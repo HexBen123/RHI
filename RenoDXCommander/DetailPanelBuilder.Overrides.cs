@@ -1513,6 +1513,10 @@ public partial class DetailPanelBuilder
             channelCombo.SelectedItem = "Global";
             _window.ViewModel.SetReShadeChannelOverride(capturedName, null);
 
+            // Reset launch exe override
+            _window.ViewModel.GameNameServiceInstance.LaunchExeOverrides.Remove(capturedName);
+            _window.ViewModel.SaveSettingsPublic();
+
             // Revert card properties to auto-detected values
             {
                 var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
@@ -1598,7 +1602,7 @@ public partial class DetailPanelBuilder
         };
         manageLeftColumn.Children.Add(presetBtn);
 
-        // ── Normal ReShade toggle ────────────────────────────────────────────
+        // ── Normal ReShade toggle (now in left column, below preset) ─────────
         normalReShadeToggle = new ToggleSwitch
         {
             Header = "ReShade Without Addon Support",
@@ -1638,7 +1642,99 @@ public partial class DetailPanelBuilder
                 }
             }
         };
-        manageRightColumn.Children.Add(normalReShadeToggle);
+        manageLeftColumn.Children.Add(normalReShadeToggle);
+
+        // ── Launch executable override (right column) ────────────────────────
+        var launchExeLabel = new TextBlock
+        {
+            Text = "Launch executable",
+            FontSize = 12,
+            Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+            Margin = new Thickness(0, 0, 0, 6),
+        };
+        manageRightColumn.Children.Add(launchExeLabel);
+
+        var currentLaunchExe = _window.ViewModel.GameNameServiceInstance.LaunchExeOverrides
+            .TryGetValue(capturedName, out var savedExe) ? savedExe : "";
+        var launchExeBox = new TextBox
+        {
+            Text = currentLaunchExe,
+            PlaceholderText = "Auto-detect (or paste path)",
+            FontSize = 11,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Margin = new Thickness(0, 0, 0, 6),
+        };
+        launchExeBox.LostFocus += (s, ev) =>
+        {
+            var newPath = launchExeBox.Text.Trim();
+            if (string.IsNullOrEmpty(newPath))
+            {
+                _window.ViewModel.GameNameServiceInstance.LaunchExeOverrides.Remove(capturedName);
+            }
+            else
+            {
+                _window.ViewModel.GameNameServiceInstance.LaunchExeOverrides[capturedName] = newPath;
+            }
+            _window.ViewModel.SaveSettingsPublic();
+        };
+        manageRightColumn.Children.Add(launchExeBox);
+
+        var launchBtnRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+        var browseLaunchBtn = new Button
+        {
+            Content = "Browse",
+            FontSize = 11,
+            Padding = new Thickness(8, 4, 8, 4),
+            Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
+            Foreground = UIFactory.Brush(ResourceKeys.ChipTextBrush),
+            BorderBrush = UIFactory.Brush(ResourceKeys.BorderSubtleBrush),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(6),
+        };
+        browseLaunchBtn.Click += async (s, ev) =>
+        {
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(_window);
+            string? filePath = await Task.Run(() =>
+            {
+                var ofn = new NativeInterop.OpenFileName();
+                ofn.structSize = System.Runtime.InteropServices.Marshal.SizeOf(ofn);
+                ofn.hwndOwner = hwnd;
+                ofn.filter = "Executables (*.exe)\0*.exe\0All Files (*.*)\0*.*\0";
+                ofn.file = new string(new char[260]);
+                ofn.maxFile = ofn.file.Length;
+                ofn.title = "Select Game Executable";
+                ofn.initialDir = card.InstallPath;
+                ofn.flags = 0x00080000 | 0x00001000;
+                return NativeInterop.GetOpenFileName(ref ofn) ? ofn.file.TrimEnd('\0') : null;
+            });
+            if (!string.IsNullOrEmpty(filePath))
+            {
+                launchExeBox.Text = filePath;
+                _window.ViewModel.GameNameServiceInstance.LaunchExeOverrides[capturedName] = filePath;
+                _window.ViewModel.SaveSettingsPublic();
+            }
+        };
+        launchBtnRow.Children.Add(browseLaunchBtn);
+
+        var resetLaunchBtn = new Button
+        {
+            Content = "Reset",
+            FontSize = 11,
+            Padding = new Thickness(8, 4, 8, 4),
+            Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
+            Foreground = UIFactory.Brush(ResourceKeys.ChipTextBrush),
+            BorderBrush = UIFactory.Brush(ResourceKeys.BorderSubtleBrush),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(6),
+        };
+        resetLaunchBtn.Click += (s, ev) =>
+        {
+            launchExeBox.Text = "";
+            _window.ViewModel.GameNameServiceInstance.LaunchExeOverrides.Remove(capturedName);
+            _window.ViewModel.SaveSettingsPublic();
+        };
+        launchBtnRow.Children.Add(resetLaunchBtn);
+        manageRightColumn.Children.Add(launchBtnRow);
 
         Grid.SetColumn(manageLeftColumn, 0);
         manageRowGrid.Children.Add(manageLeftColumn);

@@ -258,6 +258,7 @@
                         <!-- Game ListView -->
                         <ListView x:Name="GameList" Grid.Row="3"
                                   SelectionChanged="GameList_SelectionChanged"
+                                  DoubleTapped="GameList_DoubleTapped"
                                   Background="Transparent"
                                   SelectionMode="Single" Padding="4">
                             <ListView.ItemTemplate>
@@ -393,6 +394,16 @@
                                     </StackPanel>
                                     <!-- Right: game actions -->
                                     <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
+                                        <Button x:Name="DetailLaunchBtn" x:FieldModifier="internal"
+                                                Background="#1A3A20"
+                                                Foreground="#6AE87A"
+                                                BorderBrush="#2A5A30" BorderThickness="1"
+                                                CornerRadius="6" Padding="10,4" MinWidth="0" MinHeight="0"
+                                                FontSize="11" FontWeight="SemiBold"
+                                                Click="LaunchGame_Click"
+                                                ToolTipService.ToolTip="Launch this game">
+                                            <TextBlock Text="▶ Launch" FontSize="11"/>
+                                        </Button>
                                         <Button x:Name="DetailHideBtn" x:FieldModifier="internal"
                                                 Background="{StaticResource SurfaceOverlayBrush}"
                                                 Foreground="{StaticResource ChipTextBrush}"

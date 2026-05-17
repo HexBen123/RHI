@@ -283,4 +283,12 @@ public class RemoteManifest
     /// </summary>
     [JsonPropertyName("legacyReShadeVersions")]
     public Dictionary<string, string>? LegacyReShadeVersions { get; set; }
+
+    /// <summary>
+    /// Per-game launch executable overrides. When auto-detection picks the wrong exe
+    /// or the game needs a specific executable, this provides a direct mapping.
+    /// Key = game name, Value = relative exe path from InstallPath.
+    /// </summary>
+    [JsonPropertyName("launchExeOverrides")]
+    public Dictionary<string, string>? LaunchExeOverrides { get; set; }
 }

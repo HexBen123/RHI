@@ -2,8 +2,9 @@
 
 ### New Features
 
-- **Auto-delete downloaded addons** — When the addon file watcher detects and installs an addon from the watch folder (Downloads by default), the source file is automatically deleted after successful installation. Keeps your Downloads folder clean.
-- **Nexus Mods update check** — External-only games with Nexus downloads are now checked for updates via the Nexus GraphQL v2 API (no API key required). When a Nexus mod is updated, the install button turns purple and shows "Update RenoDX". Games with both Snapshot and Nexus downloads show "Also available on Nexus Mods" in the Info popup. Uses the same 4-hour cooldown as other update checks. Nexus updates do not contribute to Update All.
+- **Game Launch** — Launch your games straight from RHI! Hit the new green "▶ Launch" button or double-click any game in the sidebar. Steam games launch through Steam (with overlay and playtime tracking), everything else launches directly. Set a custom exe per game in Overrides if auto-detection picks the wrong one.
+- **Nexus Mods Update Alerts** — RHI now automatically checks if your Nexus-hosted mods have been updated. When a new version drops, the button turns purple with "Update RenoDX" — click it to go straight to the Nexus page. No API key needed, no setup required. Games with both Snapshot and Nexus versions show a handy "Also available on Nexus Mods" link in the Info popup.
+- **Auto-cleanup for downloaded addons** — Addon files detected and installed from your Downloads folder are now automatically deleted after successful installation. No more clutter.
 
 ### Bug Fixes
 
@@ -20,6 +21,7 @@
 - Batman™: Arkham Knight — added PCGW URL override (AppID redirect not working).
 - Forza Horizon 6 — added PCGW URL override.
 - Blacklisted DLC/skin entries: Forza Horizon 5 DLCs, Arkham Knight skins, SkinBatmanInc, SkinBatmanNoel, New 52 Skins Pack.
+- Stellar Blade — added Unreal Engine override (was not auto-detected).
 
 ## v1.9.5
 

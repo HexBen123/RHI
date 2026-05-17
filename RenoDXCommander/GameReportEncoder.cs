@@ -173,6 +173,7 @@ public static class GameReportEncoder
             if ((bool?)ov["wikiExcluded"] == true) ovLines.Add("Wiki Excluded: Yes");
             if (ov["shaderMode"] is string sm && !string.IsNullOrEmpty(sm)) ovLines.Add($"Shader Mode: {sm}");
             if (ov["addonMode"] is string am && !string.IsNullOrEmpty(am)) ovLines.Add($"Addon Mode: {am}");
+            if (ov["launchExe"] is string le && !string.IsNullOrEmpty(le)) ovLines.Add($"Launch Exe: `{le}`");
 
             if (ovLines.Count > 0)
             {
@@ -309,6 +310,7 @@ public static class GameReportEncoder
             ["updateExcludedUL"] = vm.IsUpdateAllExcludedUl(gameName),
             ["updateExcludedDC"] = vm.IsUpdateAllExcludedDc(gameName),
             ["updateExcludedOS"] = vm.IsUpdateAllExcludedOs(gameName),
+            ["launchExe"] = gns.LaunchExeOverrides.TryGetValue(gameName, out var launchOv) ? launchOv : "",
         };
 
         // Addons

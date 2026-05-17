@@ -1446,6 +1446,86 @@ public sealed partial class MainWindow
             ViewModel.ToggleHideGameCommand.Execute(card);
     }
 
+    internal void LaunchGame_Click(object sender, RoutedEventArgs e)
+    {
+        var card = GetCardFromSender(sender) ?? ViewModel.SelectedGame;
+        if (card == null) return;
+        LaunchGame(card);
+    }
+
+    private void GameList_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
+    {
+        if (ViewModel.SelectedGame is { } card)
+            LaunchGame(card);
+    }
+
+    private void LaunchGame(GameCardViewModel card)
+    {
+        try
+        {
+            var gameName = card.GameName;
+
+            // 1. User override (absolute path)
+            if (ViewModel.GameNameServiceInstance.LaunchExeOverrides.TryGetValue(gameName, out var userExe)
+                && !string.IsNullOrEmpty(userExe) && File.Exists(userExe))
+            {
+                _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via user override: {userExe}");
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(userExe) { UseShellExecute = true });
+                return;
+            }
+
+            // 2. Manifest override (relative path from InstallPath)
+            if (ViewModel.Manifest?.LaunchExeOverrides != null
+                && ViewModel.Manifest.LaunchExeOverrides.TryGetValue(gameName, out var manifestExe)
+                && !string.IsNullOrEmpty(manifestExe) && !string.IsNullOrEmpty(card.InstallPath))
+            {
+                var fullPath = Path.Combine(card.InstallPath, manifestExe);
+                if (File.Exists(fullPath))
+                {
+                    _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via manifest override: {fullPath}");
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(fullPath) { UseShellExecute = true });
+                    return;
+                }
+            }
+
+            // 3. Steam protocol
+            var steamAppId = card.DetectedGame?.SteamAppId;
+            if (steamAppId != null && steamAppId > 0)
+            {
+                var steamUri = $"steam://rungameid/{steamAppId}";
+                _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via Steam: {steamUri}");
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(steamUri) { UseShellExecute = true });
+                return;
+            }
+
+            // 4. Direct exe — find the game exe in InstallPath
+            if (!string.IsNullOrEmpty(card.InstallPath) && Directory.Exists(card.InstallPath))
+            {
+                var exes = Directory.GetFiles(card.InstallPath, "*.exe", SearchOption.TopDirectoryOnly);
+                // Prefer exe matching game name or folder name, exclude known non-game exes
+                var excludeNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                    { "unins000", "UnityCrashHandler64", "UnityCrashHandler32", "CrashReporter", "launcher" };
+                var gameExe = exes
+                    .Where(e => !excludeNames.Contains(Path.GetFileNameWithoutExtension(e)))
+                    .OrderByDescending(e => new FileInfo(e).Length) // largest exe is usually the game
+                    .FirstOrDefault();
+
+                if (gameExe != null)
+                {
+                    _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via auto-detected exe: {gameExe}");
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(gameExe) { UseShellExecute = true });
+                    return;
+                }
+            }
+
+            _crashReporter.Log($"[MainWindow.LaunchGame] No launch method found for '{gameName}'");
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[MainWindow.LaunchGame] Failed to launch '{card.GameName}' — {ex.Message}");
+        }
+    }
+
     internal async void BrowseFolder_Click(object sender, RoutedEventArgs e)
     {
         var card = GetCardFromSender(sender);

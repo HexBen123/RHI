@@ -44,6 +44,9 @@ public class GameNameService : IGameNameService
     private Dictionary<string, string> _reShadeChannelOverrides = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, string> _dxvkVariantOverrides = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Per-game launch executable overrides. Key = game name, Value = absolute exe path.</summary>
+    private Dictionary<string, string> _launchExeOverrides = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Maps current (renamed) game name → original store-detected name.</summary>
     private Dictionary<string, string> _originalDetectedNames = new(StringComparer.OrdinalIgnoreCase);
 
@@ -78,6 +81,8 @@ public class GameNameService : IGameNameService
     public Dictionary<string, string> ReShadeChannelOverrides => _reShadeChannelOverrides;
     /// <summary>Per-game DXVK variant overrides. Key = game name, Value = "Development", "Stable", or "LiliumHdr". Absent = use global default.</summary>
     public Dictionary<string, string> DxvkVariantOverrides => _dxvkVariantOverrides;
+    /// <summary>Per-game launch executable overrides. Key = game name, Value = absolute exe path.</summary>
+    public Dictionary<string, string> LaunchExeOverrides => _launchExeOverrides;
     public Dictionary<string, string> OriginalDetectedNames => _originalDetectedNames;
 
     public GameNameService(
@@ -268,6 +273,9 @@ public class GameNameService : IGameNameService
         _dxvkVariantOverrides = new(Load<Dictionary<string, string>>("DxvkVariantOverrides",
             new(StringComparer.OrdinalIgnoreCase)), StringComparer.OrdinalIgnoreCase);
 
+        _launchExeOverrides = new(Load<Dictionary<string, string>>("LaunchExeOverrides",
+            new(StringComparer.OrdinalIgnoreCase)), StringComparer.OrdinalIgnoreCase);
+
         _hiddenGames = new HashSet<string>(
             Load<List<string>>("HiddenGames", _hiddenGames?.ToList() ?? new()), StringComparer.OrdinalIgnoreCase);
 
@@ -343,6 +351,7 @@ public class GameNameService : IGameNameService
                 s["ApiOverrides"]        = JsonSerializer.Serialize(_apiOverrides);
                 s["ReShadeChannelOverrides"] = JsonSerializer.Serialize(_reShadeChannelOverrides);
                 s["DxvkVariantOverrides"] = JsonSerializer.Serialize(_dxvkVariantOverrides);
+                s["LaunchExeOverrides"] = JsonSerializer.Serialize(_launchExeOverrides);
                 s["HiddenGames"]         = JsonSerializer.Serialize(_hiddenGames?.ToList() ?? new List<string>());
                 s["FavouriteGames"]      = JsonSerializer.Serialize(_favouriteGames?.ToList() ?? new List<string>());
                 s["ViewLayout"]          = ((int)currentViewLayout).ToString();
@@ -478,6 +487,7 @@ public class GameNameService : IGameNameService
         MigrateDict(_apiOverrides, oldName, newName);
         MigrateDict(_reShadeChannelOverrides, oldName, newName);
         MigrateDict(_dxvkVariantOverrides, oldName, newName);
+        MigrateDict(_launchExeOverrides, oldName, newName);
 
         // Migrate DLL override config
         dllOverrideService.MigrateOverride(oldName, newName);
