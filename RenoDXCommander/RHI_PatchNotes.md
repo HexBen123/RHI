@@ -4,8 +4,8 @@
 
 - **Game Launch** — Launch your games straight from RHI! Hit the new green "▶ Launch" button or double-click any game in the sidebar. Steam games launch through Steam (with overlay and playtime tracking), everything else launches directly. Set a custom exe per game in Overrides if auto-detection picks the wrong one.
 - **Nexus Mods Update Alerts** — RHI now automatically checks if your Nexus-hosted mods have been updated. When a new version drops, the button turns purple with "Update RenoDX" — click it to go straight to the Nexus page. No API key needed, no setup required. Games with both Snapshot and Nexus versions show a handy "Also available on Nexus Mods" link in the Info popup.
+- **Overrides Panel Revamp** — Complete visual overhaul of the per-game overrides panel. Game name and wiki name are now side by side. Shader/addon toggles replaced with compact ComboBox dropdowns (Global, Custom, Select, Off). DXVK toggle and variant selector merged into a single dropdown (Off, Global, Development, Stable, Lilium HDR). DLL naming boxes are hidden when disabled and shown side by side when enabled. Wiki exclusion is now a dropdown instead of a toggle. The separate "ReShade Without Addon Support" toggle has been merged into the RS Channel selector (No Addons option). Management buttons (Change folder, Remove game, Reset Overrides, Copy Report) are now a single compact row. Compact view combines overrides and management into one page instead of two. Overall layout is tighter and more consistent.
 - **Auto-cleanup for downloaded addons** — Addon files detected and installed from your Downloads folder are now automatically deleted after successful installation. No more clutter.
-- **"No Addons" in RS Channel dropdown** — The separate "ReShade Without Addon Support" toggle has been merged into the RS Channel selector. Options are now: Global, Stable, Nightly, No Addons, Legacy.
 
 ### Bug Fixes
 

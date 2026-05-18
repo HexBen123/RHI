@@ -344,6 +344,15 @@ public partial class MainViewModel
                 }
 
                 string addonMode = GetPerGameAddonMode(gameName);
+
+                // "Off" mode → deploy with empty list (removes all managed addons)
+                if (addonMode == "Off")
+                {
+                    _addonPackService.DeployAddonsForGame(gameName, card.InstallPath, is32Bit,
+                        useGlobalSet: true, perGameSelection: new List<string>());
+                    return;
+                }
+
                 bool useGlobalSet = addonMode != "Select";
 
                 List<string>? selection = null;
@@ -398,6 +407,15 @@ public partial class MainViewModel
                     }
 
                     string addonMode = GetPerGameAddonMode(card.GameName);
+
+                    // "Off" mode → deploy with empty list (removes all managed addons)
+                    if (addonMode == "Off")
+                    {
+                        _addonPackService.DeployAddonsForGame(card.GameName, card.InstallPath, is32Bit,
+                            useGlobalSet: true, perGameSelection: new List<string>());
+                        continue;
+                    }
+
                     bool useGlobalSet = addonMode != "Select";
 
                     List<string>? selection = null;

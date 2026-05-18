@@ -157,7 +157,7 @@ public partial class MainViewModel : ObservableObject
 
     public void NavigateCompactPage(int delta)
     {
-        CompactPageIndex = ((CompactPageIndex + delta) % 3 + 3) % 3;
+        CompactPageIndex = ((CompactPageIndex + delta) % 2 + 2) % 2;
     }
 
     /// <summary>
@@ -320,6 +320,10 @@ public partial class MainViewModel : ObservableObject
     /// </summary>
     internal IEnumerable<string>? ResolveShaderSelection(string gameName, string? shaderModeOverride)
     {
+        // 0. Per-game "Off" mode → null (removes managed shaders)
+        if (string.Equals(shaderModeOverride, "Off", StringComparison.OrdinalIgnoreCase))
+            return null;
+
         // 1. Per-game "Custom" mode → custom shader sentinel
         if (string.Equals(shaderModeOverride, "Custom", StringComparison.OrdinalIgnoreCase))
             return new[] { ShaderPackService.CustomShaderSentinel };

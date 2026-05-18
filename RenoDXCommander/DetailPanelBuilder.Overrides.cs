@@ -40,6 +40,8 @@ public partial class DetailPanelBuilder
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
+        ToolTipService.SetToolTip(detectedBox,
+            "The display name for this game. Edit and press Enter to rename. Reset reverts to the auto-detected store name.");
         var wikiBox = new TextBox
         {
             Header = "Wiki mod name",
@@ -48,6 +50,8 @@ public partial class DetailPanelBuilder
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
+        ToolTipService.SetToolTip(wikiBox,
+            "Override the name used to look up this game on the RenoDX/Luma wiki. Leave blank to use the game name. Press Enter to save.");
         var originalStoreName = _window.ViewModel.GetOriginalStoreName(gameName);
 
         // Mutable captured name so rename handler can update it for subsequent handlers
@@ -55,7 +59,7 @@ public partial class DetailPanelBuilder
 
         var resetBtn = new Button
         {
-            Content = "↩ Reset",
+            Content = "Reset",
             FontSize = 12,
             VerticalAlignment = VerticalAlignment.Bottom,
             Padding = new Thickness(10, 6, 10, 6),
@@ -514,36 +518,61 @@ public partial class DetailPanelBuilder
         topRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         topRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-        // Left column: Game Name above (Wiki Name + Reset Button)
+        // Left column: Game Name + Wiki Name side by side, then Reset + Wiki ComboBox below
         var topLeftColumn = new StackPanel { Spacing = 6 };
-        topLeftColumn.Children.Add(detectedBox);
 
-        var wikiResetRow = new Grid { ColumnSpacing = 8 };
-        wikiResetRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        wikiResetRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        Grid.SetColumn(wikiBox, 0);
-        Grid.SetColumn(resetBtn, 1);
-        wikiResetRow.Children.Add(wikiBox);
-        wikiResetRow.Children.Add(resetBtn);
-        topLeftColumn.Children.Add(wikiResetRow);
+        // Row 1: Game name + Wiki name side by side
+        var nameRow = new Grid { ColumnSpacing = 8 };
+        nameRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        nameRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        Grid.SetColumn(detectedBox, 0);
+        Grid.SetColumn(wikiBox, 1);
+        nameRow.Children.Add(detectedBox);
+        nameRow.Children.Add(wikiBox);
+        topLeftColumn.Children.Add(nameRow);
 
-        // Wiki exclusion toggle (compact, no header — placed below wiki name)
-        var wikiExcludeToggle = new ToggleSwitch
+        // Row 2: Reset button (half) + Wiki lookup ComboBox (half)
+        var resetWikiRow = new Grid { ColumnSpacing = 8 };
+        resetWikiRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        resetWikiRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+        // Restyle reset button to blue accent
+        resetBtn.Content = "Reset";
+        resetBtn.FontSize = 12;
+        resetBtn.Height = 32;
+        resetBtn.HorizontalAlignment = HorizontalAlignment.Stretch;
+        resetBtn.VerticalAlignment = VerticalAlignment.Stretch;
+        resetBtn.Padding = new Thickness(10, 6, 10, 6);
+        resetBtn.Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush);
+        resetBtn.Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush);
+        resetBtn.BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush);
+        resetBtn.BorderThickness = new Thickness(1);
+        resetBtn.CornerRadius = new CornerRadius(8);
+        Grid.SetColumn(resetBtn, 0);
+        resetWikiRow.Children.Add(resetBtn);
+
+        // Wiki lookup ComboBox (replaces ToggleSwitch)
+        var wikiExcludeItems = new[] { "Included", "Excluded" };
+        var wikiExcludeCombo = new ComboBox
         {
-            IsOn = _window.ViewModel.IsWikiExcluded(gameName),
-            OnContent = "Excluded from wiki lookups",
-            OffContent = "Included in wiki lookups",
-            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            FontSize = 11,
+            ItemsSource = wikiExcludeItems,
+            SelectedItem = _window.ViewModel.IsWikiExcluded(gameName) ? "Excluded" : "Included",
+            FontSize = 12,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
         };
-        ToolTipService.SetToolTip(wikiExcludeToggle,
-            "When enabled, this game will not be looked up on the RenoDX wiki. Useful for games that share a name with an unrelated wiki entry.");
-        wikiExcludeToggle.Toggled += (s, ev) =>
+        ToolTipService.SetToolTip(wikiExcludeCombo,
+            "Included = this game is looked up on the RenoDX and Luma wikis. Excluded = skip wiki lookups for this game.");
+        wikiExcludeCombo.SelectionChanged += (s, ev) =>
         {
-            if (wikiExcludeToggle.IsOn != _window.ViewModel.IsWikiExcluded(capturedName))
+            var selected = wikiExcludeCombo.SelectedItem as string;
+            bool shouldExclude = selected == "Excluded";
+            if (shouldExclude != _window.ViewModel.IsWikiExcluded(capturedName))
                 _window.ViewModel.ToggleWikiExclusion(capturedName);
         };
-        topLeftColumn.Children.Add(wikiExcludeToggle);
+        Grid.SetColumn(wikiExcludeCombo, 1);
+        resetWikiRow.Children.Add(wikiExcludeCombo);
+
+        topLeftColumn.Children.Add(resetWikiRow);
 
         Grid.SetColumn(topLeftColumn, 0);
         topRowGrid.Children.Add(topLeftColumn);
@@ -565,11 +594,27 @@ public partial class DetailPanelBuilder
 
         // Column 2: DLL naming override
         var topRightColumn = new StackPanel { Spacing = 6 };
-        // DLL naming override moved here from the old Bottom Row
         topRightColumn.Children.Add(dllOverrideToggle);
-        topRightColumn.Children.Add(rsNameBox);
-        topRightColumn.Children.Add(dcNameBox);
-        topRightColumn.Children.Add(osNameBox);
+
+        // 3 DLL name boxes side by side, hidden when toggle is off
+        var dllBoxesGrid = new Grid { ColumnSpacing = 8, Visibility = isDllOverride ? Visibility.Visible : Visibility.Collapsed };
+        dllBoxesGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        dllBoxesGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        dllBoxesGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        Grid.SetColumn(rsNameBox, 0);
+        Grid.SetColumn(dcNameBox, 1);
+        Grid.SetColumn(osNameBox, 2);
+        dllBoxesGrid.Children.Add(rsNameBox);
+        dllBoxesGrid.Children.Add(dcNameBox);
+        dllBoxesGrid.Children.Add(osNameBox);
+        topRightColumn.Children.Add(dllBoxesGrid);
+
+        // Show/hide DLL boxes when toggle changes
+        dllOverrideToggle.Toggled += (s, ev) =>
+        {
+            dllBoxesGrid.Visibility = dllOverrideToggle.IsOn ? Visibility.Visible : Visibility.Collapsed;
+        };
+
         Grid.SetColumn(topRightColumn, 2);
         topRowGrid.Children.Add(topRightColumn);
 
@@ -606,125 +651,81 @@ public partial class DetailPanelBuilder
             }
         };
 
-        // ── Per-game Shader mode ─────────────────────────────────────────────
+        // ── Per-game Shader mode ComboBox ─────────────────────────────────────
         string currentShaderMode = _window.ViewModel.GetPerGameShaderMode(gameName);
-        bool isGlobalShaders = currentShaderMode != "Select";
-        var shaderToggle = new ToggleSwitch
-        {
-            Header = "Global",
-            IsOn = isGlobalShaders,
-            OnContent = "On",
-            OffContent = "Off",
-            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            FontSize = 12,
-        };
-        ToolTipService.SetToolTip(shaderToggle,
-            "On = use the global shader selection from Settings. Off = pick specific shader packs for this game.");
+        // Resolve effective display: if global UseCustomShaders is ON and mode is "Global", show "Custom"
+        string effectiveShaderDisplay = currentShaderMode;
+        if (currentShaderMode == "Global"
+            && _window.ViewModel.Settings.UseCustomShaders
+            && !_window.ViewModel.GameNameServiceInstance.PerGameShaderMode.ContainsKey(gameName))
+            effectiveShaderDisplay = "Custom";
 
-        var selectShadersBtn = new Button
+        var shaderModeItems = new[] { "Global", "Custom", "Select", "Off" };
+        bool shaderComboInitializing = true;
+
+        var shaderModeCombo = new ComboBox
         {
-            Content = "Select Shaders",
+            ItemsSource = shaderModeItems,
+            SelectedItem = effectiveShaderDisplay,
             FontSize = 12,
-            Padding = new Thickness(12, 7, 12, 7),
-            CornerRadius = new CornerRadius(8),
             HorizontalAlignment = HorizontalAlignment.Stretch,
-            IsEnabled = !isGlobalShaders,
-            Background = UIFactory.Brush(isGlobalShaders ? ResourceKeys.SurfaceOverlayBrush : ResourceKeys.AccentBlueBgBrush),
-            Foreground = UIFactory.Brush(isGlobalShaders ? ResourceKeys.TextDisabledBrush : ResourceKeys.AccentBlueBrush),
-            BorderBrush = UIFactory.Brush(isGlobalShaders ? ResourceKeys.BorderSubtleBrush : ResourceKeys.AccentBlueBorderBrush),
-            BorderThickness = new Thickness(1),
+            IsEnabled = !card.UseNormalReShade,
         };
-        ToolTipService.SetToolTip(selectShadersBtn, "Choose which shader packs to use for this game");
+        ToolTipService.SetToolTip(shaderModeCombo,
+            "Global = use global shader selection. Custom = use custom shader directories. Select = pick per-game packs. Off = no shaders.");
 
-        shaderToggle.Toggled += (s, ev) =>
+        shaderModeCombo.SelectionChanged += async (s, ev) =>
         {
-            bool global = shaderToggle.IsOn;
-            selectShadersBtn.IsEnabled = !global;
-            selectShadersBtn.Background = UIFactory.Brush(global ? ResourceKeys.SurfaceOverlayBrush : ResourceKeys.AccentBlueBgBrush);
-            selectShadersBtn.Foreground = UIFactory.Brush(global ? ResourceKeys.TextDisabledBrush : ResourceKeys.AccentBlueBrush);
-            selectShadersBtn.BorderBrush = UIFactory.Brush(global ? ResourceKeys.BorderSubtleBrush : ResourceKeys.AccentBlueBorderBrush);
+            if (shaderComboInitializing) return;
+            var selected = shaderModeCombo.SelectedItem as string;
+            if (string.IsNullOrEmpty(selected)) return;
+            CrashReporter.Log($"[DetailPanelBuilder.ShaderMode] '{capturedName}' selection changed to: '{selected}'");
 
-            // Auto-save: persist shader mode immediately
-            var newMode = global ? "Global" : "Select";
-            if (newMode != _window.ViewModel.GetPerGameShaderMode(capturedName))
+            if (selected == "Select")
             {
-                _window.ViewModel.SetPerGameShaderMode(capturedName, newMode);
-                if (newMode == "Global")
-                    _window.ViewModel.GameNameServiceInstance.PerGameShaderSelection.Remove(capturedName);
+                // Open per-game shader picker
+                List<string>? current = _window.ViewModel.GameNameServiceInstance.PerGameShaderSelection.TryGetValue(gameName, out var existing)
+                    ? existing
+                    : _window.ViewModel.Settings.SelectedShaderPacks;
+                var result = await ShaderPopupHelper.ShowAsync(
+                    _window.Content.XamlRoot,
+                    _window.ViewModel.ShaderPackServiceInstance,
+                    current,
+                    ShaderPopupHelper.PopupContext.PerGame);
+                if (result != null)
+                {
+                    _window.ViewModel.GameNameServiceInstance.PerGameShaderSelection[gameName] = result;
+                    _window.ViewModel.SetPerGameShaderMode(capturedName, "Select");
+                    _window.ViewModel.DeployShadersForCard(capturedName);
+                }
+                else
+                {
+                    // Cancelled — revert to previous
+                    shaderComboInitializing = true;
+                    shaderModeCombo.SelectedItem = effectiveShaderDisplay;
+                    shaderComboInitializing = false;
+                }
+                return;
+            }
+
+            if (selected == "Off")
+            {
+                _window.ViewModel.SetPerGameShaderMode(capturedName, "Off");
                 _window.ViewModel.DeployShadersForCard(capturedName);
             }
-        };
-
-        // ── Per-game Custom Shaders toggle ─────────────────────────────────
-        bool isPerGameCustom = currentShaderMode == "Custom";
-        // Default to ON when global UseCustomShaders is enabled and no per-game override exists
-        bool customDefault = isPerGameCustom ||
-            (_window.ViewModel.Settings.UseCustomShaders && currentShaderMode == "Global"
-             && !_window.ViewModel.GameNameServiceInstance.PerGameShaderMode.ContainsKey(gameName));
-        var customShadersToggle = new ToggleSwitch
-        {
-            Header = "Custom",
-            IsOn = customDefault,
-            OnContent = "On",
-            OffContent = "Off",
-            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            FontSize = 12,
-        };
-        ToolTipService.SetToolTip(customShadersToggle,
-            "On = use shaders from the custom shader directories. Off = use shader packs (global or per-game).");
-
-        customShadersToggle.Toggled += (s, ev) =>
-        {
-            bool customOn = customShadersToggle.IsOn;
-            if (customOn)
+            else if (selected == "Custom")
             {
                 _window.ViewModel.SetPerGameShaderMode(capturedName, "Custom");
-            }
-            else
-            {
-                _window.ViewModel.SetPerGameShaderMode(capturedName, "Global");
-            }
-            _window.ViewModel.DeployShadersForCard(capturedName);
-        };
-
-        selectShadersBtn.Click += async (s, ev) =>
-        {
-            List<string>? current = _window.ViewModel.GameNameServiceInstance.PerGameShaderSelection.TryGetValue(gameName, out var existing)
-                ? existing
-                : _window.ViewModel.Settings.SelectedShaderPacks;
-            var result = await ShaderPopupHelper.ShowAsync(
-                _window.Content.XamlRoot,
-                _window.ViewModel.ShaderPackServiceInstance,
-                current,
-                ShaderPopupHelper.PopupContext.PerGame);
-            if (result != null)
-            {
-                _window.ViewModel.GameNameServiceInstance.PerGameShaderSelection[gameName] = result;
                 _window.ViewModel.DeployShadersForCard(capturedName);
             }
+            else // "Global"
+            {
+                _window.ViewModel.SetPerGameShaderMode(capturedName, "Global");
+                _window.ViewModel.DeployShadersForCard(capturedName);
+            }
+            effectiveShaderDisplay = selected;
         };
-
-        // ── Shaders section (left column of Middle Row) ──────────────────────
-        var shadersLabel = new TextBlock
-        {
-            Text = "Shaders",
-            FontSize = 12,
-            Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-            Margin = new Thickness(0, 0, 0, 8),
-        };
-        var shaderTogglesRow = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            Spacing = 12,
-        };
-        shaderTogglesRow.Children.Add(shaderToggle);
-        shaderTogglesRow.Children.Add(customShadersToggle);
-
-        var shaderColumn = new StackPanel { Spacing = 6 };
-        shaderColumn.Children.Add(shadersLabel);
-        shaderColumn.Children.Add(shaderTogglesRow);
-        shaderColumn.Children.Add(selectShadersBtn);
-        Grid.SetColumn(shaderColumn, 0);
+        shaderComboInitializing = false;
 
         // ── Auto-save: RS name box on Enter ──────────────────────────────────────
         rsNameBox.KeyDown += (s, e) =>
@@ -1295,165 +1296,330 @@ public partial class DetailPanelBuilder
         _window.OverridesPanel.Children.Add(middleRowGrid);
         _window.OverridesPanel.Children.Add(UIFactory.MakeSeparator());
 
-        // ── Bottom Row Grid (3 columns: Star | Auto divider | Star) — Shaders (left) ──
-        var bottomRowGrid = new Grid { ColumnSpacing = 0 };
-        bottomRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        bottomRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        bottomRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        // ── Combined "Shaders and Addons" Row (3 columns: Star | Auto | Star) ──
+        var shadersAddonsRowGrid = new Grid { ColumnSpacing = 0 };
+        shadersAddonsRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        shadersAddonsRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        shadersAddonsRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-        Grid.SetColumn(shaderColumn, 0);
-        var bottomRowDivider = new Border
+        // ── Left column: "Shaders and Addons" ──
+        var shadersAddonsLeftColumn = new StackPanel { Spacing = 6 };
+        shadersAddonsLeftColumn.Children.Add(new TextBlock
+        {
+            Text = "Shaders and Addons",
+            FontSize = 12,
+            Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+            Margin = new Thickness(0, 0, 0, 4),
+        });
+
+        // Shader + Addon ComboBoxes side by side in a 2-column grid
+        var shaderAddonGrid = new Grid { ColumnSpacing = 12 };
+        shaderAddonGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        shaderAddonGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        shaderAddonGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        shaderAddonGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+        var shaderLabel = new TextBlock
+        {
+            Text = "Shaders",
+            FontSize = 11,
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+        };
+        Grid.SetRow(shaderLabel, 0); Grid.SetColumn(shaderLabel, 0);
+        shaderAddonGrid.Children.Add(shaderLabel);
+        Grid.SetRow(shaderModeCombo, 1); Grid.SetColumn(shaderModeCombo, 0);
+        shaderAddonGrid.Children.Add(shaderModeCombo);
+
+        // ── Per-game Addon mode ComboBox ─────────────────────────────────────
+        string currentAddonMode = _window.ViewModel.GetPerGameAddonMode(gameName);
+        var addonModeItems = new[] { "Global", "Select", "Off" };
+        bool addonComboInitializing = true;
+
+        var addonModeCombo = new ComboBox
+        {
+            ItemsSource = addonModeItems,
+            SelectedItem = currentAddonMode == "Off" ? "Off" : (currentAddonMode == "Select" ? "Select" : "Global"),
+            FontSize = 12,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            IsEnabled = !card.UseNormalReShade,
+        };
+        ToolTipService.SetToolTip(addonModeCombo,
+            "Global = use global addon set. Select = pick per-game addons. Off = no addons for this game.");
+
+        addonModeCombo.SelectionChanged += async (s, ev) =>
+        {
+            if (addonComboInitializing) return;
+            var selected = addonModeCombo.SelectedItem as string;
+            if (string.IsNullOrEmpty(selected)) return;
+            CrashReporter.Log($"[DetailPanelBuilder.AddonMode] '{capturedName}' selection changed to: '{selected}'");
+
+            if (selected == "Select")
+            {
+                List<string>? current = _window.ViewModel.GameNameServiceInstance.PerGameAddonSelection.TryGetValue(gameName, out var existingAddons)
+                    ? existingAddons
+                    : null;
+
+                IAddonPackService? addonPackService = null;
+                var addonSvcProp = _window.ViewModel.GetType().GetProperty("AddonPackServiceInstance");
+                if (addonSvcProp != null)
+                    addonPackService = addonSvcProp.GetValue(_window.ViewModel) as IAddonPackService;
+
+                if (addonPackService == null)
+                {
+                    var infoDlg = new ContentDialog
+                    {
+                        Title = "Select Addons",
+                        Content = new TextBlock
+                        {
+                            Text = "Addon service is not yet wired. Complete Task 9.1 to enable addon selection.",
+                            FontSize = 13,
+                            Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+                        },
+                        CloseButtonText = "OK",
+                        XamlRoot = _window.Content.XamlRoot,
+                        Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
+                        RequestedTheme = ElementTheme.Dark,
+                    };
+                    await DialogService.ShowSafeAsync(infoDlg);
+                    addonComboInitializing = true;
+                    addonModeCombo.SelectedItem = currentAddonMode == "Off" ? "Off" : "Global";
+                    addonComboInitializing = false;
+                    return;
+                }
+
+                var result = await AddonPopupHelper.ShowAsync(
+                    _window.Content.XamlRoot,
+                    addonPackService,
+                    current,
+                    AddonPopupHelper.PopupContext.PerGame);
+                if (result != null)
+                {
+                    _window.ViewModel.GameNameServiceInstance.PerGameAddonSelection[gameName] = result;
+                    _window.ViewModel.SetPerGameAddonMode(capturedName, "Select");
+                    _window.ViewModel.DeployAddonsForCard(capturedName);
+                }
+                else
+                {
+                    addonComboInitializing = true;
+                    addonModeCombo.SelectedItem = currentAddonMode == "Off" ? "Off" : "Global";
+                    addonComboInitializing = false;
+                }
+                return;
+            }
+
+            if (selected == "Off")
+            {
+                _window.ViewModel.SetPerGameAddonMode(capturedName, "Off");
+                _window.ViewModel.DeployAddonsForCard(capturedName);
+            }
+            else // "Global"
+            {
+                _window.ViewModel.SetPerGameAddonMode(capturedName, "Global");
+                _window.ViewModel.DeployAddonsForCard(capturedName);
+            }
+        };
+        addonComboInitializing = false;
+
+        var addonLabel = new TextBlock
+        {
+            Text = "Addons",
+            FontSize = 11,
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+        };
+        Grid.SetRow(addonLabel, 0); Grid.SetColumn(addonLabel, 1);
+        shaderAddonGrid.Children.Add(addonLabel);
+        Grid.SetRow(addonModeCombo, 1); Grid.SetColumn(addonModeCombo, 1);
+        shaderAddonGrid.Children.Add(addonModeCombo);
+
+        shadersAddonsLeftColumn.Children.Add(shaderAddonGrid);
+
+        // "Select ReShade Preset" button
+        var presetBtn = new Button
+        {
+            Content = "Select ReShade Preset",
+            FontSize = 12,
+            Height = 32,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
+            Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
+            BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            Margin = new Thickness(0, 8, 0, 0),
+        };
+        ToolTipService.SetToolTip(presetBtn,
+            "Pick .ini preset files to copy to this game's folder. Place presets in the reshade-presets folder.");
+        presetBtn.Click += async (s, ev) =>
+        {
+            var selected = await PresetPopupHelper.ShowAsync(_window.Content.XamlRoot);
+            if (selected != null && selected.Count > 0)
+            {
+                var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
+                    c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+                if (targetCard != null && !string.IsNullOrEmpty(targetCard.InstallPath))
+                {
+                    int count = PresetPopupHelper.DeployPresets(selected, targetCard.InstallPath);
+                    CrashReporter.Log($"[DetailPanelBuilder] Deployed {count} preset(s) to '{capturedName}'");
+
+                    if (count > 0)
+                    {
+                        var shaderDialog = new ContentDialog
+                        {
+                            Title = "🔧 Install Shaders?",
+                            Content = "Also install the required shaders and textures?",
+                            PrimaryButtonText = "Yes",
+                            CloseButtonText = "No",
+                            XamlRoot = _window.Content.XamlRoot,
+                            RequestedTheme = ElementTheme.Dark,
+                        };
+
+                        var shaderResult = await DialogService.ShowSafeAsync(shaderDialog);
+                        if (shaderResult == ContentDialogResult.Primary)
+                        {
+                            var presetPaths = selected.Select(f => Path.Combine(PresetPopupHelper.PresetsDir, f)).ToList();
+                            await _window.ViewModel.ApplyPresetShadersAsync(capturedName, presetPaths);
+
+                            // Rebuild overrides panel so the shader combo reflects the new "Select" mode
+                            var refreshCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
+                                c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+                            if (refreshCard != null)
+                                BuildOverridesPanel(refreshCard);
+                        }
+                    }
+                }
+            }
+        };
+        shadersAddonsLeftColumn.Children.Add(presetBtn);
+
+        Grid.SetColumn(shadersAddonsLeftColumn, 0);
+        shadersAddonsRowGrid.Children.Add(shadersAddonsLeftColumn);
+
+        // Vertical divider
+        var shadersAddonsDivider = new Border
         {
             Width = 1,
             Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
             VerticalAlignment = VerticalAlignment.Stretch,
             Margin = new Thickness(12, 0, 12, 0),
         };
-        Grid.SetColumn(bottomRowDivider, 1);
+        Grid.SetColumn(shadersAddonsDivider, 1);
+        shadersAddonsRowGrid.Children.Add(shadersAddonsDivider);
 
-        bottomRowGrid.Children.Add(shaderColumn);
-        bottomRowGrid.Children.Add(bottomRowDivider);
+        // ── Right column: "Launch executable" (grid-aligned with left column) ──
+        var shadersAddonsRightColumn = new Grid { RowSpacing = 6 };
+        shadersAddonsRightColumn.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // Row 0: label + spacer (matches left title + sub-labels)
+        shadersAddonsRightColumn.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // Row 1: textbox (aligns with combos)
+        shadersAddonsRightColumn.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // Row 2: buttons (aligns with preset btn)
 
-        // ── Per-game Addon mode (right column of Bottom Row) ─────────────────
-        string currentAddonMode = _window.ViewModel.GetPerGameAddonMode(gameName);
-        bool isGlobalAddons = currentAddonMode != "Select";
-        var addonToggle = new ToggleSwitch
+        // Label + spacer to match left column's "Shaders and Addons" title + sub-label row
+        var launchExeHeaderPanel = new StackPanel { Spacing = 4 };
+        launchExeHeaderPanel.Children.Add(new TextBlock
         {
-            Header = "Global",
-            IsOn = isGlobalAddons,
-            OnContent = "On",
-            OffContent = "Off",
-            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            FontSize = 12,
-        };
-        ToolTipService.SetToolTip(addonToggle,
-            "On = use the global addon set for this game. Off = pick specific addons for this game.");
-
-        var selectAddonsBtn = new Button
-        {
-            Content = "Select Addons",
-            FontSize = 12,
-            Padding = new Thickness(12, 7, 12, 7),
-            CornerRadius = new CornerRadius(8),
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            IsEnabled = !isGlobalAddons,
-            Background = UIFactory.Brush(isGlobalAddons ? ResourceKeys.SurfaceOverlayBrush : ResourceKeys.AccentBlueBgBrush),
-            Foreground = UIFactory.Brush(isGlobalAddons ? ResourceKeys.TextDisabledBrush : ResourceKeys.AccentBlueBrush),
-            BorderBrush = UIFactory.Brush(isGlobalAddons ? ResourceKeys.BorderSubtleBrush : ResourceKeys.AccentBlueBorderBrush),
-            BorderThickness = new Thickness(1),
-        };
-        ToolTipService.SetToolTip(selectAddonsBtn, "Choose which addons to deploy for this game");
-
-        addonToggle.Toggled += (s, ev) =>
-        {
-            bool global = addonToggle.IsOn;
-            selectAddonsBtn.IsEnabled = !global;
-            selectAddonsBtn.Background = UIFactory.Brush(global ? ResourceKeys.SurfaceOverlayBrush : ResourceKeys.AccentBlueBgBrush);
-            selectAddonsBtn.Foreground = UIFactory.Brush(global ? ResourceKeys.TextDisabledBrush : ResourceKeys.AccentBlueBrush);
-            selectAddonsBtn.BorderBrush = UIFactory.Brush(global ? ResourceKeys.BorderSubtleBrush : ResourceKeys.AccentBlueBorderBrush);
-
-            // Auto-save: persist addon mode immediately
-            var newMode = global ? "Global" : "Select";
-            if (newMode != _window.ViewModel.GetPerGameAddonMode(capturedName))
-            {
-                _window.ViewModel.SetPerGameAddonMode(capturedName, newMode);
-                _window.ViewModel.DeployAddonsForCard(capturedName);
-            }
-        };
-
-        selectAddonsBtn.Click += async (s, ev) =>
-        {
-            List<string>? current = _window.ViewModel.GameNameServiceInstance.PerGameAddonSelection.TryGetValue(gameName, out var existingAddons)
-                ? existingAddons
-                : null;
-
-            // AddonPackService may not be wired into MainViewModel yet (Task 9.1).
-            // Access it via the exposed instance if available, otherwise show a placeholder message.
-            IAddonPackService? addonPackService = null;
-            var addonSvcProp = _window.ViewModel.GetType().GetProperty("AddonPackServiceInstance");
-            if (addonSvcProp != null)
-                addonPackService = addonSvcProp.GetValue(_window.ViewModel) as IAddonPackService;
-
-            if (addonPackService == null)
-            {
-                // Fallback: show info that addon service is not yet available
-                var infoDlg = new ContentDialog
-                {
-                    Title = "Select Addons",
-                    Content = new TextBlock
-                    {
-                        Text = "Addon service is not yet wired. Complete Task 9.1 to enable addon selection.",
-                        FontSize = 13,
-                        Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-                    },
-                    CloseButtonText = "OK",
-                    XamlRoot = _window.Content.XamlRoot,
-                    Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
-                    RequestedTheme = ElementTheme.Dark,
-                };
-                await DialogService.ShowSafeAsync(infoDlg);
-                return;
-            }
-
-            var result = await AddonPopupHelper.ShowAsync(
-                _window.Content.XamlRoot,
-                addonPackService,
-                current,
-                AddonPopupHelper.PopupContext.PerGame);
-            if (result != null)
-            {
-                _window.ViewModel.GameNameServiceInstance.PerGameAddonSelection[gameName] = result;
-                _window.ViewModel.DeployAddonsForCard(capturedName);
-            }
-        };
-
-        var addonsLabel = new TextBlock
-        {
-            Text = "Addons",
+            Text = "Launch executable",
             FontSize = 12,
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-            Margin = new Thickness(0, 0, 0, 8),
-        };
-
-        var addonColumn = new StackPanel { Spacing = 6 };
-        addonColumn.Children.Add(addonsLabel);
-        addonColumn.Children.Add(addonToggle);
-        addonColumn.Children.Add(selectAddonsBtn);
-
-        // If normal ReShade is active, disable addon controls on initial build
-        if (card.UseNormalReShade)
+        });
+        // Invisible spacer matching the "Shaders" / "Addons" sub-label height
+        launchExeHeaderPanel.Children.Add(new TextBlock
         {
-            addonToggle.IsOn = false;
-            addonToggle.IsEnabled = false;
-            selectAddonsBtn.IsEnabled = false;
-            selectAddonsBtn.Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush);
-            selectAddonsBtn.Foreground = UIFactory.Brush(ResourceKeys.TextDisabledBrush);
-            selectAddonsBtn.BorderBrush = UIFactory.Brush(ResourceKeys.BorderSubtleBrush);
-        }
+            Text = " ",
+            FontSize = 11,
+        });
+        Grid.SetRow(launchExeHeaderPanel, 0);
+        shadersAddonsRightColumn.Children.Add(launchExeHeaderPanel);
 
-        Grid.SetColumn(addonColumn, 2);
+        var currentLaunchExe = _window.ViewModel.GameNameServiceInstance.LaunchExeOverrides
+            .TryGetValue(capturedName, out var savedExe) ? savedExe : "";
+        var launchExeBox = new TextBox
+        {
+            Text = currentLaunchExe,
+            PlaceholderText = "Auto-detect (or paste path)",
+            FontSize = 11,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+        launchExeBox.LostFocus += (s, ev) =>
+        {
+            var newPath = launchExeBox.Text.Trim();
+            if (string.IsNullOrEmpty(newPath))
+                _window.ViewModel.GameNameServiceInstance.LaunchExeOverrides.Remove(capturedName);
+            else
+                _window.ViewModel.GameNameServiceInstance.LaunchExeOverrides[capturedName] = newPath;
+            _window.ViewModel.SaveSettingsPublic();
+        };
+        Grid.SetRow(launchExeBox, 1);
+        shadersAddonsRightColumn.Children.Add(launchExeBox);
 
-        bottomRowGrid.Children.Add(addonColumn);
+        var launchBtnRow = new Grid { ColumnSpacing = 8, Margin = new Thickness(0, 8, 0, 0) };
+        launchBtnRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        launchBtnRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        var browseLaunchBtn = new Button
+        {
+            Content = "Browse",
+            FontSize = 12,
+            Height = 32,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
+            Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
+            BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+        };
+        browseLaunchBtn.Click += async (s, ev) =>
+        {
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(_window);
+            string? filePath = await Task.Run(() =>
+            {
+                var ofn = new NativeInterop.OpenFileName();
+                ofn.structSize = System.Runtime.InteropServices.Marshal.SizeOf(ofn);
+                ofn.hwndOwner = hwnd;
+                ofn.filter = "Executables (*.exe)\0*.exe\0All Files (*.*)\0*.*\0";
+                ofn.file = new string(new char[260]);
+                ofn.maxFile = ofn.file.Length;
+                ofn.title = "Select Game Executable";
+                ofn.initialDir = card.InstallPath;
+                ofn.flags = 0x00080000 | 0x00001000;
+                return NativeInterop.GetOpenFileName(ref ofn) ? ofn.file.TrimEnd('\0') : null;
+            });
+            if (!string.IsNullOrEmpty(filePath))
+            {
+                launchExeBox.Text = filePath;
+                _window.ViewModel.GameNameServiceInstance.LaunchExeOverrides[capturedName] = filePath;
+                _window.ViewModel.SaveSettingsPublic();
+            }
+        };
+        Grid.SetColumn(browseLaunchBtn, 0);
+        launchBtnRow.Children.Add(browseLaunchBtn);
 
-        _window.OverridesPanel.Children.Add(bottomRowGrid);
-        _window.OverridesPanel.Children.Add(UIFactory.MakeSeparator());
+        var resetLaunchBtn = new Button
+        {
+            Content = "Reset",
+            FontSize = 12,
+            Height = 32,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
+            Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
+            BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+        };
+        resetLaunchBtn.Click += (s, ev) =>
+        {
+            launchExeBox.Text = "";
+            _window.ViewModel.GameNameServiceInstance.LaunchExeOverrides.Remove(capturedName);
+            _window.ViewModel.SaveSettingsPublic();
+        };
+        Grid.SetColumn(resetLaunchBtn, 1);
+        launchBtnRow.Children.Add(resetLaunchBtn);
+        Grid.SetRow(launchBtnRow, 2);
+        shadersAddonsRightColumn.Children.Add(launchBtnRow);
 
-        // ── Settings row (preset selector + Normal ReShade toggle) ──
-        // Forward-declare variables so the reset handler can reference them
+        Grid.SetColumn(shadersAddonsRightColumn, 2);
+        shadersAddonsRowGrid.Children.Add(shadersAddonsRightColumn);
 
-        // Forward-declare DXVK toggles so the reset handler can reference them
+        _window.OverridesPanel.Children.Add(shadersAddonsRowGrid);
+
+        // Forward-declare DXVK toggle so the reset handler can reference it
         ToggleSwitch dxvkToggle = null!;
-
-        var manageRowGrid = new Grid { ColumnSpacing = 0 };
-        manageRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        manageRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        manageRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-
-        // Left column — preset selector
-        var manageLeftColumn = new StackPanel { Spacing = 6 };
-
-        // Right column — Normal ReShade toggle
-        var manageRightColumn = new StackPanel { Spacing = 6 };
 
         var resetOverridesBtn = new Button
         {
@@ -1472,9 +1638,12 @@ public partial class DetailPanelBuilder
             // Reset all controls to defaults
             detectedBox.Text = originalStoreName ?? gameName;
             wikiBox.Text = "";
-            shaderToggle.IsOn = true;
-            customShadersToggle.IsOn = false;
-            addonToggle.IsOn = true;
+            shaderComboInitializing = true;
+            shaderModeCombo.SelectedItem = "Global";
+            shaderComboInitializing = false;
+            addonComboInitializing = true;
+            addonModeCombo.SelectedItem = "Global";
+            addonComboInitializing = false;
             if (renderPathCombo != null) renderPathCombo.SelectedItem = "DirectX";
             dllOverrideToggle.IsOn = false;
             // Reset update inclusion to all-included
@@ -1489,7 +1658,7 @@ public partial class DetailPanelBuilder
             if (_window.ViewModel.IsUpdateAllExcludedOs(capturedName))
                 _window.ViewModel.ToggleUpdateAllExclusionOs(capturedName);
             UpdateInclusionHelper.RefreshSummary(updateSummaryText, _window.ViewModel, capturedName, card.IsREEngineGame, card.DxvkEnabled);
-            wikiExcludeToggle.IsOn = false;
+            wikiExcludeCombo.SelectedItem = "Included";
 
             // Persist all reset values immediately
             var resetName = (originalStoreName ?? gameName).Trim();
@@ -1581,6 +1750,7 @@ public partial class DetailPanelBuilder
             // Reset launch exe override
             _window.ViewModel.GameNameServiceInstance.LaunchExeOverrides.Remove(capturedName);
             _window.ViewModel.SaveSettingsPublic();
+            launchExeBox.Text = "";
 
             // Revert card properties to auto-detected values
             {
@@ -1610,175 +1780,12 @@ public partial class DetailPanelBuilder
             if (nameChanged)
                 _window.RequestReselect(capturedName);
         };
-
-        var presetBtn = new Button
-        {
-            Content = "Select ReShade Preset",
-            FontSize = 12,
-            Height = 32,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
-            Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
-            BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
-        };
-        ToolTipService.SetToolTip(presetBtn,
-            "Pick .ini preset files to copy to this game's folder. Place presets in the reshade-presets folder.");
-        presetBtn.Click += async (s, ev) =>
-        {
-            var selected = await PresetPopupHelper.ShowAsync(_window.Content.XamlRoot);
-            if (selected != null && selected.Count > 0)
-            {
-                var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
-                    c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
-                if (targetCard != null && !string.IsNullOrEmpty(targetCard.InstallPath))
-                {
-                    int count = PresetPopupHelper.DeployPresets(selected, targetCard.InstallPath);
-                    CrashReporter.Log($"[DetailPanelBuilder] Deployed {count} preset(s) to '{capturedName}'");
-
-                    if (count > 0)
-                    {
-                        var shaderDialog = new ContentDialog
-                        {
-                            Title = "🔧 Install Shaders?",
-                            Content = "Also install the required shaders and textures?",
-                            PrimaryButtonText = "Yes",
-                            CloseButtonText = "No",
-                            XamlRoot = _window.Content.XamlRoot,
-                            RequestedTheme = ElementTheme.Dark,
-                        };
-
-                        var shaderResult = await DialogService.ShowSafeAsync(shaderDialog);
-                        if (shaderResult == ContentDialogResult.Primary)
-                        {
-                            var presetPaths = selected.Select(f => Path.Combine(PresetPopupHelper.PresetsDir, f)).ToList();
-                            await _window.ViewModel.ApplyPresetShadersAsync(capturedName, presetPaths);
-
-                            // Rebuild overrides panel so the shader toggle reflects the new "Select" mode
-                            var refreshCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
-                                c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
-                            if (refreshCard != null)
-                                BuildOverridesPanel(refreshCard);
-                        }
-                    }
-                }
-            }
-        };
-        manageLeftColumn.Children.Add(presetBtn);
-
-        // ── Launch executable override (right column) ────────────────────────
-        var launchExeLabel = new TextBlock
-        {
-            Text = "Launch executable",
-            FontSize = 12,
-            Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-            Margin = new Thickness(0, 0, 0, 6),
-        };
-        manageRightColumn.Children.Add(launchExeLabel);
-
-        var currentLaunchExe = _window.ViewModel.GameNameServiceInstance.LaunchExeOverrides
-            .TryGetValue(capturedName, out var savedExe) ? savedExe : "";
-        var launchExeBox = new TextBox
-        {
-            Text = currentLaunchExe,
-            PlaceholderText = "Auto-detect (or paste path)",
-            FontSize = 11,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            Margin = new Thickness(0, 0, 0, 6),
-        };
-        launchExeBox.LostFocus += (s, ev) =>
-        {
-            var newPath = launchExeBox.Text.Trim();
-            if (string.IsNullOrEmpty(newPath))
-            {
-                _window.ViewModel.GameNameServiceInstance.LaunchExeOverrides.Remove(capturedName);
-            }
-            else
-            {
-                _window.ViewModel.GameNameServiceInstance.LaunchExeOverrides[capturedName] = newPath;
-            }
-            _window.ViewModel.SaveSettingsPublic();
-        };
-        manageRightColumn.Children.Add(launchExeBox);
-
-        var launchBtnRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
-        var browseLaunchBtn = new Button
-        {
-            Content = "Browse",
-            FontSize = 11,
-            Padding = new Thickness(8, 4, 8, 4),
-            Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
-            Foreground = UIFactory.Brush(ResourceKeys.ChipTextBrush),
-            BorderBrush = UIFactory.Brush(ResourceKeys.BorderSubtleBrush),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(6),
-        };
-        browseLaunchBtn.Click += async (s, ev) =>
-        {
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(_window);
-            string? filePath = await Task.Run(() =>
-            {
-                var ofn = new NativeInterop.OpenFileName();
-                ofn.structSize = System.Runtime.InteropServices.Marshal.SizeOf(ofn);
-                ofn.hwndOwner = hwnd;
-                ofn.filter = "Executables (*.exe)\0*.exe\0All Files (*.*)\0*.*\0";
-                ofn.file = new string(new char[260]);
-                ofn.maxFile = ofn.file.Length;
-                ofn.title = "Select Game Executable";
-                ofn.initialDir = card.InstallPath;
-                ofn.flags = 0x00080000 | 0x00001000;
-                return NativeInterop.GetOpenFileName(ref ofn) ? ofn.file.TrimEnd('\0') : null;
-            });
-            if (!string.IsNullOrEmpty(filePath))
-            {
-                launchExeBox.Text = filePath;
-                _window.ViewModel.GameNameServiceInstance.LaunchExeOverrides[capturedName] = filePath;
-                _window.ViewModel.SaveSettingsPublic();
-            }
-        };
-        launchBtnRow.Children.Add(browseLaunchBtn);
-
-        var resetLaunchBtn = new Button
-        {
-            Content = "Reset",
-            FontSize = 11,
-            Padding = new Thickness(8, 4, 8, 4),
-            Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
-            Foreground = UIFactory.Brush(ResourceKeys.ChipTextBrush),
-            BorderBrush = UIFactory.Brush(ResourceKeys.BorderSubtleBrush),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(6),
-        };
-        resetLaunchBtn.Click += (s, ev) =>
-        {
-            launchExeBox.Text = "";
-            _window.ViewModel.GameNameServiceInstance.LaunchExeOverrides.Remove(capturedName);
-            _window.ViewModel.SaveSettingsPublic();
-        };
-        launchBtnRow.Children.Add(resetLaunchBtn);
-        manageRightColumn.Children.Add(launchBtnRow);
-
-        Grid.SetColumn(manageLeftColumn, 0);
-        manageRowGrid.Children.Add(manageLeftColumn);
-
-        var manageDivider = new Border
-        {
-            Width = 1,
-            Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
-            VerticalAlignment = VerticalAlignment.Stretch,
-            Margin = new Thickness(12, 0, 12, 0),
-        };
-        Grid.SetColumn(manageDivider, 1);
-        manageRowGrid.Children.Add(manageDivider);
-
-        Grid.SetColumn(manageRightColumn, 2);
-        manageRowGrid.Children.Add(manageRightColumn);
-
-        _window.OverridesPanel.Children.Add(manageRowGrid);
+        // resetOverridesBtn is hidden — triggered via Management panel automation peer
+        resetOverridesBtn.Visibility = Visibility.Collapsed;
+        _window.OverridesPanel.Children.Add(resetOverridesBtn);
 
         // ══════════════════════════════════════════════════════════════════════
-        // DXVK section — separator + DXVK toggle row
+        // DXVK section — separator + DXVK ComboBox (left), right reserved
         // ══════════════════════════════════════════════════════════════════════
         if (card.IsDxvkToggleVisible)
         {
@@ -1789,40 +1796,91 @@ public partial class DetailPanelBuilder
             dxvkRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             dxvkRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-            // Left column — DXVK toggle
-            dxvkToggle = new ToggleSwitch
+            // Left column — DXVK ComboBox (Off / Global / Development / Stable / Lilium HDR)
+            var dxvkModeItems = new[] { "Off", "Global", "Development", "Stable", "Lilium HDR" };
+            string defaultDxvkSelection;
+            if (!card.DxvkEnabled)
             {
-                Header = "DXVK (DX→Vulkan)",
-                IsOn = card.DxvkEnabled,
-                IsEnabled = card.IsDxvkToggleEnabled && card.DxvkInstallEnabled,
-                OnContent = "Enabled",
-                OffContent = "Disabled",
-                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+                defaultDxvkSelection = "Off";
+            }
+            else
+            {
+                var currentDxvkOverride = _window.ViewModel.GetDxvkVariantOverride(gameName);
+                defaultDxvkSelection = currentDxvkOverride switch
+                {
+                    "Development" => "Development",
+                    "Stable" => "Stable",
+                    "LiliumHdr" => "Lilium HDR",
+                    _ => "Global",
+                };
+            }
+
+            var dxvkModeCombo = new ComboBox
+            {
+                ItemsSource = dxvkModeItems,
+                SelectedItem = defaultDxvkSelection,
                 FontSize = 12,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                IsEnabled = card.IsDxvkToggleEnabled && card.DxvkInstallEnabled,
             };
             if (card.DxvkToggleTooltip != null)
-                ToolTipService.SetToolTip(dxvkToggle, card.DxvkToggleTooltip);
+                ToolTipService.SetToolTip(dxvkModeCombo, card.DxvkToggleTooltip);
             else
-                ToolTipService.SetToolTip(dxvkToggle,
-                    "Enable DXVK to translate DirectX to Vulkan for this game. " +
-                    "Enables ReShade compute shaders, may improve performance and reduce shader stutter.");
+                ToolTipService.SetToolTip(dxvkModeCombo,
+                    "Off = DXVK disabled. Global = use global variant setting.\nDevelopment/Stable/Lilium HDR = per-game variant override.\nDXVK translates DirectX to Vulkan — enables compute shaders.");
 
-            dxvkToggle.Toggled += async (s, ev) =>
+            dxvkToggle = new ToggleSwitch { IsOn = card.DxvkEnabled, Visibility = Visibility.Collapsed };
+
+            dxvkModeCombo.SelectionChanged += async (s, ev) =>
             {
+                var selected = dxvkModeCombo.SelectedItem as string;
+                if (string.IsNullOrEmpty(selected)) return;
                 var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
                     c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
                 if (targetCard == null) return;
-                if (dxvkToggle.IsOn != targetCard.DxvkEnabled)
-                {
-                    dxvkToggle.IsEnabled = false;
-                    await _window.ViewModel.HandleDxvkToggleAsync(targetCard, dxvkToggle.IsOn, _window.Content.XamlRoot);
-                    // Sync toggle state in case install was cancelled
-                    dxvkToggle.IsOn = targetCard.DxvkEnabled;
-                    dxvkToggle.IsEnabled = targetCard.IsDxvkToggleEnabled && targetCard.DxvkInstallEnabled;
 
-                    // Rebuild the overrides panel so Update Inclusion picks up the new DxvkEnabled state
-                    _window.PopulateDetailPanel(targetCard);
-                    BuildOverridesPanel(targetCard);
+                if (selected == "Off")
+                {
+                    if (targetCard.DxvkEnabled)
+                    {
+                        await _window.ViewModel.HandleDxvkToggleAsync(targetCard, false, _window.Content.XamlRoot);
+                        _window.ViewModel.SetDxvkVariantOverride(capturedName, null);
+                        _window.PopulateDetailPanel(targetCard);
+                        BuildOverridesPanel(targetCard);
+                    }
+                }
+                else
+                {
+                    string? variantValue = selected switch
+                    {
+                        "Development" => "Development",
+                        "Stable" => "Stable",
+                        "Lilium HDR" => "LiliumHdr",
+                        _ => null,
+                    };
+                    _window.ViewModel.SetDxvkVariantOverride(capturedName, variantValue);
+
+                    if (!targetCard.DxvkEnabled)
+                    {
+                        var resolvedVariant = _window.ViewModel.ResolveDxvkVariant(capturedName);
+                        var savedVariant = _window.ViewModel.DxvkServiceInstance.SelectedVariant;
+                        _window.ViewModel.DxvkServiceInstance.SelectedVariant = resolvedVariant;
+                        await _window.ViewModel.HandleDxvkToggleAsync(targetCard, true, _window.Content.XamlRoot);
+                        _window.ViewModel.DxvkServiceInstance.SelectedVariant = savedVariant;
+                        if (!targetCard.DxvkEnabled) dxvkModeCombo.SelectedItem = "Off";
+                        _window.PopulateDetailPanel(targetCard);
+                        BuildOverridesPanel(targetCard);
+                    }
+                    else
+                    {
+                        var resolvedVariant = _window.ViewModel.ResolveDxvkVariant(capturedName);
+                        var savedVariant = _window.ViewModel.DxvkServiceInstance.SelectedVariant;
+                        _window.ViewModel.DxvkServiceInstance.SelectedVariant = resolvedVariant;
+                        await _window.ViewModel.DxvkServiceInstance.EnsureStagingAsync();
+                        if (_window.ViewModel.DxvkServiceInstance.IsStagingReady)
+                            await _window.ViewModel.InstallDxvkAsync(targetCard, _window.Content.XamlRoot);
+                        _window.ViewModel.DxvkServiceInstance.SelectedVariant = savedVariant;
+                    }
                 }
             };
 
@@ -1834,12 +1892,10 @@ public partial class DetailPanelBuilder
                 Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
                 Margin = new Thickness(0, 0, 0, 4),
             });
-            dxvkColumn.Children.Add(dxvkToggle);
-
+            dxvkColumn.Children.Add(dxvkModeCombo);
             Grid.SetColumn(dxvkColumn, 0);
             dxvkRowGrid.Children.Add(dxvkColumn);
 
-            // Vertical divider
             var dxvkDivider = new Border
             {
                 Width = 1,
@@ -1850,80 +1906,24 @@ public partial class DetailPanelBuilder
             Grid.SetColumn(dxvkDivider, 1);
             dxvkRowGrid.Children.Add(dxvkDivider);
 
-            // Right column — DXVK Variant override
-            var dxvkVariantItems = new[] { "Global", "Development", "Stable", "Lilium HDR" };
-            var currentDxvkOverride = _window.ViewModel.GetDxvkVariantOverride(gameName);
-            var defaultDxvkVariantSelection = currentDxvkOverride switch
-            {
-                "Development" => "Development",
-                "Stable" => "Stable",
-                "LiliumHdr" => "Lilium HDR",
-                _ => "Global",
-            };
-
-            var dxvkVariantCombo = new ComboBox
-            {
-                ItemsSource = dxvkVariantItems,
-                SelectedItem = defaultDxvkVariantSelection,
-                FontSize = 12,
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-            };
-            ToolTipService.SetToolTip(dxvkVariantCombo,
-                "Override the global DXVK variant for this game.\nLilium HDR enables HDR swap chain upgrades via scRGB.");
-
-            dxvkVariantCombo.SelectionChanged += async (s, ev) =>
-            {
-                var selected = dxvkVariantCombo.SelectedItem as string;
-                string? variantValue = selected switch
-                {
-                    "Development" => "Development",
-                    "Stable" => "Stable",
-                    "Lilium HDR" => "LiliumHdr",
-                    _ => null,
-                };
-
-                _window.ViewModel.SetDxvkVariantOverride(capturedName, variantValue);
-
-                var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
-                    c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
-                if (targetCard != null && targetCard.DxvkEnabled)
-                {
-                    var resolvedVariant = _window.ViewModel.ResolveDxvkVariant(capturedName);
-                    var savedVariant = _window.ViewModel.DxvkServiceInstance.SelectedVariant;
-                    _window.ViewModel.DxvkServiceInstance.SelectedVariant = resolvedVariant;
-
-                    await _window.ViewModel.DxvkServiceInstance.EnsureStagingAsync();
-
-                    if (_window.ViewModel.DxvkServiceInstance.IsStagingReady)
-                        await _window.ViewModel.InstallDxvkAsync(targetCard, _window.Content.XamlRoot);
-
-                    _window.ViewModel.DxvkServiceInstance.SelectedVariant = savedVariant;
-                }
-            };
-
-            var dxvkVariantPanel = new StackPanel { Spacing = 4 };
-            dxvkVariantPanel.Children.Add(new TextBlock
-            {
-                Text = "DXVK Variant",
-                FontSize = 12,
-                Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
-                Margin = new Thickness(0, 0, 0, 4),
-            });
-            dxvkVariantPanel.Children.Add(dxvkVariantCombo);
-
-            Grid.SetColumn(dxvkVariantPanel, 2);
-            dxvkRowGrid.Children.Add(dxvkVariantPanel);
-
             _window.OverridesPanel.Children.Add(dxvkRowGrid);
         }
-
-        // ── Management section (separate bordered panel below overrides) ──
+        // ── Management section (single row: 4 buttons side by side with separators) ──
         _window.ManagementPanel.Children.Clear();
+
+        var mgmtRow = new Grid { ColumnSpacing = 0 };
+        mgmtRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        mgmtRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        mgmtRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        mgmtRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        mgmtRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        mgmtRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        mgmtRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
         var changeFolderBtn = new Button
         {
             Content = "Change install folder",
-            FontSize = 12,
+            FontSize = 11,
             Height = 32,
             HorizontalAlignment = HorizontalAlignment.Stretch,
             Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
@@ -1934,12 +1934,17 @@ public partial class DetailPanelBuilder
             Tag = card,
         };
         changeFolderBtn.Click += (s, ev) => _window.BrowseFolder_Click(s, ev);
-        _window.ManagementPanel.Children.Add(changeFolderBtn);
+        Grid.SetColumn(changeFolderBtn, 0);
+        mgmtRow.Children.Add(changeFolderBtn);
+
+        var sep1 = new Border { Width = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(8, 4, 8, 4) };
+        Grid.SetColumn(sep1, 1);
+        mgmtRow.Children.Add(sep1);
 
         var removeGameBtn = new Button
         {
-            Content = "Reset folder / Remove game",
-            FontSize = 12,
+            Content = "Reset / Remove game",
+            FontSize = 11,
             Height = 32,
             HorizontalAlignment = HorizontalAlignment.Stretch,
             Background = UIFactory.Brush(ResourceKeys.AccentRedBgBrush),
@@ -1950,12 +1955,17 @@ public partial class DetailPanelBuilder
             Tag = card,
         };
         removeGameBtn.Click += (s, ev) => _window.RemoveManualGame_Click(s, ev);
-        _window.ManagementPanel.Children.Add(removeGameBtn);
+        Grid.SetColumn(removeGameBtn, 2);
+        mgmtRow.Children.Add(removeGameBtn);
+
+        var sep2 = new Border { Width = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(8, 4, 8, 4) };
+        Grid.SetColumn(sep2, 3);
+        mgmtRow.Children.Add(sep2);
 
         var mgmtResetOverridesBtn = new Button
         {
             Content = "Reset Overrides",
-            FontSize = 12,
+            FontSize = 11,
             Height = 32,
             HorizontalAlignment = HorizontalAlignment.Stretch,
             Background = UIFactory.Brush(ResourceKeys.AccentRedBgBrush),
@@ -1970,12 +1980,17 @@ public partial class DetailPanelBuilder
                 as Microsoft.UI.Xaml.Automation.Peers.ButtonAutomationPeer;
             peer?.Invoke();
         };
-        _window.ManagementPanel.Children.Add(mgmtResetOverridesBtn);
+        Grid.SetColumn(mgmtResetOverridesBtn, 4);
+        mgmtRow.Children.Add(mgmtResetOverridesBtn);
+
+        var sep3 = new Border { Width = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(8, 4, 8, 4) };
+        Grid.SetColumn(sep3, 5);
+        mgmtRow.Children.Add(sep3);
 
         var reportBtn = new Button
         {
             Content = "Copy Report",
-            FontSize = 12,
+            FontSize = 11,
             Height = 32,
             HorizontalAlignment = HorizontalAlignment.Stretch,
             Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
@@ -1991,6 +2006,9 @@ public partial class DetailPanelBuilder
             if (targetCard != null)
                 await GameReportEncoder.ShowAndCopyAsync(_window.Content.XamlRoot, targetCard, _window.ViewModel);
         };
-        _window.ManagementPanel.Children.Add(reportBtn);
+        Grid.SetColumn(reportBtn, 6);
+        mgmtRow.Children.Add(reportBtn);
+
+        _window.ManagementPanel.Children.Add(mgmtRow);
     }
 }

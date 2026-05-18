@@ -3,6 +3,7 @@
 // XAML elements as detail mode, just showing/hiding sections based on page index.
 
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using RenoDXCommander.Services;
 using RenoDXCommander.ViewModels;
 
@@ -125,13 +126,10 @@ public class CompactViewBuilder
         {
             if (child is not UIElement element) continue;
 
-            if (element == overridesContainer)
+            if (element == overridesContainer || element == managementContainer)
             {
+                // Page 1: show both overrides and management together
                 element.Visibility = pageIndex == 1 ? Visibility.Visible : Visibility.Collapsed;
-            }
-            else if (element == managementContainer)
-            {
-                element.Visibility = pageIndex == 2 ? Visibility.Visible : Visibility.Collapsed;
             }
             else
             {
@@ -139,6 +137,18 @@ public class CompactViewBuilder
                 // are visible on page 0 (Game Card) only
                 element.Visibility = pageIndex == 0 ? Visibility.Visible : Visibility.Collapsed;
             }
+        }
+
+        // Center overrides+management vertically when they're the only visible content
+        if (pageIndex == 1)
+        {
+            _window.DetailScrollViewer.VerticalScrollBarVisibility = ScrollBarVisibility.Disabled;
+            detailPanel.VerticalAlignment = VerticalAlignment.Center;
+        }
+        else
+        {
+            _window.DetailScrollViewer.VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
+            detailPanel.VerticalAlignment = VerticalAlignment.Top;
         }
     }
 
@@ -152,5 +162,8 @@ public class CompactViewBuilder
             if (child is UIElement element)
                 element.Visibility = Visibility.Visible;
         }
+        // Restore scrolling and top alignment when leaving compact mode
+        _window.DetailScrollViewer.VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
+        _window.DetailPanel.VerticalAlignment = VerticalAlignment.Top;
     }
 }
