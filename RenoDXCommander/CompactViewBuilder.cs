@@ -139,17 +139,9 @@ public class CompactViewBuilder
             }
         }
 
-        // Center overrides+management vertically when they're the only visible content
-        if (pageIndex == 1)
-        {
-            _window.DetailScrollViewer.VerticalScrollBarVisibility = ScrollBarVisibility.Disabled;
-            detailPanel.VerticalAlignment = VerticalAlignment.Center;
-        }
-        else
-        {
-            _window.DetailScrollViewer.VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
-            detailPanel.VerticalAlignment = VerticalAlignment.Top;
-        }
+        // Center content vertically in compact mode (all pages)
+        _window.DetailScrollViewer.VerticalScrollBarVisibility = ScrollBarVisibility.Disabled;
+        detailPanel.VerticalAlignment = VerticalAlignment.Center;
     }
 
     /// <summary>

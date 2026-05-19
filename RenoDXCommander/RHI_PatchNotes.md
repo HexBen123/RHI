@@ -1,4 +1,4 @@
-## v1.9.6-beta
+## v1.9.6
 
 ### New Features
 
@@ -17,6 +17,7 @@
 - Fixed LumaBoost (and other single-file shader repos) not deploying to game folders. Shader extraction now handles repos without a `Shaders/` subdirectory.
 - Fixed shader packs being downloaded multiple times concurrently, causing file lock errors and potential UI freezes during install. Each pack now has a per-pack download lock.
 - Fixed `addon_deployments.json` file contention when deploying addons to multiple games simultaneously.
+- Fixed Display Commander Info button showing the raw GitHub release page instead of the actual changelog. The update check was pre-populating the field, preventing the changelog fetch.
 
 ### Manifest Updates
 

@@ -1279,7 +1279,6 @@ public partial class MainViewModel
     /// </summary>
     public async Task EnsureDcReleaseBodyAsync(string? installedVersion = null)
     {
-        if (_latestDcReleaseBody != null) return;
         try
         {
             var response = await _http.GetAsync(DcChangelogUrl).ConfigureAwait(false);

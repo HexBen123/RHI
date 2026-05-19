@@ -139,14 +139,34 @@ public partial class CardBuilder
         }
         panel.Children.Add(rsRow);
 
-        // RenoDX row
-        var rdxRow = BuildComponentRow(card, "RenoDX", "RDX",
-            card.RdxStatusText, card.RdxStatusColor, card.RdxShortAction,
-            card.CardRdxInstallEnabled, card.IsRdxInstalled,
-            showCopyConfig: false, copyConfigVisible: false,
-            copyConfigTooltip: null,
-            addonType: AddonType.RenoDX,
-            btnBackground: card.InstallBtnBackground, btnForeground: card.InstallBtnForeground, btnBorderBrush: card.InstallBtnBorderBrush);
+        // RenoDX row — handles both wiki-matched and external-only games
+        Grid rdxRow;
+        if (card.IsExternalOnly && !(card.LumaFeatureEnabled && card.IsLumaMode))
+        {
+            // External-only: use same BuildComponentRow format but with external button styling
+            var isNexusUpdate = card.Status == GameStatus.UpdateAvailable;
+            rdxRow = BuildComponentRow(card, "RenoDX", "RDX",
+                card.IsRdxInstalled ? (card.RdxInstalledVersion ?? "Installed") : "",
+                card.IsRdxInstalled ? "#5ECB7D" : "#5A6880",
+                card.ExternalDisplayLabel,
+                true, card.IsRdxInstalled,
+                showCopyConfig: false, copyConfigVisible: false,
+                copyConfigTooltip: null,
+                addonType: AddonType.RenoDX,
+                btnBackground: isNexusUpdate ? "#201838" : "#182840",
+                btnForeground: isNexusUpdate ? "#B898E8" : "#7AACDD",
+                btnBorderBrush: isNexusUpdate ? "#3A2860" : "#2A4468");
+        }
+        else
+        {
+            rdxRow = BuildComponentRow(card, "RenoDX", "RDX",
+                card.RdxStatusText, card.RdxStatusColor, card.RdxShortAction,
+                card.CardRdxInstallEnabled, card.IsRdxInstalled,
+                showCopyConfig: false, copyConfigVisible: false,
+                copyConfigTooltip: null,
+                addonType: AddonType.RenoDX,
+                btnBackground: card.InstallBtnBackground, btnForeground: card.InstallBtnForeground, btnBorderBrush: card.InstallBtnBorderBrush);
+        }
         rdxRow.Visibility = card.RenoDxRowVisibility;
         // Make RDX status text a clickable link to the RenoDX wiki page
         var rdxStatusBlock = rdxRow.Children.OfType<TextBlock>().FirstOrDefault(t => t.Tag as string == "StatusText");
@@ -261,74 +281,6 @@ public partial class CardBuilder
             }
         }
         panel.Children.Add(osRow);
-
-        // External/Discord row — shown when game is external-only (no wiki mod)
-        Grid? externalRow = null;
-        if (card.IsExternalOnly && !(card.LumaFeatureEnabled && card.IsLumaMode))
-        {
-            externalRow = new Grid { Margin = new Thickness(0, 2, 0, 2) };
-            externalRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(60) });
-            externalRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            externalRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-            var extName = new TextBlock
-            {
-                Text = "RenoDX",
-                FontSize = 12,
-                Foreground = UIFactory.GetBrush("#A0AABB"),
-                VerticalAlignment = VerticalAlignment.Center,
-            };
-            Grid.SetColumn(extName, 0);
-            externalRow.Children.Add(extName);
-
-            var extBtn = new Button
-            {
-                Content = card.ExternalDisplayLabel,
-                Tag = card,
-                FontSize = 11,
-                Padding = new Thickness(8, 3, 8, 3),
-                MinWidth = 0,
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                Background = UIFactory.GetBrush("#1A2040"),
-                Foreground = UIFactory.GetBrush("#7AACDD"),
-                BorderBrush = UIFactory.GetBrush("#2A4468"),
-                CornerRadius = new CornerRadius(6),
-            };
-            extBtn.Click += async (s, ev) =>
-            {
-                var url = card.ExternalUrl;
-                if (!string.IsNullOrEmpty(url))
-                    await Windows.System.Launcher.LaunchUriAsync(new Uri(url));
-            };
-            Grid.SetColumn(extBtn, 1);
-            externalRow.Children.Add(extBtn);
-
-            var extDeleteBtn = new Button
-            {
-                Content = "✕",
-                Tag = card,
-                FontSize = 11,
-                Padding = new Thickness(4, 2, 4, 2),
-                MinWidth = 0,
-                Background = UIFactory.GetBrush("transparent"),
-                Foreground = UIFactory.GetBrush("#FF4444"),
-                BorderThickness = new Thickness(0),
-                VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(4, 0, 0, 0),
-                Opacity = card.IsRdxInstalled ? 1 : 0,
-                IsHitTestVisible = card.IsRdxInstalled,
-            };
-            ToolTipService.SetToolTip(extDeleteBtn, "Uninstall RenoDX mod");
-            extDeleteBtn.Click += (s, ev) =>
-            {
-                if ((s as FrameworkElement)?.Tag is GameCardViewModel c)
-                    _window.ViewModel.UninstallModCommand.Execute(c);
-            };
-            Grid.SetColumn(extDeleteBtn, 2);
-            externalRow.Children.Add(extDeleteBtn);
-
-            panel.Children.Add(externalRow);
-        }
 
         // ── Subscribe to PropertyChanged for live updates while flyout is open ──
         System.ComponentModel.PropertyChangedEventHandler? handler = null;

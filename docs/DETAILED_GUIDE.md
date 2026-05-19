@@ -259,13 +259,13 @@ Click the Install button on the ReShade row. RHI places the ReShade DLL in the g
 
 ### ReShade Without Addon Support
 
-A per-game toggle in the overrides panel switches from addon-enabled ReShade to standard ReShade. When enabled:
+The RS Channel dropdown includes a "No Addons" option that switches from addon-enabled ReShade to standard ReShade. When selected:
 
 - All addons (RenoDX, ReLimiter, Display Commander, managed addon packs) are removed from the game folder.
 - Addon rows are dimmed and disabled.
-- The addon override toggle is locked off.
+- The shader and addon mode dropdowns are locked.
 
-Toggle back to restore addon ReShade and re-deploy addons. The setting persists per-game across restarts.
+Select any other RS Channel option to restore addon ReShade and re-deploy addons. The setting persists per-game across restarts.
 
 ### ReShade Detection Under Non-Standard Filenames
 
@@ -516,10 +516,11 @@ Enabled addons are automatically deployed when ReShade is installed on a game, r
 
 ### Per-Game Addon Overrides
 
-Each game's override panel has an Addons section with a Global toggle:
+Each game's override panel has an Addons dropdown:
 
-- **Global on** — the game uses the globally enabled addon set.
-- **Global off** — opens a per-game addon picker. Toggle individual addons for that game only.
+- **Global** — the game uses the globally enabled addon set.
+- **Select** — opens a per-game addon picker. Choose individual addons for that game only.
+- **Off** — removes all managed addons from the game folder.
 
 ### Special Addons
 
@@ -548,9 +549,8 @@ The Overrides section appears below Components in the detail panel. All controls
 | Rendering Path | For dual-API games — switches between DirectX and Vulkan ReShade. |
 | Bitness override | Auto, 32-bit, or 64-bit. Overrides PE header detection. |
 | Graphics API override | Auto, DirectX8, DirectX9, DirectX10, DX11/DX12, Vulkan, OpenGL. |
-| RS Channel override | Global, Stable, Nightly, or Legacy (specific version). Overrides the global ReShade build channel for this game. Vulkan games: applies to all Vulkan games. Legacy pins to a specific older version and excludes from updates. |
-| DXVK Variant override | Global, Development, Stable, or Lilium HDR. Overrides the global DXVK variant for this game. |
-| ReShade Without Addon Support | Toggle to switch from addon-enabled to standard ReShade. |
+| RS Channel override | Global, Stable, Nightly, No Addons, or Legacy (specific version). Overrides the global ReShade build channel for this game. Vulkan games: applies to all Vulkan games. Legacy pins to a specific older version and excludes from updates. |
+| DXVK mode | Off, Global, Development, Stable, or Lilium HDR. Off disables DXVK. Global uses the global variant setting. Others set a per-game variant override and enable DXVK. |
 | OptiScaler DLL name | Override the OptiScaler proxy DLL filename. |
 | Select ReShade Preset | Deploy preset files from the presets folder. |
 | Copy Report | Generate a diagnostic code for Discord or GitHub issues. |
@@ -661,9 +661,9 @@ DXVK is a DirectX-to-Vulkan translation layer that can improve performance and e
 
 ### Enabling DXVK
 
-The DXVK toggle appears in the Overrides panel for DX8, DX9, and DX10 games. It is hidden for DX11, DX12, OpenGL, and Vulkan games. Games with DX12 detected alongside their primary API (dual-API) also hide the toggle, as do Unreal Engine DX11 games that likely support DX12.
+The DXVK dropdown appears in the Overrides panel for DX8, DX9, and DX10 games. It is hidden for DX11, DX12, OpenGL, and Vulkan games. Games with DX12 detected alongside their primary API (dual-API) also hide the dropdown, as do Unreal Engine DX11 games that likely support DX12.
 
-Toggling DXVK on triggers the install flow (with a warning dialog). Toggling off uninstalls DXVK and restores the original game DLLs.
+Selecting any option other than "Off" triggers the install flow (with a warning dialog). Selecting "Off" uninstalls DXVK and restores the original game DLLs.
 
 ### What happens on install
 
@@ -701,7 +701,7 @@ The "DXVK Variant" dropdown in the Overrides panel lets you override the global 
 
 ### Anti-cheat blacklist
 
-Games with known anti-cheat (Fortnite, Apex Legends, Valorant, etc.) are blacklisted via the remote manifest. The DXVK toggle is disabled for these games.
+Games with known anti-cheat (Fortnite, Apex Legends, Valorant, etc.) are blacklisted via the remote manifest. The DXVK dropdown is disabled for these games.
 
 ---
 
