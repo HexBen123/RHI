@@ -36,4 +36,22 @@ public class SavedGameLibrary
     /// Restored during cache phase so update badges persist across restarts without re-checking.
     /// </summary>
     public Dictionary<string, string> UpdateAvailableSnapshot { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Cached DLSS/Streamline DLL paths per game. Maps game name → serialized detection paths.
+    /// Avoids expensive recursive directory scans on subsequent launches.
+    /// </summary>
+    public Dictionary<string, DlssPathCache> DlssPathsCache { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+}
+
+/// <summary>
+/// Cached DLSS/Streamline DLL paths for a single game.
+/// </summary>
+public class DlssPathCache
+{
+    public string? DlssPath { get; set; }
+    public string? DlssdPath { get; set; }
+    public string? DlssgPath { get; set; }
+    public string? StreamlineFolder { get; set; }
+    public List<string>? StreamlineFiles { get; set; }
 }

@@ -1024,29 +1024,78 @@ public partial class OptiScalerService
 
     /// <summary>
     /// Returns the path to the staged nvngx_dlss.dll, or null if not staged.
+    /// Checks the new DlssStreamlineService cache first (newest version), falls back to legacy staging.
     /// </summary>
     public static string? GetStagedDlssPath()
     {
+        // New cache: %LocalAppData%\RHI\DLSS\{version}\nvngx_dlss.dll — find newest
+        var newCacheDir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "RHI", "DLSS");
+        var newestDll = FindNewestDllInCache(newCacheDir, DlssDllFileName);
+        if (newestDll != null) return newestDll;
+
+        // Legacy fallback
         var path = Path.Combine(DlssStagingDir, DlssDllFileName);
         return File.Exists(path) ? path : null;
     }
 
     /// <summary>
     /// Returns the path to the staged nvngx_dlssd.dll (Ray Reconstruction), or null if not staged.
+    /// Checks the new DlssStreamlineService cache first (newest version), falls back to legacy staging.
     /// </summary>
     public static string? GetStagedDlssdPath()
     {
+        var newCacheDir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "RHI", "DLSS-D");
+        var newestDll = FindNewestDllInCache(newCacheDir, DlssdDllFileName);
+        if (newestDll != null) return newestDll;
+
         var path = Path.Combine(DlssStagingDir, DlssdDllFileName);
         return File.Exists(path) ? path : null;
     }
 
     /// <summary>
     /// Returns the path to the staged nvngx_dlssg.dll (Frame Generation), or null if not staged.
+    /// Checks the new DlssStreamlineService cache first (newest version), falls back to legacy staging.
     /// </summary>
     public static string? GetStagedDlssgPath()
     {
+        var newCacheDir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "RHI", "DLSS-G");
+        var newestDll = FindNewestDllInCache(newCacheDir, DlssgDllFileName);
+        if (newestDll != null) return newestDll;
+
         var path = Path.Combine(DlssStagingDir, DlssgDllFileName);
         return File.Exists(path) ? path : null;
+    }
+
+    /// <summary>
+    /// Finds the newest version of a DLL in the versioned cache directory structure.
+    /// Directories are named by version (e.g. "310.6.0"). Returns the full path to the DLL
+    /// in the newest version folder, or null if no cached versions exist.
+    /// </summary>
+    private static string? FindNewestDllInCache(string cacheDir, string dllFileName)
+    {
+        if (!Directory.Exists(cacheDir)) return null;
+
+        try
+        {
+            // Get all version subdirectories, find the one with the DLL, pick the newest
+            // (alphabetical sort works for version numbers like "310.6.0" > "310.5.3" > "3.8.10")
+            var versionDirs = Directory.GetDirectories(cacheDir)
+                .Where(d => File.Exists(Path.Combine(d, dllFileName)))
+                .OrderByDescending(d => Path.GetFileName(d), StringComparer.OrdinalIgnoreCase)
+                .FirstOrDefault();
+
+            if (versionDirs != null)
+                return Path.Combine(versionDirs, dllFileName);
+        }
+        catch { }
+
+        return null;
     }
 
     /// <summary>

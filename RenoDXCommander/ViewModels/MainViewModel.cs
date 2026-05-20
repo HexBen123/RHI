@@ -40,6 +40,8 @@ public partial class MainViewModel : ObservableObject
     private readonly IOptiScalerWikiService _optiScalerWikiService;
     private readonly IHdrDatabaseService _hdrDatabaseService;
     private readonly INexusUpdateService _nexusUpdateService;
+    private readonly IDlssStreamlineService _dlssStreamlineService;
+    private readonly DlssPresetService _dlssPresetService;
     private readonly GitHubETagCache _etagCache;
     /// <summary>
     /// Task that tracks the background shader pack download/extraction.
@@ -67,6 +69,8 @@ public partial class MainViewModel : ObservableObject
     public IOptiScalerWikiService OptiScalerWikiServiceInstance => _optiScalerWikiService;
     public IHdrDatabaseService HdrDatabaseServiceInstance => _hdrDatabaseService;
     public IREFrameworkService REFrameworkServiceInstance => _refService;
+    public IDlssStreamlineService DlssStreamlineServiceInstance => _dlssStreamlineService;
+    public DlssPresetService DlssPresetServiceInstance => _dlssPresetService;
     public RemoteManifest? Manifest => _manifest;
 
     public bool SkipUpdateCheck
@@ -479,6 +483,8 @@ public partial class MainViewModel : ObservableObject
         IOptiScalerWikiService optiScalerWikiService,
         IHdrDatabaseService hdrDatabaseService,
         INexusUpdateService nexusUpdateService,
+        IDlssStreamlineService dlssStreamlineService,
+        DlssPresetService dlssPresetService,
         GitHubETagCache etagCache)
     {
         _http = http;
@@ -513,6 +519,8 @@ public partial class MainViewModel : ObservableObject
         _optiScalerWikiService = optiScalerWikiService;
         _hdrDatabaseService = hdrDatabaseService;
         _nexusUpdateService = nexusUpdateService;
+        _dlssStreamlineService = dlssStreamlineService;
+        _dlssPresetService = dlssPresetService;
         _etagCache = etagCache;
         // Wire up SettingsChanged so property changes trigger a full save
         _settingsViewModel.SettingsChanged = () => SaveNameMappings();

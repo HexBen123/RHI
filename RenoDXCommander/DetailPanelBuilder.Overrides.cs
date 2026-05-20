@@ -1785,6 +1785,151 @@ public partial class DetailPanelBuilder
         _window.OverridesPanel.Children.Add(resetOverridesBtn);
 
         // ══════════════════════════════════════════════════════════════════════
+        // DLSS / Streamline section — horizontal row with version + preset dropdowns
+        // ══════════════════════════════════════════════════════════════════════
+        {
+            _window.OverridesPanel.Children.Add(UIFactory.MakeSeparator());
+
+            _window.OverridesPanel.Children.Add(new TextBlock
+            {
+                Text = "DLSS / Streamline",
+                FontSize = 12,
+                Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+                Margin = new Thickness(0, 0, 0, 4),
+            });
+
+            var dlssService = _window.ViewModel.DlssStreamlineServiceInstance;
+            var presetService = _window.ViewModel.DlssPresetServiceInstance;
+            bool hasDlss = card.HasDlss;
+            bool hasDlssd = card.HasDlssd;
+            bool hasDlssg = card.HasDlssg;
+            bool hasStreamline = card.HasStreamline;
+
+            var dlssRowGrid = new Grid { ColumnSpacing = 12 };
+            dlssRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            dlssRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            dlssRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            dlssRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            dlssRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            dlssRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            dlssRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+            // SR column
+            var srCol = BuildDlssColumn("DLSS", hasDlss, dlssService.DlssVersions,
+                card.DlssInstalledVersion, DlssPresetService.SrPresets,
+                presetService.IsSupported && hasDlss ? presetService.GetSrPreset(card.GameName, card.InstallPath) : 0u,
+                async (version) =>
+                {
+                    var tc = _window.ViewModel.AllCards.FirstOrDefault(c => c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+                    if (tc?.DlssDetection?.DlssPath == null) return;
+                    if (version == "Default") dlssService.Restore(tc.DlssDetection.DlssPath);
+                    else if (version == "Custom") await dlssService.SwapDlssCustomAsync(tc.DlssDetection.DlssPath);
+                    else await dlssService.SwapDlssAsync(tc.DlssDetection.DlssPath, version);
+                    tc.RefreshDlssVersions(dlssService);
+                    _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(tc));
+                },
+                (preset) => { presetService.SetSrPreset(card.GameName, card.InstallPath, preset); _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(card)); });
+            Grid.SetColumn(srCol, 0);
+            dlssRowGrid.Children.Add(srCol);
+
+            dlssRowGrid.Children.Add(MakeDlssDivider(1));
+
+            // RR column
+            var rrCol = BuildDlssColumn("Ray Reconstruction", hasDlssd, dlssService.DlssdVersions,
+                card.DlssdInstalledVersion, DlssPresetService.RrPresets,
+                presetService.IsSupported && hasDlssd ? presetService.GetRrPreset(card.GameName, card.InstallPath) : 0u,
+                async (version) =>
+                {
+                    var tc = _window.ViewModel.AllCards.FirstOrDefault(c => c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+                    if (tc?.DlssDetection?.DlssdPath == null) return;
+                    if (version == "Default") dlssService.Restore(tc.DlssDetection.DlssdPath);
+                    else if (version == "Custom") await dlssService.SwapDlssCustomAsync(tc.DlssDetection.DlssdPath);
+                    else await dlssService.SwapDlssdAsync(tc.DlssDetection.DlssdPath, version);
+                    tc.RefreshDlssVersions(dlssService);
+                    _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(tc));
+                },
+                (preset) => { presetService.SetRrPreset(card.GameName, card.InstallPath, preset); _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(card)); });
+            Grid.SetColumn(rrCol, 2);
+            dlssRowGrid.Children.Add(rrCol);
+
+            dlssRowGrid.Children.Add(MakeDlssDivider(3));
+
+            // FG column
+            var fgCol = BuildDlssColumn("Frame Generation", hasDlssg, dlssService.DlssgVersions,
+                card.DlssgInstalledVersion, DlssPresetService.FgPresets,
+                presetService.IsSupported && hasDlssg ? presetService.GetFgPreset(card.GameName, card.InstallPath) : 0u,
+                async (version) =>
+                {
+                    var tc = _window.ViewModel.AllCards.FirstOrDefault(c => c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+                    if (tc?.DlssDetection?.DlssgPath == null) return;
+                    if (version == "Default") dlssService.Restore(tc.DlssDetection.DlssgPath);
+                    else if (version == "Custom") await dlssService.SwapDlssCustomAsync(tc.DlssDetection.DlssgPath);
+                    else await dlssService.SwapDlssgAsync(tc.DlssDetection.DlssgPath, version);
+                    tc.RefreshDlssVersions(dlssService);
+                    _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(tc));
+                },
+                (preset) => { presetService.SetFgPreset(card.GameName, card.InstallPath, preset); _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(card)); });
+            Grid.SetColumn(fgCol, 4);
+            dlssRowGrid.Children.Add(fgCol);
+
+            dlssRowGrid.Children.Add(MakeDlssDivider(5));
+
+            // SL column (no preset)
+            var slCol = BuildDlssColumn("Streamline", hasStreamline, dlssService.StreamlineVersions,
+                card.StreamlineInstalledVersion, null, 0,
+                async (version) =>
+                {
+                    var tc = _window.ViewModel.AllCards.FirstOrDefault(c => c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+                    if (tc?.DlssDetection?.StreamlineFolder == null) return;
+                    if (version == "Default") dlssService.RestoreStreamline(tc.DlssDetection.StreamlineFolder);
+                    else if (version == "Custom") await dlssService.SwapStreamlineCustomAsync(tc.DlssDetection.StreamlineFolder);
+                    else await dlssService.SwapStreamlineAsync(tc.DlssDetection.StreamlineFolder, version);
+                    tc.RefreshDlssVersions(dlssService);
+                    _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(tc));
+                },
+                null);
+
+            // Add Restore All button into the SL column (fills the preset slot)
+            // Enabled when any backup exists OR any preset is non-default
+            bool hasNonDefaultPreset = (presetService.IsSupported && hasDlss && presetService.GetSrPreset(card.GameName, card.InstallPath) != 0)
+                || (presetService.IsSupported && hasDlssd && presetService.GetRrPreset(card.GameName, card.InstallPath) != 0)
+                || (presetService.IsSupported && hasDlssg && presetService.GetFgPreset(card.GameName, card.InstallPath) != 0);
+            var dlssRestoreBtn = new Button
+            {
+                Content = "Restore All",
+                FontSize = 11,
+                Height = 32,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush),
+                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+                BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(8),
+                IsEnabled = card.HasAnyDlssBackup || hasNonDefaultPreset,
+            };
+            dlssRestoreBtn.Click += (s, ev) =>
+            {
+                var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
+                    c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+                if (targetCard?.DlssDetection != null)
+                {
+                    dlssService.RestoreAll(targetCard.DlssDetection);
+                    presetService.SetSrPreset(targetCard.GameName, targetCard.InstallPath, 0);
+                    presetService.SetRrPreset(targetCard.GameName, targetCard.InstallPath, 0);
+                    presetService.SetFgPreset(targetCard.GameName, targetCard.InstallPath, 0);
+                    targetCard.RefreshDlssVersions(dlssService);
+                    _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(targetCard));
+                }
+            };
+            slCol.Children.Add(dlssRestoreBtn);
+
+            Grid.SetColumn(slCol, 6);
+            dlssRowGrid.Children.Add(slCol);
+
+            _window.OverridesPanel.Children.Add(dlssRowGrid);
+        }
+
+        // ══════════════════════════════════════════════════════════════════════
         // DXVK section — separator + DXVK ComboBox (left), right reserved
         // ══════════════════════════════════════════════════════════════════════
         if (card.IsDxvkToggleVisible)
@@ -2011,4 +2156,111 @@ public partial class DetailPanelBuilder
 
         _window.ManagementPanel.Children.Add(mgmtRow);
     }
+
+    /// <summary>
+    /// Builds a single DLSS/Streamline column with label, version ComboBox, and optional preset ComboBox.
+    /// </summary>
+    private StackPanel BuildDlssColumn(string label, bool isPresent,
+        IReadOnlyList<string> availableVersions, string? installedVersion,
+        (string Name, uint Value)[]? presets, uint currentPreset,
+        Func<string, Task> onVersionSelected, Action<uint>? onPresetSelected)
+    {
+        var col = new StackPanel { Spacing = 4, Opacity = isPresent ? 1.0 : 0.4 };
+
+        col.Children.Add(new TextBlock
+        {
+            Text = label,
+            FontSize = 11,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+        });
+
+        // Version ComboBox
+        var items = new List<string> { "Default" };
+        items.AddRange(availableVersions);
+        items.Add("Custom");
+
+        int selectedIndex = 0;
+        if (installedVersion != null && isPresent)
+        {
+            for (int i = 0; i < availableVersions.Count; i++)
+            {
+                if (installedVersion.Equals(availableVersions[i], StringComparison.OrdinalIgnoreCase)
+                    || availableVersions[i].StartsWith(installedVersion + ".", StringComparison.OrdinalIgnoreCase)
+                    || availableVersions[i].StartsWith(installedVersion, StringComparison.OrdinalIgnoreCase)
+                    || installedVersion.StartsWith(availableVersions[i], StringComparison.OrdinalIgnoreCase))
+                {
+                    selectedIndex = i + 1;
+                    break;
+                }
+            }
+        }
+
+        var versionCombo = new ComboBox
+        {
+            ItemsSource = items,
+            SelectedIndex = selectedIndex,
+            FontSize = 11,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            IsEnabled = isPresent,
+        };
+
+        bool versionInit = true;
+        versionCombo.SelectionChanged += async (s, ev) =>
+        {
+            if (versionInit) return;
+            var selected = versionCombo.SelectedItem as string;
+            if (!string.IsNullOrEmpty(selected))
+                await onVersionSelected(selected);
+        };
+        versionInit = false;
+        col.Children.Add(versionCombo);
+
+        // Preset ComboBox (only for SR, RR, FG)
+        if (presets != null && isPresent)
+        {
+            var presetItems = presets.Select(p => p.Name).ToList();
+            int presetIdx = 0;
+            for (int i = 0; i < presets.Length; i++)
+            {
+                if (presets[i].Value == currentPreset) { presetIdx = i; break; }
+            }
+
+            var presetCombo = new ComboBox
+            {
+                ItemsSource = presetItems,
+                SelectedIndex = presetIdx,
+                FontSize = 11,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                IsEnabled = isPresent,
+            };
+
+            bool presetInit = true;
+            presetCombo.SelectionChanged += (s, ev) =>
+            {
+                if (presetInit) return;
+                var idx = presetCombo.SelectedIndex;
+                if (idx >= 0 && idx < presets.Length)
+                    onPresetSelected?.Invoke(presets[idx].Value);
+            };
+            presetInit = false;
+            col.Children.Add(presetCombo);
+        }
+
+        return col;
+    }
+
+    private static Border MakeDlssDivider(int column)
+    {
+        var divider = new Border
+        {
+            Width = 1,
+            Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
+            VerticalAlignment = VerticalAlignment.Stretch,
+            Margin = new Thickness(0, 0, 0, 0),
+        };
+        Grid.SetColumn(divider, column);
+        return divider;
+    }
 }
+

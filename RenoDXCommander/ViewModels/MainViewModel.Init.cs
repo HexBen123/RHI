@@ -193,6 +193,8 @@ public partial class MainViewModel
             // show cached cards immediately and run the full scan in the background.
             if (hasCachedLibrary)
             {
+                // Initialize DLSS preset service early (needed for preset dropdowns in detail panel)
+                Task.Run(() => { try { _dlssPresetService.Initialize(); } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] DLSS preset init failed (cache path) — {ex.Message}"); } });
                 await LoadCacheAndBuildCardsAsync(savedLib!);
                 _ = RunBackgroundScanAndMergeAsync(savedLib!);
                 return;
@@ -237,6 +239,12 @@ public partial class MainViewModel
                 try { await _optiScalerService.EnsureDlssStagingAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] DLSS staging task failed — {ex.Message}"); }
             });
+            var dlssManifestTask = Task.Run(async () => {
+                try { await _dlssStreamlineService.FetchManifestAsync(); }
+                catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] DLSS manifest fetch failed — {ex.Message}"); }
+            });
+            // Initialize DLSS preset service (loads NVAPI + caches driver profiles)
+            Task.Run(() => { try { _dlssPresetService.Initialize(); } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] DLSS preset init failed — {ex.Message}"); } });
             var dxvkTask     = Task.Run(async () => {
                 try
                 {
@@ -1457,6 +1465,21 @@ public partial class MainViewModel
                     newCard.ExcludeFromUpdateAllDxvk = true;
             }
 
+            // ── DLSS / Streamline detection ──────────────────────────────────────
+            if (!string.IsNullOrEmpty(installPath) && Directory.Exists(installPath))
+            {
+                try
+                {
+                    var dlssDetection = _dlssStreamlineService.Detect(installPath);
+                    if (dlssDetection.HasAny)
+                        newCard.ApplyDlssDetection(dlssDetection);
+                }
+                catch (Exception ex)
+                {
+                    _crashReporter.Log($"[BuildCards] DLSS detection failed for '{game.Name}' — {ex.Message}");
+                }
+            }
+
             var lumaMatch = MatchLumaGame(game.Name);
             if (lumaMatch != null)
             {
@@ -1800,9 +1823,26 @@ public partial class MainViewModel
                 updateSnapshot[c.GameName] = string.Join(",", flags);
         }
 
+        // Collect DLSS/Streamline path cache from cards for fast restore on next launch
+        var dlssPathsCache = new Dictionary<string, DlssPathCache>(StringComparer.OrdinalIgnoreCase);
+        foreach (var c in _allCards)
+        {
+            if (c.DlssDetection != null && c.DlssDetection.HasAny)
+            {
+                dlssPathsCache[c.GameName] = new DlssPathCache
+                {
+                    DlssPath = c.DlssDetection.DlssPath,
+                    DlssdPath = c.DlssDetection.DlssdPath,
+                    DlssgPath = c.DlssDetection.DlssgPath,
+                    StreamlineFolder = c.DlssDetection.StreamlineFolder,
+                    StreamlineFiles = c.DlssDetection.StreamlineFiles.Count > 0 ? c.DlssDetection.StreamlineFiles : null,
+                };
+            }
+        }
+
         _gameLibraryService.Save(detectedGames, addonCache, _hiddenGames, _favouriteGames, _manualGames,
             _engineTypeCache, _resolvedPathCache, _addonFileCache, _bitnessCache, LastSelectedGameName,
-            dxvkEnabledGames, dxvkInstalledVersions, excludeFromUpdateAllDxvk, updateSnapshot);
+            dxvkEnabledGames, dxvkInstalledVersions, excludeFromUpdateAllDxvk, updateSnapshot, dlssPathsCache);
     }
 
     /// <summary>
@@ -2054,6 +2094,38 @@ public partial class MainViewModel
             if (savedLib.ExcludeFromUpdateAllDxvk.Contains(game.Name))
                 newCard.ExcludeFromUpdateAllDxvk = true;
 
+            // DLSS / Streamline: restore from cached paths (fast — just reads file versions, no directory scan)
+            if (savedLib.DlssPathsCache != null && savedLib.DlssPathsCache.TryGetValue(game.Name, out var dlssCache))
+            {
+                var detection = new DlssDetectionResult
+                {
+                    DlssPath = dlssCache.DlssPath,
+                    DlssdPath = dlssCache.DlssdPath,
+                    DlssgPath = dlssCache.DlssgPath,
+                    StreamlineFolder = dlssCache.StreamlineFolder,
+                    StreamlineFiles = dlssCache.StreamlineFiles ?? new(),
+                };
+                // Set the interposer path from the folder
+                if (dlssCache.StreamlineFolder != null)
+                    detection.StreamlineInterposerPath = Path.Combine(dlssCache.StreamlineFolder, "sl.interposer.dll");
+
+                // Read current versions from the cached paths (fast File.Exists + FileVersionInfo)
+                if (detection.DlssPath != null && File.Exists(detection.DlssPath))
+                    detection.DlssVersion = _dlssStreamlineService.GetFileVersion(detection.DlssPath);
+                if (detection.DlssdPath != null && File.Exists(detection.DlssdPath))
+                    detection.DlssdVersion = _dlssStreamlineService.GetFileVersion(detection.DlssdPath);
+                if (detection.DlssgPath != null && File.Exists(detection.DlssgPath))
+                    detection.DlssgVersion = _dlssStreamlineService.GetFileVersion(detection.DlssgPath);
+                if (detection.StreamlineInterposerPath != null && File.Exists(detection.StreamlineInterposerPath))
+                    detection.StreamlineVersion = _dlssStreamlineService.GetFileVersion(detection.StreamlineInterposerPath);
+
+                if (detection.HasAny)
+                    newCard.ApplyDlssDetection(detection);
+            }
+
+            // DLSS / Streamline detection is NOT done via full recursive scan here (cache path)
+            // because it's too slow for the UI thread. The background scan handles fresh detection.
+
             // ReLimiter detection (single File.Exists check + local JSON read for version)
             if (!string.IsNullOrEmpty(installPath))
             {
@@ -2247,6 +2319,10 @@ public partial class MainViewModel
             dlssTask         = Task.Run(async () => {
                 try { await _optiScalerService.EnsureDlssStagingAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] DLSS staging task failed — {ex.Message}"); }
+            });
+            var dlssManifestTask2 = Task.Run(async () => {
+                try { await _dlssStreamlineService.FetchManifestAsync(); }
+                catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] DLSS manifest fetch failed — {ex.Message}"); }
             });
             var dxvkTask     = Task.Run(async () => {
                 try
@@ -2585,6 +2661,10 @@ public partial class MainViewModel
                 existing.DxvkRecord              = fresh.DxvkRecord;
                 existing.DxvkEnabled             = fresh.DxvkEnabled;
                 existing.ExcludeFromUpdateAllDxvk = fresh.ExcludeFromUpdateAllDxvk;
+
+                // ── DLSS / Streamline fields ─────────────────────────────
+                if (fresh.DlssDetection != null)
+                    existing.ApplyDlssDetection(fresh.DlssDetection);
             }
             else
             {
