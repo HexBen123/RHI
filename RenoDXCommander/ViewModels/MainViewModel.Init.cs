@@ -392,19 +392,19 @@ public partial class MainViewModel
             {
                 if (prevUpdateStatus.TryGetValue(c.GameName, out var prev))
                 {
-                    if (prev.mod == GameStatus.UpdateAvailable && c.Status == GameStatus.Installed)
+                    if (prev.mod == GameStatus.UpdateAvailable && c.Status == GameStatus.Installed && !c.ExcludeFromUpdateAllRenoDx)
                         c.Status = GameStatus.UpdateAvailable;
-                    if (prev.rs == GameStatus.UpdateAvailable && c.RsStatus == GameStatus.Installed)
+                    if (prev.rs == GameStatus.UpdateAvailable && c.RsStatus == GameStatus.Installed && !c.ExcludeFromUpdateAllReShade)
                         c.RsStatus = GameStatus.UpdateAvailable;
-                    if (prev.dc == GameStatus.UpdateAvailable && c.DcStatus == GameStatus.Installed)
+                    if (prev.dc == GameStatus.UpdateAvailable && c.DcStatus == GameStatus.Installed && !c.ExcludeFromUpdateAllDc)
                         c.DcStatus = GameStatus.UpdateAvailable;
-                    if (prev.ul == GameStatus.UpdateAvailable && c.UlStatus == GameStatus.Installed)
+                    if (prev.ul == GameStatus.UpdateAvailable && c.UlStatus == GameStatus.Installed && !c.ExcludeFromUpdateAllUl)
                         c.UlStatus = GameStatus.UpdateAvailable;
-                    if (prev.refFw == GameStatus.UpdateAvailable && c.RefStatus == GameStatus.Installed)
+                    if (prev.refFw == GameStatus.UpdateAvailable && c.RefStatus == GameStatus.Installed && !c.ExcludeFromUpdateAllRef)
                         c.RefStatus = GameStatus.UpdateAvailable;
-                    if (prev.os == GameStatus.UpdateAvailable && c.OsStatus == GameStatus.Installed)
+                    if (prev.os == GameStatus.UpdateAvailable && c.OsStatus == GameStatus.Installed && !c.ExcludeFromUpdateAllOs)
                         c.OsStatus = GameStatus.UpdateAvailable;
-                    if (prev.dxvk == GameStatus.UpdateAvailable && c.DxvkStatus == GameStatus.Installed)
+                    if (prev.dxvk == GameStatus.UpdateAvailable && c.DxvkStatus == GameStatus.Installed && !c.ExcludeFromUpdateAllDxvk)
                         c.DxvkStatus = GameStatus.UpdateAvailable;
                 }
             }
@@ -2195,13 +2195,13 @@ public partial class MainViewModel
                 {
                     switch (flag.Trim())
                     {
-                        case "RDX":  if (newCard.Status != GameStatus.NotInstalled) newCard.Status = GameStatus.UpdateAvailable; break;
-                        case "RS":   if (newCard.RsStatus != GameStatus.NotInstalled) newCard.RsStatus = GameStatus.UpdateAvailable; break;
-                        case "UL":   if (newCard.UlStatus != GameStatus.NotInstalled) newCard.UlStatus = GameStatus.UpdateAvailable; break;
-                        case "DC":   if (newCard.DcStatus != GameStatus.NotInstalled) newCard.DcStatus = GameStatus.UpdateAvailable; break;
-                        case "OS":   if (newCard.OsStatus != GameStatus.NotInstalled) newCard.OsStatus = GameStatus.UpdateAvailable; break;
-                        case "REF":  if (newCard.RefStatus != GameStatus.NotInstalled) newCard.RefStatus = GameStatus.UpdateAvailable; break;
-                        case "DXVK": if (newCard.DxvkStatus != GameStatus.NotInstalled) newCard.DxvkStatus = GameStatus.UpdateAvailable; break;
+                        case "RDX":  if (newCard.Status != GameStatus.NotInstalled && !newCard.ExcludeFromUpdateAllRenoDx) newCard.Status = GameStatus.UpdateAvailable; break;
+                        case "RS":   if (newCard.RsStatus != GameStatus.NotInstalled && !newCard.ExcludeFromUpdateAllReShade) newCard.RsStatus = GameStatus.UpdateAvailable; break;
+                        case "UL":   if (newCard.UlStatus != GameStatus.NotInstalled && !newCard.ExcludeFromUpdateAllUl) newCard.UlStatus = GameStatus.UpdateAvailable; break;
+                        case "DC":   if (newCard.DcStatus != GameStatus.NotInstalled && !newCard.ExcludeFromUpdateAllDc) newCard.DcStatus = GameStatus.UpdateAvailable; break;
+                        case "OS":   if (newCard.OsStatus != GameStatus.NotInstalled && !newCard.ExcludeFromUpdateAllOs) newCard.OsStatus = GameStatus.UpdateAvailable; break;
+                        case "REF":  if (newCard.RefStatus != GameStatus.NotInstalled && !newCard.ExcludeFromUpdateAllRef) newCard.RefStatus = GameStatus.UpdateAvailable; break;
+                        case "DXVK": if (newCard.DxvkStatus != GameStatus.NotInstalled && !newCard.ExcludeFromUpdateAllDxvk) newCard.DxvkStatus = GameStatus.UpdateAvailable; break;
                         case "LUMA": if (newCard.LumaStatus != GameStatus.NotInstalled) newCard.LumaStatus = GameStatus.UpdateAvailable; break;
                     }
                 }

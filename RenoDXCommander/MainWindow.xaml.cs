@@ -300,30 +300,8 @@ public sealed partial class MainWindow : Window
                     ScrollToCard(card);
                     break;
                 case ViewLayout.Detail:
-                    // Debounce detail panel rebuild — wait 80ms after last selection change
-                    _pendingSelectionCard = card;
-                    if (_selectionDebounceTimer == null)
-                    {
-                        _selectionDebounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(150) };
-                        _selectionDebounceTimer.Tick += (s, ev) =>
-                        {
-                            _selectionDebounceTimer.Stop();
-                            var target = _pendingSelectionCard;
-                            if (target != null && target == ViewModel.SelectedGame)
-                            {
-                                PopulateDetailPanel(target);
-                                DetailPanel.Visibility = Visibility.Visible;
-                                BuildOverridesPanel(target);
-                                OverridesContainer.Visibility = Visibility.Visible;
-                                ManagementContainer.Visibility = Visibility.Visible;
-                            }
-                        };
-                    }
-                    _selectionDebounceTimer.Stop();
-                    _selectionDebounceTimer.Start();
-                    break;
                 case ViewLayout.Compact:
-                    // Debounce compact page rebuild — same pattern as Detail mode
+                    // Debounce panel rebuild for both Detail and Compact modes
                     _pendingSelectionCard = card;
                     if (_selectionDebounceTimer == null)
                     {
@@ -334,8 +312,19 @@ public sealed partial class MainWindow : Window
                             var target = _pendingSelectionCard;
                             if (target != null && target == ViewModel.SelectedGame)
                             {
-                                _compactViewBuilder?.RebuildCurrentPage(
-                                    target, ViewModel.CompactPageIndex);
+                                if (ViewModel.CurrentViewLayout == ViewLayout.Detail)
+                                {
+                                    PopulateDetailPanel(target);
+                                    DetailPanel.Visibility = Visibility.Visible;
+                                    BuildOverridesPanel(target);
+                                    OverridesContainer.Visibility = Visibility.Visible;
+                                    ManagementContainer.Visibility = Visibility.Visible;
+                                }
+                                else if (ViewModel.CurrentViewLayout == ViewLayout.Compact)
+                                {
+                                    _compactViewBuilder?.RebuildCurrentPage(
+                                        target, ViewModel.CompactPageIndex);
+                                }
                             }
                         };
                     }

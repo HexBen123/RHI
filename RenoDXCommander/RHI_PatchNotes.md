@@ -13,6 +13,7 @@
 - Fixed compact view becoming unresponsive when rapidly navigating with arrow keys. Added 150ms selection debounce to prevent UI thread overload from rapid panel rebuilds.
 - Fixed unnecessary UAC/admin prompt during Update All for users with Vulkan games. The Vulkan ReShade layer was being recopied to ProgramData on every run even when already up to date.
 - Fixed manually-installed RenoDX addons (e.g. from Nexus Mods) not being detected after a normal Refresh. The addon file cache was trusting stale "no addon" entries instead of rechecking.
+- Fixed per-game update exclusions not being respected. Games with specific components excluded from Update All (via Update Inclusion dialog) were still showing purple update indicators.
 
 ### OptiScaler Integration
 

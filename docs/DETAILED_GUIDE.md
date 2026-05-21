@@ -16,6 +16,7 @@ This document covers every feature in RHI. For a quick overview, see the [README
 - [RE Framework](#re-framework)
 - [Luma Framework](#luma-framework)
 - [Frame Rate Limiters](#frame-rate-limiters)
+- [DLSS & Streamline Manager](#dlss--streamline-manager)
 - [OptiScaler](#optiscaler)
 - [Shader Packs](#shader-packs)
 - [ReShade Addon Management](#reshade-addon-management)
@@ -378,6 +379,62 @@ An alternative frame rate limiter, also downloaded from GitHub.
 
 ---
 
+## DLSS & Streamline Manager
+
+RHI includes a full DLSS and Streamline version manager in the Overrides panel. For any game with DLSS or Streamline DLLs detected, the "DLSS / Streamline" row appears with per-component dropdowns.
+
+### Version Swapping
+
+- **DLSS SR** (`nvngx_dlss.dll`) — choose any version independently
+- **DLSS RR** (`nvngx_dlssd.dll`) — choose any version independently
+- **DLSS FG** (`nvngx_dlssg.dll`) — choose any version independently
+- **Streamline** (`sl.*.dll`) — all files updated as a set
+
+Versions are downloaded on-demand from `dlss_manifest.json` (hosted on `RankFTW/RHI`) and cached locally at `%LocalAppData%\RHI\DLSS\{version}\`, `DLSS-D\{version}\`, `DLSS-G\{version}\`, and `Streamline\{version}\`.
+
+### Backups & Restore
+
+The original game DLL is backed up with `.original` extension before swapping. Select "Default" from the dropdown to restore the original. "Restore All" reverts all components and resets presets.
+
+For Streamline, only files already present in the game folder are replaced — RHI never adds files that weren't there originally.
+
+### DLSS Presets
+
+Set per-game DLSS presets directly from RHI via the NVIDIA Driver Settings API (NVAPI):
+
+| Component | Available Presets |
+|-----------|------------------|
+| SR | Default, J, K, L, M |
+| RR | Default, D, E |
+| FG | Default, A, B |
+
+Changes apply instantly to the NVIDIA driver profile. No NVIDIA Profile Inspector needed. Silently no-ops on AMD/Intel systems.
+
+### Custom Files
+
+Place your own DLLs in the custom folders and select "Custom" from the dropdown:
+- `%LocalAppData%\RHI\DLSS-Custom\nvngx_dlss.dll`
+- `%LocalAppData%\RHI\Streamline-Custom\sl.*.dll`
+
+### Smart Detection
+
+RHI recursively searches game folders for DLSS and Streamline DLLs regardless of folder structure. Handles:
+- Unreal Engine (`Engine\Plugins\Runtime\Nvidia\...`)
+- CryEngine (`Bin\Win64Shared`)
+- WindowsApps packages
+- Any other layout
+
+Correctly distinguishes game DLSS files from OptiScaler's bridging copies (skips folders containing `OptiScaler.ini`).
+
+Detection results are cached in two tiers:
+1. **Trusted path cache** — after 3 confirmations at the same path, future scans use direct `File.Exists` checks (~1ms vs 1-4s recursive scan)
+2. **Skip cache** — games scanned 3 times with no DLSS found are auto-exempted from future scans
+
+---
+
+
+---
+
 ## OptiScaler
 
 [OptiScaler](https://github.com/optiscaler/OptiScaler) is a 64-bit middleware DLL that intercepts upscaler calls (DLSS, FSR, XeSS) and redirects them to alternative backends. RHI manages the full lifecycle: download, staging, install, uninstall, update detection, INI configuration, ReShade coexistence, DLL naming, and hotkey setup.
@@ -398,7 +455,7 @@ Game-owned files are backed up to `.original` before overwriting and restored on
 
 ### DLSS Auto-Download
 
-The latest NVIDIA DLSS Super Resolution, Ray Reconstruction, and Frame Generation DLLs are automatically downloaded and staged on startup, sourced from the DLSS Swapper manifest. Each DLL has independent version tracking and auto-updates.
+The latest NVIDIA DLSS Super Resolution, Ray Reconstruction, and Frame Generation DLLs are automatically downloaded and staged on startup from the RHI DLSS manifest (`dlss_manifest.json` hosted on GitHub). Each DLL has independent version tracking. OptiScaler uses the newest cached version automatically.
 
 ### OptiPatcher
 
@@ -884,7 +941,16 @@ Everything is stored under `%LOCALAPPDATA%\RHI\`:
 | `downloads\` | Cached downloads organised into subdirectories: `shaders/`, `renodx/`, `framelimiter/`, `luma/`, `misc/`. |
 | `optiscaler\` | Staged OptiScaler release (DLL, companion files, INI, version tag). |
 | `optipatcher\` | Staged OptiPatcher release. |
-| `dlss\` | Staged DLSS DLLs with independent version files. |
+| `dlss\` | Legacy DLSS staging (deprecated — replaced by versioned cache below). |
+| `DLSS\{version}\` | Versioned DLSS SR cache (e.g. `DLSS\310.6.0\nvngx_dlss.dll`). |
+| `DLSS-D\{version}\` | Versioned DLSS RR cache. |
+| `DLSS-G\{version}\` | Versioned DLSS FG cache. |
+| `Streamline\{version}\` | Versioned Streamline cache (all `sl.*.dll` files). |
+| `DLSS-Custom\` | User-provided custom DLSS DLL. |
+| `Streamline-Custom\` | User-provided custom Streamline DLLs. |
+| `dlss_manifest.json` | Cached DLSS/Streamline version manifest. |
+| `dlss_scan_cache.json` | Games confirmed to have no DLSS (auto-skip after 3 scans). |
+| `dlss_trusted_paths.json` | Confirmed DLL paths for fast detection (skip recursive scan). |
 | `addons\` | Downloaded ReShade addon files and `versions.json`. |
 | `addons_cache.ini` | Cached Addons.ini for offline fallback. |
 | `inis\` | Preset config files (`reshade.ini`, `reshade.vulkan.ini`, `relimiter.ini`, `DisplayCommander.ini`, `OptiScaler.ini`, etc.) and `reshade-presets\` subfolder. |
