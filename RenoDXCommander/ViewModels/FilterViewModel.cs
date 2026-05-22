@@ -273,7 +273,12 @@ public partial class FilterViewModel : ObservableObject
             || (card.LumaMod?.Author?.Contains(query, StringComparison.OrdinalIgnoreCase) == true)
             || card.VulkanRenderingPath.Contains(query, StringComparison.OrdinalIgnoreCase)
             || (card.HasUwFixUrl && "UW Fix".Contains(query, StringComparison.OrdinalIgnoreCase))
-            || (card.HasUltraPlusUrl && "Ultra+".Contains(query, StringComparison.OrdinalIgnoreCase));
+            || (card.HasUltraPlusUrl && "Ultra+".Contains(query, StringComparison.OrdinalIgnoreCase))
+            || (card.HasDlss && "DLSS".Contains(query, StringComparison.OrdinalIgnoreCase))
+            || (card.HasDlssd && "Ray Reconstruction".Contains(query, StringComparison.OrdinalIgnoreCase))
+            || (card.HasDlssg && "Frame Generation".Contains(query, StringComparison.OrdinalIgnoreCase))
+            || (card.HasStreamline && "Streamline".Contains(query, StringComparison.OrdinalIgnoreCase))
+            || (card.HasAnyDlssStreamline && "DLSS".Contains(query, StringComparison.OrdinalIgnoreCase));
     }
 
     public void ApplyFilter()

@@ -1,8 +1,8 @@
-## v1.9.7-beta
+## v1.9.7
 
 ### New Features
 
-- **DLSS & Streamline Manager** — Full version management for NVIDIA DLSS and Streamline DLLs. Swap DLSS Super Resolution, Ray Reconstruction, and Frame Generation independently to any version. Update or downgrade Streamline as a set. All versions are downloaded on-demand and cached locally. Backups are created automatically with `.original` extension — restore anytime with one click. Smart detection finds DLLs regardless of folder structure (Unreal Engine, Unity, CryEngine, WindowsApps). Correctly distinguishes game DLSS files from OptiScaler's bridging copies.
+- **DLSS & Streamline Manager** — Full version management for NVIDIA DLSS and Streamline DLLs. Swap DLSS Super Resolution, Ray Reconstruction, and Frame Generation independently to any version. Update or downgrade Streamline as a set. All versions are downloaded on-demand and cached locally. Backups are created automatically with `.original` extension — restore anytime with one click. Smart detection finds DLLs regardless of folder structure (Unreal Engine, Unity, CryEngine, WindowsApps). Correctly distinguishes game DLSS files from OptiScaler's bridging copies. Available in Detail and Compact views (not Grid view).
 - **DLSS Preset Control** — Change DLSS presets per-game directly from RHI. Set SR presets (J, K, L, M), RR presets (D, E), and FG presets (A, B) without needing NVIDIA Profile Inspector. Changes apply instantly to the NVIDIA driver profile.
 - **Custom DLSS/Streamline Files** — Drop your own DLLs into the Custom folders and select "Custom" from the version dropdown to deploy them.
 
@@ -22,6 +22,12 @@
 ### Improvements
 
 - Game Report (Copy Report) now includes all collected data: update exclusions, addon selections, DLSS/Streamline versions and paths, and preset values.
+- Search bar now filters by DLSS/Streamline presence — type "DLSS", "Ray Reconstruction", "Frame Generation", or "Streamline" to find games with those components.
+
+### Manifest Updates
+
+- Zero Parades — 64-bit override, DX12 API override.
+- Gothic II: Gold Classic — install path override to `system\` subfolder (ReShade was deploying to wrong directory).
 
 ---
 
