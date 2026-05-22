@@ -2023,7 +2023,8 @@ public partial class MainViewModel
                             if ((fn.StartsWith("Luma", StringComparison.OrdinalIgnoreCase)
                                 || fn.EndsWith(".addon64", StringComparison.OrdinalIgnoreCase)
                                 || fn.EndsWith(".addon32", StringComparison.OrdinalIgnoreCase))
-                                && !fn.StartsWith("renodx-devkit", StringComparison.OrdinalIgnoreCase))
+                                && !fn.StartsWith("renodx-devkit", StringComparison.OrdinalIgnoreCase)
+                                && !fn.StartsWith("renodx-dlssfix", StringComparison.OrdinalIgnoreCase))
                             {
                                 try { File.Delete(f); } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.ToggleLumaMode] Failed to delete '{f}' — {ex.Message}"); }
                             }
