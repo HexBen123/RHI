@@ -78,6 +78,10 @@ public partial class DlssStreamlineService : IDlssStreamlineService
 
         // Try load cached manifest synchronously for immediate availability
         LoadCachedManifest();
+
+        // Ensure custom folders exist so users can drop files in
+        try { Directory.CreateDirectory(DlssCustomDir); } catch { }
+        try { Directory.CreateDirectory(StreamlineCustomDir); } catch { }
     }
 
     // ── Manifest fetching ─────────────────────────────────────────────────────
