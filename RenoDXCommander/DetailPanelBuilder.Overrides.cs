@@ -1826,9 +1826,11 @@ public partial class DetailPanelBuilder
             dlssRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
             // SR column
-            var srCol = BuildDlssColumn("DLSS", hasDlss, dlssService.DlssVersions,
+            // Disable for DLSS 1.x (not compatible with 2.x+ versions in manifest)
+            bool srEnabled = hasDlss && !(card.DlssInstalledVersion?.StartsWith("1.") == true);
+            var srCol = BuildDlssColumn("DLSS", srEnabled, dlssService.DlssVersions,
                 card.DlssInstalledVersion, DlssPresetService.SrPresets,
-                presetService.IsSupported && hasDlss ? presetService.GetSrPreset(card.GameName, card.InstallPath) : 0u,
+                presetService.IsSupported && srEnabled ? presetService.GetSrPreset(card.GameName, card.InstallPath) : 0u,
                 async (version) =>
                 {
                     var tc = _window.ViewModel.AllCards.FirstOrDefault(c => c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
@@ -1886,7 +1888,9 @@ public partial class DetailPanelBuilder
             dlssRowGrid.Children.Add(MakeDlssDivider(5));
 
             // SL column (no preset)
-            var slCol = BuildDlssColumn("Streamline", hasStreamline, dlssService.StreamlineVersions,
+            // Disable for Streamline v1.x (not compatible with v2.x+ versions in manifest)
+            bool slEnabled = hasStreamline && !(card.StreamlineInstalledVersion?.StartsWith("1.") == true);
+            var slCol = BuildDlssColumn("Streamline", slEnabled, dlssService.StreamlineVersions,
                 card.StreamlineInstalledVersion, null, 0,
                 async (version) =>
                 {

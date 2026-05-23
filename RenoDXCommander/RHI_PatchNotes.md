@@ -7,6 +7,7 @@
 ### Bug Fixes
 
 - Fixed RenoDX mod install incorrectly warning about replacing the DLSS Fix global addon (`renodx-dlssfix.addon64`). Global addons are no longer treated as game-specific mods during install.
+- DLSS and Streamline version dropdowns are now disabled for games with v1.x DLLs (e.g. Witcher 3). These legacy versions are not compatible with the newer versions available in the manager.
 
 ### Manifest Updates
 
