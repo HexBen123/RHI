@@ -8,6 +8,7 @@
 - **Install Warnings** — Per-game, per-component install warnings driven from the manifest. When a game has a known requirement (e.g. FF7R needs DX11 mode for Luma), a dialog pops up before install with the warning. User can Continue or Cancel.
 - **Message of the Day** — RHI can now display announcements to all users on launch. Messages are fetched from GitHub (`motd.md`) and shown once per unique message (tracked by content hash). When the file is empty or unchanged, nothing is shown.
 - **Launch Arguments** — Set per-game launch arguments from the Overrides panel (next to the launch executable path). Arguments are passed to the game on launch. Steam games use `-applaunch` for reliable argument passing while preserving overlay and playtime tracking.
+- **Epic Games Store Launch** — Epic games now launch through the Epic protocol URL instead of direct exe, fixing "please launch through the Epic launcher" errors for EOS-protected games. Works silently without bringing the launcher to the foreground.
 
 ### Bug Fixes
 
@@ -15,6 +16,8 @@
 - DLSS and Streamline version dropdowns are now disabled for games with v1.x DLLs (e.g. Witcher 3). These legacy versions are not compatible with the newer versions available in the manager.
 - Full Refresh now clears DLSS scan caches, ensuring newly added DLLs (e.g. game update adds Ray Reconstruction) are detected.
 - Fixed DLSS presets not applying for games with custom NVIDIA driver profiles (e.g. GreedFall 2). Custom profiles named after the exe are now matched correctly.
+- Fixed DLSS scan cache file contention when the cache phase and background scan write simultaneously. Both `dlss_trusted_paths.json` and `dlss_scan_cache.json` now use a shared lock to prevent concurrent write failures.
+- Fixed DLSS detection scanning into sibling game folders for GOG Galaxy installs (e.g. BioShock Infinite falsely showing Fort Solis's DLSS). The search root guard now recognizes `Games` as a library folder.
 
 ### UI Changes
 

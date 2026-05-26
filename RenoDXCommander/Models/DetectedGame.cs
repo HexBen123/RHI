@@ -7,4 +7,10 @@ public class DetectedGame
     public string Source { get; set; } = "";
     public bool IsManuallyAdded { get; set; }
     public int? SteamAppId { get; set; }
+
+    /// <summary>Epic Games Store catalog namespace (for protocol launch).</summary>
+    public string? EpicCatalogNamespace { get; set; }
+
+    /// <summary>Epic Games Store app name (for protocol launch).</summary>
+    public string? EpicAppName { get; set; }
 }

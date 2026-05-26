@@ -1481,7 +1481,7 @@ public partial class MainViewModel
                 try
                 {
                     // Try fast path first (trusted cached paths — no recursive scan)
-                    var fastResult = _dlssStreamlineService.TryFastDetect(game.Name);
+                    var fastResult = _dlssStreamlineService.TryFastDetect(game.Name, installPath);
                     if (fastResult != null)
                     {
                         newCard.ApplyDlssDetection(fastResult);

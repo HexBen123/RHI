@@ -128,7 +128,7 @@ public interface IDlssStreamlineService
     /// <summary>
     /// Attempts fast detection using trusted cached paths. Returns null if full scan needed.
     /// </summary>
-    DlssDetectionResult? TryFastDetect(string gameName);
+    DlssDetectionResult? TryFastDetect(string gameName, string installPath);
 
     /// <summary>
     /// Records a successful detection for trusted path confirmation.

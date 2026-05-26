@@ -145,6 +145,7 @@ public partial class DlssStreamlineService
             || string.Equals(name, "SteamLibrary", StringComparison.OrdinalIgnoreCase)
             || string.Equals(name, "EpicGames", StringComparison.OrdinalIgnoreCase)
             || string.Equals(name, "GOG Games", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(name, "Games", StringComparison.OrdinalIgnoreCase)
             || string.Equals(name, "WindowsApps", StringComparison.OrdinalIgnoreCase)
             || string.Equals(name, "Program Files", StringComparison.OrdinalIgnoreCase)
             || string.Equals(name, "Program Files (x86)", StringComparison.OrdinalIgnoreCase))

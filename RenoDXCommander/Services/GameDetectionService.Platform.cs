@@ -49,7 +49,18 @@ public partial class GameDetectionService
                 var name = ExtractJsonString(json, "DisplayName");
                 var path = ExtractJsonString(json, "InstallLocation");
                 if (!string.IsNullOrEmpty(name) && !string.IsNullOrEmpty(path) && Directory.Exists(path))
-                    games.Add(new DetectedGame { Name = name, InstallPath = path, Source = "Epic" });
+                {
+                    var catalogNamespace = ExtractJsonString(json, "CatalogNamespace");
+                    var appName = ExtractJsonString(json, "AppName");
+                    games.Add(new DetectedGame
+                    {
+                        Name = name,
+                        InstallPath = path,
+                        Source = "Epic",
+                        EpicCatalogNamespace = catalogNamespace,
+                        EpicAppName = appName,
+                    });
+                }
             }
             catch (Exception ex) { CrashReporter.Log($"[GameDetectionService.FindEpicGames] Failed to parse manifest '{file}' — {ex.Message}"); }
         }

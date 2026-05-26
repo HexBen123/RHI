@@ -62,6 +62,7 @@ public partial class DlssStreamlineService : IDlssStreamlineService
     // ── State ─────────────────────────────────────────────────────────────────
 
     private DlssManifestData? _manifest;
+    private static readonly object _cacheSaveLock = new();
 
     public IReadOnlyList<string> DlssVersions => _manifest?.Dlss?.Select(e => FormatVersion(e.Version)).ToList().AsReadOnly()
         ?? (IReadOnlyList<string>)Array.Empty<string>();
@@ -284,12 +285,21 @@ public partial class DlssStreamlineService : IDlssStreamlineService
     /// Invalidates trusted path entries that have null components (partial detection).
     /// Games with fully populated paths keep their trusted status.
     /// Called on Full Refresh to detect newly added DLLs (e.g. game update adds RR/FG).
-    /// Does NOT clear the scan skip cache — games confirmed to have no DLSS stay skipped.
+    /// Also clears the scan skip cache so reinstalled games are re-scanned.
     /// </summary>
     public void ClearScanCaches()
     {
-        // Only invalidate trusted entries with null paths (partial detection)
-        // Games with all paths populated keep their trusted status
+        // Clear the scan skip cache entirely — reinstalled games may now have DLSS
+        EnsureScanCacheLoaded();
+        if (_scanSkipCache!.Count > 0)
+        {
+            CrashReporter.Log($"[DlssStreamlineService.ClearScanCaches] Clearing scan skip cache ({_scanSkipCache.Count} entries)");
+            _scanSkipCache.Clear();
+            SaveScanCache();
+        }
+
+        // Invalidate trusted entries with null paths (partial detection — new DLLs may have appeared)
+        // Entries with all paths populated stay trusted (validated at read time via PathsAreWithin)
         EnsureTrustedCacheLoaded();
         var toRemove = _trustedPathCache!
             .Where(kvp => kvp.Value.DlssPath == null || kvp.Value.DlssdPath == null
@@ -330,15 +340,18 @@ public partial class DlssStreamlineService : IDlssStreamlineService
 
     private void SaveScanCache()
     {
-        try
+        lock (_cacheSaveLock)
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(ScanSkipCachePath)!);
-            var json = JsonSerializer.Serialize(_scanSkipCache, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(ScanSkipCachePath, json);
-        }
-        catch (Exception ex)
-        {
-            CrashReporter.Log($"[DlssStreamlineService.SaveScanCache] Failed — {ex.Message}");
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(ScanSkipCachePath)!);
+                var json = JsonSerializer.Serialize(_scanSkipCache, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(ScanSkipCachePath, json);
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[DlssStreamlineService.SaveScanCache] Failed — {ex.Message}");
+            }
         }
     }
 
@@ -349,13 +362,22 @@ public partial class DlssStreamlineService : IDlssStreamlineService
 
     /// <summary>
     /// Attempts a fast detection using trusted cached paths. Returns a valid result if all
-    /// cached paths still exist, or null if a full scan is needed.
+    /// cached paths still exist and are within the game's install path, or null if a full scan is needed.
     /// </summary>
-    public DlssDetectionResult? TryFastDetect(string gameName)
+    public DlssDetectionResult? TryFastDetect(string gameName, string installPath)
     {
         EnsureTrustedCacheLoaded();
         if (!_trustedPathCache!.TryGetValue(gameName, out var entry) || entry.ConfirmCount < SkipThreshold)
             return null;
+
+        // Validate cached paths are inside the game's install tree (not a sibling game)
+        var searchRoot = ResolveSearchRoot(installPath);
+        if (!PathsAreWithin(entry, searchRoot))
+        {
+            CrashReporter.Log($"[DlssStreamlineService.TryFastDetect] Cached paths for '{gameName}' are outside install path — invalidating");
+            InvalidateTrustedPath(gameName);
+            return null;
+        }
 
         // Verify cached paths still exist
         var result = new DlssDetectionResult();
@@ -425,6 +447,22 @@ public partial class DlssStreamlineService : IDlssStreamlineService
         SaveTrustedCache();
     }
 
+    /// <summary>Checks if all non-null paths in the entry are within the given root directory.</summary>
+    private static bool PathsAreWithin(TrustedPathEntry entry, string root)
+    {
+        var normalizedRoot = root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+            + Path.DirectorySeparatorChar;
+        if (entry.DlssPath != null && !entry.DlssPath.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase))
+            return false;
+        if (entry.DlssdPath != null && !entry.DlssdPath.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase))
+            return false;
+        if (entry.DlssgPath != null && !entry.DlssgPath.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase))
+            return false;
+        if (entry.StreamlineFolder != null && !entry.StreamlineFolder.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase))
+            return false;
+        return true;
+    }
+
     /// <summary>Removes a game from the trusted path cache.</summary>
     public void InvalidateTrustedPath(string gameName)
     {
@@ -451,13 +489,16 @@ public partial class DlssStreamlineService : IDlssStreamlineService
 
     private void SaveTrustedCache()
     {
-        try
+        lock (_cacheSaveLock)
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(TrustedPathCachePath)!);
-            var json = JsonSerializer.Serialize(_trustedPathCache, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(TrustedPathCachePath, json);
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(TrustedPathCachePath)!);
+                var json = JsonSerializer.Serialize(_trustedPathCache, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(TrustedPathCachePath, json);
+            }
+            catch (Exception ex) { CrashReporter.Log($"[DlssStreamlineService.SaveTrustedCache] Failed — {ex.Message}"); }
         }
-        catch (Exception ex) { CrashReporter.Log($"[DlssStreamlineService.SaveTrustedCache] Failed — {ex.Message}"); }
     }
 
     public async Task<string?> EnsureNewestDlssCachedAsync()

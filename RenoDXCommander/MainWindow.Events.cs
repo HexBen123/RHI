@@ -1532,7 +1532,16 @@ public sealed partial class MainWindow
                 return;
             }
 
-            // 4. Direct exe — find the game exe in InstallPath
+            // 4. Epic Games Store protocol
+            if (!string.IsNullOrEmpty(card.DetectedGame?.EpicAppName))
+            {
+                var epicUri = $"com.epicgames.launcher://apps/{card.DetectedGame.EpicAppName}?action=launch&silent=true";
+                _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via Epic protocol: {epicUri}");
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(epicUri) { UseShellExecute = true });
+                return;
+            }
+
+            // 5. Direct exe — find the game exe in InstallPath
             if (!string.IsNullOrEmpty(card.InstallPath) && Directory.Exists(card.InstallPath))
             {
                 var exes = Directory.GetFiles(card.InstallPath, "*.exe", SearchOption.TopDirectoryOnly);
