@@ -193,6 +193,9 @@
     "DRAGON QUEST VII Reimagined": "Dragon Quest VII Remake",
     "DRAGON QUEST® XI S: Echoes of an Elusive Age™ - Definitive Edition": "Dragon Quest XI (Original & DE)",
     "Dying Light": "Dying Light",
+    "Mass Effect 1 (Legendary Edition)": "Mass Effect : Legendary Edition",
+    "Mass Effect 2 (Legendary Edition)": "Mass Effect : Legendary Edition",
+    "Mass Effect 3 (Legendary Edition)": "Mass Effect : Legendary Edition",
     "ELDEN RING": "Elden Ring",
     "ELDEN RING NIGHTREIGN": "Elden Ring: Nightreign",
     "EVERSPACE™ 2": "EVERSPACE 2",
@@ -794,8 +797,15 @@
   },
 
   "launchExeOverrides": {
-  }
-,
+  },
+
+  "splitGames": {
+    "Mass Effect™ Legendary Edition": [
+      { "name": "Mass Effect 1 (Legendary Edition)", "subPath": "Game\\ME1\\Binaries\\Win64" },
+      { "name": "Mass Effect 2 (Legendary Edition)", "subPath": "Game\\ME2\\Binaries\\Win64" },
+      { "name": "Mass Effect 3 (Legendary Edition)", "subPath": "Game\\ME3\\Binaries\\Win64" }
+    ]
+  },
   "installWarnings": {
     "FINAL FANTASY VII REMAKE INTERGRADE": {
       "luma": "⚠ This game MUST be set to DX11 mode for Luma to work.\n\nAdd -dx11 to your Steam launch arguments:\nRight-click game → Properties → Launch Options → type: -dx11"
