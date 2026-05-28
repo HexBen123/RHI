@@ -137,6 +137,11 @@ public partial class DetailPanelBuilder
                         System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
                     badge.PointerEntered += (s, e) => cursorProp?.SetValue(badge, handCursor);
                     badge.PointerExited += (s, e) => cursorProp?.SetValue(badge, arrowCursor);
+                    ToolTipService.SetToolTip(badge, $"Mod author: {author} — click to open Ko-fi donation page");
+                }
+                else
+                {
+                    ToolTipService.SetToolTip(badge, $"Mod author: {author}");
                 }
                 _window.DetailAuthorBadgePanel.Children.Add(badge);
             }

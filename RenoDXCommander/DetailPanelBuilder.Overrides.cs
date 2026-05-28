@@ -893,6 +893,8 @@ public partial class DetailPanelBuilder
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
+        ToolTipService.SetToolTip(apiCombo,
+            "Override the detected graphics API for this game.\nAuto uses PE header scanning. Reset Overrides reverts to auto-detection.");
 
         apiCombo.SelectionChanged += (s, ev) =>
         {
@@ -1005,6 +1007,8 @@ public partial class DetailPanelBuilder
             FontSize = 12,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
+        ToolTipService.SetToolTip(channelCombo,
+            "Override the global ReShade build channel for this game.\nGlobal = use Settings default. Vulkan games: changing this affects ALL Vulkan games.");
 
         bool channelComboInitializing = true;
 
