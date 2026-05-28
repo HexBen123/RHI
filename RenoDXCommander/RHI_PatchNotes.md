@@ -30,10 +30,12 @@
 
 ### Luma Changes
 
+- **Luma Drag-Drop & File Watcher Install** — Drag a Luma mod archive (zip or 7z) from Explorer, Discord, or Nexus onto a game card to install it. The file watcher also auto-detects Luma archives in your Downloads folder and prompts you to pick a game. Handles all variants: full packages with custom ReShade, addon-only mods, and shader-only mods. If the archive doesn't include ReShade, RHI deploys its own cached version automatically. Archives with multiple game folders (e.g. BO3 with Alternatives/Debug/Optional folders) automatically filter out non-game folders and prompt you to pick the correct one if needed.
 - Luma toggle button moved to the right side of the Components header. Dynamic info text now explains whether the game is auto-configured for Luma or manually toggleable. Toggle text shortened to "Luma ON" / "Luma OFF".
 - Luma installs now deploy shaders using the same global/per-game shader selection as normal ReShade installs (previously hardcoded to Lilium only).
 - Fixed Luma uninstall leaving behind a `reshade-shaders-original` folder. The shader folder is now properly deleted instead of renamed.
 - Fixed Luma installs not applying screenshot save path, overlay hotkey, or screenshot hotkey to reshade.ini. These settings are now passed through correctly, matching normal ReShade installs.
+- RS Channel dropdown is now disabled when Luma mode is active (Luma bundles its own ReShade).
 
 ### Manifest Updates
 

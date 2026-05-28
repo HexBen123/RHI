@@ -122,14 +122,15 @@ public sealed class AddonFileWatcher : IDisposable
             return;
         }
 
-        // Check for archive files containing "renodx" in the name
+        // Check for archive files containing "renodx" or "luma" in the name
         if (ArchiveExtensions.Contains(ext))
         {
             var fileName = Path.GetFileName(path);
-            if (!fileName.Contains("renodx", StringComparison.OrdinalIgnoreCase))
+            if (!fileName.Contains("renodx", StringComparison.OrdinalIgnoreCase)
+                && !fileName.Contains("luma", StringComparison.OrdinalIgnoreCase))
                 return;
 
-            _crashReporter.Log($"[AddonFileWatcher] Detected archive with renodx: {fileName}");
+            _crashReporter.Log($"[AddonFileWatcher] Detected archive: {fileName}");
             WaitAndRaise(path, ArchiveFileDetected);
             return;
         }

@@ -302,7 +302,8 @@ public class UninstallReShadeShaderRemovalTests : IDisposable
     private class StubLumaService : ILumaService
     {
         public Task<List<LumaMod>> FetchCompletedModsAsync(IProgress<string>? progress = null) => Task.FromResult(new List<LumaMod>());
-        public Task<LumaInstalledRecord> InstallAsync(LumaMod mod, string gameInstallPath, IProgress<(string, double)>? progress = null) => Task.FromResult(new LumaInstalledRecord());
+        public Task<LumaInstalledRecord> InstallAsync(LumaMod mod, string gameInstallPath, IEnumerable<string>? selectedShaderPacks = null, string? screenshotSavePath = null, string? overlayHotkey = null, string? screenshotHotkey = null, string? gameName = null, IProgress<(string, double)>? progress = null) => Task.FromResult(new LumaInstalledRecord());
+        public Task<LumaInstalledRecord> InstallFromArchiveAsync(string archivePath, string gameInstallPath, bool is32Bit, IEnumerable<string>? selectedShaderPacks = null, string? screenshotSavePath = null, string? overlayHotkey = null, string? screenshotHotkey = null, string? gameName = null, Func<List<string>, Task<string?>>? folderPicker = null) => Task.FromResult(new LumaInstalledRecord());
         public void Uninstall(LumaInstalledRecord record) { }
         public void SaveLumaRecord(LumaInstalledRecord record) { }
         public void RemoveLumaRecord(string gameName, string installPath) { }

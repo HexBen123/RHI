@@ -565,6 +565,7 @@ public partial class MainViewModel : ObservableObject
     private Dictionary<string, string> _gameRenames => _gameNameService.GameRenames;
 
     private readonly ILumaService _lumaService;
+    public ILumaService LumaServiceInstance => _lumaService;
     private readonly IReShadeUpdateService _rsUpdateService;
     private readonly INormalReShadeUpdateService _normalRsUpdateService;
     private readonly ReShadeNightlyService _rsNightlyService;

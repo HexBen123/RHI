@@ -629,4 +629,352 @@ public class LumaService : ILumaService
         var latest = await GetLatestBuildNumberAsync().ConfigureAwait(false);
         return latest > 0 && latest > record.InstalledBuildNumber;
     }
+
+    // ── Install from local archive (drag-drop / file watcher) ─────────────────────
+
+    /// <summary>
+    /// Installs a Luma mod from a local archive (zip or 7z) to the game folder.
+    /// Handles game-name subfolders, deploys ReShade if missing, skips reshade.ini from archive.
+    /// </summary>
+    public async Task<LumaInstalledRecord> InstallFromArchiveAsync(
+        string archivePath,
+        string gameInstallPath,
+        bool is32Bit,
+        IEnumerable<string>? selectedShaderPacks = null,
+        string? screenshotSavePath = null,
+        string? overlayHotkey = null,
+        string? screenshotHotkey = null,
+        string? gameName = null,
+        Func<List<string>, Task<string?>>? folderPicker = null)
+    {
+        var installedFiles = new List<string>();
+
+        // ── 1. Deploy reshade.ini FIRST (for AddonPath routing) ──
+        try
+        {
+            _auxFileService.EnsureInisDir();
+            if (File.Exists(AuxInstallService.RsIniPath))
+            {
+                _auxFileService.MergeRsIni(gameInstallPath, screenshotSavePath, overlayHotkey, screenshotHotkey, gameName);
+                installedFiles.Add("reshade.ini");
+            }
+        }
+        catch (Exception ex) { CrashReporter.Log($"[LumaService.InstallFromArchive] reshade.ini deploy failed — {ex.Message}"); }
+
+        // ── 2. Extract archive ──
+        var addonDeployPath = ModInstallService.GetAddonDeployPath(gameInstallPath);
+        bool archiveHasDxgi = false;
+
+        if (archivePath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+        {
+            using var archive = System.IO.Compression.ZipFile.OpenRead(archivePath);
+
+            // Detect game-name subfolder prefix to strip
+            var prefix = DetectSubfolderPrefix(archive.Entries.Select(e => e.FullName));
+
+            // If no single prefix found, check for multiple valid candidates and ask user
+            if (string.IsNullOrEmpty(prefix) && folderPicker != null)
+            {
+                var entryPaths = archive.Entries.Select(e => e.FullName).Where(p => !string.IsNullOrEmpty(p)).ToList();
+                var topFolders = entryPaths
+                    .Select(p => { var idx = p.IndexOfAny(new[] { '/', '\\' }); return idx > 0 ? p[..(idx + 1)] : null; })
+                    .Where(f => f != null && !f.TrimStart('/').TrimStart('\\').StartsWith("("))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                var validFolders = topFolders.Where(f =>
+                {
+                    bool hasLuma = entryPaths.Any(p => p.StartsWith(f!, StringComparison.OrdinalIgnoreCase)
+                        && p.Length > f!.Length && p[f.Length..].StartsWith("Luma", StringComparison.OrdinalIgnoreCase));
+                    bool hasDxgi = entryPaths.Any(p => p.Equals(f + "dxgi.dll", StringComparison.OrdinalIgnoreCase));
+                    return hasLuma || hasDxgi;
+                }).ToList();
+
+                if (validFolders.Count > 1)
+                {
+                    var folderNames = validFolders.Select(f => f!.TrimEnd('/', '\\')).ToList();
+                    var chosen = await folderPicker(folderNames!);
+                    if (chosen == null)
+                    {
+                        return new LumaInstalledRecord
+                        {
+                            GameName = gameName ?? Path.GetFileNameWithoutExtension(archivePath),
+                            InstallPath = gameInstallPath,
+                            DownloadUrl = $"local:{Path.GetFileName(archivePath)}",
+                            InstalledFiles = new List<string>(),
+                            InstalledAt = DateTime.UtcNow,
+                            InstalledBuildNumber = 0,
+                        };
+                    }
+                    prefix = chosen + "/";
+                }
+            }
+
+            foreach (var entry in archive.Entries)
+            {
+                if (string.IsNullOrEmpty(entry.Name)) continue;
+
+                // Skip reshade.ini from the zip
+                if (entry.Name.Equals("reshade.ini", StringComparison.OrdinalIgnoreCase)
+                    || entry.Name.Equals("ReShade.ini", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                // Skip non-game files
+                if (entry.Name.Equals("README.txt", StringComparison.OrdinalIgnoreCase)
+                    || entry.Name.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)
+                    || entry.Name.EndsWith(".png", StringComparison.OrdinalIgnoreCase)
+                    || entry.FullName.Contains("(Debug)", StringComparison.OrdinalIgnoreCase)
+                    || entry.FullName.Contains("(Optional)", StringComparison.OrdinalIgnoreCase)
+                    || entry.FullName.Contains("(Alternatives)", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                // Strip prefix
+                var relativePath = entry.FullName;
+                if (!string.IsNullOrEmpty(prefix) && relativePath.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                    relativePath = relativePath[prefix.Length..];
+
+                if (string.IsNullOrEmpty(relativePath)) continue;
+
+                if (entry.Name.Equals("dxgi.dll", StringComparison.OrdinalIgnoreCase))
+                    archiveHasDxgi = true;
+
+                // Route .addon files to the addon deploy path
+                var isAddonFile = entry.Name.EndsWith(".addon", StringComparison.OrdinalIgnoreCase)
+                               || entry.Name.EndsWith(".addon64", StringComparison.OrdinalIgnoreCase)
+                               || entry.Name.EndsWith(".addon32", StringComparison.OrdinalIgnoreCase);
+                var baseDir = isAddonFile ? addonDeployPath : gameInstallPath;
+                var destPath = Path.Combine(baseDir, relativePath);
+
+                Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
+                entry.ExtractToFile(destPath, overwrite: true);
+                installedFiles.Add(relativePath);
+            }
+        }
+        else if (archivePath.EndsWith(".7z", StringComparison.OrdinalIgnoreCase))
+        {
+            // Extract to temp, then copy with prefix stripping
+            var tempDir = Path.Combine(Path.GetTempPath(), "RHI_Luma_" + Guid.NewGuid().ToString("N")[..8]);
+            try
+            {
+                Directory.CreateDirectory(tempDir);
+                var sevenZipExe = Path.Combine(AppContext.BaseDirectory, "7z.exe");
+                var psi = new System.Diagnostics.ProcessStartInfo(sevenZipExe, $"x \"{archivePath}\" -o\"{tempDir}\" -y")
+                {
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                };
+                using var proc = System.Diagnostics.Process.Start(psi);
+                proc?.WaitForExit(60000);
+
+                // Find the content root (strip game-name subfolder)
+                var contentRoot = tempDir;
+                var validCandidates = DetectContentRootCandidates(tempDir);
+
+                if (validCandidates.Count == 1)
+                {
+                    contentRoot = validCandidates[0];
+                }
+                else if (validCandidates.Count > 1)
+                {
+                    // Multiple valid folders — ask the user to pick
+                    if (folderPicker != null)
+                    {
+                        var folderNames = validCandidates.Select(Path.GetFileName).ToList()!;
+                        var chosen = await folderPicker(folderNames!);
+                        if (chosen == null)
+                        {
+                            CrashReporter.Log("[LumaService.InstallFromArchive] User cancelled folder selection");
+                            return new LumaInstalledRecord
+                            {
+                                GameName = gameName ?? Path.GetFileNameWithoutExtension(archivePath),
+                                InstallPath = gameInstallPath,
+                                DownloadUrl = $"local:{Path.GetFileName(archivePath)}",
+                                InstalledFiles = new List<string>(),
+                                InstalledAt = DateTime.UtcNow,
+                                InstalledBuildNumber = 0,
+                            };
+                        }
+                        contentRoot = validCandidates.FirstOrDefault(d =>
+                            Path.GetFileName(d).Equals(chosen, StringComparison.OrdinalIgnoreCase)) ?? tempDir;
+                    }
+                    else
+                    {
+                        // No picker available — use the first valid candidate
+                        contentRoot = validCandidates[0];
+                        CrashReporter.Log($"[LumaService.InstallFromArchive] Multiple candidates found, using first: '{Path.GetFileName(contentRoot)}'");
+                    }
+                }
+                else
+                {
+                    // No valid candidates with Luma/ or dxgi.dll — check for single subfolder fallback
+                    var allSubdirs = Directory.GetDirectories(tempDir)
+                        .Where(d => !Path.GetFileName(d).StartsWith("("))
+                        .ToArray();
+                    if (allSubdirs.Length == 1)
+                        contentRoot = allSubdirs[0];
+                }
+
+                foreach (var file in Directory.GetFiles(contentRoot, "*", SearchOption.AllDirectories))
+                {
+                    var relativePath = Path.GetRelativePath(contentRoot, file);
+                    var fileName = Path.GetFileName(file);
+
+                    // Skip reshade.ini, README, images, debug/optional folders
+                    if (fileName.Equals("reshade.ini", StringComparison.OrdinalIgnoreCase)
+                        || fileName.Equals("ReShade.ini", StringComparison.OrdinalIgnoreCase)
+                        || fileName.Equals("README.txt", StringComparison.OrdinalIgnoreCase)
+                        || fileName.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)
+                        || fileName.EndsWith(".png", StringComparison.OrdinalIgnoreCase)
+                        || relativePath.Contains("(Debug)", StringComparison.OrdinalIgnoreCase)
+                        || relativePath.Contains("(Optional)", StringComparison.OrdinalIgnoreCase)
+                        || relativePath.Contains("(Alternatives)", StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    if (fileName.Equals("dxgi.dll", StringComparison.OrdinalIgnoreCase))
+                        archiveHasDxgi = true;
+
+                    var isAddonFile = fileName.EndsWith(".addon", StringComparison.OrdinalIgnoreCase)
+                                   || fileName.EndsWith(".addon64", StringComparison.OrdinalIgnoreCase)
+                                   || fileName.EndsWith(".addon32", StringComparison.OrdinalIgnoreCase);
+                    var baseDir = isAddonFile ? addonDeployPath : gameInstallPath;
+                    var destPath = Path.Combine(baseDir, relativePath);
+
+                    Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
+                    File.Copy(file, destPath, overwrite: true);
+                    installedFiles.Add(relativePath);
+                }
+            }
+            finally
+            {
+                try { Directory.Delete(tempDir, recursive: true); } catch { }
+            }
+        }
+
+        // ── 3. Deploy ReShade if archive didn't include dxgi.dll ──
+        if (!archiveHasDxgi)
+        {
+            var rsPath = is32Bit ? AuxInstallService.RsStagedPath32 : AuxInstallService.RsStagedPath64;
+            var destDxgi = Path.Combine(gameInstallPath, "dxgi.dll");
+            if (File.Exists(rsPath))
+            {
+                File.Copy(rsPath, destDxgi, overwrite: true);
+                installedFiles.Add("dxgi.dll");
+                CrashReporter.Log($"[LumaService.InstallFromArchive] Deployed cached ReShade as dxgi.dll ({(is32Bit ? "32-bit" : "64-bit")})");
+            }
+            else
+            {
+                CrashReporter.Log($"[LumaService.InstallFromArchive] WARNING: No cached ReShade available at '{rsPath}'");
+            }
+        }
+
+        // ── 4. Deploy shaders ──
+        try
+        {
+            _shaderPackService.SyncGameFolder(gameInstallPath, selectedShaderPacks);
+            var rsDir = Path.Combine(gameInstallPath, ShaderPackService.GameReShadeShaders);
+            if (Directory.Exists(rsDir))
+            {
+                foreach (var file in Directory.GetFiles(rsDir, "*", SearchOption.AllDirectories))
+                    installedFiles.Add(Path.GetRelativePath(gameInstallPath, file));
+            }
+        }
+        catch (Exception ex) { CrashReporter.Log($"[LumaService.InstallFromArchive] Shader deploy failed — {ex.Message}"); }
+
+        // ── 5. Save record ──
+        var record = new LumaInstalledRecord
+        {
+            GameName = gameName ?? Path.GetFileNameWithoutExtension(archivePath),
+            InstallPath = gameInstallPath,
+            DownloadUrl = $"local:{Path.GetFileName(archivePath)}",
+            InstalledFiles = installedFiles,
+            InstalledAt = DateTime.UtcNow,
+            InstalledBuildNumber = 0,
+        };
+        SaveRecord(record);
+        CrashReporter.Log($"[LumaService.InstallFromArchive] Installed {installedFiles.Count} files to '{gameInstallPath}'");
+        return record;
+    }
+
+    /// <summary>
+    /// Detects a common game-name subfolder prefix in archive entries.
+    /// Returns the prefix to strip (e.g. "Call of Duty Black Ops III/") or empty string.
+    /// Filters out folders starting with '(' (Alternatives, Debug, Optional) before checking.
+    /// </summary>
+    private static string DetectSubfolderPrefix(IEnumerable<string> entryPaths)
+    {
+        var paths = entryPaths.Where(p => !string.IsNullOrEmpty(p)).ToList();
+        if (paths.Count == 0) return "";
+
+        // Get all unique top-level folder names
+        var topFolders = paths
+            .Select(p =>
+            {
+                var slashIdx = p.IndexOfAny(new[] { '/', '\\' });
+                return slashIdx > 0 ? p[..(slashIdx + 1)] : null;
+            })
+            .Where(f => f != null)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (topFolders.Count == 0) return "";
+
+        // Filter out folders starting with '(' (Alternatives, Debug, Optional, etc.)
+        var candidates = topFolders
+            .Where(f => !f!.TrimStart('/').TrimStart('\\').StartsWith("("))
+            .ToList();
+
+        // Among remaining candidates, find ones that contain Luma/ or dxgi.dll
+        var validCandidates = candidates.Where(candidate =>
+        {
+            bool hasLuma = paths.Any(p =>
+                p.StartsWith(candidate!, StringComparison.OrdinalIgnoreCase)
+                && p.Length > candidate!.Length
+                && p[candidate.Length..].StartsWith("Luma", StringComparison.OrdinalIgnoreCase));
+            bool hasDxgi = paths.Any(p =>
+                p.Equals(candidate + "dxgi.dll", StringComparison.OrdinalIgnoreCase));
+            return hasLuma || hasDxgi;
+        }).ToList();
+
+        if (validCandidates.Count == 1)
+            return validCandidates[0]!;
+
+        // Fallback: original logic for single-folder archives
+        if (topFolders.Count == 1)
+        {
+            var candidate = topFolders[0]!;
+            bool hasLuma = paths.Any(p =>
+                p.StartsWith(candidate, StringComparison.OrdinalIgnoreCase)
+                && p.Length > candidate.Length
+                && p[candidate.Length..].StartsWith("Luma", StringComparison.OrdinalIgnoreCase));
+            bool hasDxgi = paths.Any(p =>
+                p.Equals(candidate + "dxgi.dll", StringComparison.OrdinalIgnoreCase));
+            if (hasLuma || hasDxgi)
+                return candidate;
+        }
+
+        return "";
+    }
+
+    /// <summary>
+    /// Detects valid game content folders in a 7z extraction directory.
+    /// Filters out folders starting with '(' and returns folders containing Luma/ or dxgi.dll.
+    /// </summary>
+    private static List<string> DetectContentRootCandidates(string tempDir)
+    {
+        var subdirs = Directory.GetDirectories(tempDir);
+
+        // Filter out folders starting with '(' (Alternatives, Debug, Optional, etc.)
+        var candidates = subdirs
+            .Where(d => !Path.GetFileName(d).StartsWith("("))
+            .ToList();
+
+        // Among remaining, find ones that contain Luma/ or dxgi.dll
+        var valid = candidates.Where(d =>
+            Directory.Exists(Path.Combine(d, "Luma"))
+            || File.Exists(Path.Combine(d, "dxgi.dll")))
+            .ToList();
+
+        return valid;
+    }
+
 }

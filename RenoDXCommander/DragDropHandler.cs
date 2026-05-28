@@ -188,11 +188,64 @@ public partial class DragDropHandler
                     continue;
                 }
 
-                // Handle archive files — extract and look for .addon64/.addon32 inside
+                // Handle archive files — check for Luma mod first, then extract for addons
                 if (ArchiveExtensions.Contains(ext))
                 {
                     try
                     {
+                        // Check if this is a Luma mod archive
+                        if ((ext == ".zip" || ext == ".7z") && IsLumaArchive(file.Path))
+                        {
+                            // Show game picker (same as file watcher path)
+                            var lumaGames = _window.ViewModel.AllCards
+                                .Where(c => c.LumaFeatureEnabled && !string.IsNullOrEmpty(c.InstallPath))
+                                .OrderBy(c => c.GameName, StringComparer.OrdinalIgnoreCase)
+                                .ToList();
+
+                            if (lumaGames.Count > 0)
+                            {
+                                var gameNames = lumaGames.Select(c => c.GameName).ToList();
+                                var selectedGame = _window.ViewModel.SelectedGame;
+                                var preSelectIndex = selectedGame != null
+                                    ? gameNames.IndexOf(selectedGame.GameName)
+                                    : -1;
+
+                                var combo = new Microsoft.UI.Xaml.Controls.ComboBox
+                                {
+                                    ItemsSource = gameNames,
+                                    SelectedIndex = preSelectIndex >= 0 ? preSelectIndex : 0,
+                                    FontSize = 12,
+                                    HorizontalAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Stretch,
+                                };
+                                var pickerDialog = new Microsoft.UI.Xaml.Controls.ContentDialog
+                                {
+                                    Title = "Install Luma Mod",
+                                    Content = new Microsoft.UI.Xaml.Controls.StackPanel
+                                    {
+                                        Spacing = 8,
+                                        Children =
+                                        {
+                                            new Microsoft.UI.Xaml.Controls.TextBlock { Text = $"Luma mod detected: {Path.GetFileName(file.Path)}\n\nSelect game to install to:", TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap, FontSize = 12 },
+                                            combo,
+                                        }
+                                    },
+                                    PrimaryButtonText = "Install",
+                                    CloseButtonText = "Cancel",
+                                    XamlRoot = _window.Content.XamlRoot,
+                                    RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark,
+                                };
+                                var result = await DialogService.ShowSafeAsync(pickerDialog);
+                                if (result == Microsoft.UI.Xaml.Controls.ContentDialogResult.Primary)
+                                {
+                                    var selectedName = combo.SelectedItem as string;
+                                    var card = lumaGames.FirstOrDefault(c => c.GameName == selectedName);
+                                    if (card != null)
+                                        await ProcessDroppedLumaArchiveAsync(file.Path, card);
+                                }
+                                continue;
+                            }
+                        }
+
                         await ProcessDroppedArchive(file.Path);
                     }
                     catch (Exception ex)

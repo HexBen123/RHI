@@ -448,6 +448,83 @@ public partial class DragDropHandler
         }
 
         var ext = Path.GetExtension(filename);
+
+        // Handle zip/7z URLs — download and check if it's a Luma archive
+        if (ext.Equals(".zip", StringComparison.OrdinalIgnoreCase) || ext.Equals(".7z", StringComparison.OrdinalIgnoreCase))
+        {
+            _crashReporter.Log($"[DragDropHandler.ProcessDroppedUrl] Archive URL detected: {filename} — downloading to check for Luma");
+            var lumaTemp = Path.Combine(Path.GetTempPath(), filename);
+            try
+            {
+                using var http = new HttpClient();
+                var bytes = await http.GetByteArrayAsync(url);
+                await File.WriteAllBytesAsync(lumaTemp, bytes);
+
+                if (IsLumaArchive(lumaTemp))
+                {
+                    // Show game picker and install
+                    var lumaGames = _window.ViewModel.AllCards
+                        .Where(c => c.LumaFeatureEnabled && !string.IsNullOrEmpty(c.InstallPath))
+                        .OrderBy(c => c.GameName, StringComparer.OrdinalIgnoreCase)
+                        .ToList();
+
+                    if (lumaGames.Count > 0)
+                    {
+                        var gameNames = lumaGames.Select(c => c.GameName).ToList();
+                        var selectedGame = _window.ViewModel.SelectedGame;
+                        var preSelectIndex = selectedGame != null ? gameNames.IndexOf(selectedGame.GameName) : -1;
+
+                        var combo = new ComboBox
+                        {
+                            ItemsSource = gameNames,
+                            SelectedIndex = preSelectIndex >= 0 ? preSelectIndex : 0,
+                            FontSize = 12,
+                            HorizontalAlignment = HorizontalAlignment.Stretch,
+                        };
+                        var pickerDialog = new ContentDialog
+                        {
+                            Title = "Install Luma Mod",
+                            Content = new StackPanel
+                            {
+                                Spacing = 8,
+                                Children =
+                                {
+                                    new TextBlock { Text = $"Luma mod detected: {filename}\n\nSelect game to install to:", TextWrapping = TextWrapping.Wrap, FontSize = 12 },
+                                    combo,
+                                }
+                            },
+                            PrimaryButtonText = "Install",
+                            CloseButtonText = "Cancel",
+                            XamlRoot = _window.Content.XamlRoot,
+                            RequestedTheme = ElementTheme.Dark,
+                        };
+                        var result = await DialogService.ShowSafeAsync(pickerDialog);
+                        if (result == ContentDialogResult.Primary)
+                        {
+                            var selectedName = combo.SelectedItem as string;
+                            var card = lumaGames.FirstOrDefault(c => c.GameName == selectedName);
+                            if (card != null)
+                                await ProcessDroppedLumaArchiveAsync(lumaTemp, card);
+                        }
+                    }
+                }
+                else
+                {
+                    // Not a Luma archive — treat as a regular archive (extract for addons)
+                    await ProcessDroppedArchive(lumaTemp);
+                }
+            }
+            catch (Exception ex)
+            {
+                _crashReporter.Log($"[DragDropHandler.ProcessDroppedUrl] Failed to download/process archive — {ex.Message}");
+            }
+            finally
+            {
+                try { if (File.Exists(lumaTemp)) File.Delete(lumaTemp); } catch { }
+            }
+            return;
+        }
+
         if (!ext.Equals(".addon64", StringComparison.OrdinalIgnoreCase)
             && !ext.Equals(".addon32", StringComparison.OrdinalIgnoreCase))
         {

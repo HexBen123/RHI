@@ -21,6 +21,23 @@ public interface ILumaService
 
     void Uninstall(LumaInstalledRecord record);
 
+    /// <summary>
+    /// Installs a Luma mod from a local archive (zip or 7z) to the game folder.
+    /// </summary>
+    /// <param name="folderPicker">Optional callback invoked when the archive contains multiple
+    /// candidate game folders. Receives the folder names and should return the user's choice,
+    /// or null to cancel.</param>
+    Task<LumaInstalledRecord> InstallFromArchiveAsync(
+        string archivePath,
+        string gameInstallPath,
+        bool is32Bit,
+        IEnumerable<string>? selectedShaderPacks = null,
+        string? screenshotSavePath = null,
+        string? overlayHotkey = null,
+        string? screenshotHotkey = null,
+        string? gameName = null,
+        Func<List<string>, Task<string?>>? folderPicker = null);
+
     void SaveLumaRecord(LumaInstalledRecord record);
 
     void RemoveLumaRecord(string gameName, string installPath);

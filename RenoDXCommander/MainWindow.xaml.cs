@@ -256,31 +256,99 @@ public sealed partial class MainWindow : Window
 
             NativeInterop.SetForegroundWindow(WinRT.Interop.WindowNative.GetWindowHandle(this));
 
+            // Check if this is a Luma mod archive
+            var ext = Path.GetExtension(filePath);
+            if ((ext.Equals(".zip", StringComparison.OrdinalIgnoreCase) || ext.Equals(".7z", StringComparison.OrdinalIgnoreCase))
+                && DragDropHandler.IsLumaArchive(filePath))
+            {
+                // Show game picker filtered to Luma-enabled games
+                var lumaGames = ViewModel.AllCards
+                    .Where(c => c.LumaFeatureEnabled && !string.IsNullOrEmpty(c.InstallPath))
+                    .OrderBy(c => c.GameName, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                if (lumaGames.Count == 0)
+                {
+                    _crashReporter.Log("[MainWindow.HandleArchiveFile] Luma archive detected but no Luma-enabled games found");
+                    return;
+                }
+
+                // Try fuzzy match by filename to pre-select in the picker
+                var fileName = Path.GetFileNameWithoutExtension(filePath).ToLowerInvariant();
+                var gameNames = lumaGames.Select(c => c.GameName).ToList();
+                var autoMatchIndex = gameNames.FindIndex(name =>
+                    fileName.Contains(name.ToLowerInvariant().Replace(":", "").Replace("™", "")));
+
+                // Always show picker — pre-select the matched game if found
+                var combo = new ComboBox
+                {
+                    ItemsSource = gameNames,
+                    SelectedIndex = autoMatchIndex >= 0 ? autoMatchIndex : 0,
+                    FontSize = 12,
+                    HorizontalAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Stretch,
+                };
+                var pickerDialog = new ContentDialog
+                {
+                    Title = "Install Luma Mod",
+                    Content = new StackPanel
+                    {
+                        Spacing = 8,
+                        Children =
+                        {
+                            new TextBlock { Text = $"Luma mod detected: {Path.GetFileName(filePath)}\n\nSelect game to install to:", TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap, FontSize = 12 },
+                            combo,
+                        }
+                    },
+                    PrimaryButtonText = "Install",
+                    CloseButtonText = "Cancel",
+                    XamlRoot = Content.XamlRoot,
+                    RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark,
+                };
+                var result = await DialogService.ShowSafeAsync(pickerDialog);
+                if (result != ContentDialogResult.Primary) return;
+                var selectedName = combo.SelectedItem as string;
+                var selectedCard = lumaGames.FirstOrDefault(c => c.GameName == selectedName);
+
+                if (selectedCard != null)
+                {
+                    await _dragDropHandler.ProcessDroppedLumaArchiveAsync(filePath, selectedCard);
+                }
+
+                // Delete source from watch folder
+                DeleteFromWatchFolder(filePath);
+                return;
+            }
+
             await _dragDropHandler.ProcessDroppedArchive(filePath);
 
             // Delete source archive from watch folder after successful processing
-            var watchFolder = _addonFileWatcher.CurrentWatchPath;
-            var fileDir = Path.GetDirectoryName(filePath);
-            if (!string.IsNullOrEmpty(watchFolder) && !string.IsNullOrEmpty(fileDir)
-                && string.Equals(Path.GetFullPath(fileDir), Path.GetFullPath(watchFolder), StringComparison.OrdinalIgnoreCase))
-            {
-                try
-                {
-                    if (File.Exists(filePath))
-                    {
-                        File.Delete(filePath);
-                        _crashReporter.Log($"[MainWindow.HandleArchiveFile] Deleted source archive '{Path.GetFileName(filePath)}' from watch folder");
-                    }
-                }
-                catch (Exception delEx)
-                {
-                    _crashReporter.Log($"[MainWindow.HandleArchiveFile] Failed to delete source archive — {delEx.Message}");
-                }
-            }
+            DeleteFromWatchFolder(filePath);
         }
         catch (Exception ex)
         {
             _crashReporter.Log($"[MainWindow.HandleArchiveFile] Failed — {ex.Message}");
+        }
+    }
+
+    private void DeleteFromWatchFolder(string filePath)
+    {
+        var watchFolder = _addonFileWatcher.CurrentWatchPath;
+        var fileDir = Path.GetDirectoryName(filePath);
+        if (!string.IsNullOrEmpty(watchFolder) && !string.IsNullOrEmpty(fileDir)
+            && string.Equals(Path.GetFullPath(fileDir), Path.GetFullPath(watchFolder), StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                if (File.Exists(filePath))
+                {
+                    File.Delete(filePath);
+                    _crashReporter.Log($"[MainWindow.HandleArchiveFile] Deleted source archive '{Path.GetFileName(filePath)}' from watch folder");
+                }
+            }
+            catch (Exception delEx)
+            {
+                _crashReporter.Log($"[MainWindow.HandleArchiveFile] Failed to delete source archive — {delEx.Message}");
+            }
         }
     }
 
