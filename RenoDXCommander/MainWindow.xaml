@@ -1363,7 +1363,7 @@
                                                Foreground="{StaticResource TextPrimaryBrush}"/>
                                     <TextBlock TextWrapping="Wrap" FontSize="11"
                                                Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                               Text="Controls the green DLSS text overlay that NVIDIA shows in the corner of games when DLSS is active. This is a global system setting — it affects all games. Requires admin privileges to change."/>
+                                               Text="Controls the DLSS text overlay that NVIDIA shows in the corner of games when DLSS is active. This is a global system setting — it affects all games. Requires admin privileges to change."/>
                                     <ComboBox x:Name="DlssIndicatorCombo" x:FieldModifier="internal"
                                               FontSize="12" HorizontalAlignment="Stretch" VerticalAlignment="Bottom"
                                               SelectionChanged="DlssIndicatorCombo_SelectionChanged">
