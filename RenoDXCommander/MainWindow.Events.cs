@@ -805,6 +805,46 @@ public sealed partial class MainWindow
         await dialog.ShowAsync();
     }
 
+    internal bool _dlssIndicatorInitializing = true;
+
+    private async void DlssIndicatorCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_dlssIndicatorInitializing) return;
+        if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
+
+        // 0 = Enabled (0x400), 1 = Disabled (0x0)
+        uint value = combo.SelectedIndex == 0 ? 0x400u : 0u;
+
+        try
+        {
+            // Writing to HKLM requires admin — use a reg.exe process with elevation
+            var regValue = value.ToString();
+            var psi = new System.Diagnostics.ProcessStartInfo("reg.exe",
+                $"add \"HKLM\\SOFTWARE\\NVIDIA Corporation\\Global\\NGXCore\" /v ShowDlssIndicator /t REG_DWORD /d {regValue} /f")
+            {
+                UseShellExecute = true,
+                Verb = "runas",
+                CreateNoWindow = true,
+            };
+            var proc = System.Diagnostics.Process.Start(psi);
+            if (proc != null)
+            {
+                await proc.WaitForExitAsync();
+                _crashReporter.Log($"[DlssIndicatorCombo] Set ShowDlssIndicator to {value} (exit code: {proc.ExitCode})");
+            }
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            // User cancelled UAC — revert the combo
+            _crashReporter.Log("[DlssIndicatorCombo] UAC cancelled — reverting selection");
+            combo.SelectedIndex = combo.SelectedIndex == 0 ? 1 : 0;
+        }
+        catch (Exception ex)
+        {
+            _crashReporter.Log($"[DlssIndicatorCombo] Failed to set registry — {ex.Message}");
+        }
+    }
+
     private async void BrowseScreenshotPath_Click(object sender, RoutedEventArgs e)
     {
         try

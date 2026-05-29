@@ -1328,23 +1328,50 @@
                             </Grid>
                         </Border>
 
-                        <!-- ── Mass DLSS & Streamline Deployment ───────────────────── -->
+                        <!-- ── Mass DLSS & Streamline Deployment + DLSS Indicator ── -->
                         <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
-                            <StackPanel Spacing="12">
-                                <TextBlock Text="Mass DLSS &amp; Streamline Deployment" FontSize="14" FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextPrimaryBrush}"/>
-                                <TextBlock TextWrapping="Wrap" FontSize="11"
-                                           Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                           Text="Deploy DLSS and Streamline DLL versions and DLSS presets to multiple games at once. Backs up originals automatically. Games without DLSS/Streamline or with v1.x versions are skipped."/>
-                                <Button Content="Batch Deploy"
-                                        Click="MassDlssDeploy_Click"
-                                        Background="{StaticResource AccentBlueBgBrush}"
-                                        Foreground="{StaticResource AccentBlueBrush}"
-                                        BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
-                                        CornerRadius="8" Padding="12,7" FontSize="12"
-                                        HorizontalAlignment="Stretch"/>
-                            </StackPanel>
+                            <Grid ColumnSpacing="0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Left: Batch Deploy -->
+                                <StackPanel Grid.Column="0" Spacing="12">
+                                    <TextBlock Text="Mass DLSS &amp; Streamline Deployment" FontSize="14" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                                    <TextBlock TextWrapping="Wrap" FontSize="11"
+                                               Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                               Text="Deploy DLSS and Streamline DLL versions and DLSS presets to multiple games at once. Backs up originals automatically. Games without DLSS/Streamline or with v1.x versions are skipped."/>
+                                    <Button Content="Batch Deploy"
+                                            Click="MassDlssDeploy_Click"
+                                            Background="{StaticResource AccentBlueBgBrush}"
+                                            Foreground="{StaticResource AccentBlueBrush}"
+                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,7" FontSize="12"
+                                            HorizontalAlignment="Stretch"/>
+                                </StackPanel>
+
+                                <!-- Divider -->
+                                <Border Grid.Column="1" Width="1" Background="{StaticResource BorderSubtleBrush}" Margin="16,0"/>
+
+                                <!-- Right: DLSS Indicator Toggle -->
+                                <StackPanel Grid.Column="2" Spacing="12">
+                                    <TextBlock Text="DLSS On-Screen Indicator" FontSize="14" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                                    <TextBlock TextWrapping="Wrap" FontSize="11"
+                                               Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                               Text="Controls the green DLSS text overlay that NVIDIA shows in the corner of games when DLSS is active. This is a global system setting — it affects all games. Requires admin privileges to change."/>
+                                    <ComboBox x:Name="DlssIndicatorCombo" x:FieldModifier="internal"
+                                              FontSize="12" HorizontalAlignment="Stretch"
+                                              SelectionChanged="DlssIndicatorCombo_SelectionChanged">
+                                        <ComboBoxItem Content="Enabled"/>
+                                        <ComboBoxItem Content="Disabled"/>
+                                    </ComboBox>
+                                </StackPanel>
+                            </Grid>
                         </Border>
 
                         <!-- ── OptiScaler Settings ─────────────────────────────────── -->

@@ -113,6 +113,21 @@ public class SettingsHandler
             rsChannelCombo.SelectedIndex = 1;
         else
             rsChannelCombo.SelectedIndex = 0;
+
+        // Initialize DLSS Indicator combo from registry
+        try
+        {
+            using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\NVIDIA Corporation\Global\NGXCore");
+            var val = key?.GetValue("ShowDlssIndicator");
+            // 0x400 = enabled, 0 = disabled. Default to disabled if key doesn't exist.
+            bool indicatorEnabled = val is int intVal && intVal != 0;
+            _window.DlssIndicatorCombo.SelectedIndex = indicatorEnabled ? 0 : 1; // 0=Enabled, 1=Disabled
+        }
+        catch
+        {
+            _window.DlssIndicatorCombo.SelectedIndex = 1; // Default to Disabled if registry unreadable
+        }
+        _window._dlssIndicatorInitializing = false;
     }
 
     public void SettingsBack_Click(object sender, RoutedEventArgs e)
