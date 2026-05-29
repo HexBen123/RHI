@@ -410,6 +410,9 @@ public partial class MainViewModel
                 }
             }
 
+            // Notify the Update All button after restoring update statuses
+            NotifyUpdateButtonChanged();
+
             // Check for updates (async, parallel, non-blocking)
             _crashReporter.Log("[MainViewModel.InitializeAsync] Starting background update checks...");
             _ = Task.Run(async () =>
