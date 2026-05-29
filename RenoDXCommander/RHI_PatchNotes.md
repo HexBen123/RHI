@@ -30,6 +30,8 @@
 
 - RenoDX wiki status badge (Working, In Progress, etc.) moved from the main detail panel into the RenoDX Info button dialog. Cleaner main view, status still accessible.
 - Settings page reorganized: "Crash & Error Logs" renamed to "Data & Custom Files" with AppData/Custom folder buttons. Global Update Checks replaced with a compact "Update Inclusion" button + summary line (matching the per-game overrides style). Custom Shaders and Shader Cache merged into one row. Addon Watch Folder moved up next to Global Update Checks. Mass INI Deployment and Mass Preset Install combined into a single "Mass Deployment" section. Verbose Logging and Skip Update Check toggles removed.
+- OptiScaler Settings compacted: DLSS input toggle replaced with a Yes/No dropdown next to GPU Type. Hotkey and Apply button placed side by side. Compatibility list link removed.
+- Tooltips added to all interactive controls in the detail panel (overrides, management buttons, launch settings, DLSS section, author badges).
 
 ### Luma Changes
 
