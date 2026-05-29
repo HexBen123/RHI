@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using RenoDXCommander.Services;
 
 namespace RenoDXCommander;
 
@@ -79,7 +80,7 @@ public static class UIFactory
         });
         panel.Children.Add(new TextBlock
         {
-            Text = label,
+            Text = LocalizationService.Text(label),
             FontSize = 11,
             Foreground = GetBrush("#A0AABB"),
             VerticalAlignment = VerticalAlignment.Center,
@@ -110,7 +111,7 @@ public static class UIFactory
     {
         return new TextBlock
         {
-            Text = text,
+            Text = LocalizationService.Text(text),
             FontSize = fontSize,
             Foreground = Brush(foregroundKey),
         };
@@ -133,7 +134,7 @@ public static class UIFactory
     {
         return new Button
         {
-            Content = content,
+            Content = LocalizationService.Text(content),
             Tag = tag,
             FontSize = 11,
             Padding = new Thickness(8, 3, 8, 3),

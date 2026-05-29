@@ -583,6 +583,7 @@ public partial class DragDropHandler
             return;
         }
         progressDialog.Closed += (_, _) => DialogService.ReleaseDialogGate();
+        LocalizationService.ApplyTo(progressDialog);
         var dialogTask = progressDialog.ShowAsync();
 
         try
@@ -631,14 +632,14 @@ public partial class DragDropHandler
                             _window.DispatcherQueue.TryEnqueue(() =>
                             {
                                 progressBar.Value = pct;
-                                progressText.Text = $"Downloading {filename}... {downloaded / 1024} KB ({pct:F0}%)";
+                                progressText.Text = LocalizationService.Text($"Downloading {filename}... {downloaded / 1024} KB ({pct:F0}%)");
                             });
                         }
                         else
                         {
                             _window.DispatcherQueue.TryEnqueue(() =>
                             {
-                                progressText.Text = $"Downloading {filename}... {downloaded / 1024} KB";
+                                progressText.Text = LocalizationService.Text($"Downloading {filename}... {downloaded / 1024} KB");
                             });
                         }
                     }

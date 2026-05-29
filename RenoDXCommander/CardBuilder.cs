@@ -376,6 +376,7 @@ public partial class CardBuilder
             });
         };
 
+        LocalizationService.ApplyTo(border);
         return border;
     }
 }

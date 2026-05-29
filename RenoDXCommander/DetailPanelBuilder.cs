@@ -178,7 +178,7 @@ public partial class DetailPanelBuilder
             : UIFactory.Brush(ResourceKeys.BorderSubtleBrush);
 
         _window.DetailHideBtn.Tag = card;
-        _window.DetailHideIcon.Text = card.IsHidden ? "Show" : "Hide";
+        _window.DetailHideIcon.Text = LocalizationService.Text(card.IsHidden ? "Show" : "Hide");
         _window.DetailHideBtn.Foreground = UIFactory.Brush(ResourceKeys.ChipTextBrush);
 
         // Folder management buttons

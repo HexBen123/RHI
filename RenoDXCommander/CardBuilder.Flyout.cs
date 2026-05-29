@@ -146,7 +146,7 @@ public partial class CardBuilder
             // External-only: use same BuildComponentRow format but with external button styling
             var isNexusUpdate = card.Status == GameStatus.UpdateAvailable;
             rdxRow = BuildComponentRow(card, "RenoDX", "RDX",
-                card.IsRdxInstalled ? (card.RdxInstalledVersion ?? "Installed") : "",
+                card.IsRdxInstalled ? (card.RdxInstalledVersion ?? LocalizationService.Text("Installed")) : "",
                 card.IsRdxInstalled ? "#5ECB7D" : "#5A6880",
                 card.ExternalDisplayLabel,
                 true, card.IsRdxInstalled,
@@ -362,6 +362,7 @@ public partial class CardBuilder
         // Store handler reference on the panel so we can unsubscribe on flyout close
         panel.Tag = (card, handler);
 
+        LocalizationService.ApplyTo(panel);
         return panel;
     }
 
@@ -441,7 +442,7 @@ public partial class CardBuilder
         // Store the AddonType on DataContext for the click handler to identify which addon
         infoBtn.DataContext = addonType;
         ApplyCardInfoButtonStyle(infoBtn, sourceType);
-        ToolTipService.SetToolTip(infoBtn, tooltip);
+        ToolTipService.SetToolTip(infoBtn, LocalizationService.Text(tooltip));
         infoBtn.Click += _window.InfoButton_Click;
         Grid.SetColumn(infoBtn, 2);
         row.Children.Add(infoBtn);
@@ -540,7 +541,7 @@ public partial class CardBuilder
         {
             if (child is TextBlock tb && tb.Tag as string == "StatusText")
             {
-                tb.Text = statusText;
+                tb.Text = LocalizationService.Text(statusText);
                 tb.Foreground = UIFactory.GetBrush(statusColor);
             }
             else if (child is Button btn)
@@ -565,12 +566,12 @@ public partial class CardBuilder
 
                         var tooltip = _addonInfoResolver.GetTooltip(card, addonType, manifest, osWikiData, hdrDatabase);
                         ApplyCardInfoButtonStyle(btn, sourceType);
-                        ToolTipService.SetToolTip(btn, tooltip);
+                        ToolTipService.SetToolTip(btn, LocalizationService.Text(tooltip));
                     }
                 }
                 else if (col == 3) // install button
                 {
-                    btn.Content = actionLabel;
+                    btn.Content = LocalizationService.Text(actionLabel);
                     btn.IsEnabled = installEnabled;
                     if (btnBackground != null)
                         btn.Background = UIFactory.GetBrush(btnBackground);
