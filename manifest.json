@@ -105,6 +105,7 @@
   ],
 
   "sixtyFourBitGames": [
+    "Anno 117 - Pax Romana",
     "Zero Parades",
     "BeamNG.drive",
     "Control",
@@ -265,6 +266,7 @@
   },
 
   "installPathOverrides": {
+    "Anno 117 - Pax Romana": "Bin\\Win64",
     "SOULCALIBUR VI": "SoulcaliburVI\\Binaries\\Win64",
     "Gothic II: Gold Classic": "system",
     "ARMORED CORE™ VI FIRES OF RUBICON™": "Game",
@@ -401,6 +403,7 @@
   },
 
   "graphicsApiOverrides": {
+    "Anno 117 - Pax Romana": "DX12",
     "Zero Parades": "DX12",
     "Assassin's Creed": "DX10",
     "Assassin's Creed Origins": "DX11",

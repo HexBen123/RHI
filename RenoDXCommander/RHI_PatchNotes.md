@@ -9,6 +9,7 @@
 ### Manifest Updates
 
 - 007 First Light — redirected to Nexus Mods (author: Musa). Previously pointed to Discord.
+- Anno 117 - Pax Romana — install path override to `Bin\Win64`, 64-bit override, DX12 API override. Fixes DLSS/Streamline not being detected (was scanning the wrong folder).
 - Directive 8020 — added to UE-Extended games list with native HDR info note.
 - Mass Effect™ Legendary Edition — added EA App / Game Pass variant (without ™) to splitGames so the split works regardless of store.
 - All UE-Extended game notes updated: replaced manual ReShade.ini Set_Path editing instructions with "In the RenoDX UI under Advanced Settings, set Upgrade Path to Off."
