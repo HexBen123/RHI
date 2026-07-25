@@ -1178,6 +1178,29 @@ public partial class AuxInstallService
         WriteIni(iniFilePath, ini);
     }
 
+    /// <summary>
+    /// Writes the target_fps value to the [FrameLimiter] section of a relimiter.ini file.
+    /// When 0, the key is removed (disabled/off). Otherwise sets the FPS cap value.
+    /// </summary>
+    public static void ApplyUlTargetFps(string iniFilePath, int targetFps)
+    {
+        var ini = File.Exists(iniFilePath)
+            ? ParseIni(File.ReadAllLines(iniFilePath))
+            : new Dictionary<string, OrderedDict>(StringComparer.OrdinalIgnoreCase);
+
+        const string section = "FrameLimiter";
+
+        if (!ini.ContainsKey(section))
+            ini[section] = new OrderedDict();
+
+        if (targetFps > 0)
+            ini[section]["target_fps"] = targetFps.ToString();
+        else
+            ini[section].Remove("target_fps");
+
+        WriteIni(iniFilePath, ini);
+    }
+
     // ── INI parsing / writing helpers ─────────────────────────────────────────────
 
     /// <summary>Simple alias for an ordered key-value dictionary (preserves insertion order).</summary>

@@ -67,6 +67,8 @@ public class SettingsHandler
         // Initialize ReLimiter shared presets toggle
         _window.UlSharedPresetsCombo.SelectedIndex = ViewModel.Settings.UlSharedPresets ? 1 : 0;
         _window.UlDlssHooksCombo.SelectedIndex = ViewModel.Settings.UlDlssHooks ? 1 : 0;
+        // Initialize ReLimiter Target FPS dropdown
+        InitializeUlTargetFpsCombo();
         // Initialize OptiScaler hotkey display
         _currentOsHotkeyString = ViewModel.Settings.OsHotkey;
         var osCombo = _window.OsHotkeyCombo;
@@ -1162,6 +1164,7 @@ public class SettingsHandler
 
         bool sharedPresets = ViewModel.Settings.UlSharedPresets;
         bool dlssHooks = ViewModel.Settings.UlDlssHooks;
+        int targetFps = ViewModel.Settings.UlTargetFps;
         int updatedCount = 0;
         foreach (var card in ViewModel.AllCards)
         {
@@ -1176,6 +1179,7 @@ public class SettingsHandler
                 AuxInstallService.ApplyUlOsdHotkey(iniFile, _currentUlHotkeyString);
                 AuxInstallService.ApplyUlSharedPresets(iniFile, sharedPresets);
                 AuxInstallService.ApplyUlDlssHooks(iniFile, dlssHooks);
+                AuxInstallService.ApplyUlTargetFps(iniFile, targetFps);
 
                 // RE Framework games also store relimiter.ini in _storage_
                 if (card.IsRefInstalled)
@@ -1186,6 +1190,7 @@ public class SettingsHandler
                         AuxInstallService.ApplyUlOsdHotkey(storagePath, _currentUlHotkeyString);
                         AuxInstallService.ApplyUlSharedPresets(storagePath, sharedPresets);
                         AuxInstallService.ApplyUlDlssHooks(storagePath, dlssHooks);
+                        AuxInstallService.ApplyUlTargetFps(storagePath, targetFps);
                     }
                 }
 
@@ -1205,6 +1210,7 @@ public class SettingsHandler
                 AuxInstallService.ApplyUlOsdHotkey(AuxInstallService.UlIniPath, _currentUlHotkeyString);
                 AuxInstallService.ApplyUlSharedPresets(AuxInstallService.UlIniPath, sharedPresets);
                 AuxInstallService.ApplyUlDlssHooks(AuxInstallService.UlIniPath, dlssHooks);
+                AuxInstallService.ApplyUlTargetFps(AuxInstallService.UlIniPath, targetFps);
             }
             catch (Exception ex)
             {
@@ -1214,7 +1220,7 @@ public class SettingsHandler
 
         var dialog = new ContentDialog
         {
-            Title = "ReLimiter OSD Hotkey",
+            Title = "ReLimiter Settings",
             Content = $"Updated {updatedCount} relimiter.ini file{(updatedCount == 1 ? "" : "s")}.",
             CloseButtonText = "OK",
             XamlRoot = _window.Content.XamlRoot,
@@ -1241,6 +1247,128 @@ public class SettingsHandler
             ViewModel.Settings.UlDlssHooks = combo.SelectedIndex == 1;
             ViewModel.SaveSettingsPublic();
         }
+    }
+
+    // ── ReLimiter Target FPS ──────────────────────────────────────────────────
+
+    /// <summary>VRR cap presets matching the MFG dialog pattern.</summary>
+    private static readonly (int Fps, string Label)[] _ulTargetFpsPresets =
+    {
+        (59,  "59 FPS (60Hz VRR Cap)"),
+        (73,  "73 FPS (75Hz VRR Cap)"),
+        (97,  "97 FPS (100Hz VRR Cap)"),
+        (116, "116 FPS (120Hz VRR Cap)"),
+        (138, "138 FPS (144Hz VRR Cap)"),
+        (157, "157 FPS (165Hz VRR Cap)"),
+        (171, "171 FPS (180Hz VRR Cap)"),
+        (189, "189 FPS (200Hz VRR Cap)"),
+        (224, "224 FPS (240Hz VRR Cap)"),
+        (258, "258 FPS (280Hz VRR Cap)"),
+        (275, "275 FPS (300Hz VRR Cap)"),
+        (324, "324 FPS (360Hz VRR Cap)"),
+        (416, "416 FPS (480Hz VRR Cap)"),
+        (431, "431 FPS (500Hz VRR Cap)"),
+    };
+    private static readonly HashSet<int> _ulTargetFpsPresetValues = new(_ulTargetFpsPresets.Select(p => p.Fps));
+
+    private bool _suppressUlTargetFpsChange;
+
+    private void InitializeUlTargetFpsCombo()
+    {
+        _suppressUlTargetFpsChange = true;
+        var combo = _window.UlTargetFpsCombo;
+        combo.Items.Clear();
+
+        combo.Items.Add("Off");
+        foreach (var preset in _ulTargetFpsPresets)
+            combo.Items.Add(preset.Label);
+
+        // If current value is a custom FPS (not in presets), insert it before "Custom..."
+        int currentFps = ViewModel.Settings.UlTargetFps;
+        if (currentFps > 0 && !_ulTargetFpsPresetValues.Contains(currentFps))
+            combo.Items.Add($"{currentFps} FPS (Custom)");
+
+        combo.Items.Add("Custom...");
+
+        // Select based on current value
+        if (currentFps == 0)
+            combo.SelectedIndex = 0; // Off
+        else
+        {
+            int matchIdx = Array.FindIndex(_ulTargetFpsPresets, p => p.Fps == currentFps);
+            if (matchIdx >= 0)
+                combo.SelectedIndex = matchIdx + 1; // +1 for "Off" at index 0
+            else
+            {
+                // Custom value — select the "(Custom)" item
+                combo.SelectedIndex = combo.Items.Count - 2; // before "Custom..."
+            }
+        }
+
+        _suppressUlTargetFpsChange = false;
+    }
+
+    public async void UlTargetFpsCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_suppressUlTargetFpsChange) return;
+        if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
+
+        var selectedText = combo.SelectedItem as string ?? "";
+
+        // "Custom..." opens a dialog for manual entry
+        if (selectedText == "Custom...")
+        {
+            var panel = new StackPanel { Spacing = 8 };
+            panel.Children.Add(new TextBlock
+            {
+                Text = "Enter a custom FPS value (20-1000):",
+                FontSize = 12,
+            });
+            var inputBox = new TextBox
+            {
+                PlaceholderText = "e.g. 165",
+                FontSize = 12,
+            };
+            panel.Children.Add(inputBox);
+
+            var dialog = new ContentDialog
+            {
+                Title = "Custom Target FPS",
+                Content = panel,
+                PrimaryButtonText = "Set",
+                CloseButtonText = "Cancel",
+                XamlRoot = _window.Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark,
+            };
+
+            var result = await DialogService.ShowSafeAsync(dialog);
+            if (result == ContentDialogResult.Primary &&
+                int.TryParse(inputBox.Text, out int customFps) &&
+                customFps >= 20 && customFps <= 1000)
+            {
+                ViewModel.Settings.UlTargetFps = customFps;
+                ViewModel.SaveSettingsPublic();
+                InitializeUlTargetFpsCombo(); // Refresh to show custom value
+            }
+            else
+            {
+                // User cancelled or invalid — revert selection
+                InitializeUlTargetFpsCombo();
+            }
+            return;
+        }
+
+        // Handle preset/Off selection
+        int newFps;
+        if (combo.SelectedIndex == 0)
+            newFps = 0; // Off
+        else if (combo.SelectedIndex - 1 < _ulTargetFpsPresets.Length)
+            newFps = _ulTargetFpsPresets[combo.SelectedIndex - 1].Fps;
+        else
+            return; // Custom label item — don't set
+
+        ViewModel.Settings.UlTargetFps = newFps;
+        ViewModel.SaveSettingsPublic();
     }
 
     // ── OptiScaler Hotkey ─────────────────────────────────────────────────────

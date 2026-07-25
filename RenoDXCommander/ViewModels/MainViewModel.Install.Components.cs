@@ -345,6 +345,15 @@ public partial class MainViewModel
                 }
             }
 
+            // Apply target FPS setting to the newly deployed INI
+            if (_settingsViewModel.UlTargetFps > 0)
+            {
+                var deployPath3 = ModInstallService.GetAddonDeployPath(card.InstallPath);
+                var iniFile3 = Path.Combine(deployPath3, "relimiter.ini");
+                if (File.Exists(iniFile3))
+                    AuxInstallService.ApplyUlTargetFps(iniFile3, _settingsViewModel.UlTargetFps);
+            }
+
             DispatcherQueue?.TryEnqueue(() =>
             {
                 card.UlInstalledFile = GetUlFileName(card.Is32Bit);

@@ -1830,6 +1830,7 @@
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto"/>
@@ -1844,6 +1845,9 @@
                                     <TextBlock Grid.Row="0" Grid.Column="2" FontSize="11"
                                                Foreground="{StaticResource InlineDescriptionBrush}"
                                                Text="DLSS Hooks" VerticalAlignment="Bottom" Margin="0,0,0,4"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="3" FontSize="11"
+                                               Foreground="{StaticResource InlineDescriptionBrush}"
+                                               Text="Target FPS" VerticalAlignment="Bottom" Margin="0,0,0,4"/>
                                     <TextBox Grid.Row="1" Grid.Column="0" x:Name="UlHotkeyBox" x:FieldModifier="internal"
                                              PlaceholderText="Press a key..." IsReadOnly="True"
                                              FontSize="12" MinWidth="80"
@@ -1865,6 +1869,12 @@
                                               SelectionChanged="UlDlssHooksCombo_SelectionChanged">
                                         <ComboBoxItem Content="Off"/>
                                         <ComboBoxItem Content="On"/>
+                                    </ComboBox>
+                                    <ComboBox Grid.Row="1" Grid.Column="3" x:Name="UlTargetFpsCombo" x:FieldModifier="internal"
+                                              FontSize="12" HorizontalAlignment="Stretch"
+                                              ToolTipService.ToolTip="Global FPS cap written to all relimiter.ini files. Select a VRR preset or Custom for a manual value."
+                                              SelectionChanged="UlTargetFpsCombo_SelectionChanged">
+                                        <!-- Items populated in code-behind -->
                                     </ComboBox>
                                 </Grid>
 

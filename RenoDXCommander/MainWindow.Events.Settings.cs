@@ -91,6 +91,9 @@ public sealed partial class MainWindow
     private void UlDlssHooksCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         => _settingsHandler.UlDlssHooksCombo_SelectionChanged(sender, e);
 
+    private void UlTargetFpsCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        => _settingsHandler.UlTargetFpsCombo_SelectionChanged(sender, e);
+
     private void OsHotkeyCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         => _settingsHandler.OsHotkeyCombo_SelectionChanged(sender, e);
 

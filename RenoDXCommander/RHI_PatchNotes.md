@@ -3,6 +3,7 @@
 ### New
 
 - **Engine version manifest overrides** (`engineHintOverrides`) — allows specifying exact UE versions per game remotely (e.g. "Unreal Engine 4.27.2", "Unreal Engine 5.4.3"). Used for Game Pass games where auto-detection fails, and for accurate DOF Fix eligibility without needing `dofFixForceGames`.
+- **ReLimiter Target FPS setting** — new global FPS limit setting in the Component Settings card. Select a VRR-optimal preset or enter a custom value. Written to all relimiter.ini files on ReLimiter install and when clicking "Apply to All Games". Also available per-game in the ReLimiter cog dialog.
 
 ### Changes
 
@@ -28,11 +29,13 @@
 - Added empty `engineHintOverrides` field (ready for per-game population).
 - Added Avowed engine version override (Unreal Engine 5.3.2).
 - Added engine version overrides: Call of the Elder Gods (5.6.1), Denshattack! (5.6.1), Dragon Quest VII Reimagined (4.27.2), Ghostwire: Tokyo (4.27.2), Palworld (5.1.1), Shin Megami Tensei V: Vengeance (4.27.2).
+- Added LEGO® Batman™: Legacy of the Dark Knight ultrawide fix URL override.
 - Fixed Halo: Campaign Evolved install path (was pointing to DigitalExtras instead of `Meteorite\Binaries\Win64`).
 - Added Halo: Campaign Evolved to native HDR games.
 - Added Halo: Campaign Evolved Nexus URL override.
 - Added `engineHintOverrides` manifest field for remote engine hint corrections.
 - Added FINAL FANTASY XIV Online Nexus URL override (covers both detected name variants).
+- Added LEGO® Batman™: Legacy of the Dark Knight ultrawide fix URL override.
 
 ---
 
