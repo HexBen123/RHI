@@ -75,6 +75,26 @@ public partial class MainViewModel
         return string.Join("\n", notesParts);
     }
 
+    /// <summary>
+    /// Returns true if the filename is a game-specific RenoDX addon (not a global utility addon).
+    /// Global addons like renodx-devkit, renodx-dlssfix, renodx-upgrade, renodx-universal_ue_dof_fix
+    /// are excluded — they're managed by the addon system, not game-specific mods.
+    /// </summary>
+    private static bool IsGameSpecificRenodxAddon(string fileName)
+    {
+        if (!fileName.StartsWith("renodx", StringComparison.OrdinalIgnoreCase))
+            return false;
+        if (fileName.StartsWith("renodx-devkit", StringComparison.OrdinalIgnoreCase))
+            return false;
+        if (fileName.StartsWith("renodx-dlssfix", StringComparison.OrdinalIgnoreCase))
+            return false;
+        if (fileName.StartsWith("renodx-upgrade", StringComparison.OrdinalIgnoreCase))
+            return false;
+        if (fileName.StartsWith("renodx-universal_ue", StringComparison.OrdinalIgnoreCase))
+            return false;
+        return true;
+    }
+
     private static string? ScanForInstalledAddon(string installPath, GameMod? mod)
     {
         if (!Directory.Exists(installPath)) return null;
@@ -93,7 +113,7 @@ public partial class MainViewModel
                 foreach (var ext in new[] { "*.addon64", "*.addon32" })
                 {
                     var found = Directory.GetFiles(addonSearchPath, ext)
-                        .FirstOrDefault(f => Path.GetFileName(f).StartsWith("renodx", StringComparison.OrdinalIgnoreCase));
+                        .FirstOrDefault(f => IsGameSpecificRenodxAddon(Path.GetFileName(f)));
                     if (found != null) return Path.GetFileName(found);
                 }
             }
@@ -104,7 +124,7 @@ public partial class MainViewModel
             foreach (var ext in new[] { "*.addon64", "*.addon32" })
             {
                 var found = Directory.GetFiles(installPath, ext)
-                    .FirstOrDefault(f => Path.GetFileName(f).StartsWith("renodx", StringComparison.OrdinalIgnoreCase));
+                    .FirstOrDefault(f => IsGameSpecificRenodxAddon(Path.GetFileName(f)));
                 if (found != null) return Path.GetFileName(found);
             }
 
@@ -119,7 +139,7 @@ public partial class MainViewModel
                     foreach (var ext in new[] { "*.addon64", "*.addon32" })
                     {
                         var found = Directory.GetFiles(sp, ext)
-                            .FirstOrDefault(f => Path.GetFileName(f).StartsWith("renodx", StringComparison.OrdinalIgnoreCase));
+                            .FirstOrDefault(f => IsGameSpecificRenodxAddon(Path.GetFileName(f)));
                         if (found != null) return Path.GetFileName(found);
                     }
                 }
@@ -196,7 +216,7 @@ public partial class MainViewModel
                 foreach (var ext in new[] { "*.addon64", "*.addon32" })
                 {
                     var found = Directory.GetFiles(addonSearchPath, ext)
-                        .FirstOrDefault(f => Path.GetFileName(f).StartsWith("renodx", StringComparison.OrdinalIgnoreCase));
+                        .FirstOrDefault(f => IsGameSpecificRenodxAddon(Path.GetFileName(f)));
                     if (found != null) return Path.GetFileName(found);
                 }
             }
@@ -206,7 +226,7 @@ public partial class MainViewModel
             foreach (var ext in new[] { "*.addon64", "*.addon32" })
             {
                 var found = Directory.GetFiles(installPath, ext)
-                    .FirstOrDefault(f => Path.GetFileName(f).StartsWith("renodx", StringComparison.OrdinalIgnoreCase));
+                    .FirstOrDefault(f => IsGameSpecificRenodxAddon(Path.GetFileName(f)));
                 if (found != null) return Path.GetFileName(found);
             }
             var commonPaths = new[] { "Binaries\\Win64", "Binaries\\Win32", "Binaries\\x86", "x64", "x86" };
@@ -219,7 +239,7 @@ public partial class MainViewModel
                     foreach (var ext in new[] { "*.addon64", "*.addon32" })
                     {
                         var found = Directory.GetFiles(sp, ext)
-                            .FirstOrDefault(f => Path.GetFileName(f).StartsWith("renodx", StringComparison.OrdinalIgnoreCase));
+                            .FirstOrDefault(f => IsGameSpecificRenodxAddon(Path.GetFileName(f)));
                         if (found != null) return Path.GetFileName(found);
                     }
                 }

@@ -273,3 +273,19 @@ Major architectural changes. Depend on stable boundaries from Phase 2.
 ### Key Insight
 
 Phase 1 complete: Remove Grid View → Split files → Delete dead flyout builder. That sequence eliminated ~5000 lines and the dual-builder maintenance burden. Phase 2 partially done with service injection. Concurrency (Step 6) is the next high-value target.
+
+
+---
+
+## Maybe / Low Priority
+
+### Store-Qualified installPathOverrides
+
+Games available on both Steam and Xbox (Game Pass) often have different subfolder structures (`Win64` vs `WinGDK`). Currently `installPathOverrides` is a single string per game name — can't differentiate by store.
+
+**Options considered:**
+- **Pipe-separated paths** (try both, use whichever exists): `"Game": "Meteorite\\Binaries\\Win64|Meteorite\\Binaries\\WinGDK"` — consistent with existing `engineIniPathOverrides` pattern
+- **Store-qualified dict**: `"Game": { "Steam": "..\\Win64", "Xbox": "..\\WinGDK" }` — breaks existing type, needs migration
+- **Do nothing**: Xbox detection may already resolve to the correct subfolder since WindowsApps paths include the full structure
+
+**Trigger**: When a game is confirmed to have the same detected name from both stores but different subfolder layouts. Halo: Campaign Evolved is the first candidate (Steam = `Win64`, Game Pass = `WinGDK`).

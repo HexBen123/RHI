@@ -14,6 +14,7 @@
 
 - Fixed UE4 games showing Engine.ini HDR as "On" in cog dialog after fresh install despite HDR keys not being deployed.
 - Fixed Update All overriding user's manual Engine.ini HDR toggle on UE4 games.
+- Fixed `renodx-upgrade` addon being detected as the game's installed RenoDX mod (now excluded from mod scan alongside devkit, dlssfix, and dof fix).
 
 ### Manifest Updates
 
