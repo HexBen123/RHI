@@ -1,3 +1,11 @@
+## v2.2.4
+
+### Manifest Updates
+
+- Fixed Arma Reforger launching wrong exe (was ArmaReforgerSteamDiag.exe, now ArmaReforgerSteam.exe).
+
+---
+
 ## v2.2.3
 
 ### New
@@ -35,7 +43,6 @@
 - Added Halo: Campaign Evolved Nexus URL override.
 - Added `engineHintOverrides` manifest field for remote engine hint corrections.
 - Added FINAL FANTASY XIV Online Nexus URL override (covers both detected name variants).
-- Added LEGO® Batman™: Legacy of the Dark Knight ultrawide fix URL override.
 
 ---
 

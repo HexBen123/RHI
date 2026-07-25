@@ -1059,6 +1059,7 @@
   },
 
   "launchExeOverrides": {
+    "Arma Reforger": "ArmaReforgerSteam.exe",
     "Crysis Remastered": "CrysisRemastered.exe",
     "Returnal™": "Returnal-Win64-Shipping.exe",
     "The Elder Scrolls V: Skyrim Special Edition": "SkyrimSE.exe",
