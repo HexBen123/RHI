@@ -144,6 +144,9 @@ public partial class App : Application
         if (launchIdx >= 0 && launchIdx < cmdArgs.Length - 1)
             launchGameArg = cmdArgs[launchIdx + 1];
 
+        // Handle --minimized argument (start minimized to tray)
+        var startMinimized = cmdArgs.Contains("--minimized");
+
         if (!SingleInstanceService.TryAcquire())
         {
             // Another instance is running — forward the file or launch command and exit
@@ -187,8 +190,19 @@ public partial class App : Application
         GraphicsApiDetector.LoadCache();
         MainViewModel.LoadGameApiCache();
         _window = Services.GetRequiredService<MainWindow>();
-        _window.Activate();
-        CrashReporter.Log("[App.OnLaunched] MainWindow activated");
+        
+        if (startMinimized)
+        {
+            CrashReporter.Log("[App.OnLaunched] Starting minimized to tray");
+            // Don't activate window — it will initialize tray icon and stay hidden
+            if (_window is MainWindow mw)
+                mw.StartMinimizedToTray();
+        }
+        else
+        {
+            _window.Activate();
+            CrashReporter.Log("[App.OnLaunched] MainWindow activated");
+        }
 
         // Start listening for file paths from subsequent instances
         SingleInstanceService.StartListening();

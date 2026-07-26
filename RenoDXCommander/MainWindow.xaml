@@ -2264,6 +2264,7 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
                                         <StackPanel Grid.Column="0" Spacing="4">
                                             <TextBlock Text="Close to Tray" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"/>
@@ -2278,6 +2279,15 @@
                                             <TextBlock Text="Recent Games" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"/>
                                             <ComboBox x:Name="RecentGamesCombo" x:FieldModifier="internal"
                                                       SelectionChanged="RecentGamesCombo_SelectionChanged"
+                                                      FontSize="12" Padding="8,4" CornerRadius="8" HorizontalAlignment="Stretch">
+                                                <ComboBoxItem Content="Off"/>
+                                                <ComboBoxItem Content="On"/>
+                                            </ComboBox>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Spacing="4">
+                                            <TextBlock Text="Start with Windows" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                            <ComboBox x:Name="StartWithWindowsCombo" x:FieldModifier="internal"
+                                                      SelectionChanged="StartWithWindowsCombo_SelectionChanged"
                                                       FontSize="12" Padding="8,4" CornerRadius="8" HorizontalAlignment="Stretch">
                                                 <ComboBoxItem Content="Off"/>
                                                 <ComboBoxItem Content="On"/>

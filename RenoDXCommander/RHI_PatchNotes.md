@@ -1,5 +1,9 @@
 ## v2.2.4
 
+### New
+
+- **Start with Windows** — new option in System Tray settings. When enabled, RHI launches minimized to the system tray on Windows startup.
+
 ### Manifest Updates
 
 - Fixed Arma Reforger launching wrong exe (was ArmaReforgerSteamDiag.exe, now ArmaReforgerSteam.exe).

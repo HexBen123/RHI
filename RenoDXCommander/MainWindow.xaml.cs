@@ -266,6 +266,34 @@ public sealed partial class MainWindow : Window
         _shutdownSignalTimer.Start();
     }
 
+    /// <summary>
+    /// Called when starting with --minimized flag. Initializes the app without showing the window.
+    /// </summary>
+    public void StartMinimizedToTray()
+    {
+        _crashReporter.Log("[MainWindow] StartMinimizedToTray called");
+        
+        // Force tray icon initialization regardless of setting (user explicitly wants to start minimized)
+        TrayIconService.Initialize(
+            _windowStateManager.Hwnd,
+            onShowWindow: () => { this.Activate(); },
+            onExit: () => { _forceClose = true; this.Close(); },
+            onLaunchGame: (name) =>
+            {
+                var card = ViewModel.AllCards.FirstOrDefault(c =>
+                    c.GameName.Equals(name, StringComparison.OrdinalIgnoreCase));
+                if (card != null)
+                {
+                    DispatcherQueue.TryEnqueue(() => LaunchGame(card));
+                }
+            });
+        TrayIconService.UpdateRecentGames(ViewModel.Settings.RecentLaunches);
+        
+        // Update jump list if enabled
+        if (ViewModel.Settings.RecentGamesMenu && ViewModel.Settings.RecentLaunches.Count > 0)
+            TrayIconService.UpdateJumpList(ViewModel.Settings.RecentLaunches);
+    }
+
     private void MainWindow_Activated(object? sender, WindowActivatedEventArgs e)
     {
         try

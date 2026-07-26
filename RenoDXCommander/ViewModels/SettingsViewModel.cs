@@ -64,6 +64,7 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _dropHelperEnabled = true;
     [ObservableProperty] private bool _closeToTray;
     [ObservableProperty] private bool _recentGamesMenu;
+    [ObservableProperty] private bool _startWithWindows;
     [ObservableProperty] private List<string> _recentLaunches = new();
 
     // ── Digital Vibrance ──────────────────────────────────────────────────────
@@ -261,6 +262,7 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("DropHelperEnabled", out var dheVal)) DropHelperEnabled = dheVal != "false"; // default true
         if (s.TryGetValue("CloseToTray", out var cttVal)) CloseToTray = cttVal == "true";
         if (s.TryGetValue("RecentGamesMenu", out var rgmVal)) RecentGamesMenu = rgmVal == "true";
+        if (s.TryGetValue("StartWithWindows", out var swwVal)) StartWithWindows = swwVal == "true";
         if (s.TryGetValue("RecentLaunches", out var rlVal))
         {
             try { RecentLaunches = System.Text.Json.JsonSerializer.Deserialize<List<string>>(rlVal) ?? new(); }
@@ -345,6 +347,7 @@ public partial class SettingsViewModel : ObservableObject
         else s["DropHelperEnabled"] = "true";
         s["CloseToTray"] = CloseToTray ? "true" : "false";
         s["RecentGamesMenu"] = RecentGamesMenu ? "true" : "false";
+        s["StartWithWindows"] = StartWithWindows ? "true" : "false";
         if (RecentLaunches.Count > 0) s["RecentLaunches"] = System.Text.Json.JsonSerializer.Serialize(RecentLaunches);
 
         // DLSS/Streamline defaults

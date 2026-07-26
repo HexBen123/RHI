@@ -1194,6 +1194,39 @@ public sealed partial class MainWindow
             TrayIconService.ClearJumpList();
     }
 
+    private void StartWithWindowsCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (ViewModel?.Settings == null || ViewModel.Settings.IsLoadingSettings) return;
+        var enabled = ((ComboBox)sender).SelectedIndex == 1;
+        ViewModel.Settings.StartWithWindows = enabled;
+        ViewModel.SaveSettingsPublic();
+
+        // Update registry Run key
+        try
+        {
+            const string keyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
+            const string valueName = "RHI";
+            using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(keyPath, writable: true);
+            if (key == null) return;
+
+            if (enabled)
+            {
+                var exePath = Environment.ProcessPath ?? System.Reflection.Assembly.GetExecutingAssembly().Location;
+                key.SetValue(valueName, $"\"{exePath}\" --minimized");
+                CrashReporter.Log("[StartWithWindows] Registry Run key added");
+            }
+            else
+            {
+                key.DeleteValue(valueName, throwOnMissingValue: false);
+                CrashReporter.Log("[StartWithWindows] Registry Run key removed");
+            }
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[StartWithWindows] Failed to update registry: {ex.Message}");
+        }
+    }
+
     private void HdrToggle_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not Button btn || btn.Tag is not GameCardViewModel card) return;

@@ -267,6 +267,7 @@ public class SettingsHandler
         // Initialize tray combos
         _window.CloseToTrayCombo.SelectedIndex = ViewModel.Settings.CloseToTray ? 1 : 0;
         _window.RecentGamesCombo.SelectedIndex = ViewModel.Settings.RecentGamesMenu ? 1 : 0;
+        _window.StartWithWindowsCombo.SelectedIndex = ViewModel.Settings.StartWithWindows ? 1 : 0;
     }
 
     /// <summary>
