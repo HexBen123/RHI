@@ -419,6 +419,14 @@ public class EmulatorConfig
 {
     [JsonPropertyName("addons")]
     public List<string> Addons { get; set; } = new();
+
+    /// <summary>
+    /// Optional direct download URLs for addons that aren't on the wiki.
+    /// Key = addon/game name (matches entry in Addons list), Value = direct .addon64 URL.
+    /// Falls back to wiki-scraped URL when not present.
+    /// </summary>
+    [JsonPropertyName("addonUrls")]
+    public Dictionary<string, string>? AddonUrls { get; set; }
 }
 
 /// <summary>

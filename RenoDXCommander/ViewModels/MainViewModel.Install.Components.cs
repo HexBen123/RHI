@@ -146,17 +146,34 @@ public partial class MainViewModel
         {
             foreach (var wikiName in card.EmulatorAddonNames)
             {
-                // Resolve URL from wiki-scraped mod list
-                var mod = _allMods.FirstOrDefault(m =>
-                    m.Name.Equals(wikiName, StringComparison.OrdinalIgnoreCase));
-                if (mod?.SnapshotUrl == null)
+                // Resolve URL: manifest addonUrls takes priority, then wiki-scraped mod list
+                string? resolvedUrl = null;
+                string? fileName = null;
+
+                if (_manifest?.EmulatorGames?.TryGetValue("Ryubing", out var emuCfgInstall) == true
+                    && emuCfgInstall.AddonUrls?.TryGetValue(wikiName, out var manifestUrl) == true
+                    && !string.IsNullOrEmpty(manifestUrl))
                 {
-                    _crashReporter.Log($"[InstallEmulatorAddonsAsync] Skipping '{wikiName}' — not found in wiki or no snapshot URL");
+                    resolvedUrl = manifestUrl;
+                    fileName = Path.GetFileName(manifestUrl);
+                }
+                else
+                {
+                    var mod = _allMods.FirstOrDefault(m =>
+                        m.Name.Equals(wikiName, StringComparison.OrdinalIgnoreCase));
+                    if (mod?.SnapshotUrl != null)
+                    {
+                        resolvedUrl = mod.SnapshotUrl;
+                        fileName = Path.GetFileName(mod.SnapshotUrl);
+                    }
+                }
+
+                if (resolvedUrl == null || fileName == null)
+                {
+                    _crashReporter.Log($"[InstallEmulatorAddonsAsync] Skipping '{wikiName}' — not found in wiki or manifest addonUrls");
                     failed++;
                     continue;
                 }
-
-                var fileName = Path.GetFileName(mod.SnapshotUrl);
                 card.ActionMessage = $"Downloading {wikiName}... ({installed + 1}/{card.EmulatorAddonNames.Count})";
 
                 try
@@ -165,7 +182,7 @@ public partial class MainViewModel
                     var destPath = Path.Combine(deployPath, fileName);
 
                     // Download to cache
-                    using var response = await _http.GetAsync(mod.SnapshotUrl);
+                    using var response = await _http.GetAsync(resolvedUrl);
                     response.EnsureSuccessStatusCode();
 
                     var tempPath = cachePath + ".tmp";

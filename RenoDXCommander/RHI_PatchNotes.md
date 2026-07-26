@@ -3,12 +3,15 @@
 ### New
 
 - **Start with Windows** — new option in System Tray settings. When enabled, RHI launches minimized to the system tray on Windows startup.
+- **Manifest addon URL overrides for Ryubing** — emulator addon entries can now have direct download URLs in the manifest, bypassing the wiki scrape for addons not listed there.
 
 ### Manifest Updates
 
 - Fixed Arma Reforger launching wrong exe (was ArmaReforgerSteamDiag.exe, now ArmaReforgerSteam.exe).
 - Added Hell is Us engine version override (Unreal Engine 5.5.4).
+- Added Xenoblade Chronicles, Xenoblade Chronicles 2, and Xenoblade Chronicles 3 to Ryubing emulator addon list with shared addon URL.
 - Removed Halo: Campaign Evolved from native HDR games list.
+- Added Xenoblade Chronicles, Xenoblade Chronicles 2, and Xenoblade Chronicles 3 to Ryubing addon bundle (all covered by Souperman9's single xenobladechronicles addon).
 
 ---
 

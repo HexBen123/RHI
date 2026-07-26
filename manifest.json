@@ -163,8 +163,16 @@
         "Splatoon 3",
         "The Legend of Zelda: Breath of the Wild",
         "The Legend of Zelda: Tears of the Kingdom",
+        "Xenoblade Chronicles",
+        "Xenoblade Chronicles 2",
+        "Xenoblade Chronicles 3",
         "Xenoblade Chronicles X: Definitive Edition"
-      ]
+      ],
+      "addonUrls": {
+        "Xenoblade Chronicles": "https://souperman9.github.io/renodx/renodx-xenobladechronicles.addon64",
+        "Xenoblade Chronicles 2": "https://souperman9.github.io/renodx/renodx-xenobladechronicles.addon64",
+        "Xenoblade Chronicles 3": "https://souperman9.github.io/renodx/renodx-xenobladechronicles.addon64"
+      }
     }
   },
 
