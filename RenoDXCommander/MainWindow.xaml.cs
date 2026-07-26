@@ -56,6 +56,9 @@ public sealed partial class MainWindow : Window
         _dofFixService = App.Services.GetRequiredService<DofFixService>();
         _addonPackService = viewModel.AddonPackServiceInstance;
         InitializeComponent();
+        // Hide immediately if starting minimized — must be before any Activate() call
+        if (App._startMinimized)
+            AppWindow.Hide();
         InitializeSkeletons();
         _detailPanelBuilder = new DetailPanelBuilder(
             this,
@@ -264,6 +267,10 @@ public sealed partial class MainWindow : Window
             }
         };
         _shutdownSignalTimer.Start();
+
+        // If started with --minimized, initialize tray and stay hidden
+        if (App._startMinimized)
+            StartMinimizedToTray();
     }
 
     /// <summary>

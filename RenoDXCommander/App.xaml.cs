@@ -9,6 +9,7 @@ public partial class App : Application
 {
     private Window? _window;
     internal static string? _pendingLaunchGame;
+    internal static bool _startMinimized;
 
     /// <summary>
     /// The application-wide DI service provider.
@@ -163,6 +164,8 @@ public partial class App : Application
 
         // Store pending launch for after window initializes
         _pendingLaunchGame = launchGameArg;
+        // Set minimized flag BEFORE creating the window so the constructor can read it
+        _startMinimized = startMinimized;
 
         // ── Admin Mode: if the scheduled task exists and we're not elevated, relaunch via task ──
         if (!IsRunningAsAdmin() && IsAdminTaskRegistered())
@@ -191,17 +194,14 @@ public partial class App : Application
         MainViewModel.LoadGameApiCache();
         _window = Services.GetRequiredService<MainWindow>();
         
-        if (startMinimized)
-        {
-            CrashReporter.Log("[App.OnLaunched] Starting minimized to tray");
-            // Don't activate window — it will initialize tray icon and stay hidden
-            if (_window is MainWindow mw)
-                mw.StartMinimizedToTray();
-        }
-        else
+        if (!startMinimized)
         {
             _window.Activate();
             CrashReporter.Log("[App.OnLaunched] MainWindow activated");
+        }
+        else
+        {
+            CrashReporter.Log("[App.OnLaunched] Started minimized to tray");
         }
 
         // Start listening for file paths from subsequent instances
