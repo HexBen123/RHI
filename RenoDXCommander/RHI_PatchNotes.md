@@ -4,6 +4,7 @@
 
 - Fixed Arma Reforger launching wrong exe (was ArmaReforgerSteamDiag.exe, now ArmaReforgerSteam.exe).
 - Added Hell is Us engine version override (Unreal Engine 5.5.4).
+- Removed Halo: Campaign Evolved from native HDR games list.
 
 ---
 
