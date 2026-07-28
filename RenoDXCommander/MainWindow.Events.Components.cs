@@ -784,6 +784,14 @@ public sealed partial class MainWindow
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
         });
+        content.Children.Add(new TextBlock
+        {
+            Text = "Requires NVIDIA App with Overlay and Game Filters enabled.",
+            FontSize = 11,
+            Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush),
+            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+            Margin = new Thickness(0, 0, 0, 4),
+        });
 
         var rtxHdrCombo = new ComboBox { FontSize = 11, MinWidth = 100 };
         rtxHdrCombo.Items.Add("Off");
