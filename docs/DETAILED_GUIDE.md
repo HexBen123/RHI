@@ -248,6 +248,15 @@ The RS Channel dropdown in per-game overrides offers:
 
 Per-game channel overrides let you mix channels across your library. Legacy and Custom exclude games from ReShade update checks automatically.
 
+### Custom ReShade Auto-Redeploy
+
+When you update a DLL in `%LocalAppData%\RHI\Custom\ReShade\`, RHI detects the change and automatically redeploys it to all games using that specific DLL.
+
+- Checked on every **Refresh** and every **4 hours** (background timer)
+- Hash file (`custom_reshade_hashes.json`) stored alongside the DLLs in the Custom folder
+- DX games: file copied directly to the game folder
+- Vulkan games: copied to the global layer (`C:\ProgramData\ReShade\`) via elevation
+
 ### Vulkan Games
 
 Vulkan games use a global implicit layer instead of a per-game DLL. See [Vulkan ReShade Support](#vulkan-reshade-support).
@@ -281,6 +290,44 @@ Some games are redirected to Nexus Mods or Discord via the manifest. The install
 ### HDR Gaming Database
 
 The RenoDX Info button links to [hdrmods.com](https://www.hdrmods.com) entries where available.
+
+---
+
+## RTX HDR
+
+NVIDIA's driver-level HDR injection, available for any game via the RenoDX cog dialog.
+
+### Requirements
+
+- NVIDIA App installed (not legacy GeForce Experience)
+- NVIDIA Overlay enabled in NVIDIA App settings
+- Game Filters and Photo Mode enabled in NVIDIA App settings
+- RTX series GPU
+- Driver 550+
+
+### Usage
+
+1. Open the RenoDX cog (⚙) for any game
+2. Toggle "Enable RTX HDR" to On at the bottom of the dialog
+3. Click "Configure RTX HDR" to adjust settings
+
+### Settings
+
+| Setting | Range | Default | Notes |
+|---------|-------|---------|-------|
+| Peak Brightness | 400–2000 nits | Your global peak nits | Pre-populated from RHI Settings |
+| Contrast | -100 to +100 | 0 (Gamma 2.0) | +25 = Gamma 2.2, +50 = Gamma 2.4 |
+| Saturation | -100 to +100 | 0 | -25 = Neutral Saturation |
+| Middle Grey | 10–100 | 50 | Dropdown in steps of 5 |
+| Debanding | Off/Low/High | No Debanding | Indicator and Debug variants available |
+
+### Behaviour
+
+- Enabling RTX HDR **uninstalls** any active RenoDX mod (mutually exclusive — both inject HDR)
+- Disabling RTX HDR does NOT reinstall RenoDX
+- Settings are written to the game's NVIDIA driver profile
+- When no RenoDX mod is available, the cog dialog only shows the RTX HDR toggle (nits/presets hidden)
+- The install button changes to "Configure RTX HDR" when active
 
 ---
 
@@ -650,6 +697,10 @@ When enabled (Settings → System & Maintenance → System Tray), clicking the w
 ### Jump List
 
 When "Recent Games" is enabled, right-clicking the RHI icon on the taskbar shows your recent games in the Windows jump list — the same "Recent" section you see on Steam. Click any game to launch it instantly. Works in both normal and Admin Mode.
+
+### Start with Windows
+
+When enabled (Settings → System & Maintenance → System Tray), RHI registers itself in the Windows startup registry (`HKCU\...\Run`) with a `--minimized` flag. On boot, RHI starts directly to the system tray without showing the window. The tray icon, jump list, and background update checks all function normally. Works with Admin Mode — a signal file is used to pass the minimized state across the scheduled task elevation boundary.
 
 ### Activate from Shortcut
 

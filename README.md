@@ -31,6 +31,9 @@ One app to manage HDR mods across your entire PC game library. RHI auto-detects 
 - **Peak Brightness** — set your monitor's peak nits once, automatically written to all reshade.ini files on every deploy.
 - **Luma + RenoDX coexistence** — for compatible games, both frameworks run side by side.
 - **Ryubing emulator support** — 9 Switch game addons from Souperman9, downloaded and deployed in one click. Addons self-select which game is running.
+- **RTX HDR per-game toggle** — enable NVIDIA's driver-level HDR injection for any game. Configure Peak Brightness, Contrast, Saturation, Middle Grey, and Debanding. Requires NVIDIA App with Overlay and Game Filters enabled.
+- **Custom ReShade auto-redeploy** — update a custom ReShade DLL in the Custom folder and it's automatically redeployed to all games using it. Checked on Refresh and every 4 hours.
+- **Start with Windows** — launch minimized to the system tray on Windows startup.
 - **UE-Extended auto-configuration** — reshade.ini `[renodx]` section and Engine.ini HDR settings are written automatically.
 - **Nexus Mods update alerts** — GraphQL API, no API key required.
 - **Remote manifest** — game-specific fixes pushed over the air without app updates.
