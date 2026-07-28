@@ -119,11 +119,19 @@ public partial class MainViewModel
             newResolvedPathCache[rootKey] = installPath;
 
             // Apply per-game install path overrides (e.g. Cyberpunk 2077 → bin\x64)
+            // Supports pipe-separated paths (try each, use first that exists)
             if (_installPathOverrides.TryGetValue(game.Name, out var subPath))
             {
-                var overridePath = Path.Combine(game.InstallPath, subPath);
-                if (Directory.Exists(overridePath))
-                    installPath = overridePath;
+                var candidates = subPath.Split('|');
+                foreach (var candidate in candidates)
+                {
+                    var overridePath = Path.Combine(game.InstallPath, candidate.Trim());
+                    if (Directory.Exists(overridePath))
+                    {
+                        installPath = overridePath;
+                        break;
+                    }
+                }
             }
 
             // Detect bitness: use cached value if available, otherwise run PE detection.

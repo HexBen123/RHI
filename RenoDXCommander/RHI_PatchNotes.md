@@ -16,7 +16,9 @@
 - Added Halo: Campaign Evolved PCGW URL override.
 - Added Halo: Campaign Evolved engine version override (Unreal Engine 5.5.4).
 - Added Halo: The Master Chief Collection PCGW URL override.
+- Fixed Halo: Campaign Evolved install path override to support both Steam (Win64) and Game Pass (WinGDK) via pipe-separated paths.
 - Added Xenoblade Chronicles, Xenoblade Chronicles 2, and Xenoblade Chronicles 3 to Ryubing addon bundle (all covered by Souperman9's single xenobladechronicles addon).
+- Added Halo: Campaign Evolved WinGDK install path fallback (Game Pass version).
 
 ---
 

@@ -454,11 +454,22 @@ public partial class MainViewModel
                 : game.InstallPath;
 
             // Apply per-game install path overrides (e.g. Cyberpunk 2077 → bin\x64)
+            // Supports pipe-separated paths (try each, use first that exists)
             if (_installPathOverrides.TryGetValue(game.Name, out var subPath))
             {
-                var overridePath = Path.Combine(game.InstallPath, subPath);
-                // Trust the override without checking Directory.Exists — Phase 2 will verify
-                installPath = overridePath;
+                var candidates = subPath.Split('|');
+                string? resolvedOverride = null;
+                foreach (var candidate in candidates)
+                {
+                    var overridePath = Path.Combine(game.InstallPath, candidate.Trim());
+                    if (Directory.Exists(overridePath))
+                    {
+                        resolvedOverride = overridePath;
+                        break;
+                    }
+                }
+                // Trust first candidate if none exist on disk (Phase 2 will verify)
+                installPath = resolvedOverride ?? Path.Combine(game.InstallPath, candidates[0].Trim());
             }
 
             // Resolve engine from cache
