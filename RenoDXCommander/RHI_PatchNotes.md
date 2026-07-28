@@ -1,3 +1,11 @@
+## v2.2.5
+
+### Bug Fixes
+
+- Fixed RenoDX install warnings from the manifest not showing (only Luma warnings were wired up).
+
+---
+
 ## v2.2.4
 
 ### New
