@@ -1152,6 +1152,9 @@
     "FINAL FANTASY VII REMAKE INTERGRADE": {
       "luma": "⚠ This game MUST be set to DX11 mode for Luma to work.\n\nAdd -dx11 to your Steam launch arguments:\nRight-click game → Properties → Launch Options → type: -dx11"
     },
+    "Halo: Campaign Evolved": {
+      "renodx": "⚠ Only use the RenoDX mod from the RenoDX Discord.\n\nThe wiki version may be outdated or incompatible with this game."
+    },
     "_REFERENCE_EXAMPLE_DO_NOT_USE": {
       "reshade": "Example ReShade warning",
       "renodx": "Example RenoDX warning",
