@@ -1218,24 +1218,57 @@ $session.Save()
     // ── RTX HDR get/set ───────────────────────────────────────────────────────
 
     public uint GetRtxHdrAllow(string gameName, string installPath) => GetPreset(gameName, installPath, RTX_HDR_ALLOW_ID);
-    public bool SetRtxHdrAllow(string gameName, string installPath, uint value) => SetPreset(gameName, installPath, RTX_HDR_ALLOW_ID, value);
-
     public uint GetRtxHdrEnable(string gameName, string installPath) => GetPreset(gameName, installPath, RTX_HDR_ENABLE_ID);
-    public bool SetRtxHdrEnable(string gameName, string installPath, uint value) => SetPreset(gameName, installPath, RTX_HDR_ENABLE_ID, value);
-
     public uint GetRtxHdrContrast(string gameName, string installPath) => GetPreset(gameName, installPath, RTX_HDR_CONTRAST_ID);
-    public bool SetRtxHdrContrast(string gameName, string installPath, uint value) => SetPreset(gameName, installPath, RTX_HDR_CONTRAST_ID, value);
-
     public uint GetRtxHdrSaturation(string gameName, string installPath) => GetPreset(gameName, installPath, RTX_HDR_SATURATION_ID);
-    public bool SetRtxHdrSaturation(string gameName, string installPath, uint value) => SetPreset(gameName, installPath, RTX_HDR_SATURATION_ID, value);
-
     public uint GetRtxHdrPeakBrightness(string gameName, string installPath) => GetPreset(gameName, installPath, RTX_HDR_PEAK_BRIGHTNESS_ID);
-    public bool SetRtxHdrPeakBrightness(string gameName, string installPath, uint value) => SetPreset(gameName, installPath, RTX_HDR_PEAK_BRIGHTNESS_ID, value);
-
     public uint GetRtxHdrMiddleGrey(string gameName, string installPath) => GetPreset(gameName, installPath, RTX_HDR_MIDDLE_GREY_ID);
-    public bool SetRtxHdrMiddleGrey(string gameName, string installPath, uint value) => SetPreset(gameName, installPath, RTX_HDR_MIDDLE_GREY_ID, value);
-
     public uint GetRtxHdrDebanding(string gameName, string installPath) => GetPreset(gameName, installPath, RTX_HDR_DEBANDING_ID);
-    public bool SetRtxHdrDebanding(string gameName, string installPath, uint value) => SetPreset(gameName, installPath, RTX_HDR_DEBANDING_ID, value);
+
+    /// <summary>
+    /// Sets an RTX HDR setting using raw NVAPI (NvAPIWrapper silently ignores newer setting IDs).
+    /// </summary>
+    private bool SetRtxHdrRaw(string gameName, string installPath, uint settingId, uint value)
+    {
+        if (!_isSupported || _session == null) return false;
+        try
+        {
+            var profile = FindProfile(gameName, installPath);
+            if (profile == null)
+            {
+                if (!AutoCreateProfiles) return false;
+                profile = CreateProfileForGame(gameName, installPath);
+                if (profile == null) return false;
+            }
+            else if (AutoCreateProfiles && !string.IsNullOrEmpty(installPath) && Directory.Exists(installPath))
+            {
+                EnsureExeRegistered(profile, gameName, installPath);
+            }
+
+            var sH = GetHandlePtr(_session.Handle);
+            var pH = GetHandlePtr(profile.Handle);
+            if (sH != IntPtr.Zero && pH != IntPtr.Zero)
+            {
+                if (SetSettingRawNvApi(sH, pH, settingId, value))
+                    return true;
+            }
+
+            CrashReporter.Log($"[DlssPresetService.SetRtxHdrRaw] Failed to write 0x{settingId:X8}={value} for '{gameName}'");
+            return false;
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[DlssPresetService.SetRtxHdrRaw] Error for '{gameName}' — {ex.Message}");
+            return false;
+        }
+    }
+
+    public bool SetRtxHdrAllow(string gameName, string installPath, uint value) => SetRtxHdrRaw(gameName, installPath, RTX_HDR_ALLOW_ID, value);
+    public bool SetRtxHdrEnable(string gameName, string installPath, uint value) => SetRtxHdrRaw(gameName, installPath, RTX_HDR_ENABLE_ID, value);
+    public bool SetRtxHdrContrast(string gameName, string installPath, uint value) => SetRtxHdrRaw(gameName, installPath, RTX_HDR_CONTRAST_ID, value);
+    public bool SetRtxHdrSaturation(string gameName, string installPath, uint value) => SetRtxHdrRaw(gameName, installPath, RTX_HDR_SATURATION_ID, value);
+    public bool SetRtxHdrPeakBrightness(string gameName, string installPath, uint value) => SetRtxHdrRaw(gameName, installPath, RTX_HDR_PEAK_BRIGHTNESS_ID, value);
+    public bool SetRtxHdrMiddleGrey(string gameName, string installPath, uint value) => SetRtxHdrRaw(gameName, installPath, RTX_HDR_MIDDLE_GREY_ID, value);
+    public bool SetRtxHdrDebanding(string gameName, string installPath, uint value) => SetRtxHdrRaw(gameName, installPath, RTX_HDR_DEBANDING_ID, value);
 
 }
