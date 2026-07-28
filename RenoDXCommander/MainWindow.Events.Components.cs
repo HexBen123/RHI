@@ -896,9 +896,16 @@ public sealed partial class MainWindow
         content.Children.Add(nitsSlider);
 
         // ── Contrast ──────────────────────────────────────────────────────────
-        var contrastLabel = new TextBlock { Text = $"Contrast: {contrastDisplay}", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
+        string ContrastLabel(int val) => val switch
+        {
+            0 => "Contrast: 0 — Gamma 2.0 (Default)",
+            25 => "Contrast: +25 — Gamma 2.2",
+            50 => "Contrast: +50 — Gamma 2.4",
+            _ => $"Contrast: {(val >= 0 ? "+" : "")}{val}",
+        };
+        var contrastLabel = new TextBlock { Text = ContrastLabel(contrastDisplay), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
         var contrastSlider = new Slider { Minimum = -100, Maximum = 100, StepFrequency = 1, Value = contrastDisplay, HorizontalAlignment = HorizontalAlignment.Stretch };
-        contrastSlider.ValueChanged += (s, ev) => contrastLabel.Text = $"Contrast: {(int)contrastSlider.Value}";
+        contrastSlider.ValueChanged += (s, ev) => contrastLabel.Text = ContrastLabel((int)contrastSlider.Value);
         content.Children.Add(contrastLabel);
         content.Children.Add(contrastSlider);
 
