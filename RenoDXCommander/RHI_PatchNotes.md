@@ -5,7 +5,7 @@
 - **Start with Windows** — new option in System Tray settings. When enabled, RHI launches minimized to the system tray on Windows startup.
 - **Manifest addon URL overrides for Ryubing** — emulator addon entries can now have direct download URLs in the manifest, bypassing the wiki scrape for addons not listed there.
 - **Custom ReShade auto-redeploy** — when you update a custom ReShade DLL in the Custom folder, RHI automatically detects the change and redeploys it to all games using that DLL. Checked on Refresh and every 4 hours. Vulkan games get the updated layer via elevation if needed.
-- **RTX HDR per-game toggle** — new option at the bottom of the RenoDX cog dialog. Enable RTX HDR for any game via NVIDIA driver profile settings. Enabling uninstalls any active RenoDX mod and sets the driver to inject HDR. The button text changes to "Configure RTX HDR" when active. When no RenoDX mod is available, the cog dialog hides nits/presets sections and only shows the RTX HDR toggle.
+- **RTX HDR per-game toggle** — new option at the bottom of the RenoDX cog dialog. Enable RTX HDR for any game via NVIDIA driver profile settings. Requires NVIDIA App with Overlay and Game Filters enabled. Enabling uninstalls any active RenoDX mod and sets the driver to inject HDR with sensible defaults (peak nits from RHI settings, neutral contrast/saturation). The button text changes to "Configure RTX HDR" when active, opening a dedicated settings dialog with sliders for Peak Brightness, Contrast, Saturation, Middle Grey, and Debanding. When no RenoDX mod is available, the cog dialog hides nits/presets sections and only shows the RTX HDR toggle.
 
 ### Manifest Updates
 
