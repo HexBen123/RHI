@@ -90,6 +90,15 @@ public partial class MainViewModel
     public async Task RefreshAsync()
     {
         await InitializeAsync(forceRescan: true);
+
+        // Check for custom ReShade DLL changes and redeploy
+        try
+        {
+            var redeployed = _customReShadeHashService.CheckAndRedeploy(_allCards);
+            if (redeployed > 0)
+                _crashReporter.Log($"[MainViewModel.RefreshAsync] Custom ReShade redeploy — {redeployed} game(s) updated");
+        }
+        catch (Exception ex) { _crashReporter.Log($"[MainViewModel.RefreshAsync] Custom ReShade hash check failed — {ex.Message}"); }
     }
 
     [RelayCommand]

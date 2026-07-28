@@ -44,6 +44,15 @@ public partial class MainViewModel
                 var records = _installer.LoadAll();
                 var auxRecords = _auxInstaller.LoadAll();
                 await CheckForUpdatesAsync(_allCards, records, auxRecords);
+
+                // Check for custom ReShade DLL changes and redeploy
+                try
+                {
+                    var redeployed = _customReShadeHashService.CheckAndRedeploy(_allCards);
+                    if (redeployed > 0)
+                        _crashReporter.Log($"[MainViewModel] Periodic custom ReShade redeploy — {redeployed} game(s) updated");
+                }
+                catch (Exception ex) { _crashReporter.Log($"[MainViewModel] Custom ReShade hash check failed — {ex.Message}"); }
             }
             catch (Exception ex)
             {

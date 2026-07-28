@@ -4,6 +4,7 @@
 
 - **Start with Windows** — new option in System Tray settings. When enabled, RHI launches minimized to the system tray on Windows startup.
 - **Manifest addon URL overrides for Ryubing** — emulator addon entries can now have direct download URLs in the manifest, bypassing the wiki scrape for addons not listed there.
+- **Custom ReShade auto-redeploy** — when you update a custom ReShade DLL in the Custom folder, RHI automatically detects the change and redeploys it to all games using that DLL. Checked on Refresh and every 4 hours. Vulkan games get the updated layer via elevation if needed.
 
 ### Manifest Updates
 

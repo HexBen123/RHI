@@ -43,6 +43,7 @@ public partial class MainViewModel : ObservableObject
     private readonly IDlssStreamlineService _dlssStreamlineService;
     private readonly DlssPresetService _dlssPresetService;
     private readonly DofFixService _dofFixService;
+    private readonly CustomReShadeHashService _customReShadeHashService;
     private readonly GitHubETagCache _etagCache;
     /// <summary>
     /// Task that tracks the background shader pack download/extraction.
@@ -499,6 +500,7 @@ public partial class MainViewModel : ObservableObject
         _dlssStreamlineService = dlssStreamlineService;
         _dlssPresetService = dlssPresetService;
         _dofFixService = App.Services.GetRequiredService<DofFixService>();
+        _customReShadeHashService = App.Services.GetRequiredService<CustomReShadeHashService>();
         _etagCache = etagCache;
         // Wire up SettingsChanged so property changes trigger a full save
         _settingsViewModel.SettingsChanged = () => SaveNameMappings();

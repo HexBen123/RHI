@@ -84,6 +84,17 @@ Games on both Steam and Xbox with different subfolder structures (`Win64` vs `Wi
 - Currently the UI silently fails on older drivers
 - Show "Requires driver X.XX+" tooltip when disabled
 
+### Custom ReShade Auto-Redeploy
+When a user updates a custom ReShade DLL in the Custom folder, automatically redeploy it to all games using that DLL.
+
+- Hash each `.dll` in Custom folder, store hashes in `custom_reshade_hashes.json` alongside the DLLs (in the Custom folder itself)
+- On Refresh + 4-hour background cycle: re-hash and compare
+- If hash changed → redeploy to all games with "Custom" RS channel that use that specific DLL
+- Vulkan games: update the global layer in `%ProgramData%\ReShade\` (requires admin)
+- Update stored hashes after successful redeploy
+
+**Source:** Discord user request.
+
 ---
 
 ## 💡 Nice-to-Have
