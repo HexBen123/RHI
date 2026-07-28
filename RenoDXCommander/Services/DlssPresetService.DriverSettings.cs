@@ -1207,13 +1207,13 @@ $session.Save()
 
     // ── RTX HDR settings ──────────────────────────────────────────────────────
 
-    private const uint RTX_HDR_ALLOW_ID = 0x1090F9A4;            // Disallow=0x00, Allow=0x01
-    private const uint RTX_HDR_ENABLE_ID = 0x1090F9A5;           // Off=0x00, On=0x01
-    private const uint RTX_HDR_CONTRAST_ID = 0x1090F9A6;         // 0-100
-    private const uint RTX_HDR_SATURATION_ID = 0x1090F9A7;       // 0-100
-    private const uint RTX_HDR_PEAK_BRIGHTNESS_ID = 0x1090F9A8;
-    private const uint RTX_HDR_MIDDLE_GREY_ID = 0x1090F9A9;
-    private const uint RTX_HDR_DEBANDING_ID = 0x1090F9AA;
+    private const uint RTX_HDR_ALLOW_ID = 0x1077A11A;            // Disallow=0x00, Allow=0x01
+    private const uint RTX_HDR_ENABLE_ID = 0x00DD48FB;           // Off=0x00, On=0x01
+    private const uint RTX_HDR_CONTRAST_ID = 0x00DD48FE;         // stored = 100 + display (-100 to +100)
+    private const uint RTX_HDR_SATURATION_ID = 0x00DD48FF;       // stored = 100 + display (-100 to +100)
+    private const uint RTX_HDR_PEAK_BRIGHTNESS_ID = 0x00DD48FC;  // 400-2000 nits
+    private const uint RTX_HDR_MIDDLE_GREY_ID = 0x00DD48FD;      // 10-100, default 50
+    private const uint RTX_HDR_DEBANDING_ID = 0x00432F84;        // No=0x06, Low=0x0A, High=0x02
 
     // ── RTX HDR get/set ───────────────────────────────────────────────────────
 
