@@ -809,9 +809,13 @@ public sealed partial class MainWindow
                     ViewModel.UninstallMod(card);
                 }
 
-                // Set RTX HDR profile settings (Allow + Enable)
+                // Set RTX HDR profile settings (Allow + Enable + sensible defaults)
                 dlssPresetService.SetRtxHdrAllow(card.GameName, card.InstallPath, 0x01);
                 dlssPresetService.SetRtxHdrEnable(card.GameName, card.InstallPath, 0x01);
+                dlssPresetService.SetRtxHdrPeakBrightness(card.GameName, card.InstallPath, (uint)(ViewModel.Settings.PeakNits > 0 ? ViewModel.Settings.PeakNits : 510));
+                dlssPresetService.SetRtxHdrContrast(card.GameName, card.InstallPath, 100);       // 0 (neutral)
+                dlssPresetService.SetRtxHdrSaturation(card.GameName, card.InstallPath, 100);     // 0 (neutral)
+                dlssPresetService.SetRtxHdrMiddleGrey(card.GameName, card.InstallPath, 50);      // default
 
                 CrashReporter.Log($"[RdxCogButton_Click] RTX HDR enabled for '{card.GameName}'");
             }
