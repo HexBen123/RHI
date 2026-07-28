@@ -2,27 +2,24 @@
 
 ### New
 
-- **RTX HDR per-game toggle** — new option at the bottom of the RenoDX cog dialog. Enable RTX HDR for any game via NVIDIA driver profile settings. Requires NVIDIA App with Overlay and Game Filters enabled. Enabling uninstalls any active RenoDX mod and sets the driver to inject HDR with sensible defaults (peak nits from RHI settings, neutral contrast/saturation). The button text changes to "Configure RTX HDR" when active, opening a dedicated settings dialog with sliders for Peak Brightness, Contrast, Saturation, Middle Grey, and Debanding. When no RenoDX mod is available, the cog dialog hides nits/presets sections and only shows the RTX HDR toggle.
-- **Custom ReShade auto-redeploy** — when you update a custom ReShade DLL in the Custom folder, RHI automatically detects the change and redeploys it to all games using that DLL. Checked on Refresh and every 4 hours. Vulkan games get the updated layer via elevation if needed.
-- **Start with Windows** — new option in System Tray settings. When enabled, RHI launches minimized to the system tray on Windows startup.
-- **Pipe-separated install path overrides** — manifest `installPathOverrides` now supports multiple candidate subpaths separated by `|`. Tries each in order, uses the first that exists on disk. Enables one manifest entry to work across stores (e.g. Steam Win64 vs Game Pass WinGDK).
+- **RTX HDR** — enable NVIDIA's driver-level HDR for any game, right from the RenoDX ⚙ dialog. Toggle it on, and RHI writes sensible defaults (your peak nits, neutral contrast/saturation) so it works immediately. Click "Configure RTX HDR" to fine-tune Peak Brightness, Contrast, Saturation, Middle Grey, and Debanding. Requires NVIDIA App with Overlay and Game Filters enabled.
+- **Custom ReShade auto-redeploy** — drop an updated ReShade DLL into the Custom folder and RHI automatically pushes it to every game using that DLL. No more manually copying files. Checked on Refresh and every 4 hours.
+- **Start with Windows** — new toggle in System Tray settings. RHI launches silently to the tray on boot — ready to go without cluttering your desktop.
 
 ### Bug Fixes
 
-- Fixed drag-and-drop addon installs not deploying Engine.ini LUT setting (`r.LUT.UpdateEveryFrame=1`) for Unreal Engine games.
-- Fixed path reconciliation not checking the addon deploy subfolder when a game's install path changes between stores.
-- Full Refresh now validates `installed.json` and removes orphaned records where the addon file no longer exists on disk.
+- Fixed drag-and-drop mod installs on Unreal Engine games not writing the Engine.ini LUT fix.
+- Fixed mods appearing "not installed" after switching a game between Steam and Game Pass.
+- Full Refresh now cleans up stale install records for games that have been moved or uninstalled.
 
 ### Manifest Updates
 
-- Fixed Arma Reforger launching wrong exe (was ArmaReforgerSteamDiag.exe, now ArmaReforgerSteam.exe).
-- Added Hell is Us engine version override (Unreal Engine 5.5.4).
-- Added Halo: Campaign Evolved engine version override (Unreal Engine 5.5.4).
-- Added Halo: Campaign Evolved PCGW URL override.
-- Added Halo: The Master Chief Collection PCGW URL override.
-- Fixed Halo: Campaign Evolved install path to support both Steam (Win64) and Game Pass (WinGDK).
-- Removed Halo: Campaign Evolved from native HDR games list.
-- Added Xenoblade Chronicles 1/2/3 to Ryubing emulator addon bundle with direct download URL.
+- Fixed Arma Reforger launching wrong exe.
+- Added engine version overrides: Hell is Us (UE 5.5.4), Halo: Campaign Evolved (UE 5.5.4).
+- Added PCGW links: Halo: Campaign Evolved, Halo: The Master Chief Collection.
+- Fixed Halo: Campaign Evolved install path for Game Pass (WinGDK).
+- Removed Halo: Campaign Evolved from native HDR list.
+- Added Xenoblade Chronicles 1/2/3 to Ryubing emulator bundle.
 
 ---
 
