@@ -4,6 +4,10 @@
 
 - Fixed RenoDX install warnings from the manifest not showing (only Luma warnings were wired up).
 
+### Manifest Updates
+
+- Updated Halo: Campaign Evolved RenoDX install warning to clarify generic UE mod deployment and UE-Extended alternative.
+
 ---
 
 ## v2.2.4
