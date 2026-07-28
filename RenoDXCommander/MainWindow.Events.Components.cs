@@ -820,11 +820,16 @@ public sealed partial class MainWindow
                 gameNameService.RtxHdrGames.Remove(card.GameName);
                 card.IsRtxHdrEnabled = false;
 
-                // Clear RTX HDR profile settings
-                dlssPresetService.SetRtxHdrAllow(card.GameName, card.InstallPath, 0x00);
-                dlssPresetService.SetRtxHdrEnable(card.GameName, card.InstallPath, 0x00);
+                // Delete all RTX HDR settings from profile (revert to global/inherited)
+                dlssPresetService.DeletePresetPublic(card.GameName, card.InstallPath, 0x1077A11A); // Allow
+                dlssPresetService.DeletePresetPublic(card.GameName, card.InstallPath, 0x00DD48FB); // Enable
+                dlssPresetService.DeletePresetPublic(card.GameName, card.InstallPath, 0x00DD48FC); // Peak Brightness
+                dlssPresetService.DeletePresetPublic(card.GameName, card.InstallPath, 0x00DD48FD); // Middle Grey
+                dlssPresetService.DeletePresetPublic(card.GameName, card.InstallPath, 0x00DD48FE); // Contrast
+                dlssPresetService.DeletePresetPublic(card.GameName, card.InstallPath, 0x00DD48FF); // Saturation
+                dlssPresetService.DeletePresetPublic(card.GameName, card.InstallPath, 0x00432F84); // Debanding
 
-                CrashReporter.Log($"[RdxCogButton_Click] RTX HDR disabled for '{card.GameName}'");
+                CrashReporter.Log($"[RdxCogButton_Click] RTX HDR disabled for '{card.GameName}' — all settings deleted from profile");
             }
 
             card.NotifyAll();
