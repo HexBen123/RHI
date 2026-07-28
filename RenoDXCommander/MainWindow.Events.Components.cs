@@ -821,13 +821,14 @@ public sealed partial class MainWindow
                 card.IsRtxHdrEnabled = false;
 
                 // Delete all RTX HDR settings from profile (revert to global/inherited)
-                dlssPresetService.DeleteSettingRaw(card.GameName, card.InstallPath, 0x1077A11A); // Allow
-                dlssPresetService.DeleteSettingRaw(card.GameName, card.InstallPath, 0x00DD48FB); // Enable
-                dlssPresetService.DeleteSettingRaw(card.GameName, card.InstallPath, 0x00DD48FC); // Peak Brightness
-                dlssPresetService.DeleteSettingRaw(card.GameName, card.InstallPath, 0x00DD48FD); // Middle Grey
-                dlssPresetService.DeleteSettingRaw(card.GameName, card.InstallPath, 0x00DD48FE); // Contrast
-                dlssPresetService.DeleteSettingRaw(card.GameName, card.InstallPath, 0x00DD48FF); // Saturation
-                dlssPresetService.DeleteSettingRaw(card.GameName, card.InstallPath, 0x00432F84); // Debanding
+                // Some settings (0x00DD48Fx) can't be deleted via NvAPI — write defaults instead
+                dlssPresetService.DeleteSettingRaw(card.GameName, card.InstallPath, 0x1077A11A); // Allow (deletable)
+                dlssPresetService.SetRtxHdrEnable(card.GameName, card.InstallPath, 0x00);        // Enable → Off
+                dlssPresetService.SetRtxHdrContrast(card.GameName, card.InstallPath, 100);       // Contrast → 0 (default)
+                dlssPresetService.SetRtxHdrSaturation(card.GameName, card.InstallPath, 100);     // Saturation → 0 (default)
+                dlssPresetService.SetRtxHdrPeakBrightness(card.GameName, card.InstallPath, 0);   // Peak Brightness → N/A
+                dlssPresetService.SetRtxHdrMiddleGrey(card.GameName, card.InstallPath, 50);      // Middle Grey → default
+                dlssPresetService.DeleteSettingRaw(card.GameName, card.InstallPath, 0x00432F84); // Debanding (deletable)
 
                 CrashReporter.Log($"[RdxCogButton_Click] RTX HDR disabled for '{card.GameName}' — all settings deleted from profile");
             }
