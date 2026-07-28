@@ -1153,7 +1153,7 @@
       "luma": "⚠ This game MUST be set to DX11 mode for Luma to work.\n\nAdd -dx11 to your Steam launch arguments:\nRight-click game → Properties → Launch Options → type: -dx11"
     },
     "Halo: Campaign Evolved": {
-      "renodx": "⚠ For best results, use the named RenoDX mod from the RenoDX Discord.\n\nInstalling through RHI will deploy the generic Unreal Engine mod. You can also use the UE-Extended version if you don't have Discord access."
+      "renodx": "⚠ For best results, use the named RenoDX mod from the RenoDX Discord.\n\nInstalling through RHI will deploy the generic Unreal Engine mod. You can also enable UE-Extended via the RenoDX ⚙ dialog if you don't have Discord access."
     },
     "_REFERENCE_EXAMPLE_DO_NOT_USE": {
       "reshade": "Example ReShade warning",
