@@ -159,6 +159,8 @@ public partial class App : Application
             try { File.Delete(minimizedSignalPath); } catch { }
         }
 
+        CrashReporter.Log($"[App.OnLaunched] Args: [{string.Join(", ", cmdArgs)}], startMinimized={startMinimized}");
+
         if (!SingleInstanceService.TryAcquire())
         {
             // Another instance is running — forward the file or launch command and exit
