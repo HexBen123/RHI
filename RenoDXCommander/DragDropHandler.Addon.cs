@@ -363,6 +363,16 @@ public partial class DragDropHandler
             };
             _modInstallService.SaveRecordPublic(installRecord);
 
+            // Deploy Engine.ini LUT setting for Unreal Engine games (same as normal install flow)
+            if (targetCard.EngineHint?.Contains("Unreal") == true)
+            {
+                try
+                {
+                    AuxInstallService.ApplyEngineIniLutSetting(targetCard.InstallPath, targetCard.EngineIniProjectOverride, gameName);
+                }
+                catch (Exception ex) { _crashReporter.Log($"[DragDropHandler.ProcessDroppedAddon] Engine.ini LUT deploy failed — {ex.Message}"); }
+            }
+
             // Update card status
             targetCard.InstalledRecord = installRecord;
             targetCard.Status = GameStatus.Installed;
