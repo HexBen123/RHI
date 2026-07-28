@@ -910,9 +910,14 @@ public sealed partial class MainWindow
         content.Children.Add(contrastSlider);
 
         // ── Saturation ────────────────────────────────────────────────────────
-        var satLabel = new TextBlock { Text = $"Saturation: {saturationDisplay}", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
+        string SaturationLabel(int val) => val switch
+        {
+            -25 => "Saturation: -25 — Neutral Saturation",
+            _ => $"Saturation: {(val >= 0 ? "+" : "")}{val}",
+        };
+        var satLabel = new TextBlock { Text = SaturationLabel(saturationDisplay), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
         var satSlider = new Slider { Minimum = -100, Maximum = 100, StepFrequency = 1, Value = saturationDisplay, HorizontalAlignment = HorizontalAlignment.Stretch };
-        satSlider.ValueChanged += (s, ev) => satLabel.Text = $"Saturation: {(int)satSlider.Value}";
+        satSlider.ValueChanged += (s, ev) => satLabel.Text = SaturationLabel((int)satSlider.Value);
         content.Children.Add(satLabel);
         content.Children.Add(satSlider);
 
