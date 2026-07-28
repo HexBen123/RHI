@@ -219,22 +219,27 @@ public partial class MainViewModel
             {
                 var oldPath = record.InstallPath;
                 var addonFile = record.AddonFileName;
-                var newFilePath = string.IsNullOrEmpty(addonFile) ? null : Path.Combine(installPath, addonFile);
-                var oldFilePath = string.IsNullOrEmpty(addonFile) ? null : Path.Combine(oldPath, addonFile);
+                // Check both raw install path and addon deploy subfolder
+                var newDeployPath = ModInstallService.GetAddonDeployPath(installPath);
+                var newFilePath = string.IsNullOrEmpty(addonFile) ? null : Path.Combine(newDeployPath, addonFile);
+                var newFilePathRoot = string.IsNullOrEmpty(addonFile) ? null : Path.Combine(installPath, addonFile);
+                var oldDeployPath = Directory.Exists(oldPath) ? ModInstallService.GetAddonDeployPath(oldPath) : oldPath;
+                var oldFilePath = string.IsNullOrEmpty(addonFile) ? null : Path.Combine(oldDeployPath, addonFile);
+                var oldFilePathRoot = string.IsNullOrEmpty(addonFile) ? null : Path.Combine(oldPath, addonFile);
 
-                if (newFilePath != null && File.Exists(newFilePath))
+                if ((newFilePath != null && File.Exists(newFilePath)) || (newFilePathRoot != null && File.Exists(newFilePathRoot)))
                 {
                     // Addon already exists at the new path (user may have reinstalled)
                     _crashReporter.Log($"[BuildCards] Path reconciliation: '{game.Name}' path changed '{oldPath}' → '{installPath}', addon already at new path");
                 }
-                else if (oldFilePath != null && File.Exists(oldFilePath))
+                else if ((oldFilePath != null && File.Exists(oldFilePath)) || (oldFilePathRoot != null && File.Exists(oldFilePathRoot)))
                 {
+                    var sourceFile = (oldFilePath != null && File.Exists(oldFilePath)) ? oldFilePath : oldFilePathRoot!;
                     // Try to copy the addon from the old path to the new path
                     try
                     {
-                        var newDeployDir = Path.GetDirectoryName(newFilePath!)!;
-                        Directory.CreateDirectory(newDeployDir);
-                        File.Copy(oldFilePath, newFilePath!, overwrite: true);
+                        Directory.CreateDirectory(newDeployPath);
+                        File.Copy(sourceFile, newFilePath ?? Path.Combine(newDeployPath, addonFile!), overwrite: true);
                         _crashReporter.Log($"[BuildCards] Path reconciliation: '{game.Name}' copied addon '{addonFile}' from '{oldPath}' → '{installPath}'");
                     }
                     catch (Exception ex)
