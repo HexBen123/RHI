@@ -111,6 +111,30 @@ public partial class MainViewModel
         _addonFileCache.Clear();
         _bitnessCache.Clear();
         _dlssStreamlineService.ClearScanCaches();
+
+        // Validate installed.json — remove records where the addon file no longer exists on disk
+        progress?.Report("Validating install records...");
+        try
+        {
+            var records = _installer.LoadAll();
+            int removed = 0;
+            foreach (var record in records.ToList())
+            {
+                var deployPath = ModInstallService.GetAddonDeployPath(record.InstallPath);
+                var filePath = Path.Combine(deployPath, record.AddonFileName);
+                var fallbackPath = Path.Combine(record.InstallPath, record.AddonFileName);
+                if (!File.Exists(filePath) && !File.Exists(fallbackPath))
+                {
+                    _installer.RemoveRecord(record);
+                    removed++;
+                    _crashReporter.Log($"[FullRefreshAsync] Removed orphaned record: '{record.GameName}' at '{record.InstallPath}' ({record.AddonFileName} not found on disk)");
+                }
+            }
+            if (removed > 0)
+                _crashReporter.Log($"[FullRefreshAsync] Cleaned up {removed} orphaned install record(s)");
+        }
+        catch (Exception ex) { _crashReporter.Log($"[FullRefreshAsync] Install record validation failed — {ex.Message}"); }
+
         await InitializeAsync(forceRescan: true, progress: progress);
     }
 
