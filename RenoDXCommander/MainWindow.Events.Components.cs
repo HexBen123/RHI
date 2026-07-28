@@ -856,6 +856,117 @@ public sealed partial class MainWindow
         _detailPanelBuilder?.UpdateDetailComponentRows(card);
     }
 
+    internal async void RtxHdrConfigButton_Click(object sender, RoutedEventArgs e)
+    {
+        var card = (sender as FrameworkElement)?.Tag as GameCardViewModel
+                ?? (sender as Button)?.Tag as GameCardViewModel;
+        if (card == null || string.IsNullOrEmpty(card.InstallPath)) return;
+
+        var dlssPresetService = App.Services.GetRequiredService<DlssPresetService>();
+        var content = new StackPanel { Spacing = 12 };
+
+        // Read current values
+        var currentContrast = (int)dlssPresetService.GetRtxHdrContrast(card.GameName, card.InstallPath);
+        var currentSaturation = (int)dlssPresetService.GetRtxHdrSaturation(card.GameName, card.InstallPath);
+        var currentPeakBrightness = (int)dlssPresetService.GetRtxHdrPeakBrightness(card.GameName, card.InstallPath);
+        var currentMiddleGrey = (int)dlssPresetService.GetRtxHdrMiddleGrey(card.GameName, card.InstallPath);
+        var currentDebanding = (int)dlssPresetService.GetRtxHdrDebanding(card.GameName, card.InstallPath);
+
+        // Convert stored values to display values
+        int contrastDisplay = currentContrast > 0 ? currentContrast - 100 : 0;
+        int saturationDisplay = currentSaturation > 0 ? currentSaturation - 100 : 0;
+        int peakBrightnessDisplay = currentPeakBrightness > 0 ? currentPeakBrightness : ViewModel.Settings.PeakNits;
+        if (peakBrightnessDisplay < 400) peakBrightnessDisplay = 510; // fallback default
+
+        // ── Peak Brightness ───────────────────────────────────────────────────
+        var nitsLabel = new TextBlock { Text = $"Peak Brightness: {peakBrightnessDisplay} nits", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
+        var nitsSlider = new Slider { Minimum = 400, Maximum = 2000, StepFrequency = 10, Value = peakBrightnessDisplay, HorizontalAlignment = HorizontalAlignment.Stretch };
+        nitsSlider.ValueChanged += (s, ev) => nitsLabel.Text = $"Peak Brightness: {(int)nitsSlider.Value} nits";
+        content.Children.Add(nitsLabel);
+        content.Children.Add(nitsSlider);
+
+        // ── Contrast ──────────────────────────────────────────────────────────
+        var contrastLabel = new TextBlock { Text = $"Contrast: {contrastDisplay}", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
+        var contrastSlider = new Slider { Minimum = -100, Maximum = 100, StepFrequency = 1, Value = contrastDisplay, HorizontalAlignment = HorizontalAlignment.Stretch };
+        contrastSlider.ValueChanged += (s, ev) => contrastLabel.Text = $"Contrast: {(int)contrastSlider.Value}";
+        content.Children.Add(contrastLabel);
+        content.Children.Add(contrastSlider);
+
+        // ── Saturation ────────────────────────────────────────────────────────
+        var satLabel = new TextBlock { Text = $"Saturation: {saturationDisplay}", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
+        var satSlider = new Slider { Minimum = -100, Maximum = 100, StepFrequency = 1, Value = saturationDisplay, HorizontalAlignment = HorizontalAlignment.Stretch };
+        satSlider.ValueChanged += (s, ev) => satLabel.Text = $"Saturation: {(int)satSlider.Value}";
+        content.Children.Add(satLabel);
+        content.Children.Add(satSlider);
+
+        // ── Middle Grey ───────────────────────────────────────────────────────
+        var middleGreyValues = new int[] { 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100 };
+        var middleGreyCombo = new ComboBox { FontSize = 12, HorizontalAlignment = HorizontalAlignment.Stretch };
+        int selectedMgIndex = 8; // default = 50
+        for (int i = 0; i < middleGreyValues.Length; i++)
+        {
+            var val = middleGreyValues[i];
+            middleGreyCombo.Items.Add(val == 50 ? "50 (Default)" : val.ToString());
+            if (currentMiddleGrey == val) selectedMgIndex = i;
+        }
+        middleGreyCombo.SelectedIndex = selectedMgIndex;
+        var mgLabel = new TextBlock { Text = "Middle Grey", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
+        content.Children.Add(mgLabel);
+        content.Children.Add(middleGreyCombo);
+
+        // ── Debanding ─────────────────────────────────────────────────────────
+        var debandingOptions = new (string name, uint value)[]
+        {
+            ("No Debanding", 0x06),
+            ("Low Debanding", 0x0A),
+            ("High Debanding", 0x02),
+            ("High Debanding (Indicator)", 0x03),
+            ("High Debanding (Indicator + Debug)", 0x23),
+        };
+        var debandingCombo = new ComboBox { FontSize = 12, HorizontalAlignment = HorizontalAlignment.Stretch };
+        int selectedDbIndex = 0;
+        for (int i = 0; i < debandingOptions.Length; i++)
+        {
+            debandingCombo.Items.Add(debandingOptions[i].name);
+            if (currentDebanding == (int)debandingOptions[i].value) selectedDbIndex = i;
+        }
+        debandingCombo.SelectedIndex = selectedDbIndex;
+        var dbLabel = new TextBlock { Text = "Debanding", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
+        content.Children.Add(dbLabel);
+        content.Children.Add(debandingCombo);
+
+        // ── Dialog ────────────────────────────────────────────────────────────
+        var dialog = new ContentDialog
+        {
+            Title = "RTX HDR Settings",
+            Content = new ScrollViewer { Content = content, MaxHeight = 520, Padding = new Thickness(0, 0, 16, 0) },
+            PrimaryButtonText = "Apply",
+            CloseButtonText = "Cancel",
+            XamlRoot = Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+
+        var result = await DialogService.ShowSafeAsync(dialog);
+        if (result != ContentDialogResult.Primary) return;
+
+        // Write all values
+        var peakNits = (uint)nitsSlider.Value;
+        var contrastStored = (uint)(100 + (int)contrastSlider.Value);
+        var satStored = (uint)(100 + (int)satSlider.Value);
+        var middleGrey = (uint)middleGreyValues[middleGreyCombo.SelectedIndex];
+        var debanding = debandingOptions[debandingCombo.SelectedIndex].value;
+
+        dlssPresetService.SetRtxHdrPeakBrightness(card.GameName, card.InstallPath, peakNits);
+        dlssPresetService.SetRtxHdrContrast(card.GameName, card.InstallPath, contrastStored);
+        dlssPresetService.SetRtxHdrSaturation(card.GameName, card.InstallPath, satStored);
+        dlssPresetService.SetRtxHdrMiddleGrey(card.GameName, card.InstallPath, middleGrey);
+        dlssPresetService.SetRtxHdrDebanding(card.GameName, card.InstallPath, debanding);
+
+        CrashReporter.Log($"[RtxHdrConfigButton_Click] Applied RTX HDR settings for '{card.GameName}': PeakNits={peakNits}, Contrast={contrastStored}, Sat={satStored}, MidGrey={middleGrey}, Deband=0x{debanding:X2}");
+        card.ActionMessage = "✅ RTX HDR settings applied.";
+        card.FadeMessage(m => card.ActionMessage = m, card.ActionMessage);
+    }
+
     private async void UlCogButton_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;

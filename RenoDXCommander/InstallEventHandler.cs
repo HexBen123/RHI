@@ -59,10 +59,10 @@ public class InstallEventHandler
             return;
         }
 
-        // If RTX HDR is active, open the RenoDX cog dialog (which shows RTX HDR config)
+        // If RTX HDR is active, open the RTX HDR configuration dialog
         if (checkCard?.IsRtxHdrEnabled == true)
         {
-            _window.RdxCogButton_Click(sender, e);
+            _window.RtxHdrConfigButton_Click(sender, e);
             return;
         }
 
