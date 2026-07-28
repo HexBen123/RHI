@@ -21,6 +21,7 @@ public partial class DlssPresetService
     private const uint NVAPI_DRS_GET_SETTING_ID = 0xEA99498D; // Primary (R610+), fallback: 0x73BF8338
     private const uint NVAPI_DRS_SAVE_SETTINGS_ID = 0xFCBC7E14;
     private const uint NVAPI_DRS_RESTORE_PROFILE_DEFAULT_ID = 0xFA5B6166;
+    private const uint NVAPI_DRS_DELETE_PROFILE_SETTING_ID = 0xE4A26362;
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate int NvAPI_DRS_SetSettingPtr_t(IntPtr hSession, IntPtr hProfile, IntPtr pSetting, uint x, uint y);
@@ -37,11 +38,15 @@ public partial class DlssPresetService
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate int NvAPI_DRS_RestoreProfileDefault_t(IntPtr hSession, IntPtr hProfile);
 
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate int NvAPI_DRS_DeleteProfileSetting_t(IntPtr hSession, IntPtr hProfile, uint settingId);
+
     private static NvAPI_DRS_SetSettingPtr_t? _nativeSetSettingPtr;
     private static NvAPI_DRS_SetSettingLegacy_t? _nativeSetSettingLegacy;
     private static NvAPI_DRS_GetSettingPtr_t? _nativeGetSettingPtr;
     private static NvAPI_DRS_SaveSettings_t? _nativeSaveSettings;
     private static NvAPI_DRS_RestoreProfileDefault_t? _nativeRestoreProfileDefault;
+    private static NvAPI_DRS_DeleteProfileSetting_t? _nativeDeleteProfileSetting;
 
     private static void EnsureNativeFunctions()
     {
@@ -51,6 +56,7 @@ public partial class DlssPresetService
         var getPtr = NvAPI_QueryInterface(NVAPI_DRS_GET_SETTING_ID);
         var savePtr = NvAPI_QueryInterface(NVAPI_DRS_SAVE_SETTINGS_ID);
         var restorePtr = NvAPI_QueryInterface(NVAPI_DRS_RESTORE_PROFILE_DEFAULT_ID);
+        var deletePtr = NvAPI_QueryInterface(NVAPI_DRS_DELETE_PROFILE_SETTING_ID);
         if (setPtr != IntPtr.Zero)
             _nativeSetSettingPtr = Marshal.GetDelegateForFunctionPointer<NvAPI_DRS_SetSettingPtr_t>(setPtr);
         if (setLegacyPtr != IntPtr.Zero)
@@ -61,6 +67,8 @@ public partial class DlssPresetService
             _nativeSaveSettings = Marshal.GetDelegateForFunctionPointer<NvAPI_DRS_SaveSettings_t>(savePtr);
         if (restorePtr != IntPtr.Zero)
             _nativeRestoreProfileDefault = Marshal.GetDelegateForFunctionPointer<NvAPI_DRS_RestoreProfileDefault_t>(restorePtr);
+        if (deletePtr != IntPtr.Zero)
+            _nativeDeleteProfileSetting = Marshal.GetDelegateForFunctionPointer<NvAPI_DRS_DeleteProfileSetting_t>(deletePtr);
     }
 
     /// <summary>
@@ -175,6 +183,71 @@ public partial class DlssPresetService
         finally
         {
             Marshal.FreeHGlobal(ptr);
+        }
+    }
+
+    /// <summary>
+    /// Deletes a setting from a profile via raw NVAPI (NvAPI_DRS_DeleteProfileSetting).
+    /// Used when NvAPIWrapper's profile.DeleteSetting() silently fails for newer setting IDs.
+    /// </summary>
+    private bool DeleteSettingRawNvApi(IntPtr sessionHandle, IntPtr profileHandle, uint settingId)
+    {
+        EnsureNativeFunctions();
+        if (_nativeDeleteProfileSetting == null || _nativeSaveSettings == null) return false;
+
+        try
+        {
+            int result = _nativeDeleteProfileSetting(sessionHandle, profileHandle, settingId);
+            if (result != 0)
+            {
+                CrashReporter.Log($"[DlssPresetService.DeleteSettingRawNvApi] NvAPI_DRS_DeleteProfileSetting returned {result} for 0x{settingId:X8}");
+                return false;
+            }
+
+            int saveResult = _nativeSaveSettings(sessionHandle);
+            if (saveResult != 0)
+            {
+                CrashReporter.Log($"[DlssPresetService.DeleteSettingRawNvApi] NvAPI_DRS_SaveSettings returned {saveResult}");
+                return false;
+            }
+
+            CrashReporter.Log($"[DlssPresetService.DeleteSettingRawNvApi] Deleted 0x{settingId:X8} via raw NVAPI");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[DlssPresetService.DeleteSettingRawNvApi] Exception — {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Deletes a setting from a game's profile using raw NVAPI.
+    /// Falls back to NvAPIWrapper's DeleteSetting if raw NVAPI is unavailable.
+    /// </summary>
+    public bool DeleteSettingRaw(string gameName, string installPath, uint settingId)
+    {
+        if (!_isSupported || _session == null) return false;
+        try
+        {
+            var profile = FindProfile(gameName, installPath);
+            if (profile == null) return false;
+
+            var sH = GetHandlePtr(_session.Handle);
+            var pH = GetHandlePtr(profile.Handle);
+            if (sH != IntPtr.Zero && pH != IntPtr.Zero)
+            {
+                return DeleteSettingRawNvApi(sH, pH, settingId);
+            }
+
+            // Fallback
+            try { profile.DeleteSetting(settingId); _session.Save(); return true; }
+            catch { return false; }
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[DlssPresetService.DeleteSettingRaw] Error for '{gameName}' — {ex.Message}");
+            return false;
         }
     }
 
