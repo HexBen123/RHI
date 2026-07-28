@@ -271,7 +271,14 @@ public sealed partial class MainWindow : Window
 
         // If started with --minimized, initialize tray and stay hidden
         if (App._startMinimized)
+        {
             StartMinimizedToTray();
+            // WinUI may re-present the window after construction — hide again on next tick
+            DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+            {
+                AppWindow.Hide();
+            });
+        }
     }
 
     /// <summary>
@@ -308,6 +315,13 @@ public sealed partial class MainWindow : Window
         {
             // Only restore once
             this.Activated -= MainWindow_Activated;
+
+            // If starting minimized, hide instead of restoring
+            if (App._startMinimized)
+            {
+                AppWindow.Hide();
+                return;
+            }
 
             if (ViewModel.CurrentViewLayout == ViewLayout.Compact)
             {
