@@ -27,7 +27,7 @@ public partial class GameCardViewModel
         }
     }
 
-    public bool CanInstall => Mod?.SnapshotUrl != null && !IsInstalling && !IsExternalOnly && IsRsInstalled;
+    public bool CanInstall => IsRtxHdrEnabled || (Mod?.SnapshotUrl != null && !IsInstalling && !IsExternalOnly && IsRsInstalled);
 
     public string GenericModLabel => IsGenericMod
         ? (EngineHint.Contains("Unity")

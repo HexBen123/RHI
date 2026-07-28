@@ -185,7 +185,7 @@ public sealed partial class MainWindow
         var iniPath = Path.Combine(card.InstallPath, "reshade.ini");
         var presetPath = Path.Combine(card.InstallPath, "RHI-RenoDX-Preset.txt");
         var content = new StackPanel { Spacing = 8 };
-        bool hasRenoDxMod = card.Mod != null || card.Status != GameStatus.NotInstalled;
+        bool hasRenoDxMod = !card.IsRtxHdrEnabled && (card.Mod?.SnapshotUrl != null || card.Status == GameStatus.Installed || card.Status == GameStatus.UpdateAvailable);
 
         // ── Top row: UE-Extended + Engine.ini HDR side by side ─────────────────
         if (card.UeExtendedToggleVisibility == Visibility.Visible || card.UseUeExtended)
