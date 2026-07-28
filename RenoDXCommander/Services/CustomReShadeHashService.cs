@@ -28,6 +28,31 @@ public class CustomReShadeHashService
     }
 
     /// <summary>
+    /// Ensures the hash file exists. If missing, creates it with current hashes (no redeploy).
+    /// Call on app startup to establish the baseline.
+    /// </summary>
+    public void EnsureInitialized()
+    {
+        if (File.Exists(HashFilePath)) return;
+
+        var customDir = DlssStreamlineService.RsCustomDir;
+        if (!Directory.Exists(customDir)) return;
+
+        var dllFiles = Directory.GetFiles(customDir, "*.dll");
+        if (dllFiles.Length == 0) return;
+
+        var hashes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var dllPath in dllFiles)
+        {
+            var filename = Path.GetFileName(dllPath);
+            hashes[filename] = ComputeSha256(dllPath);
+        }
+
+        SaveHashes(hashes);
+        _crashReporter.Log($"[CustomReShadeHashService] Initialized hash file with {hashes.Count} DLL(s)");
+    }
+
+    /// <summary>
     /// Checks all DLLs in the Custom\ReShade folder for changes and redeploys where needed.
     /// Returns the number of games redeployed to.
     /// </summary>
