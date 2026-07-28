@@ -438,7 +438,7 @@ public partial class DetailPanelBuilder
             _window.DetailDxvkDeleteBtn.Opacity = dxvkShow ? 1 : 0;
             _window.DetailDxvkDeleteBtn.IsHitTestVisible = dxvkShow;
         }
-        bool rdxGreyed = card.UseNormalReShade || !card.IsRsInstalled;
+        bool rdxGreyed = !card.IsRtxHdrEnabled && (card.UseNormalReShade || !card.IsRsInstalled);
         _window.DetailRdxRow.Opacity = 1.0;
         _window.DetailRdxRow.IsHitTestVisible = true;
         if (showRdx)
@@ -505,7 +505,7 @@ public partial class DetailPanelBuilder
                 _window.DetailRdxInstallBtn.BorderBrush = UIFactory.GetBrush(card.InstallBtnBorderBrush);
                 _window.DetailRdxInstallBtn.BorderThickness = new Thickness(1);
                 _window.DetailRdxInstallBtn.Opacity = rdxGreyed ? 0.35 : 1.0;
-                _window.DetailRdxInstallBtn.IsHitTestVisible = !card.UseNormalReShade && card.IsRsInstalled;
+                _window.DetailRdxInstallBtn.IsHitTestVisible = card.IsRtxHdrEnabled || (!card.UseNormalReShade && card.IsRsInstalled);
                 _window.DetailRdxDeleteBtn.Tag = card;
                 var rdxShow = card.ReinstallRowVisibility == Visibility.Visible;
                 _window.DetailRdxDeleteBtn.Opacity = rdxShow ? 1 : 0;
