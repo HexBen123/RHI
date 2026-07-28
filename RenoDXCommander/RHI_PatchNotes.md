@@ -20,6 +20,7 @@
 - Fixed Halo: Campaign Evolved install path for Game Pass (WinGDK).
 - Removed Halo: Campaign Evolved from native HDR list.
 - Added Xenoblade Chronicles 1/2/3 to Ryubing emulator bundle.
+- Added RenoDX install warning for Halo: Campaign Evolved (use Discord version only).
 
 ---
 

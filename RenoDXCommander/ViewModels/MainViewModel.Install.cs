@@ -758,6 +758,14 @@ public partial class MainViewModel
             card.ActionMessage = "No install path — use 📁 to pick the game folder.";
             return;
         }
+
+        // Check for manifest-driven install warning
+        if (!await CheckInstallWarningAsync(card.GameName, "renodx"))
+        {
+            if (swappedTo32 && originalSnapshotUrl != null) card.Mod.SnapshotUrl = originalSnapshotUrl;
+            return;
+        }
+
         card.IsInstalling = true;
         card.ActionMessage = "Starting download...";
         _crashReporter.Log($"[MainViewModel.InstallModAsync] Install started: {card.GameName} → {card.InstallPath}");
