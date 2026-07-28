@@ -22,6 +22,7 @@ public partial class GameCardViewModel : ObservableObject
     [ObservableProperty] private bool _isRunning = false;
 
     [ObservableProperty] private bool _isExternalOnly;
+    [ObservableProperty] private bool _isRtxHdrEnabled;
     [ObservableProperty] private bool _isGenericMod;
     [ObservableProperty] private string _externalUrl   = "";
     [ObservableProperty] private string _externalLabel = "";

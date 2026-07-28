@@ -185,6 +185,7 @@ public sealed partial class MainWindow
         var iniPath = Path.Combine(card.InstallPath, "reshade.ini");
         var presetPath = Path.Combine(card.InstallPath, "RHI-RenoDX-Preset.txt");
         var content = new StackPanel { Spacing = 8 };
+        bool hasRenoDxMod = card.Mod != null || card.Status != GameStatus.NotInstalled;
 
         // ── Top row: UE-Extended + Engine.ini HDR side by side ─────────────────
         if (card.UeExtendedToggleVisibility == Visibility.Visible || card.UseUeExtended)
@@ -229,7 +230,7 @@ public sealed partial class MainWindow
         }
 
         // ── Peak Nits row (inside topGrid for alignment) ──────────────────────
-        if (File.Exists(iniPath))
+        if (hasRenoDxMod && File.Exists(iniPath))
         {
             var peakIni = AuxInstallService.ParseIni(File.ReadAllLines(iniPath));
             var presetWithNits = peakIni.FirstOrDefault(kv =>
@@ -632,6 +633,8 @@ public sealed partial class MainWindow
         }
 
         // ── Preset Export/Import buttons (side by side) ───────────────────────
+        if (hasRenoDxMod)
+        {
         content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 10, 0, 2) });
         content.Children.Add(new TextBlock
         {
@@ -770,6 +773,75 @@ public sealed partial class MainWindow
             ToolTipService.SetToolTip(importBtn, "Restore presets from the exported backup file into reshade.ini.");
         presetRow.Children.Add(importBtn);
         content.Children.Add(presetRow);
+        } // end hasRenoDxMod
+
+        // ── RTX HDR Toggle ─────────────────────────────────────────────────────
+        content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 10, 0, 2) });
+        content.Children.Add(new TextBlock
+        {
+            Text = "RTX HDR",
+            FontSize = 13,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+        });
+
+        var rtxHdrCombo = new ComboBox { FontSize = 11, MinWidth = 100 };
+        rtxHdrCombo.Items.Add("Off");
+        rtxHdrCombo.Items.Add("On");
+
+        var gameNameService = App.Services.GetRequiredService<IGameNameService>();
+        bool isRtxHdrEnabled = gameNameService.RtxHdrGames.Contains(card.GameName);
+        rtxHdrCombo.SelectedIndex = isRtxHdrEnabled ? 1 : 0;
+
+        rtxHdrCombo.SelectionChanged += async (s, ev) =>
+        {
+            bool enable = rtxHdrCombo.SelectedIndex == 1;
+            var dlssPresetService = App.Services.GetRequiredService<DlssPresetService>();
+
+            if (enable)
+            {
+                gameNameService.RtxHdrGames.Add(card.GameName);
+                card.IsRtxHdrEnabled = true;
+
+                // Uninstall RenoDX if installed
+                if (card.Status == GameStatus.Installed && card.InstalledRecord != null)
+                {
+                    ViewModel.UninstallMod(card);
+                }
+
+                // Set RTX HDR profile settings (Allow + Enable)
+                dlssPresetService.SetRtxHdrAllow(card.GameName, card.InstallPath, 0x01);
+                dlssPresetService.SetRtxHdrEnable(card.GameName, card.InstallPath, 0x01);
+
+                CrashReporter.Log($"[RdxCogButton_Click] RTX HDR enabled for '{card.GameName}'");
+            }
+            else
+            {
+                gameNameService.RtxHdrGames.Remove(card.GameName);
+                card.IsRtxHdrEnabled = false;
+
+                // Clear RTX HDR profile settings
+                dlssPresetService.SetRtxHdrAllow(card.GameName, card.InstallPath, 0x00);
+                dlssPresetService.SetRtxHdrEnable(card.GameName, card.InstallPath, 0x00);
+
+                CrashReporter.Log($"[RdxCogButton_Click] RTX HDR disabled for '{card.GameName}'");
+            }
+
+            card.NotifyAll();
+            ViewModel.SaveSettingsPublic();
+            _detailPanelBuilder?.UpdateDetailComponentRows(card);
+        };
+
+        var rtxHdrRow = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 12 };
+        rtxHdrRow.Children.Add(new TextBlock
+        {
+            Text = "Enable RTX HDR",
+            FontSize = 11,
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        rtxHdrRow.Children.Add(rtxHdrCombo);
+        content.Children.Add(rtxHdrRow);
 
         var dialog = new ContentDialog
         {

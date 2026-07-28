@@ -426,6 +426,7 @@ public partial class MainViewModel
                 existing.NotesUrl           = fresh.NotesUrl;
                 existing.NotesUrlLabel      = fresh.NotesUrlLabel;
                 existing.UseUeExtended      = fresh.UseUeExtended;
+                existing.IsRtxHdrEnabled    = fresh.IsRtxHdrEnabled;
                 existing.InstalledAddonFileName = fresh.InstalledAddonFileName;
                 existing.RdxInstalledVersion    = fresh.RdxInstalledVersion;
                 existing.RsInstalledFile        = fresh.RsInstalledFile;

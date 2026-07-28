@@ -596,6 +596,7 @@ public partial class MainViewModel
                 IsFavourite            = _favouriteGames.Contains(game.Name),
                 IsManuallyAdded        = game.IsManuallyAdded,
                 UseUeExtended          = useUeExt,
+                IsRtxHdrEnabled        = _gameNameService.RtxHdrGames.Contains(game.Name),
                 IsExternalOnly         = _wikiExclusions.Contains(game.Name)
                                          ? false
                                          : effectiveMod?.SnapshotUrl == null &&

@@ -14,6 +14,7 @@ public partial class GameCardViewModel
         get
         {
             if (IsInstalling) return "Installing...";
+            if (IsRtxHdrEnabled) return "Configure RTX HDR";
             if (!IsRsInstalled && Mod?.SnapshotUrl != null && !IsExternalOnly)
                 return "⚠  ReShade required";
             // No mod available and nothing manually installed

@@ -107,6 +107,9 @@ public interface IGameNameService
     /// <summary>Maps current (renamed) game name to original store-detected name.</summary>
     Dictionary<string, string> OriginalDetectedNames { get; }
 
+    /// <summary>Games with RTX HDR enabled via NVIDIA driver profile.</summary>
+    HashSet<string> RtxHdrGames { get; }
+
     // ── Load / Save ───────────────────────────────────────────────────────────
 
     /// <summary>

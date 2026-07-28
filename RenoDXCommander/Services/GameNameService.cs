@@ -60,6 +60,9 @@ public class GameNameService : IGameNameService
     /// <summary>Per-game custom ReShade DLL selection. Key = game name, Value = DLL filename (not full path). The DLL resides in Custom\ReShade\ folder.</summary>
     private Dictionary<string, string> _customReShadeSelection = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Games with RTX HDR enabled via NVIDIA driver profile.</summary>
+    private HashSet<string> _rtxHdrGames = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Maps current (renamed) game name → original store-detected name.</summary>
     private Dictionary<string, string> _originalDetectedNames = new(StringComparer.OrdinalIgnoreCase);
 
@@ -106,6 +109,8 @@ public class GameNameService : IGameNameService
     public Dictionary<string, string> EngineVersionOverrides => _engineVersionOverrides;
     /// <summary>Per-game custom ReShade DLL selection. Key = game name, Value = DLL filename.</summary>
     public Dictionary<string, string> CustomReShadeSelection => _customReShadeSelection;
+    /// <summary>Games with RTX HDR enabled via NVIDIA driver profile.</summary>
+    public HashSet<string> RtxHdrGames => _rtxHdrGames;
     public Dictionary<string, string> OriginalDetectedNames => _originalDetectedNames;
 
     public GameNameService(
@@ -335,6 +340,9 @@ public class GameNameService : IGameNameService
         _favouriteGames = new HashSet<string>(
             Load<List<string>>("FavouriteGames", _favouriteGames?.ToList() ?? new()), StringComparer.OrdinalIgnoreCase);
 
+        _rtxHdrGames = new HashSet<string>(
+            Load<List<string>>("RtxHdrGames", _rtxHdrGames?.ToList() ?? new()), StringComparer.OrdinalIgnoreCase);
+
         if (s.TryGetValue("ViewLayout", out var vlVal) && int.TryParse(vlVal, out var vlInt) && Enum.IsDefined(typeof(ViewLayout), vlInt))
             setViewLayout((ViewLayout)vlInt);
         else if (s.TryGetValue("GridLayout", out var glVal))  // backward compat
@@ -412,6 +420,7 @@ public class GameNameService : IGameNameService
                 s["CustomReShadeSelection"] = JsonSerializer.Serialize(_customReShadeSelection);
                 s["HiddenGames"]         = JsonSerializer.Serialize(_hiddenGames?.ToList() ?? new List<string>());
                 s["FavouriteGames"]      = JsonSerializer.Serialize(_favouriteGames?.ToList() ?? new List<string>());
+                s["RtxHdrGames"]         = JsonSerializer.Serialize(_rtxHdrGames?.ToList() ?? new List<string>());
                 s["ViewLayout"]          = ((int)currentViewLayout).ToString();
                 s["FilterMode"]          = filterMode;
                 s["CustomFilters"]       = JsonSerializer.Serialize(customFilters);
@@ -534,6 +543,7 @@ public class GameNameService : IGameNameService
         MigrateHashSet(_lumaEnabledGames, oldName, newName);
         MigrateHashSet(_lumaDisabledGames, oldName, newName);
         MigrateHashSet(_normalReShadeGames, oldName, newName);
+        MigrateHashSet(_rtxHdrGames, oldName, newName);
 
         // Migrate game-name-keyed Dictionaries
         MigrateDict(_perGameShaderMode, oldName, newName);
