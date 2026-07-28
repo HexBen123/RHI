@@ -149,6 +149,16 @@ public partial class App : Application
         // Handle --minimized argument (start minimized to tray)
         var startMinimized = cmdArgs.Contains("--minimized");
 
+        // Also check for signal file (used when Admin Mode relaunches via scheduled task)
+        var minimizedSignalPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "RHI", "rhi_start_minimized");
+        if (File.Exists(minimizedSignalPath))
+        {
+            startMinimized = true;
+            try { File.Delete(minimizedSignalPath); } catch { }
+        }
+
         if (!SingleInstanceService.TryAcquire())
         {
             // Another instance is running — forward the file or launch command and exit
@@ -174,6 +184,15 @@ public partial class App : Application
             try
             {
                 CrashReporter.Log("[App.OnLaunched] Admin Mode enabled but not elevated — relaunching via scheduled task");
+                
+                // Pass minimized flag via signal file (schtasks /Run doesn't support extra args)
+                if (startMinimized)
+                {
+                    var signalDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RHI");
+                    Directory.CreateDirectory(signalDir);
+                    File.WriteAllText(Path.Combine(signalDir, "rhi_start_minimized"), "");
+                }
+
                 var psi = new System.Diagnostics.ProcessStartInfo("schtasks.exe", "/Run /TN \"RHI Admin Mode\"")
                 {
                     UseShellExecute = false,
