@@ -58,6 +58,14 @@ public class InstallEventHandler
             _window.ExternalLink_Click(sender, e);
             return;
         }
+
+        // If RTX HDR is active, open the RenoDX cog dialog (which shows RTX HDR config)
+        if (checkCard?.IsRtxHdrEnabled == true)
+        {
+            _window.RdxCogButton_Click(sender, e);
+            return;
+        }
+
         if (sender is not Button btn || btn.Tag is not GameCardViewModel card) return;
         await EnsurePathAndInstall(card, () => ViewModel.InstallModCommand.ExecuteAsync(card));
     }

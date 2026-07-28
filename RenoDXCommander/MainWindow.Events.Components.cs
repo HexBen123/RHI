@@ -177,7 +177,7 @@ public sealed partial class MainWindow
         await DialogService.ShowSafeAsync(dialog);
     }
 
-    private async void RdxCogButton_Click(object sender, RoutedEventArgs e)
+    internal async void RdxCogButton_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
         if (string.IsNullOrEmpty(card.InstallPath)) return;
