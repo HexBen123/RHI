@@ -632,6 +632,28 @@ public sealed partial class MainWindow
         var data = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(json);
         if (data == null || data.Count == 0) return;
 
+        // Confirm before proceeding — importing overwrites driver profile settings irreversibly
+        bool isAdmin = VulkanLayerService.IsRunningAsAdmin();
+        var warningText = "This will overwrite your current NVIDIA driver profile settings with the saved backup. This cannot be undone.";
+        if (!isAdmin)
+            warningText += "\n\nYou are not running as admin. Settings that require elevated privileges (e.g. ReBAR) will not be restored. Run RHI as admin to import all settings.";
+
+        var confirmResult = await DialogService.ShowSafeAsync(new ContentDialog
+        {
+            Title = "Import Profiles",
+            Content = new TextBlock
+            {
+                Text = warningText,
+                TextWrapping = TextWrapping.Wrap,
+                FontSize = 12,
+            },
+            PrimaryButtonText = "Import",
+            CloseButtonText = "Cancel",
+            XamlRoot = Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        });
+        if (confirmResult != ContentDialogResult.Primary) return;
+
         // Show progress dialog
         var progressText = new TextBlock
         {

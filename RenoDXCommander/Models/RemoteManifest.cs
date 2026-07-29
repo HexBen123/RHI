@@ -19,6 +19,14 @@ public class RemoteManifest
     [JsonPropertyName("nativeHdrGames")]
     public List<string>? NativeHdrGames { get; set; }
 
+    /// <summary>
+    /// Games that should NOT default to UE-Extended (opt-out from the new default).
+    /// Useful for games where the standard generic UE addon works better.
+    /// Key = game name. Presence in this list forces the standard generic addon.
+    /// </summary>
+    [JsonPropertyName("noUeExtendedGames")]
+    public List<string>? NoUeExtendedGames { get; set; }
+
     [JsonPropertyName("lumaRenodxCompat")]
     public List<string>? LumaRenodxCompat { get; set; }
 

@@ -23,6 +23,11 @@ public partial class DlssPresetService
         DLSS_SR_PRESET_OVERRIDE_ID,
         NGX_DLSS_SR_RENDER_SCALE_ID, NGX_DLSS_SR_RENDER_SCALE_CUSTOM_ID, NGX_DLSS_RR_RENDER_SCALE_ID, NGX_DLSS_RR_RENDER_SCALE_CUSTOM_ID,
         MFG_MODE_OVERRIDE_ID, MFG_GENERATION_FACTOR_ID, MFG_DYNAMIC_MAX_COUNT_ID, MFG_DYNAMIC_TARGET_FPS_ID,
+        // RTX HDR settings — written via raw NVAPI, must also be read/restored via raw NVAPI
+        RTX_HDR_ENABLE_ID,
+        RTX_HDR_PEAK_BRIGHTNESS_ID, RTX_HDR_MIDDLE_GREY_ID,
+        RTX_HDR_CONTRAST_ID, RTX_HDR_SATURATION_ID,
+        RTX_HDR_DEBANDING_ID,
     ];
 
     /// <summary>Exports all RHI-managed NVIDIA profile settings to a dictionary for serialization.</summary>
@@ -250,6 +255,17 @@ public partial class DlssPresetService
                 // Apply settings
                 if (elem.TryGetProperty("settings", out var settingsElem) && settingsElem.ValueKind == System.Text.Json.JsonValueKind.Object)
                 {
+                    // RTX HDR IDs silently fail via NvAPIWrapper — always use raw NVAPI for them
+                    var rawOnlyIds = new HashSet<uint>
+                    {
+                        RTX_HDR_ENABLE_ID,
+                        RTX_HDR_PEAK_BRIGHTNESS_ID, RTX_HDR_MIDDLE_GREY_ID,
+                        RTX_HDR_CONTRAST_ID, RTX_HDR_SATURATION_ID,
+                        RTX_HDR_DEBANDING_ID,
+                    };
+                    var sHImport = GetHandlePtr(_session.Handle);
+                    var pHImport = GetHandlePtr(profile.Handle);
+
                     foreach (var prop in settingsElem.EnumerateObject())
                     {
                         if (uint.TryParse(prop.Name.Replace("0x", ""), System.Globalization.NumberStyles.HexNumber, null, out var settingId))
@@ -257,15 +273,22 @@ public partial class DlssPresetService
                             var value = prop.Value.GetUInt32();
                             try
                             {
-                                profile.SetSetting(settingId, value);
+                                if (rawOnlyIds.Contains(settingId))
+                                {
+                                    // Always use raw NVAPI — NvAPIWrapper silently ignores these newer IDs
+                                    if (sHImport != IntPtr.Zero && pHImport != IntPtr.Zero)
+                                        SetSettingRawNvApi(sHImport, pHImport, settingId, value);
+                                }
+                                else
+                                {
+                                    profile.SetSetting(settingId, value);
+                                }
                             }
                             catch
                             {
                                 // Fallback to raw API for settings NvAPIWrapper doesn't know
-                                var sH = GetHandlePtr(_session.Handle);
-                                var pH = GetHandlePtr(profile.Handle);
-                                if (sH != IntPtr.Zero && pH != IntPtr.Zero)
-                                    SetSettingRawNvApi(sH, pH, settingId, value);
+                                if (sHImport != IntPtr.Zero && pHImport != IntPtr.Zero)
+                                    SetSettingRawNvApi(sHImport, pHImport, settingId, value);
                             }
                         }
                     }

@@ -24,6 +24,8 @@ public class GameNameService : IGameNameService
     private HashSet<string> _hiddenGames = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _favouriteGames = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _ueExtendedGames = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>Games where the user has explicitly opted OUT of UE-Extended (wants standard generic UE addon).</summary>
+    private HashSet<string> _ueExtendedOptOutGames = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _updateAllExcludedReShade = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _updateAllExcludedRenoDx = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _updateAllExcludedUl = new(StringComparer.OrdinalIgnoreCase);
@@ -73,6 +75,8 @@ public class GameNameService : IGameNameService
     public HashSet<string> HiddenGames => _hiddenGames;
     public HashSet<string> FavouriteGames => _favouriteGames;
     public HashSet<string> UeExtendedGames => _ueExtendedGames;
+    /// <summary>Games where the user has explicitly opted out of UE-Extended.</summary>
+    public HashSet<string> UeExtendedOptOutGames => _ueExtendedOptOutGames;
     public HashSet<string> UpdateAllExcludedReShade => _updateAllExcludedReShade;
     public HashSet<string> UpdateAllExcludedRenoDx => _updateAllExcludedRenoDx;
     public HashSet<string> UpdateAllExcludedUl => _updateAllExcludedUl;
@@ -141,6 +145,7 @@ public class GameNameService : IGameNameService
         _nameMappings              = new(StringComparer.OrdinalIgnoreCase);
         _wikiExclusions            = new(StringComparer.OrdinalIgnoreCase);
         _ueExtendedGames           = new(StringComparer.OrdinalIgnoreCase);
+        _ueExtendedOptOutGames     = new(StringComparer.OrdinalIgnoreCase);
         _updateAllExcludedReShade  = new(StringComparer.OrdinalIgnoreCase);
         _updateAllExcludedRenoDx   = new(StringComparer.OrdinalIgnoreCase);
         _updateAllExcludedUl       = new(StringComparer.OrdinalIgnoreCase);
@@ -194,6 +199,9 @@ public class GameNameService : IGameNameService
 
         _ueExtendedGames = new HashSet<string>(
             Load<List<string>>("UeExtendedGames", new()), StringComparer.OrdinalIgnoreCase);
+
+        _ueExtendedOptOutGames = new HashSet<string>(
+            Load<List<string>>("UeExtendedOptOutGames", new()), StringComparer.OrdinalIgnoreCase);
 
         _updateAllExcludedReShade = new HashSet<string>(
             Load<List<string>>("UpdateAllExcludedReShade", new()), StringComparer.OrdinalIgnoreCase);
@@ -382,6 +390,7 @@ public class GameNameService : IGameNameService
                         .ToDictionary(kv => kv.Key, kv => kv.Value));
                 s["WikiExclusions"]  = JsonSerializer.Serialize(_wikiExclusions.ToList());
                 s["UeExtendedGames"] = JsonSerializer.Serialize(_ueExtendedGames.ToList());
+                s["UeExtendedOptOutGames"] = JsonSerializer.Serialize(_ueExtendedOptOutGames.ToList());
                 s.Remove("DcModeLevel");
                 s.Remove("DcModeEnabled");
                 s.Remove("DcDllFileName");
@@ -534,6 +543,7 @@ public class GameNameService : IGameNameService
         MigrateHashSet(_favouriteGames, oldName, newName);
         MigrateHashSet(_wikiExclusions, oldName, newName);
         MigrateHashSet(_ueExtendedGames, oldName, newName);
+        MigrateHashSet(_ueExtendedOptOutGames, oldName, newName);
         MigrateHashSet(_updateAllExcludedReShade, oldName, newName);
         MigrateHashSet(_updateAllExcludedRenoDx, oldName, newName);
         MigrateHashSet(_updateAllExcludedUl, oldName, newName);

@@ -705,6 +705,7 @@ public partial class MainViewModel
             _gameNameService,
             _dllOverrideService,
             _manifestNativeHdrGames,
+            _manifestNoUeExtendedGames,
             _manifestBlacklist,
             _manifest32BitGames,
             _manifest64BitGames,

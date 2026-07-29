@@ -338,7 +338,13 @@ public partial class MainViewModel
             var legacyDirect32 = Path.Combine(card.InstallPath, LegacyUltraLimiterFileName32);
             if (File.Exists(legacyDirect32)) File.Delete(legacyDirect32);
 
-            // Save version metadata after successful install
+            // Save version metadata after successful install.
+            // If _latestUlVersion is null (e.g. app restarted after pre-caching the new binary
+            // but before installing), fetch it from GitHub now so the meta file is always updated.
+            // Without this, ul_meta.json keeps the old version and update checks keep flagging
+            // an update even though the new binary is already deployed.
+            if (string.IsNullOrEmpty(_latestUlVersion))
+                await FetchLatestUlReleaseInfoAsync(card.Is32Bit);
             if (!string.IsNullOrEmpty(_latestUlVersion))
                 SaveUlMeta(_latestUlVersion, card.Is32Bit);
 

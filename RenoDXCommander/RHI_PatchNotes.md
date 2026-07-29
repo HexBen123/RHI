@@ -1,3 +1,28 @@
+## v2.2.6
+
+### New
+
+- **UE-Extended default for generic UE games** — any Unreal Engine game without a named RenoDX mod now installs UE-Extended (`renodx-ue-extended.addon64`) automatically. Switch back to the standard generic addon via the UE-Extended dropdown (set to Off) in the RenoDX ⚙ dialog. Your choice persists across restarts.
+- **RTX HDR Settings improvements**
+  - Gamma preset buttons (2.0, 2.2, 2.4) below the Contrast slider for quick selection.
+  - Middle Grey is now a slider (10–100) with an **Auto** button that calculates the ITU-correct value from your Peak Brightness and Gamma settings.
+  - **Save as Default** / **Set Default** buttons — save your preferred RTX HDR settings once and apply them to any game with one click.
+  - Debanding is greyed out when not running as admin (requires elevated privileges to write).
+  - RTX HDR now defaults to **Gamma 2.2** with ITU-correct Middle Grey when first enabled, instead of the flat Gamma 2.0 default.
+
+### Changes
+
+- **Import Profiles confirmation** — the Import button in Settings now shows a warning that the operation is irreversible, and notes if admin-only settings (e.g. ReBAR) will be skipped due to insufficient privileges.
+- **ReLimiter Settings** — Target FPS and DLSS Hooks controls are now greyed out when no `relimiter.ini` exists in the game folder. Deploy the ini first to enable them.
+
+### Bug Fixes
+
+- Fixed RTX HDR on/off state not reflecting changes made outside RHI (e.g. via NVIDIA App or after a driver update). The toggle now reads the live driver profile on every refresh and when opening the ⚙ dialog, keeping RHI in sync.
+- Fixed RTX HDR settings not being included in the Export Profile backup. All 6 RTX HDR settings are now exported and correctly restored on import, including using raw NVAPI on the import path (NvAPIWrapper silently ignores these setting IDs).
+- Fixed ReLimiter Update All silently failing to update `ul_meta.json` after a session restart — the update deployed the new binary but the version file kept the old version, causing the update indicator to reappear on every launch.
+
+---
+
 ## v2.2.5
 
 ### Bug Fixes

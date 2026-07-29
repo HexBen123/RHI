@@ -159,9 +159,18 @@ public partial class MainViewModel
         bool nowExtended = !card.UseUeExtended;
 
         if (nowExtended)
+        {
             _ueExtendedGames.Add(card.GameName);
+            _gameNameService.UeExtendedOptOutGames.Remove(card.GameName);
+        }
         else
+        {
             _ueExtendedGames.Remove(card.GameName);
+            // Only persist opt-out if the game would default to UE-Extended (IsGenericUnreal)
+            // so we can restore standard generic on next BuildCards
+            if (card.Mod?.IsGenericUnreal == true || card.IsGenericMod)
+                _gameNameService.UeExtendedOptOutGames.Add(card.GameName);
+        }
         SaveNameMappings();
 
         // Store the original named mod URL before swapping (for restoring later)
@@ -514,9 +523,13 @@ public partial class MainViewModel
 
         // ── Apply NativeHdr / UE-Extended whitelist (same logic as BuildCards) ────
         bool isNativeHdr = IsNativeHdrGameMatch(game.Name);
-        bool useUeExt = (addonOnDisk == UeExtendedFile)
-                        || IsUeExtendedGameMatch(game.Name)
-                        || (isNativeHdr && (effectiveMod?.IsGenericUnreal == true || engine == EngineType.Unreal));
+        bool noUeExtended = (_manifestNoUeExtendedGames.Contains(game.Name))
+                         || (_gameNameService.UeExtendedOptOutGames.Contains(game.Name));
+        bool useUeExt = !noUeExtended
+                     && ((addonOnDisk == UeExtendedFile)
+                         || IsUeExtendedGameMatch(game.Name)
+                         || isNativeHdr
+                         || (effectiveMod?.IsGenericUnreal == true));
         if (useUeExt && effectiveMod != null)
         {
             effectiveMod = new GameMod

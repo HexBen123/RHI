@@ -29,6 +29,9 @@ public interface IGameNameService
     /// <summary>Games with UE extended mode enabled.</summary>
     HashSet<string> UeExtendedGames { get; }
 
+    /// <summary>Games where the user has explicitly opted out of UE-Extended.</summary>
+    HashSet<string> UeExtendedOptOutGames { get; }
+
     /// <summary>Games excluded from batch ReShade updates.</summary>
     HashSet<string> UpdateAllExcludedReShade { get; }
 

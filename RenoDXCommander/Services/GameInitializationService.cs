@@ -150,6 +150,7 @@ public class GameInitializationService : IGameInitializationService
         IGameNameService gameNameService,
         IDllOverrideService dllOverrideService,
         HashSet<string> manifestNativeHdrGames,
+        HashSet<string> manifestNoUeExtendedGames,
         HashSet<string> manifestBlacklist,
         HashSet<string> manifest32BitGames,
         HashSet<string> manifest64BitGames,
@@ -160,6 +161,7 @@ public class GameInitializationService : IGameInitializationService
         Func<string, string> normalizeForLookup)
     {
         manifestNativeHdrGames.Clear();
+        manifestNoUeExtendedGames.Clear();
         manifestWikiUnlinks.Clear();
         manifest32BitGames.Clear();
         manifest64BitGames.Clear();
@@ -187,6 +189,10 @@ public class GameInitializationService : IGameInitializationService
         if (manifest.NativeHdrGames != null)
             foreach (var game in manifest.NativeHdrGames)
                 manifestNativeHdrGames.Add(game);
+
+        if (manifest.NoUeExtendedGames != null)
+            foreach (var g in manifest.NoUeExtendedGames)
+                manifestNoUeExtendedGames.Add(g);
 
         if (manifest.ThirtyTwoBitGames != null)
             foreach (var game in manifest.ThirtyTwoBitGames)

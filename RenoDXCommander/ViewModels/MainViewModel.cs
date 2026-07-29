@@ -344,6 +344,7 @@ public partial class MainViewModel : ObservableObject
     private List<DetectedGame> _manualGames = new();
     private RemoteManifest? _manifest;
     private HashSet<string> _manifestNativeHdrGames = new(StringComparer.OrdinalIgnoreCase);
+    private HashSet<string> _manifestNoUeExtendedGames = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _manifestBlacklist = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _manifest32BitGames = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _manifest64BitGames = new(StringComparer.OrdinalIgnoreCase);

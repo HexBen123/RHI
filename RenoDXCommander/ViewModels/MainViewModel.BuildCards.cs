@@ -406,14 +406,23 @@ public partial class MainViewModel
                 }
             }
 
-            // Apply UE-Extended preference: if the game has it saved OR the file is on disk,
-            // force the Mod URL to the marat569 source so the install button targets it.
-            // Native HDR games always use UE-Extended, regardless of user toggle.
-            // UE-Extended whitelist supersedes everything — hide Nexus link and force install/update/reinstall.
+            // Apply UE-Extended preference.
+            // New default: all games with only the generic UE fallback (no named mod) use UE-Extended.
+            // Overrides (highest priority first):
+            //   1. NativeHDR games → always UE-Extended
+            //   2. Manifest noUeExtendedGames → always standard generic
+            //   3. User opt-out (_ueExtendedOptOutGames) → standard generic
+            //   4. Addon already on disk → respect whatever is installed
+            //   5. Explicit user opt-in (_ueExtendedGames) → UE-Extended
+            //   6. Default: any generic UE card (IsGenericUnreal) → UE-Extended
             bool isNativeHdr = IsNativeHdrGameMatch(game.Name);
-            bool useUeExt = (addonOnDisk == UeExtendedFile)
-                            || IsUeExtendedGameMatch(game.Name)
-                            || (isNativeHdr && (effectiveMod?.IsGenericUnreal == true || engine == EngineType.Unreal));
+            bool noUeExtended = (_manifestNoUeExtendedGames.Contains(game.Name))
+                             || (_gameNameService.UeExtendedOptOutGames.Contains(game.Name));
+            bool useUeExt = !noUeExtended
+                         && ((addonOnDisk == UeExtendedFile)
+                             || IsUeExtendedGameMatch(game.Name)
+                             || isNativeHdr
+                             || (effectiveMod?.IsGenericUnreal == true));
             if (useUeExt && effectiveMod != null)
             {
                 // Create or override the mod to use UE-Extended URL
@@ -1124,6 +1133,35 @@ public partial class MainViewModel
             });
 
         cards.AddRange(cardBag);
+
+        // ── Sync RTX HDR state from driver ────────────────────────────────────
+        // IsRtxHdrEnabled is initially set from the persisted _rtxHdrGames HashSet.
+        // After building, reconcile with the actual driver profile so changes made
+        // outside RHI (e.g. via NVIDIA App or driver update clearing settings) are reflected.
+        if (_dlssPresetService.IsSupported)
+        {
+            foreach (var card in cards)
+            {
+                if (string.IsNullOrEmpty(card.InstallPath)) continue;
+                try
+                {
+                    bool driverEnabled = _dlssPresetService.GetRtxHdrEnable(card.GameName, card.InstallPath) == 0x01;
+                    if (driverEnabled != card.IsRtxHdrEnabled)
+                    {
+                        card.IsRtxHdrEnabled = driverEnabled;
+                        if (driverEnabled)
+                            _gameNameService.RtxHdrGames.Add(card.GameName);
+                        else
+                            _gameNameService.RtxHdrGames.Remove(card.GameName);
+                        _crashReporter.Log($"[BuildCards] RTX HDR sync: '{card.GameName}' driver={driverEnabled}, was={!driverEnabled}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _crashReporter.Log($"[BuildCards] RTX HDR sync failed for '{card.GameName}' — {ex.Message}");
+                }
+            }
+        }
 
         // Log BuildCards timing summary
         var sortedTimings = gameTimings.OrderByDescending(t => t.ms).ToList();

@@ -1,5 +1,6 @@
 ﻿// MainWindow.Events.Components.cs — Per-component cog button (⚙️) dialog handlers (RS, RDX, UL, DC, OS, DXVK).
 
+using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
@@ -798,7 +799,15 @@ public sealed partial class MainWindow
         rtxHdrCombo.Items.Add("On");
 
         var gameNameService = App.Services.GetRequiredService<IGameNameService>();
-        bool isRtxHdrEnabled = gameNameService.RtxHdrGames.Contains(card.GameName);
+        // Read live driver state — reflects changes made outside RHI (e.g. NVIDIA App, driver update)
+        var dlssPresetServiceCog = App.Services.GetRequiredService<DlssPresetService>();
+        bool isRtxHdrEnabled = dlssPresetServiceCog.IsSupported && !string.IsNullOrEmpty(card.InstallPath)
+            ? (dlssPresetServiceCog.GetRtxHdrEnable(card.GameName, card.InstallPath) == 0x01)
+            : gameNameService.RtxHdrGames.Contains(card.GameName);
+        // Sync persisted state to match driver
+        if (isRtxHdrEnabled) gameNameService.RtxHdrGames.Add(card.GameName);
+        else gameNameService.RtxHdrGames.Remove(card.GameName);
+        card.IsRtxHdrEnabled = isRtxHdrEnabled;
         rtxHdrCombo.SelectedIndex = isRtxHdrEnabled ? 1 : 0;
 
         rtxHdrCombo.SelectionChanged += async (s, ev) =>
@@ -818,14 +827,37 @@ public sealed partial class MainWindow
                 }
 
                 // Set RTX HDR profile settings (Allow + Enable + sensible defaults)
-                dlssPresetService.SetRtxHdrAllow(card.GameName, card.InstallPath, 0x01);
-                dlssPresetService.SetRtxHdrEnable(card.GameName, card.InstallPath, 0x01);
-                dlssPresetService.SetRtxHdrPeakBrightness(card.GameName, card.InstallPath, (uint)(ViewModel.Settings.PeakNits > 0 ? ViewModel.Settings.PeakNits : 510));
-                dlssPresetService.SetRtxHdrContrast(card.GameName, card.InstallPath, 100);       // 0 (neutral)
-                dlssPresetService.SetRtxHdrSaturation(card.GameName, card.InstallPath, 100);     // 0 (neutral)
-                dlssPresetService.SetRtxHdrMiddleGrey(card.GameName, card.InstallPath, 50);      // default
+                // Default to Gamma 2.2 (Contrast = +25, stored = 125) — matches conventional SDR gamma
+                var enablePeakNits = ViewModel.Settings.PeakNits > 0 ? ViewModel.Settings.PeakNits : 510;
+                // Calculate ITU-correct Middle Grey for Gamma 2.2 at the user's peak nits
+                // paperWhite lookup table: (peak, pw nits) — interpolated
+                static double Lerp(double a, double b, double t) => a + t * (b - a);
+                double enablePaperWhite;
+                (double peak, double pw)[] ituTable = { (400,101),(600,138),(800,172),(1000,203),(1500,276),(2000,343) };
+                if (enablePeakNits <= ituTable[0].peak) enablePaperWhite = ituTable[0].pw;
+                else if (enablePeakNits >= ituTable[^1].peak) enablePaperWhite = ituTable[^1].pw;
+                else
+                {
+                    enablePaperWhite = ituTable[^1].pw;
+                    for (int i = 0; i < ituTable.Length - 1; i++)
+                    {
+                        if (enablePeakNits >= ituTable[i].peak && enablePeakNits <= ituTable[i+1].peak)
+                        {
+                            double t = (enablePeakNits - ituTable[i].peak) / (ituTable[i+1].peak - ituTable[i].peak);
+                            enablePaperWhite = Lerp(ituTable[i].pw, ituTable[i+1].pw, t);
+                            break;
+                        }
+                    }
+                }
+                var enableMidGrey = (uint)Math.Clamp((int)Math.Round(enablePaperWhite * Math.Pow(0.5, 2.2)), 10, 100);
 
-                CrashReporter.Log($"[RdxCogButton_Click] RTX HDR enabled for '{card.GameName}'");
+                dlssPresetService.SetRtxHdrEnable(card.GameName, card.InstallPath, 0x01);
+                dlssPresetService.SetRtxHdrPeakBrightness(card.GameName, card.InstallPath, (uint)enablePeakNits);
+                dlssPresetService.SetRtxHdrContrast(card.GameName, card.InstallPath, 125);       // Gamma 2.2 (+25)
+                dlssPresetService.SetRtxHdrSaturation(card.GameName, card.InstallPath, 100);     // 0 (neutral)
+                dlssPresetService.SetRtxHdrMiddleGrey(card.GameName, card.InstallPath, enableMidGrey); // ITU-correct for Gamma 2.2
+
+                CrashReporter.Log($"[RdxCogButton_Click] RTX HDR enabled for '{card.GameName}': PeakNits={enablePeakNits}, Contrast=125 (Gamma 2.2), MidGrey={enableMidGrey}");
             }
             else
             {
@@ -834,7 +866,6 @@ public sealed partial class MainWindow
 
                 // Delete all RTX HDR settings from profile (revert to global/inherited)
                 // Some settings (0x00DD48Fx) can't be deleted via NvAPI — write defaults instead
-                dlssPresetService.DeleteSettingRaw(card.GameName, card.InstallPath, 0x1077A11A); // Allow (deletable)
                 dlssPresetService.SetRtxHdrEnable(card.GameName, card.InstallPath, 0x00);        // Enable → Off
                 dlssPresetService.SetRtxHdrContrast(card.GameName, card.InstallPath, 100);       // Contrast → 0 (default)
                 dlssPresetService.SetRtxHdrSaturation(card.GameName, card.InstallPath, 100);     // Saturation → 0 (default)
@@ -917,6 +948,27 @@ public sealed partial class MainWindow
         content.Children.Add(contrastLabel);
         content.Children.Add(contrastSlider);
 
+        // ── Gamma preset buttons ──────────────────────────────────────────────
+        var gammaPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Margin = new Thickness(0, 2, 0, 4) };
+        foreach (var (label, value) in new[] { ("Gamma 2.0", 0), ("Gamma 2.2", 25), ("Gamma 2.4", 50) })
+        {
+            var btn = new Button
+            {
+                Content = label,
+                FontSize = 11,
+                Padding = new Thickness(10, 4, 10, 4),
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+            };
+            var capturedValue = value;
+            btn.Click += (s, ev) =>
+            {
+                contrastSlider.Value = capturedValue;
+                contrastLabel.Text = ContrastLabel(capturedValue);
+            };
+            gammaPanel.Children.Add(btn);
+        }
+        content.Children.Add(gammaPanel);
+
         // ── Saturation ────────────────────────────────────────────────────────
         string SaturationLabel(int val) => val switch
         {
@@ -930,19 +982,66 @@ public sealed partial class MainWindow
         content.Children.Add(satSlider);
 
         // ── Middle Grey ───────────────────────────────────────────────────────
-        var middleGreyValues = new int[] { 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100 };
-        var middleGreyCombo = new ComboBox { FontSize = 12, HorizontalAlignment = HorizontalAlignment.Stretch };
-        int selectedMgIndex = 8; // default = 50
-        for (int i = 0; i < middleGreyValues.Length; i++)
+        // ITU-recommended paper white nits per peak brightness (interpolated for values between table entries)
+        // Source: https://www.rtings.com/tv/learn/rtx-hdr (table from community research)
+        // Formula: midGreyNits = paperWhiteNits × (0.5 ^ gamma)
+        // gamma: 2.0 = contrast 0, 2.2 = contrast +25, 2.4 = contrast +50
+        static double CalcPaperWhiteNits(double peakNits)
         {
-            var val = middleGreyValues[i];
-            middleGreyCombo.Items.Add(val == 50 ? "50 (Default)" : val.ToString());
-            if (currentMiddleGrey == val) selectedMgIndex = i;
+            // ITU lookup table: (peakNits, paperWhiteNits)
+            (double peak, double pw)[] table =
+            {
+                (400,  101), (600,  138), (800,  172),
+                (1000, 203), (1500, 276), (2000, 343),
+            };
+            if (peakNits <= table[0].peak)  return table[0].pw;
+            if (peakNits >= table[^1].peak) return table[^1].pw;
+            for (int i = 0; i < table.Length - 1; i++)
+            {
+                if (peakNits >= table[i].peak && peakNits <= table[i + 1].peak)
+                {
+                    double t = (peakNits - table[i].peak) / (table[i + 1].peak - table[i].peak);
+                    return table[i].pw + t * (table[i + 1].pw - table[i].pw);
+                }
+            }
+            return 203; // fallback
         }
-        middleGreyCombo.SelectedIndex = selectedMgIndex;
-        var mgLabel = new TextBlock { Text = "Middle Grey", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
+        static int CalcAutoMiddleGrey(double peakNits, int contrastVal)
+        {
+            double gamma = contrastVal switch { 25 => 2.2, 50 => 2.4, _ => 2.0 };
+            // For non-preset contrast values interpolate gamma linearly between anchors
+            if (contrastVal != 0 && contrastVal != 25 && contrastVal != 50)
+                gamma = 2.0 + (contrastVal / 100.0) * 0.4; // rough linear: 0→2.0, 100→2.4
+            var pw = CalcPaperWhiteNits(peakNits);
+            var mg = pw * Math.Pow(0.5, gamma);
+            return Math.Clamp((int)Math.Round(mg), 10, 100);
+        }
+
+        var middleGreyValues = new int[] { 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100 };
+        int mgInitial = (currentMiddleGrey >= 10 && currentMiddleGrey <= 100) ? currentMiddleGrey : 50;
+        string MiddleGreyLabel(int val) => val == 50 ? "Middle Grey: 50 (Default)" : $"Middle Grey: {val}";
+        var mgLabel = new TextBlock { Text = MiddleGreyLabel(mgInitial), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
+        var mgSlider = new Slider { Minimum = 10, Maximum = 100, StepFrequency = 1, Value = mgInitial, HorizontalAlignment = HorizontalAlignment.Stretch };
+        mgSlider.ValueChanged += (s, ev) => mgLabel.Text = MiddleGreyLabel((int)mgSlider.Value);
         content.Children.Add(mgLabel);
-        content.Children.Add(middleGreyCombo);
+        content.Children.Add(mgSlider);
+
+        // Auto button — calculates correct Middle Grey from current Peak Brightness + Gamma
+        var autoMgBtn = new Button
+        {
+            Content = "Auto",
+            FontSize = 11,
+            Padding = new Thickness(10, 4, 10, 4),
+            Margin = new Thickness(0, 2, 0, 4),
+        };
+        ToolTipService.SetToolTip(autoMgBtn, "Calculate Middle Grey from Peak Brightness and Gamma using the ITU formula");
+        autoMgBtn.Click += (s, ev) =>
+        {
+            var autoVal = CalcAutoMiddleGrey((int)nitsSlider.Value, (int)contrastSlider.Value);
+            mgSlider.Value = autoVal;
+            mgLabel.Text = MiddleGreyLabel(autoVal);
+        };
+        content.Children.Add(autoMgBtn);
 
         // ── Debanding ─────────────────────────────────────────────────────────
         var debandingOptions = new (string name, uint value)[]
@@ -953,7 +1052,8 @@ public sealed partial class MainWindow
             ("High Debanding (Indicator)", 0x03),
             ("High Debanding (Indicator + Debug)", 0x23),
         };
-        var debandingCombo = new ComboBox { FontSize = 12, HorizontalAlignment = HorizontalAlignment.Stretch };
+        bool isAdmin = VulkanLayerService.IsRunningAsAdmin();
+        var debandingCombo = new ComboBox { FontSize = 12, HorizontalAlignment = HorizontalAlignment.Stretch, IsEnabled = isAdmin, Opacity = isAdmin ? 1.0 : 0.4 };
         int selectedDbIndex = 0;
         for (int i = 0; i < debandingOptions.Length; i++)
         {
@@ -964,6 +1064,95 @@ public sealed partial class MainWindow
         var dbLabel = new TextBlock { Text = "Debanding", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
         content.Children.Add(dbLabel);
         content.Children.Add(debandingCombo);
+        if (!isAdmin)
+            content.Children.Add(new TextBlock
+            {
+                Text = "Requires admin mode to change",
+                FontSize = 10,
+                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+                Margin = new Thickness(0, -4, 0, 0),
+            });
+
+        // ── Default preset buttons ────────────────────────────────────────────
+        var defaultsPath = System.IO.Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "RHI", "rtx_hdr_defaults.json");
+
+        // Load current defaults (if any) to show whether "Set Default" is available
+        bool hasDefaults = File.Exists(defaultsPath);
+
+        var defaultsPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Margin = new Thickness(0, 4, 0, 0) };
+        var saveDefaultBtn = new Button
+        {
+            Content = "Save as Default",
+            FontSize = 11,
+            Padding = new Thickness(12, 6, 12, 6),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+        ToolTipService.SetToolTip(saveDefaultBtn, "Save current slider values as your default RTX HDR preset");
+        var setDefaultBtn = new Button
+        {
+            Content = "Set Default",
+            FontSize = 11,
+            Padding = new Thickness(12, 6, 12, 6),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            IsEnabled = hasDefaults,
+        };
+        ToolTipService.SetToolTip(setDefaultBtn, hasDefaults ? "Apply your saved default preset to the sliders" : "No default saved yet — use 'Save as Default' first");
+
+        saveDefaultBtn.Click += (s, ev) =>
+        {
+            try
+            {
+                var defaults = new Dictionary<string, object>
+                {
+                    ["PeakBrightness"] = (int)nitsSlider.Value,
+                    ["Contrast"]       = (int)contrastSlider.Value,
+                    ["Saturation"]     = (int)satSlider.Value,
+                    ["MiddleGrey"]     = (int)mgSlider.Value,
+                    ["Debanding"]      = (int)debandingOptions[debandingCombo.SelectedIndex].value,
+                };
+                Directory.CreateDirectory(Path.GetDirectoryName(defaultsPath)!);
+                File.WriteAllText(defaultsPath, JsonSerializer.Serialize(defaults,
+                    new JsonSerializerOptions { WriteIndented = true }));
+                setDefaultBtn.IsEnabled = true;
+                ToolTipService.SetToolTip(setDefaultBtn, "Apply your saved default preset to the sliders");
+                saveDefaultBtn.Content = "Saved!";
+            }
+            catch (Exception ex) { CrashReporter.Log($"[RtxHdrConfigButton_Click] Failed to save defaults — {ex.Message}"); }
+        };
+
+        setDefaultBtn.Click += (s, ev) =>
+        {
+            try
+            {
+                var json = File.ReadAllText(defaultsPath);
+                var defaults = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json);
+                if (defaults == null) return;
+
+                if (defaults.TryGetValue("PeakBrightness", out var pb)) nitsSlider.Value = Math.Clamp(pb.GetInt32(), 400, 2000);
+                if (defaults.TryGetValue("Contrast", out var ct)) contrastSlider.Value = Math.Clamp(ct.GetInt32(), -100, 100);
+                if (defaults.TryGetValue("Saturation", out var sat)) satSlider.Value = Math.Clamp(sat.GetInt32(), -100, 100);
+                if (defaults.TryGetValue("MiddleGrey", out var mg))
+                {
+                    var mgVal = Math.Clamp(mg.GetInt32(), 10, 100);
+                    mgSlider.Value = mgVal;
+                }
+                if (defaults.TryGetValue("Debanding", out var db))
+                {
+                    var dbVal = db.GetInt32();
+                    for (int i = 0; i < debandingOptions.Length; i++)
+                    {
+                        if ((int)debandingOptions[i].value == dbVal) { debandingCombo.SelectedIndex = i; break; }
+                    }
+                }
+            }
+            catch (Exception ex) { CrashReporter.Log($"[RtxHdrConfigButton_Click] Failed to apply defaults — {ex.Message}"); }
+        };
+
+        defaultsPanel.Children.Add(saveDefaultBtn);
+        defaultsPanel.Children.Add(setDefaultBtn);
+        content.Children.Add(defaultsPanel);
 
         // ── Dialog ────────────────────────────────────────────────────────────
         var dialog = new ContentDialog
@@ -983,7 +1172,7 @@ public sealed partial class MainWindow
         var peakNits = (uint)nitsSlider.Value;
         var contrastStored = (uint)(100 + (int)contrastSlider.Value);
         var satStored = (uint)(100 + (int)satSlider.Value);
-        var middleGrey = (uint)middleGreyValues[middleGreyCombo.SelectedIndex];
+        var middleGrey = (uint)mgSlider.Value;
         var debanding = debandingOptions[debandingCombo.SelectedIndex].value;
 
         dlssPresetService.SetRtxHdrPeakBrightness(card.GameName, card.InstallPath, peakNits);
@@ -1092,6 +1281,9 @@ public sealed partial class MainWindow
         content.Children.Add(copyLogBtn);
 
         // ── Target FPS Setting ────────────────────────────────────────────────
+        bool ulIniExists = !string.IsNullOrEmpty(card.InstallPath)
+            && File.Exists(Path.Combine(card.InstallPath, "relimiter.ini"));
+
         content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 10, 0, 2) });
         content.Children.Add(new TextBlock
         {
@@ -1313,6 +1505,18 @@ public sealed partial class MainWindow
 
         content.Children.Add(targetFpsPanel);
         content.Children.Add(customFpsPanel);
+        if (!ulIniExists)
+        {
+            targetFpsPanel.Opacity = 0.4;
+            targetFpsPanel.IsHitTestVisible = false;
+            content.Children.Add(new TextBlock
+            {
+                Text = "Deploy relimiter.ini to enable these settings",
+                FontSize = 10,
+                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+                Margin = new Thickness(0, -2, 0, 0),
+            });
+        }
 
         // ── Compatibility Settings ────────────────────────────────────────────
         content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 10, 0, 2) });
@@ -1382,6 +1586,11 @@ public sealed partial class MainWindow
             }
         };
         content.Children.Add(dlssHooksPanel);
+        if (!ulIniExists)
+        {
+            dlssHooksPanel.Opacity = 0.4;
+            dlssHooksPanel.IsHitTestVisible = false;
+        }
 
         var dialog = new ContentDialog
         {
