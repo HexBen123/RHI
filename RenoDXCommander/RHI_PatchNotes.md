@@ -12,16 +12,18 @@
 
 ### Changes
 
+- **ReShade Settings cog** — added per-game Overlay Key and Screenshot Key pickers. Click the field and press any key to capture it, then hit Apply. Writes to all `reshade*.ini` files in the game folder so all swapchain configs stay in sync (important for Vulkan games that create multiple ReShade instances).
 - **Import Profiles confirmation** — the Import button in Settings now shows a warning that the operation is irreversible, and notes if admin-only settings (e.g. ReBAR) will be skipped due to insufficient privileges.
 - **ReLimiter Settings** — Target FPS and DLSS Hooks controls are now greyed out when no `relimiter.ini` exists in the game folder. Deploy the ini first to enable them.
 
 ### Bug Fixes
 
+- Fixed RE Framework showing a pending update on every launch. The update check was using the oldest installed record (e.g. an old DMC5 install from a previous version) as the comparison version, causing it to always detect a newer remote. Now uses the highest installed version across all RE Engine games for the comparison.
 - Fixed Game Pass games not launching — clicking Launch did nothing because there was no Xbox launch path. Game Pass games are now launched via their App User Model ID (`shell:AppsFolder\{AUMID}`), the correct activation method for packaged GDK/UWP games.
 - Fixed RTX HDR on/off state not reflecting changes made outside RHI (e.g. via NVIDIA App or after a driver update). The toggle now reads the live driver profile on every refresh and when opening the ⚙ dialog, keeping RHI in sync.
 - Fixed RTX HDR settings not being included in the Export Profile backup. All 6 RTX HDR settings are now exported and correctly restored on import, including using raw NVAPI on the import path (NvAPIWrapper silently ignores these setting IDs).
 - Fixed ReLimiter Update All silently failing to update `ul_meta.json` after a session restart — the update deployed the new binary but the version file kept the old version, causing the update indicator to reappear on every launch.
-- Fixed ReShade overlay hotkey and screenshot hotkey being reset to RHI template defaults whenever RHI redeployed `reshade.ini` (on ReShade update, INI button press, or Vulkan game refresh). Custom hotkeys set in-game are now preserved across all INI merge operations.
+- Fixed ReShade overlay hotkey and screenshot hotkey being reset to RHI's configured value whenever RHI deployed `reshade.ini`. The root issue was that `ApplyOverlayHotkey` and `ApplyScreenshotHotkey` always unconditionally overwrote the key — so any time RHI touched the ini (ReShade update, INI button, etc.) with a non-default hotkey configured in Settings, it stamped over whatever the user had set in-game. These functions now preserve existing values unless the caller explicitly requests an overwrite (used by the "Apply to All Games" actions in Settings).
 
 ---
 

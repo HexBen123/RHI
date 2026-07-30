@@ -65,17 +65,8 @@ public partial class AuxInstallService
             else
             {
                 // Section exists — overwrite matching keys, add new ones
-                // Exception: user-set hotkeys in [INPUT] must never be overwritten
                 foreach (var (key, value) in templateKeys)
-                {
-                    if (section.Equals("INPUT", StringComparison.OrdinalIgnoreCase)
-                        && (key.Equals("KeyOverlay", StringComparison.OrdinalIgnoreCase)
-                         || key.Equals("KeyScreenshot", StringComparison.OrdinalIgnoreCase))
-                        && gameKeys.ContainsKey(key))
-                        continue;
-
                     gameKeys[key] = value;
-                }
             }
         }
 
@@ -161,14 +152,6 @@ public partial class AuxInstallService
             {
                 foreach (var (key, value) in templateKeys)
                 {
-                    // Never overwrite user-set hotkeys — they are personal preferences
-                    // set in-game via the ReShade overlay and must survive INI redeployment.
-                    if (section.Equals("INPUT", StringComparison.OrdinalIgnoreCase)
-                        && (key.Equals("KeyOverlay", StringComparison.OrdinalIgnoreCase)
-                         || key.Equals("KeyScreenshot", StringComparison.OrdinalIgnoreCase))
-                        && gameKeys.ContainsKey(key))
-                        continue;
-
                     gameKeys[key] = value;
                 }
             }
@@ -191,10 +174,73 @@ public partial class AuxInstallService
         // Apply peak nits if configured
         if (peakNits > 0)
             ApplyPeakNits(gamePath, peakNits);
+
+        // ── Propagate to ReShade2/3/4... ini files ────────────────────────────
+        // Some Vulkan games (e.g. KOA: Reckoning) create multiple swapchains
+        // (main window + tiny UI overlay). ReShade assigns each swapchain its own
+        // numbered config file (ReShade2.ini, ReShade3.ini, etc.). Sync the same
+        // [ADDON], [GENERAL], [SCREENSHOT], and [INPUT] hotkeys so all instances
+        // behave consistently. Hotkeys in numbered files are always overwritten with
+        // the primary reshade.ini value — these files are ephemeral ReShade state.
+        try
+        {
+            var numberedInis = Directory.GetFiles(gameDir, "reshade*.ini")
+                .Where(f =>
+                {
+                    var name = Path.GetFileNameWithoutExtension(f);
+                    return name.Length > "reshade".Length
+                           && name.StartsWith("reshade", StringComparison.OrdinalIgnoreCase)
+                           && int.TryParse(name["reshade".Length..], out _);
+                })
+                .ToList();
+
+            if (numberedInis.Count > 0)
+            {
+                // Re-read gamePath so we propagate the final merged state
+                var mergedIni = ParseIni(File.ReadAllLines(gamePath));
+                string[] sectionsToSync = ["ADDON", "GENERAL", "SCREENSHOT"];
+
+                foreach (var numberedPath in numberedInis)
+                {
+                    try
+                    {
+                        var numberedIni = File.Exists(numberedPath)
+                            ? ParseIni(File.ReadAllLines(numberedPath))
+                            : new Dictionary<string, OrderedDict>(StringComparer.OrdinalIgnoreCase);
+
+                        foreach (var section in sectionsToSync)
+                        {
+                            if (mergedIni.TryGetValue(section, out var srcKeys))
+                                numberedIni[section] = new OrderedDict(srcKeys);
+                        }
+
+                        // Always sync hotkeys from primary ini — numbered inis are ephemeral
+                        // and the user's hotkey preference should be consistent across all swapchains.
+                        if (mergedIni.TryGetValue("INPUT", out var inputKeys))
+                        {
+                            if (!numberedIni.ContainsKey("INPUT"))
+                                numberedIni["INPUT"] = new OrderedDict();
+                            if (inputKeys.TryGetValue("KeyOverlay", out var ko))
+                                numberedIni["INPUT"]["KeyOverlay"] = ko;
+                            if (inputKeys.TryGetValue("KeyScreenshot", out var ks))
+                                numberedIni["INPUT"]["KeyScreenshot"] = ks;
+                        }
+
+                        WriteIni(numberedPath, numberedIni);
+                    }
+                    catch (Exception ex)
+                    {
+                        CrashReporter.Log($"[AuxInstallService.MergeRsVulkanIni] Failed to sync '{Path.GetFileName(numberedPath)}' — {ex.Message}");
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[AuxInstallService.MergeRsVulkanIni] Numbered ini sync failed — {ex.Message}");
+        }
     }
 
-    /// <summary>Returns true if the game name matches Red Dead Redemption 2 or Max Payne 3 (case-insensitive).
-    /// These games use the dedicated reshade.rdr2.ini template.</summary>
     internal static bool IsRdr2(string gameName) =>
         gameName.Contains("Red Dead Redemption 2", StringComparison.OrdinalIgnoreCase) ||
         gameName.Equals("RDR2", StringComparison.OrdinalIgnoreCase) ||
@@ -1094,6 +1140,7 @@ public partial class AuxInstallService
         if (!ini.ContainsKey(section))
             ini[section] = new OrderedDict();
 
+        CrashReporter.Log($"[AuxInstallService.ApplyOverlayHotkey] Writing KeyOverlay='{keyOverlayValue}' to '{Path.GetFileName(iniFilePath)}'");
         ini[section]["KeyOverlay"] = keyOverlayValue;
 
         WriteIni(iniFilePath, ini);

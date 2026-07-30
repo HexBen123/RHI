@@ -594,14 +594,18 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
 
             if (refInstalled.Count > 0)
             {
-                // Find a card with a standard version (not PD-Upscaler) for the update check.
-                // PD-Upscaler cards are on a different branch and shouldn't trigger updates.
-                var standardCard = refInstalled.FirstOrDefault(c =>
-                    !string.Equals(c.RefRecord!.InstalledVersion, "PD-Upscaler", StringComparison.OrdinalIgnoreCase));
+                // Find the highest installed standard version for the update check.
+                // Using the newest avoids false positives from stale records on games
+                // the user hasn't reinstalled since an older update.
+                var standardCard = refInstalled
+                    .Where(c => !string.Equals(c.RefRecord!.InstalledVersion, "PD-Upscaler", StringComparison.OrdinalIgnoreCase))
+                    .OrderByDescending(c => c.RefRecord!.InstalledVersion, StringComparer.OrdinalIgnoreCase)
+                    .FirstOrDefault();
 
                 if (standardCard != null)
                 {
                     var firstVersion = standardCard.RefRecord!.InstalledVersion;
+                    _crashReporter.Log($"[UpdateOrchestrationService.CheckForUpdatesAsync] REF version check using '{standardCard.GameName}' installed={firstVersion}");
                     var refUpdateAvailable = await _refService.CheckForUpdateAsync(firstVersion).ConfigureAwait(false);
 
                     if (refUpdateAvailable)

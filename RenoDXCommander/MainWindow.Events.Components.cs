@@ -167,6 +167,185 @@ public sealed partial class MainWindow
         };
         content.Children.Add(copyLogBtn);
 
+        // ── Overlay Key ───────────────────────────────────────────────────────
+        content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 4, 0, 0) });
+        content.Children.Add(new TextBlock
+        {
+            Text = "Overlay Key",
+            FontSize = 12,
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            Margin = new Thickness(0, 4, 0, 0),
+        });
+
+        // Read current key from reshade.ini (game folder)
+        var iniPath = Path.Combine(card.InstallPath, "reshade.ini");
+        string currentHotkey = ViewModel.Settings.OverlayHotkey; // fallback to global
+        if (File.Exists(iniPath))
+        {
+            try
+            {
+                var ini = AuxInstallService.ParseIni(File.ReadAllLines(iniPath));
+                if (ini.TryGetValue("INPUT", out var inputSection)
+                    && inputSection.TryGetValue("KeyOverlay", out var ko)
+                    && !string.IsNullOrWhiteSpace(ko))
+                    currentHotkey = ko;
+            }
+            catch { /* use fallback */ }
+        }
+
+        var hotkeyString = currentHotkey;
+        var hotkeyBox = new TextBox
+        {
+            Text = HotkeyManager.FormatHotkeyDisplay(hotkeyString),
+            IsReadOnly = true,
+            PlaceholderText = "Click then press a key...",
+            FontSize = 12,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+        ToolTipService.SetToolTip(hotkeyBox, "Click here then press your desired key. Written to all reshade*.ini files for this game.");
+
+        hotkeyBox.GotFocus += (s, ev) => hotkeyBox.Text = "Press a key...";
+        hotkeyBox.KeyDown += (s, ev) =>
+        {
+            var vk = (int)ev.Key;
+            if (vk == 0 || vk == 16 || vk == 17 || vk == 18) return; // ignore modifiers alone
+            bool shift = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Shift).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+            bool ctrl  = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+            bool alt   = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Menu).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+            hotkeyString = HotkeyManager.BuildHotkeyString(vk, shift, ctrl, alt);
+            hotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(hotkeyString);
+            ev.Handled = true;
+        };
+        hotkeyBox.LostFocus += (s, ev) =>
+        {
+            if (hotkeyBox.Text == "Press a key...")
+                hotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(hotkeyString);
+        };
+
+        var applyKeyBtn = new Button
+        {
+            Content = "Apply",
+            FontSize = 12,
+            Padding = new Thickness(16, 7, 16, 7),
+            HorizontalAlignment = HorizontalAlignment.Right,
+        };
+        applyKeyBtn.Click += (s, ev) =>
+        {
+            if (string.IsNullOrEmpty(card.InstallPath)) return;
+            try
+            {
+                // Write to all reshade*.ini files in the game folder
+                var iniFiles = Directory.EnumerateFiles(card.InstallPath, "reshade*.ini")
+                    .Where(f => Path.GetExtension(f).Equals(".ini", StringComparison.OrdinalIgnoreCase)
+                             && Path.GetFileNameWithoutExtension(f).StartsWith("reshade", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+                foreach (var file in iniFiles)
+                    AuxInstallService.ApplyOverlayHotkey(file, hotkeyString);
+                applyKeyBtn.Content = "Applied!";
+                _crashReporter.Log($"[RsCogButton_Click] Applied overlay key '{hotkeyString}' to {iniFiles.Count} ini file(s) for '{card.GameName}'");
+            }
+            catch (Exception ex) { card.RsActionMessage = $"❌ {ex.Message}"; }
+        };
+
+        var keyGrid = new Grid { ColumnSpacing = 8 };
+        keyGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        keyGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        keyGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        keyGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        hotkeyBox.HorizontalAlignment = HorizontalAlignment.Stretch;
+        Grid.SetColumn(hotkeyBox, 0); Grid.SetRow(hotkeyBox, 0);
+        Grid.SetColumn(applyKeyBtn, 1); Grid.SetRow(applyKeyBtn, 0);
+        keyGrid.Children.Add(hotkeyBox);
+        keyGrid.Children.Add(applyKeyBtn);
+
+        // ── Screenshot Key ────────────────────────────────────────────────────
+        content.Children.Add(new TextBlock
+        {
+            Text = "Screenshot Key",
+            FontSize = 12,
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            Margin = new Thickness(0, 6, 0, 0),
+        });
+
+        string currentScreenshotHotkey = ViewModel.Settings.ScreenshotHotkey;
+        if (File.Exists(iniPath))
+        {
+            try
+            {
+                var ini2 = AuxInstallService.ParseIni(File.ReadAllLines(iniPath));
+                if (ini2.TryGetValue("INPUT", out var inputSection2)
+                    && inputSection2.TryGetValue("KeyScreenshot", out var ks2)
+                    && !string.IsNullOrWhiteSpace(ks2))
+                    currentScreenshotHotkey = ks2;
+            }
+            catch { /* use fallback */ }
+        }
+
+        var screenshotHotkeyString = currentScreenshotHotkey;
+        var screenshotHotkeyBox = new TextBox
+        {
+            Text = HotkeyManager.FormatHotkeyDisplay(screenshotHotkeyString),
+            IsReadOnly = true,
+            PlaceholderText = "Click then press a key...",
+            FontSize = 12,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+        ToolTipService.SetToolTip(screenshotHotkeyBox, "Click here then press your desired key. Written to all reshade*.ini files for this game.");
+
+        screenshotHotkeyBox.GotFocus += (s, ev) => screenshotHotkeyBox.Text = "Press a key...";
+        screenshotHotkeyBox.KeyDown += (s, ev) =>
+        {
+            var vk2 = (int)ev.Key;
+            if (vk2 == 0 || vk2 == 16 || vk2 == 17 || vk2 == 18) return;
+            bool shift2 = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Shift).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+            bool ctrl2  = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+            bool alt2   = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Menu).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+            screenshotHotkeyString = HotkeyManager.BuildHotkeyString(vk2, shift2, ctrl2, alt2);
+            screenshotHotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(screenshotHotkeyString);
+            ev.Handled = true;
+        };
+        screenshotHotkeyBox.LostFocus += (s, ev) =>
+        {
+            if (screenshotHotkeyBox.Text == "Press a key...")
+                screenshotHotkeyBox.Text = HotkeyManager.FormatHotkeyDisplay(screenshotHotkeyString);
+        };
+
+        var applyScreenshotKeyBtn = new Button
+        {
+            Content = "Apply",
+            FontSize = 12,
+            Padding = new Thickness(16, 7, 16, 7),
+            HorizontalAlignment = HorizontalAlignment.Right,
+        };
+        applyScreenshotKeyBtn.Click += (s, ev) =>
+        {
+            if (string.IsNullOrEmpty(card.InstallPath)) return;
+            try
+            {
+                var iniFiles2 = Directory.EnumerateFiles(card.InstallPath, "reshade*.ini")
+                    .Where(f => Path.GetExtension(f).Equals(".ini", StringComparison.OrdinalIgnoreCase)
+                             && Path.GetFileNameWithoutExtension(f).StartsWith("reshade", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+                foreach (var file in iniFiles2)
+                    AuxInstallService.ApplyScreenshotHotkey(file, screenshotHotkeyString);
+                applyScreenshotKeyBtn.Content = "Applied!";
+                _crashReporter.Log($"[RsCogButton_Click] Applied screenshot key '{screenshotHotkeyString}' to {iniFiles2.Count} ini file(s) for '{card.GameName}'");
+            }
+            catch (Exception ex) { card.RsActionMessage = $"❌ {ex.Message}"; }
+        };
+
+        var screenshotKeyGrid = new Grid { ColumnSpacing = 8 };
+        screenshotKeyGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        screenshotKeyGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        screenshotHotkeyBox.HorizontalAlignment = HorizontalAlignment.Stretch;
+        Grid.SetColumn(screenshotHotkeyBox, 0);
+        Grid.SetColumn(applyScreenshotKeyBtn, 1);
+        screenshotKeyGrid.Children.Add(screenshotHotkeyBox);
+        screenshotKeyGrid.Children.Add(applyScreenshotKeyBtn);
+
+        content.Children.Add(keyGrid);
+        content.Children.Add(screenshotKeyGrid);
+
         var dialog = new ContentDialog
         {
             Title = "ReShade Settings",

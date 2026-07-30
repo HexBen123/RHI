@@ -2184,7 +2184,7 @@
                                         <TextBlock Text="Full Refresh" FontSize="13" FontWeight="SemiBold"
                                                    Foreground="{StaticResource TextPrimaryBrush}"/>
                                         <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                                   Text="Clears all caches and re-scans everything from disk. Use as a last resort if games are missing, paths have changed, or DLSS has been added to a game."/>
+                                                   Text="Clears all caches and re-scans everything from disk. Use as a last resort if games are missing, paths have changed, DLSS has been added to a game, or the DLSS section is missing from a game card."/>
                                     </StackPanel>
                                     <Button Grid.Row="1" x:Name="FullRefreshBtn" Content="Full Refresh"
                                             Click="FullRefreshButton_Click"
