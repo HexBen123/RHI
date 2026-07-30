@@ -13,4 +13,7 @@ public class DetectedGame
 
     /// <summary>Epic Games Store app name (for protocol launch).</summary>
     public string? EpicAppName { get; set; }
+
+    /// <summary>Xbox/Game Pass App User Model ID (for shell:AppsFolder launch).</summary>
+    public string? XboxAumid { get; set; }
 }

@@ -65,8 +65,17 @@ public partial class AuxInstallService
             else
             {
                 // Section exists — overwrite matching keys, add new ones
+                // Exception: user-set hotkeys in [INPUT] must never be overwritten
                 foreach (var (key, value) in templateKeys)
+                {
+                    if (section.Equals("INPUT", StringComparison.OrdinalIgnoreCase)
+                        && (key.Equals("KeyOverlay", StringComparison.OrdinalIgnoreCase)
+                         || key.Equals("KeyScreenshot", StringComparison.OrdinalIgnoreCase))
+                        && gameKeys.ContainsKey(key))
+                        continue;
+
                     gameKeys[key] = value;
+                }
             }
         }
 
@@ -151,7 +160,17 @@ public partial class AuxInstallService
             else
             {
                 foreach (var (key, value) in templateKeys)
+                {
+                    // Never overwrite user-set hotkeys — they are personal preferences
+                    // set in-game via the ReShade overlay and must survive INI redeployment.
+                    if (section.Equals("INPUT", StringComparison.OrdinalIgnoreCase)
+                        && (key.Equals("KeyOverlay", StringComparison.OrdinalIgnoreCase)
+                         || key.Equals("KeyScreenshot", StringComparison.OrdinalIgnoreCase))
+                        && gameKeys.ContainsKey(key))
+                        continue;
+
                     gameKeys[key] = value;
+                }
             }
         }
 

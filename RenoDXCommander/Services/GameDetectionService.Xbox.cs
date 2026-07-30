@@ -122,11 +122,24 @@ public partial class GameDetectionService
                     // Resolve the actual game root for GDK games
                     var gameRoot = ResolveXboxGameRoot(installLocation);
 
+                    // Capture AUMID for shell:AppsFolder launch (required for Game Pass games)
+                    string? aumid = null;
+                    try
+                    {
+                        var appEntries = package.GetAppListEntries();
+                        aumid = appEntries?.FirstOrDefault()?.AppUserModelId;
+                    }
+                    catch (Exception ex)
+                    {
+                        CrashReporter.Log($"[GameDetectionService.FindXboxGames] Package '{package.Id?.Name}' — AUMID inaccessible — {ex.Message}");
+                    }
+
                     games.Add(new DetectedGame
                     {
                         Name        = displayName,
                         InstallPath = gameRoot,
                         Source      = "Xbox",
+                        XboxAumid   = aumid,
                     });
                 }
                 catch (Exception ex)

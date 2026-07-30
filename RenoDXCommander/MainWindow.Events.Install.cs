@@ -715,7 +715,19 @@ public sealed partial class MainWindow
                 return;
             }
 
-            // 5. Direct exe — find the game exe in InstallPath
+            // 5. Xbox / Game Pass — launch via shell:AppsFolder using AUMID
+            // Direct exe launch fails for Game Pass games (WindowsApps paths are access-denied
+            // and packaged GDK apps require activation through the AUMID, not direct Process.Start)
+            if (!string.IsNullOrEmpty(card.DetectedGame?.XboxAumid))
+            {
+                var uri = $"shell:AppsFolder\\{card.DetectedGame.XboxAumid}";
+                _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via Xbox AUMID: {card.DetectedGame.XboxAumid}");
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(uri) { UseShellExecute = true });
+                MonitorProcessForHdr(null, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.InstallPath, hdrTargets);
+                return;
+            }
+
+            // 6. Direct exe — find the game exe in InstallPath
             if (!string.IsNullOrEmpty(card.InstallPath) && Directory.Exists(card.InstallPath))
             {
                 var exes = Directory.GetFiles(card.InstallPath, "*.exe", SearchOption.TopDirectoryOnly);

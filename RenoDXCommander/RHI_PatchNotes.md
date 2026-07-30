@@ -17,9 +17,11 @@
 
 ### Bug Fixes
 
+- Fixed Game Pass games not launching — clicking Launch did nothing because there was no Xbox launch path. Game Pass games are now launched via their App User Model ID (`shell:AppsFolder\{AUMID}`), the correct activation method for packaged GDK/UWP games.
 - Fixed RTX HDR on/off state not reflecting changes made outside RHI (e.g. via NVIDIA App or after a driver update). The toggle now reads the live driver profile on every refresh and when opening the ⚙ dialog, keeping RHI in sync.
 - Fixed RTX HDR settings not being included in the Export Profile backup. All 6 RTX HDR settings are now exported and correctly restored on import, including using raw NVAPI on the import path (NvAPIWrapper silently ignores these setting IDs).
 - Fixed ReLimiter Update All silently failing to update `ul_meta.json` after a session restart — the update deployed the new binary but the version file kept the old version, causing the update indicator to reappear on every launch.
+- Fixed ReShade overlay hotkey and screenshot hotkey being reset to RHI template defaults whenever RHI redeployed `reshade.ini` (on ReShade update, INI button press, or Vulkan game refresh). Custom hotkeys set in-game are now preserved across all INI merge operations.
 
 ---
 
