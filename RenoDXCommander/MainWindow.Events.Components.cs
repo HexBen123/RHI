@@ -1,4 +1,4 @@
-﻿// MainWindow.Events.Components.cs — Per-component cog button (⚙️) dialog handlers (RS, RDX, UL, DC, OS, DXVK).
+// MainWindow.Events.Components.cs — Per-component cog button (⚙️) dialog handlers (RS, RDX, UL, DC, OS, DXVK).
 
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
@@ -168,7 +168,7 @@ public sealed partial class MainWindow
         content.Children.Add(copyLogBtn);
 
         // ── Overlay Key ───────────────────────────────────────────────────────
-        content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 4, 0, 0) });
+        content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 2, 0, 2) });
         content.Children.Add(new TextBlock
         {
             Text = "Overlay Key",
@@ -257,6 +257,7 @@ public sealed partial class MainWindow
         Grid.SetColumn(applyKeyBtn, 1); Grid.SetRow(applyKeyBtn, 0);
         keyGrid.Children.Add(hotkeyBox);
         keyGrid.Children.Add(applyKeyBtn);
+        content.Children.Add(keyGrid);
 
         // ── Screenshot Key ────────────────────────────────────────────────────
         content.Children.Add(new TextBlock
@@ -343,7 +344,6 @@ public sealed partial class MainWindow
         screenshotKeyGrid.Children.Add(screenshotHotkeyBox);
         screenshotKeyGrid.Children.Add(applyScreenshotKeyBtn);
 
-        content.Children.Add(keyGrid);
         content.Children.Add(screenshotKeyGrid);
 
         var dialog = new ContentDialog
@@ -1091,7 +1091,7 @@ public sealed partial class MainWindow
         if (card == null || string.IsNullOrEmpty(card.InstallPath)) return;
 
         var dlssPresetService = App.Services.GetRequiredService<DlssPresetService>();
-        var content = new StackPanel { Spacing = 12 };
+        var content = new StackPanel { Spacing = 6 };
 
         // Read current values
         var currentContrast = (int)dlssPresetService.GetRtxHdrContrast(card.GameName, card.InstallPath);
@@ -1113,6 +1113,7 @@ public sealed partial class MainWindow
         content.Children.Add(nitsLabel);
         content.Children.Add(nitsSlider);
 
+        content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 2, 0, 2) });
         // ── Contrast ──────────────────────────────────────────────────────────
         string ContrastLabel(int val) => val switch
         {
@@ -1148,6 +1149,7 @@ public sealed partial class MainWindow
         }
         content.Children.Add(gammaPanel);
 
+        content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 2, 0, 2) });
         // ── Saturation ────────────────────────────────────────────────────────
         string SaturationLabel(int val) => val switch
         {
@@ -1160,6 +1162,7 @@ public sealed partial class MainWindow
         content.Children.Add(satLabel);
         content.Children.Add(satSlider);
 
+        content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 2, 0, 2) });
         // ── Middle Grey ───────────────────────────────────────────────────────
         // ITU-recommended paper white nits per peak brightness (interpolated for values between table entries)
         // Source: https://www.rtings.com/tv/learn/rtx-hdr (table from community research)
@@ -1222,6 +1225,7 @@ public sealed partial class MainWindow
         };
         content.Children.Add(autoMgBtn);
 
+        content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 2, 0, 2) });
         // ── Debanding ─────────────────────────────────────────────────────────
         var debandingOptions = new (string name, uint value)[]
         {
@@ -1337,7 +1341,7 @@ public sealed partial class MainWindow
         var dialog = new ContentDialog
         {
             Title = "RTX HDR Settings",
-            Content = new ScrollViewer { Content = content, MaxHeight = 520, Padding = new Thickness(0, 0, 16, 0) },
+            Content = new ScrollViewer { Content = content, MaxHeight = 600, Padding = new Thickness(0, 0, 16, 0) },
             PrimaryButtonText = "Apply",
             CloseButtonText = "Cancel",
             XamlRoot = Content.XamlRoot,

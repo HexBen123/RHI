@@ -1,5 +1,9 @@
 ## v2.2.6
 
+### Manifest Updates
+
+- Added engine tag for Halo: The Master Chief Collection (`Halo Engine`).
+
 ### New
 
 - **UE-Extended default for generic UE games** — any Unreal Engine game without a named RenoDX mod now installs UE-Extended (`renodx-ue-extended.addon64`) automatically. Switch back to the standard generic addon via the UE-Extended dropdown (set to Off) in the RenoDX ⚙ dialog. Your choice persists across restarts.

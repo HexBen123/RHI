@@ -418,7 +418,17 @@ public partial class MainViewModel
             bool isNativeHdr = IsNativeHdrGameMatch(game.Name);
             bool noUeExtended = (_manifestNoUeExtendedGames.Contains(game.Name))
                              || (_gameNameService.UeExtendedOptOutGames.Contains(game.Name));
-            bool useUeExt = !noUeExtended
+            // Only apply UE-Extended when there is no named mod available.
+            // A named mod (non-generic) always takes priority — UE-Extended is only for games
+            // without a dedicated RenoDX mod on the wiki.
+            bool hasNamedMod = effectiveMod != null && !effectiveMod.IsGenericUnreal && !effectiveMod.IsGenericUnity
+                             && effectiveMod.SnapshotUrl != null;
+            // Also block UE-Extended if a non-UE-Extended addon is already on disk
+            // (e.g. a Discord mod that was drag-dropped — DiscordUrl set, SnapshotUrl null)
+            bool hasNamedAddonOnDisk = addonOnDisk != null
+                                    && addonOnDisk != UeExtendedFile
+                                    && addonOnDisk != GenericUnrealFile;
+            bool useUeExt = !noUeExtended && !hasNamedMod && !hasNamedAddonOnDisk
                          && ((addonOnDisk == UeExtendedFile)
                              || IsUeExtendedGameMatch(game.Name)
                              || isNativeHdr

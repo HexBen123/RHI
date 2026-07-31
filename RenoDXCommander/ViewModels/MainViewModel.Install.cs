@@ -525,7 +525,12 @@ public partial class MainViewModel
         bool isNativeHdr = IsNativeHdrGameMatch(game.Name);
         bool noUeExtended = (_manifestNoUeExtendedGames.Contains(game.Name))
                          || (_gameNameService.UeExtendedOptOutGames.Contains(game.Name));
-        bool useUeExt = !noUeExtended
+        bool hasNamedModM = effectiveMod != null && !effectiveMod.IsGenericUnreal && !effectiveMod.IsGenericUnity
+                          && effectiveMod.SnapshotUrl != null;
+        bool hasNamedAddonOnDiskM = addonOnDisk != null
+                                 && addonOnDisk != UeExtendedFile
+                                 && addonOnDisk != GenericUnrealFile;
+        bool useUeExt = !noUeExtended && !hasNamedModM && !hasNamedAddonOnDiskM
                      && ((addonOnDisk == UeExtendedFile)
                          || IsUeExtendedGameMatch(game.Name)
                          || isNativeHdr
