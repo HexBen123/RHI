@@ -1107,10 +1107,18 @@ public sealed partial class MainWindow
         if (peakBrightnessDisplay < 400) peakBrightnessDisplay = 510; // fallback default
 
         // ── Peak Brightness ───────────────────────────────────────────────────
-        var nitsLabel = new TextBlock { Text = $"Peak Brightness: {peakBrightnessDisplay} nits", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
+        var nitsRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        var nitsLabel = new TextBlock { Text = $"Peak Brightness: {peakBrightnessDisplay} nits", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush), MinWidth = 175 };
+        var nitsWarning = new TextBlock { Text = "⚠ High values may look unnatural", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.AccentAmberBrush), VerticalAlignment = VerticalAlignment.Center, Opacity = peakBrightnessDisplay > 600 ? 1.0 : 0.0 };
+        nitsRow.Children.Add(nitsLabel);
+        nitsRow.Children.Add(nitsWarning);
         var nitsSlider = new Slider { Minimum = 400, Maximum = 2000, StepFrequency = 10, Value = peakBrightnessDisplay, HorizontalAlignment = HorizontalAlignment.Stretch };
-        nitsSlider.ValueChanged += (s, ev) => nitsLabel.Text = $"Peak Brightness: {(int)nitsSlider.Value} nits";
-        content.Children.Add(nitsLabel);
+        nitsSlider.ValueChanged += (s, ev) =>
+        {
+            nitsLabel.Text = $"Peak Brightness: {(int)nitsSlider.Value} nits";
+            nitsWarning.Opacity = (int)nitsSlider.Value > 600 ? 1.0 : 0.0;
+        };
+        content.Children.Add(nitsRow);
         content.Children.Add(nitsSlider);
 
         content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 2, 0, 2) });
@@ -1148,19 +1156,6 @@ public sealed partial class MainWindow
             gammaPanel.Children.Add(btn);
         }
         content.Children.Add(gammaPanel);
-
-        content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 2, 0, 2) });
-        // ── Saturation ────────────────────────────────────────────────────────
-        string SaturationLabel(int val) => val switch
-        {
-            -25 => "Saturation: -25 — Neutral Saturation",
-            _ => $"Saturation: {(val >= 0 ? "+" : "")}{val}",
-        };
-        var satLabel = new TextBlock { Text = SaturationLabel(saturationDisplay), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
-        var satSlider = new Slider { Minimum = -100, Maximum = 100, StepFrequency = 1, Value = saturationDisplay, HorizontalAlignment = HorizontalAlignment.Stretch };
-        satSlider.ValueChanged += (s, ev) => satLabel.Text = SaturationLabel((int)satSlider.Value);
-        content.Children.Add(satLabel);
-        content.Children.Add(satSlider);
 
         content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 2, 0, 2) });
         // ── Middle Grey ───────────────────────────────────────────────────────
@@ -1216,25 +1211,37 @@ public sealed partial class MainWindow
         string MiddleGreyLabel(int val, int contrastVal)
         {
             var perceivedPw = CalcPerceivedPaperwhite(val, contrastVal);
-            var defaultSuffix = val == 50 ? " (Default)" : "";
-            return $"Middle Grey: {val}{defaultSuffix} ({perceivedPw} nits)";
+            return $"Middle Grey: {val} ({perceivedPw} nits)";
         }
         
-        var mgLabel = new TextBlock { Text = MiddleGreyLabel(mgInitial, (int)contrastSlider.Value), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
+        int mgInitialPw = CalcPerceivedPaperwhite(mgInitial, (int)contrastSlider.Value);
+        var mgRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        var mgLabel = new TextBlock { Text = MiddleGreyLabel(mgInitial, (int)contrastSlider.Value), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush), MinWidth = 175 };
+        var mgWarning = new TextBlock { Text = "⚠ High values may look washed out", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.AccentAmberBrush), VerticalAlignment = VerticalAlignment.Center, Opacity = mgInitialPw > 203 ? 1.0 : 0.0 };
+        mgRow.Children.Add(mgLabel);
+        mgRow.Children.Add(mgWarning);
         var mgSlider = new Slider { Minimum = 10, Maximum = 100, StepFrequency = 1, Value = mgInitial, HorizontalAlignment = HorizontalAlignment.Stretch };
-        mgSlider.ValueChanged += (s, ev) => mgLabel.Text = MiddleGreyLabel((int)mgSlider.Value, (int)contrastSlider.Value);
+        mgSlider.ValueChanged += (s, ev) =>
+        {
+            mgLabel.Text = MiddleGreyLabel((int)mgSlider.Value, (int)contrastSlider.Value);
+            mgWarning.Opacity = CalcPerceivedPaperwhite((int)mgSlider.Value, (int)contrastSlider.Value) > 203 ? 1.0 : 0.0;
+        };
         // Also update when contrast changes (gamma affects perceived paperwhite)
-        contrastSlider.ValueChanged += (s, ev) => mgLabel.Text = MiddleGreyLabel((int)mgSlider.Value, (int)contrastSlider.Value);
-        content.Children.Add(mgLabel);
+        contrastSlider.ValueChanged += (s, ev) =>
+        {
+            mgLabel.Text = MiddleGreyLabel((int)mgSlider.Value, (int)contrastSlider.Value);
+            mgWarning.Opacity = CalcPerceivedPaperwhite((int)mgSlider.Value, (int)contrastSlider.Value) > 203 ? 1.0 : 0.0;
+        };
+        content.Children.Add(mgRow);
         content.Children.Add(mgSlider);
 
-        // Auto button — calculates correct Middle Grey from current Peak Brightness + Gamma
+        // Auto button + preset buttons — calculates correct Middle Grey or uses predefined values
+        var mgButtonsPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Margin = new Thickness(0, 2, 0, 4) };
         var autoMgBtn = new Button
         {
             Content = "Auto",
             FontSize = 11,
             Padding = new Thickness(10, 4, 10, 4),
-            Margin = new Thickness(0, 2, 0, 4),
         };
         ToolTipService.SetToolTip(autoMgBtn, "Calculate Middle Grey from Peak Brightness and Gamma using the ITU formula");
         autoMgBtn.Click += (s, ev) =>
@@ -1242,8 +1249,52 @@ public sealed partial class MainWindow
             var autoVal = CalcAutoMiddleGrey((int)nitsSlider.Value, (int)contrastSlider.Value);
             mgSlider.Value = autoVal;
             mgLabel.Text = MiddleGreyLabel(autoVal, (int)contrastSlider.Value);
+            mgWarning.Opacity = CalcPerceivedPaperwhite(autoVal, (int)contrastSlider.Value) > 203 ? 1.0 : 0.0;
         };
-        content.Children.Add(autoMgBtn);
+        mgButtonsPanel.Children.Add(autoMgBtn);
+        
+        // Separator
+        mgButtonsPanel.Children.Add(new TextBlock { Text = "|", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0, 4, 0) });
+        
+        // Preset buttons for common paperwhite values (100-200 nits range)
+        foreach (var presetPw in new[] { 100, 125, 150, 175, 200 })
+        {
+            var presetBtn = new Button
+            {
+                Content = presetPw.ToString(),
+                FontSize = 11,
+                Padding = new Thickness(8, 4, 8, 4),
+                MinWidth = 36,
+            };
+            var capturedPw = presetPw;
+            ToolTipService.SetToolTip(presetBtn, $"Set Middle Grey to achieve ~{presetPw} nits paperwhite");
+            presetBtn.Click += (s, ev) =>
+            {
+                // Reverse formula: midGrey = paperwhite × (0.5 ^ gamma)
+                double gamma = (int)contrastSlider.Value switch { 25 => 2.2, 50 => 2.4, _ => 2.0 };
+                if ((int)contrastSlider.Value != 0 && (int)contrastSlider.Value != 25 && (int)contrastSlider.Value != 50)
+                    gamma = 2.0 + ((int)contrastSlider.Value / 100.0) * 0.4;
+                var mgVal = Math.Clamp((int)Math.Round(capturedPw * Math.Pow(0.5, gamma)), 10, 100);
+                mgSlider.Value = mgVal;
+                mgLabel.Text = MiddleGreyLabel(mgVal, (int)contrastSlider.Value);
+                mgWarning.Opacity = CalcPerceivedPaperwhite(mgVal, (int)contrastSlider.Value) > 203 ? 1.0 : 0.0;
+            };
+            mgButtonsPanel.Children.Add(presetBtn);
+        }
+        content.Children.Add(mgButtonsPanel);
+
+        content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 2, 0, 2) });
+        // ── Saturation ────────────────────────────────────────────────────────
+        string SaturationLabel(int val) => val switch
+        {
+            -25 => "Saturation: -25 — Neutral Saturation",
+            _ => $"Saturation: {(val >= 0 ? "+" : "")}{val}",
+        };
+        var satLabel = new TextBlock { Text = SaturationLabel(saturationDisplay), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
+        var satSlider = new Slider { Minimum = -100, Maximum = 100, StepFrequency = 1, Value = saturationDisplay, HorizontalAlignment = HorizontalAlignment.Stretch };
+        satSlider.ValueChanged += (s, ev) => satLabel.Text = SaturationLabel((int)satSlider.Value);
+        content.Children.Add(satLabel);
+        content.Children.Add(satSlider);
 
         content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 2, 0, 2) });
         // ── Debanding ─────────────────────────────────────────────────────────

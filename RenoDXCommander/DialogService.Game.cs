@@ -234,6 +234,49 @@ public partial class DialogService
         SolidColorBrush linkColour,
         SolidColorBrush dimColour)
     {
+        // ── RTX HDR mode — show dedicated content instead of RenoDX wiki ──────
+        if (card.IsRtxHdrEnabled)
+        {
+            // RTX HDR badge (green, same style as Luma badge)
+            var rtxHdrBadge = new Border
+            {
+                CornerRadius        = new CornerRadius(6),
+                Padding             = new Thickness(10, 4, 10, 4),
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Background          = Brush(ResourceKeys.AccentGreenBgBrush),
+                BorderBrush         = Brush(ResourceKeys.AccentGreenBorderBrush),
+                BorderThickness     = new Thickness(1),
+                Child = new TextBlock
+                {
+                    Text       = "RTX HDR Enabled",
+                    FontSize   = 12,
+                    Foreground = Brush(ResourceKeys.AccentGreenBrush),
+                }
+            };
+            panel.Children.Add(rtxHdrBadge);
+
+            panel.Children.Add(new TextBlock
+            {
+                Text = "RTX HDR uses NVIDIA's driver-level HDR injection to upgrade SDR games to HDR. " +
+                       "It works at the GPU level without injecting DLLs into the game, making it compatible with anti-cheat systems.\n\n" +
+                       "Requires: NVIDIA App installed, Game Filter/Freestyle enabled, RTX GPU, driver 550+.",
+                TextWrapping = TextWrapping.Wrap,
+                Foreground   = textColour,
+                FontSize     = 13,
+                LineHeight   = 22,
+            });
+
+            AddHyperlinkBlock(panel, "RTX HDR Calibration Guide", manifest?.RtxHdrInfoUrl ?? "https://www.reddit.com/r/nvidia/comments/1b03yfg/rtx_hdr_paper_white_gamma_reference_settings/", linkColour);
+
+            // Still show HDR Gaming Database link if available
+            if (!string.IsNullOrEmpty(result.HdrAnalysisUrl))
+            {
+                AddHyperlinkBlock(panel, "HDR Analysis — HDR Gaming Database", result.HdrAnalysisUrl, linkColour);
+            }
+
+            return; // Skip regular RenoDX content
+        }
+
         // ── Wiki status badge (reuse existing badge rendering) ────────────────
         if (result.Source == InfoSourceType.Wiki && !string.IsNullOrEmpty(result.WikiStatusLabel))
         {

@@ -1,6 +1,8 @@
 {
   "version": 1,
 
+  "rtxHdrInfoUrl": "https://www.reddit.com/r/nvidia/comments/1b03yfg/rtx_hdr_paper_white_gamma_reference_settings/",
+
   "_comment_lists": "=== GAME CLASSIFICATION LISTS ===",
 
   "blacklist": [

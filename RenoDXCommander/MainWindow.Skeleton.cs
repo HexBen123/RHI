@@ -19,7 +19,8 @@ internal record VisibilityState(
     Visibility GameViewPanel,
     Visibility SkeletonRowPanel,
     Visibility SkeletonDetailPanel,
-    Visibility AboutPanel);
+    Visibility AboutPanel,
+    Visibility FaqPanel);
 
 /// <summary>Describes the structural specification of a single skeleton row element.</summary>
 internal record SkeletonRowSpec(
@@ -125,7 +126,20 @@ public sealed partial class MainWindow
                 GameViewPanel: Visibility.Collapsed,
                 SkeletonRowPanel: Visibility.Collapsed,
                 SkeletonDetailPanel: Visibility.Collapsed,
-                AboutPanel: Visibility.Visible);
+                AboutPanel: Visibility.Visible,
+                FaqPanel: Visibility.Collapsed);
+        }
+
+        // FAQ page: only FaqPanel visible, everything else collapsed
+        if (currentPage == AppPage.Faq)
+        {
+            return new VisibilityState(
+                LoadingPanel: Visibility.Collapsed,
+                GameViewPanel: Visibility.Collapsed,
+                SkeletonRowPanel: Visibility.Collapsed,
+                SkeletonDetailPanel: Visibility.Collapsed,
+                AboutPanel: Visibility.Collapsed,
+                FaqPanel: Visibility.Visible);
         }
 
         // Settings page: everything collapsed (settings panel shown instead)
@@ -136,7 +150,8 @@ public sealed partial class MainWindow
                 GameViewPanel: Visibility.Collapsed,
                 SkeletonRowPanel: Visibility.Collapsed,
                 SkeletonDetailPanel: Visibility.Collapsed,
-                AboutPanel: Visibility.Collapsed);
+                AboutPanel: Visibility.Collapsed,
+                FaqPanel: Visibility.Collapsed);
         }
 
         // Initial loading: show skeletons
@@ -147,7 +162,8 @@ public sealed partial class MainWindow
                 GameViewPanel: Visibility.Visible,
                 SkeletonRowPanel: Visibility.Visible,
                 SkeletonDetailPanel: Visibility.Visible,
-                AboutPanel: Visibility.Collapsed);
+                AboutPanel: Visibility.Collapsed,
+                FaqPanel: Visibility.Collapsed);
         }
 
         // Not loading, or silent refresh (hasInitialized=true): skeletons hidden
@@ -156,7 +172,8 @@ public sealed partial class MainWindow
             GameViewPanel: Visibility.Visible,
             SkeletonRowPanel: Visibility.Collapsed,
             SkeletonDetailPanel: Visibility.Collapsed,
-            AboutPanel: Visibility.Collapsed);
+            AboutPanel: Visibility.Collapsed,
+            FaqPanel: Visibility.Collapsed);
     }
 
     /// <summary>Number of skeleton cards to display in the grid skeleton (3×3 grid).</summary>

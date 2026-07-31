@@ -1455,4 +1455,13 @@ public sealed partial class MainWindow
     private void AboutBack_Click(object sender, RoutedEventArgs e)
         => ViewModel.NavigateToGameViewCommand.Execute(null);
 
+    private void FaqButton_Click(object sender, RoutedEventArgs e)
+    {
+        BuildFaqContent();
+        ViewModel.NavigateToFaqCommand.Execute(null);
+    }
+
+    private void FaqBack_Click(object sender, RoutedEventArgs e)
+        => ViewModel.NavigateToGameViewCommand.Execute(null);
+
 }

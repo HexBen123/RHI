@@ -405,6 +405,13 @@ public class RemoteManifest
     /// </summary>
     [JsonPropertyName("dlssPresets")]
     public ManifestDlssPresets? DlssPresets { get; set; }
+
+    /// <summary>
+    /// URL for the RTX HDR info button when RTX HDR is enabled.
+    /// Displayed as a clickable link in the RenoDX Info dialog.
+    /// </summary>
+    [JsonPropertyName("rtxHdrInfoUrl")]
+    public string? RtxHdrInfoUrl { get; set; }
 }
 
 /// <summary>

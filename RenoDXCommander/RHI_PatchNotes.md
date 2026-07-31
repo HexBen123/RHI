@@ -1,4 +1,33 @@
+## v2.2.8
+
+### Changes
+
+- **Quick Start Guide** — improved text readability with lighter text colors, removed extra line spacing in tip boxes
+- **RTX HDR Settings improvements**:
+  - Peak Brightness now shows an inline warning when set above 600 nits (high values can look unnatural)
+  - Middle Grey now shows an inline warning when perceived paperwhite exceeds 203 nits (can look washed out)
+  - Added preset buttons (100, 125, 150, 175, 200) next to Auto for quick Middle Grey selection by target paperwhite
+
+### Manifest Updates
+
+- Added `rtxHdrInfoUrl` field linking to the Reddit RTX HDR settings reference guide.
+
+---
+
 ## v2.2.7
+
+### New
+
+- **Quick Start Guide** — new "Quick Start" button in the toolbar opens a comprehensive guide covering:
+  - Step-by-step setup (select game, install ReShade, install RenoDX, choose shaders)
+  - Frame limiters with VRR-friendly FPS targets by refresh rate (60/120/165/240/360Hz)
+  - DLSS/Streamline updates and automatic version detection
+  - NVIDIA driver settings (VSync, Low Latency, Smooth Motion, ReBAR)
+  - RTX HDR for games without RenoDX mods
+  - Vulkan game handling and admin requirements
+  - Drag-and-drop for adding games, addons, and ReShade presets
+  - Full Refresh troubleshooting for missing games or changed install locations
+  - System tray features and quick-launching recent games
 
 ### Changes
 

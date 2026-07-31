@@ -18,5 +18,10 @@ public enum AppPage
     /// <summary>
     /// The About page with app info, credits, and links.
     /// </summary>
-    About
+    About,
+
+    /// <summary>
+    /// The FAQ/Quick Start guide page.
+    /// </summary>
+    Faq
 }

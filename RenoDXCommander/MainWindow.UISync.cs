@@ -96,6 +96,7 @@ public sealed partial class MainWindow
         GameViewPanel.Visibility = ViewModel.CurrentPage == AppPage.GameView ? Visibility.Visible : Visibility.Collapsed;
         SettingsPanel.Visibility = ViewModel.CurrentPage == AppPage.Settings ? Visibility.Visible : Visibility.Collapsed;
         AboutPanel.Visibility    = ViewModel.CurrentPage == AppPage.About    ? Visibility.Visible : Visibility.Collapsed;
+        FaqPanel.Visibility      = ViewModel.CurrentPage == AppPage.Faq      ? Visibility.Visible : Visibility.Collapsed;
 
         // Auto-select first game if nothing is selected
         if (GameList.SelectedItem == null && ViewModel.DisplayedGames.Count > 0)

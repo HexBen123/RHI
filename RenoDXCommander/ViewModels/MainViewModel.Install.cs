@@ -329,6 +329,9 @@ public partial class MainViewModel
     public void NavigateToAbout() => CurrentPage = AppPage.About;
 
     [RelayCommand]
+    public void NavigateToFaq() => CurrentPage = AppPage.Faq;
+
+    [RelayCommand]
     public void ToggleShowHidden()
     {
         _filterViewModel.ShowHidden = !_filterViewModel.ShowHidden;
