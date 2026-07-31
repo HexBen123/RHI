@@ -428,6 +428,18 @@ public partial class MainViewModel
             bool hasNamedAddonOnDisk = addonOnDisk != null
                                     && addonOnDisk != UeExtendedFile
                                     && addonOnDisk != GenericUnrealFile;
+            // When a named addon is on disk but no wiki mod exists, replace the generic
+            // engine fallback with a Discord link so the button shows "Download from Discord"
+            // instead of "Reinstall RenoDX/UE-Extended".
+            if (hasNamedAddonOnDisk && effectiveMod?.IsGenericUnreal == true)
+            {
+                effectiveMod = new GameMod
+                {
+                    Name       = game.Name,
+                    Status     = "💬",
+                    DiscordUrl = "https://discord.gg/gF4GRJWZ2A",
+                };
+            }
             bool useUeExt = !noUeExtended && !hasNamedMod && !hasNamedAddonOnDisk
                          && ((addonOnDisk == UeExtendedFile)
                              || IsUeExtendedGameMatch(game.Name)

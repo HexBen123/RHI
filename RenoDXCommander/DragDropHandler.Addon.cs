@@ -352,6 +352,10 @@ public partial class DragDropHandler
             File.Copy(addonPath, destPath, overwrite: true);
             _crashReporter.Log($"[DragDropHandler.ProcessDroppedAddon] Installed '{addonFileName}' to '{addonDeployPath}'");
 
+            // Determine if this is a named mod (not UE-Extended or generic UE)
+            bool isNamedMod = !addonFileName.Equals("renodx-ue-extended.addon64", StringComparison.OrdinalIgnoreCase)
+                           && !addonFileName.Equals("renodx-unrealengine.addon64", StringComparison.OrdinalIgnoreCase);
+
             // Save an InstalledModRecord so the addon survives refresh/restart
             var installRecord = new InstalledModRecord
             {
@@ -359,7 +363,8 @@ public partial class DragDropHandler
                 InstallPath   = addonDeployPath,
                 AddonFileName = addonFileName,
                 InstalledAt   = DateTime.UtcNow,
-                SnapshotUrl   = targetCard.Mod?.SnapshotUrl,
+                // For named mods from Discord, don't use the card's existing SnapshotUrl (could be UE-Extended)
+                SnapshotUrl   = isNamedMod ? null : targetCard.Mod?.SnapshotUrl,
             };
             _modInstallService.SaveRecordPublic(installRecord);
 
@@ -371,6 +376,31 @@ public partial class DragDropHandler
                     AuxInstallService.ApplyEngineIniLutSetting(targetCard.InstallPath, targetCard.EngineIniProjectOverride, gameName);
                 }
                 catch (Exception ex) { _crashReporter.Log($"[DragDropHandler.ProcessDroppedAddon] Engine.ini LUT deploy failed — {ex.Message}"); }
+            }
+
+            // If this is a named mod from Discord, update the card to reflect it's no longer UE-Extended
+            if (isNamedMod && targetCard.UseUeExtended)
+            {
+                targetCard.UseUeExtended = false;
+                targetCard.IsGenericMod = false;
+                // Remove from UE-Extended set so it persists across restarts
+                _window.ViewModel.RemoveFromUeExtendedGames(gameName);
+                _crashReporter.Log($"[DragDropHandler.ProcessDroppedAddon] Cleared UE-Extended state for '{gameName}' — named mod installed");
+            }
+
+            // Update card's Mod to reflect it's a Discord mod (named mod with no wiki entry)
+            // This applies when installing a non-generic addon over an existing card (including UE-Extended cards)
+            if (isNamedMod)
+            {
+                targetCard.Mod = new GameMod
+                {
+                    Name       = gameName,
+                    Status     = "💬",
+                    DiscordUrl = "https://discord.gg/gF4GRJWZ2A",
+                };
+                targetCard.IsExternalOnly = true;
+                targetCard.ExternalUrl = "https://discord.gg/gF4GRJWZ2A";
+                targetCard.ExternalLabel = "Download from Discord";  // ExternalDisplayLabel does the Replace("Download", "Redownload")
             }
 
             // Update card status

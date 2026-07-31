@@ -1033,10 +1033,10 @@ public sealed partial class MainWindow
                 dlssPresetService.SetRtxHdrEnable(card.GameName, card.InstallPath, 0x01);
                 dlssPresetService.SetRtxHdrPeakBrightness(card.GameName, card.InstallPath, (uint)enablePeakNits);
                 dlssPresetService.SetRtxHdrContrast(card.GameName, card.InstallPath, 125);       // Gamma 2.2 (+25)
-                dlssPresetService.SetRtxHdrSaturation(card.GameName, card.InstallPath, 100);     // 0 (neutral)
+                dlssPresetService.SetRtxHdrSaturation(card.GameName, card.InstallPath, 75);      // -25 (reduced saturation)
                 dlssPresetService.SetRtxHdrMiddleGrey(card.GameName, card.InstallPath, enableMidGrey); // ITU-correct for Gamma 2.2
 
-                CrashReporter.Log($"[RdxCogButton_Click] RTX HDR enabled for '{card.GameName}': PeakNits={enablePeakNits}, Contrast=125 (Gamma 2.2), MidGrey={enableMidGrey}");
+                CrashReporter.Log($"[RdxCogButton_Click] RTX HDR enabled for '{card.GameName}': PeakNits={enablePeakNits}, Contrast=125 (Gamma 2.2), Sat=75 (-25), MidGrey={enableMidGrey}");
             }
             else
             {
@@ -1201,10 +1201,30 @@ public sealed partial class MainWindow
 
         var middleGreyValues = new int[] { 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100 };
         int mgInitial = (currentMiddleGrey >= 10 && currentMiddleGrey <= 100) ? currentMiddleGrey : 50;
-        string MiddleGreyLabel(int val) => val == 50 ? "Middle Grey: 50 (Default)" : $"Middle Grey: {val}";
-        var mgLabel = new TextBlock { Text = MiddleGreyLabel(mgInitial), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
+        
+        // Calculate perceived paperwhite from middle grey and gamma
+        // Formula: paperwhite = midGrey / (0.5 ^ gamma)
+        int CalcPerceivedPaperwhite(int midGrey, int contrastVal)
+        {
+            double gamma = contrastVal switch { 25 => 2.2, 50 => 2.4, _ => 2.0 };
+            if (contrastVal != 0 && contrastVal != 25 && contrastVal != 50)
+                gamma = 2.0 + (contrastVal / 100.0) * 0.4;
+            var pw = midGrey / Math.Pow(0.5, gamma);
+            return (int)Math.Round(pw);
+        }
+        
+        string MiddleGreyLabel(int val, int contrastVal)
+        {
+            var perceivedPw = CalcPerceivedPaperwhite(val, contrastVal);
+            var defaultSuffix = val == 50 ? " (Default)" : "";
+            return $"Middle Grey: {val}{defaultSuffix} ({perceivedPw} nits)";
+        }
+        
+        var mgLabel = new TextBlock { Text = MiddleGreyLabel(mgInitial, (int)contrastSlider.Value), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
         var mgSlider = new Slider { Minimum = 10, Maximum = 100, StepFrequency = 1, Value = mgInitial, HorizontalAlignment = HorizontalAlignment.Stretch };
-        mgSlider.ValueChanged += (s, ev) => mgLabel.Text = MiddleGreyLabel((int)mgSlider.Value);
+        mgSlider.ValueChanged += (s, ev) => mgLabel.Text = MiddleGreyLabel((int)mgSlider.Value, (int)contrastSlider.Value);
+        // Also update when contrast changes (gamma affects perceived paperwhite)
+        contrastSlider.ValueChanged += (s, ev) => mgLabel.Text = MiddleGreyLabel((int)mgSlider.Value, (int)contrastSlider.Value);
         content.Children.Add(mgLabel);
         content.Children.Add(mgSlider);
 
@@ -1221,7 +1241,7 @@ public sealed partial class MainWindow
         {
             var autoVal = CalcAutoMiddleGrey((int)nitsSlider.Value, (int)contrastSlider.Value);
             mgSlider.Value = autoVal;
-            mgLabel.Text = MiddleGreyLabel(autoVal);
+            mgLabel.Text = MiddleGreyLabel(autoVal, (int)contrastSlider.Value);
         };
         content.Children.Add(autoMgBtn);
 

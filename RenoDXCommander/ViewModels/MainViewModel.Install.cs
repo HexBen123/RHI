@@ -141,6 +141,16 @@ public partial class MainViewModel
     public const string UeExtendedFile   = "renodx-ue-extended.addon64";
     public const string GenericUnrealFile = "renodx-unrealengine.addon64";
 
+    /// <summary>
+    /// Public method to remove a game from the UE-Extended set and persist the change.
+    /// Called by DragDropHandler when installing a named mod over UE-Extended.
+    /// </summary>
+    public void RemoveFromUeExtendedGames(string gameName)
+    {
+        _ueExtendedGames.Remove(gameName);
+        SaveNameMappings();
+    }
+
     /// <summary>Stores the original named mod SnapshotUrl per game when UE-Extended is toggled ON, so it can be restored when toggled OFF.</summary>
     private readonly Dictionary<string, string> _ueExtendedOriginalUrls = new(StringComparer.OrdinalIgnoreCase);
 
@@ -530,6 +540,18 @@ public partial class MainViewModel
         bool hasNamedAddonOnDiskM = addonOnDisk != null
                                  && addonOnDisk != UeExtendedFile
                                  && addonOnDisk != GenericUnrealFile;
+        // When a named addon is on disk but no wiki mod exists, replace the generic
+        // engine fallback with a Discord link so the button shows "Download from Discord"
+        // instead of "Reinstall RenoDX/UE-Extended".
+        if (hasNamedAddonOnDiskM && effectiveMod?.IsGenericUnreal == true)
+        {
+            effectiveMod = new GameMod
+            {
+                Name       = game.Name,
+                Status     = "💬",
+                DiscordUrl = "https://discord.gg/gF4GRJWZ2A",
+            };
+        }
         bool useUeExt = !noUeExtended && !hasNamedModM && !hasNamedAddonOnDiskM
                      && ((addonOnDisk == UeExtendedFile)
                          || IsUeExtendedGameMatch(game.Name)

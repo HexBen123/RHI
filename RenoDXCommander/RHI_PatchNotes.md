@@ -1,8 +1,22 @@
-## v2.2.6
+## v2.2.7
+
+### Changes
+
+- RTX HDR now defaults to **Saturation -25** when first enabled (previously 0/neutral). Reduces the oversaturation that RTX HDR tends to introduce.
+- RTX HDR Middle Grey slider now shows perceived paperwhite nits in parentheses, e.g. "Middle Grey: 26 (121 nits)". Set your Peak Brightness, click Auto, and the Middle Grey + perceived nits are calculated automatically using the ITU formula. Updates when contrast/gamma changes.
+
+### Bug Fixes
+
+- Fixed games with named mods from Discord incorrectly showing "Reinstall UE-Extended" instead of "Download from Discord". When a named addon file is on disk (e.g. from a Discord drag-drop) but no wiki entry exists, the card now correctly shows the Discord link button instead of the generic UE install button.
 
 ### Manifest Updates
 
 - Added engine tag for Halo: The Master Chief Collection (`Halo Engine`).
+- Added DX11 API override for Grim Dawn.
+
+---
+
+## v2.2.6
 
 ### New
 
