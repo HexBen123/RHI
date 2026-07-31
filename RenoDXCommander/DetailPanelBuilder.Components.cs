@@ -15,10 +15,11 @@ public partial class DetailPanelBuilder
     /// <summary>
     /// Returns true when the Info button for this addon has real per-game content
     /// (manifest or wiki), meaning the arrow indicator should be shown on the install button.
+    /// ReLimiter and Display Commander always return true since they have changelog content.
     /// </summary>
     private bool HasRealInfoContent(GameCardViewModel card, AddonType addonType)
     {
-        // ReLimiter and Display Commander always have changelog content
+        // ReLimiter and Display Commander always have changelog content worth highlighting
         if (addonType is AddonType.ReLimiter or AddonType.DisplayCommander)
             return true;
 
@@ -100,21 +101,13 @@ public partial class DetailPanelBuilder
             infoBtn.Opacity = 0.3;
             infoBtn.IsHitTestVisible = false;
         }
-        else if (sourceType is InfoSourceType.Manifest or InfoSourceType.Wiki)
+        else
         {
-            // Highlighted style for manifest/wiki content
+            // Always use blue highlighted style when clickable
+            // (arrow indicator on install button shows game-specific content separately)
             infoBtn.Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush);
             infoBtn.Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush);
             infoBtn.BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush);
-            infoBtn.Opacity = 1.0;
-            infoBtn.IsHitTestVisible = true;
-        }
-        else
-        {
-            // Default muted style for fallback content
-            infoBtn.Background = UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush);
-            infoBtn.Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush);
-            infoBtn.BorderBrush = UIFactory.Brush(ResourceKeys.BorderStrongBrush);
             infoBtn.Opacity = 1.0;
             infoBtn.IsHitTestVisible = true;
         }

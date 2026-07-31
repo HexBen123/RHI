@@ -116,7 +116,7 @@ public sealed partial class MainWindow
         panel.Children.Add(BuildFaqSpecialSection("◰", "AccentPurpleBrush",
             "System Tray",
             "RHI can minimize to the system tray instead of closing. Right-click the tray icon to quickly launch recent games without opening the main window.",
-            "Enable 'Close to System Tray' in Settings to keep RHI running in the background. The tray icon provides quick access to your most recently played games."));
+            "Enable 'Close to System Tray' in Settings to keep RHI running in the background. The tray icon provides quick access to your most recently played games. RHI automatically checks for updates every 4 hours while running, so everything stays up to date."));
 
         // Need More Help
         panel.Children.Add(BuildFaqLinksSection());
