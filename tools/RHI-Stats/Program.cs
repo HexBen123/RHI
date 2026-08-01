@@ -11,6 +11,11 @@ var repos = new[]
 using var http = new HttpClient();
 http.DefaultRequestHeaders.Add("User-Agent", "RHI-Stats");
 
+// Use GitHub token from environment variable for higher rate limits (5000/hour vs 60/hour)
+var ghToken = Environment.GetEnvironmentVariable("GITHUB_TOKEN");
+if (!string.IsNullOrEmpty(ghToken))
+    http.DefaultRequestHeaders.Add("Authorization", $"Bearer {ghToken}");
+
 while (true)
 {
     Console.Clear();

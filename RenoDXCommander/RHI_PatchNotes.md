@@ -1,3 +1,11 @@
+## v2.2.9
+
+### Manifest Updates
+
+- Fixed Watch Dogs 2 install path detection — added `Watch_Dogs2` and `WATCH_DOGS2` variants for Ubisoft Connect folder naming.
+
+---
+
 ## v2.2.8
 
 ### Changes
@@ -11,6 +19,7 @@
 ### Manifest Updates
 
 - Added `rtxHdrInfoUrl` field linking to the Reddit RTX HDR settings reference guide.
+- Added Watch_Dogs2 install path override (covers underscore variant detection).
 
 ---
 
