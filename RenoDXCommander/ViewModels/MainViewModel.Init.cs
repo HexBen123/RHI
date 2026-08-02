@@ -540,9 +540,10 @@ public partial class MainViewModel
                 int migrated = 0;
                 foreach (var card in _allCards)
                 {
-                    if (!_reShadeChannelOverrides.ContainsKey(card.GameName))
+                    var key = GameKey.FromCard(card.GameName, card.Source).ToKey();
+                    if (!_reShadeChannelOverrides.ContainsKey(key))
                     {
-                        _reShadeChannelOverrides[card.GameName] = "Nightly";
+                        _reShadeChannelOverrides[key] = "Nightly";
                         migrated++;
                     }
                 }

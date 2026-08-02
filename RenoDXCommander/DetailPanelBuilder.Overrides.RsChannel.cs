@@ -32,12 +32,12 @@ public partial class DetailPanelBuilder
 
         var channelItems = new[] { "Stable", "Nightly", "Custom", "No Addons", "Legacy..." };
         // For Vulkan games, show the effective Vulkan-wide override (any Vulkan game's override applies to all)
-        var currentChannelOverride = _window.ViewModel.GetReShadeChannelOverride(gameName);
+        var currentChannelOverride = _window.ViewModel.GetReShadeChannelOverride(gameName, card.Source);
         if (currentChannelOverride == null && card.RequiresVulkanInstall)
         {
             currentChannelOverride = _window.ViewModel.AllCards
                 .Where(c => c.RequiresVulkanInstall && c.GameName != gameName)
-                .Select(c => _window.ViewModel.GetReShadeChannelOverride(c.GameName))
+                .Select(c => _window.ViewModel.GetReShadeChannelOverride(c.GameName, c.Source))
                 .FirstOrDefault(ch => ch != null);
         }
 
@@ -83,7 +83,7 @@ public partial class DetailPanelBuilder
         {
             if (channelComboInitializing) return;
             var current = channelCombo.SelectedItem as string;
-            if (current == "Custom" && string.Equals(_window.ViewModel.GetReShadeChannelOverride(ctx.CapturedName), "Custom", StringComparison.OrdinalIgnoreCase))
+            if (current == "Custom" && string.Equals(_window.ViewModel.GetReShadeChannelOverride(ctx.CapturedName, ctx.Card.Source), "Custom", StringComparison.OrdinalIgnoreCase))
             {
                 channelComboInitializing = true;
                 channelCombo.SelectedItem = "Stable";
@@ -150,7 +150,7 @@ public partial class DetailPanelBuilder
                     }
                 }
 
-                _window.ViewModel.SetReShadeChannelOverride(ctx.CapturedName, pickedVersion);
+                _window.ViewModel.SetReShadeChannelOverride(ctx.CapturedName, pickedVersion, ctx.Card.Source);
 
                 // Clear No Addons mode if active (legacy is an addon build)
                 var targetCardLegacy = _window.ViewModel.AllCards.FirstOrDefault(c =>
@@ -246,7 +246,8 @@ public partial class DetailPanelBuilder
                 // ── Show picker dialog with all DLL files ──
                 // Check if a previous selection exists and is still valid
                 string? previousSelection = null;
-                if (_gameNameService.CustomReShadeSelection.TryGetValue(ctx.CapturedName, out var prevSel))
+                var customKey = GameKey.FromCard(ctx.CapturedName, ctx.Card.Source).ToKey();
+                if (_gameNameService.CustomReShadeSelection.TryGetValue(customKey, out var prevSel))
                 {
                     if (dllFiles.Any(f => Path.GetFileName(f).Equals(prevSel, StringComparison.OrdinalIgnoreCase)))
                         previousSelection = prevSel;
@@ -308,7 +309,8 @@ public partial class DetailPanelBuilder
                 }
 
                 // Save per-game selection
-                _gameNameService.CustomReShadeSelection[ctx.CapturedName] = selectedFilename;
+                var saveKey = GameKey.FromCard(ctx.CapturedName, ctx.Card.Source).ToKey();
+                _gameNameService.CustomReShadeSelection[saveKey] = selectedFilename;
                 _window.ViewModel.SaveSettingsPublic();
                 CrashReporter.Log($"[DetailPanelBuilder.RSChannel] '{ctx.CapturedName}' → Custom ReShade selected: '{selectedFilename}'");
 
@@ -338,8 +340,9 @@ public partial class DetailPanelBuilder
                     // Apply to ALL Vulkan games
                     foreach (var vCard in _window.ViewModel.AllCards.Where(c => c.RequiresVulkanInstall))
                     {
-                        _window.ViewModel.SetReShadeChannelOverride(vCard.GameName, "Custom");
-                        _gameNameService.CustomReShadeSelection[vCard.GameName] = selectedFilename;
+                        _window.ViewModel.SetReShadeChannelOverride(vCard.GameName, "Custom", vCard.Source);
+                        var vCardKey = GameKey.FromCard(vCard.GameName, vCard.Source).ToKey();
+                        _gameNameService.CustomReShadeSelection[vCardKey] = selectedFilename;
                         if (vCard.UseNormalReShade)
                             _window.ViewModel.SetUseNormalReShade(vCard, false);
                         vCard.NotifyAll();
@@ -365,7 +368,7 @@ public partial class DetailPanelBuilder
                 else
                 {
                     // Non-Vulkan: per-game only
-                    _window.ViewModel.SetReShadeChannelOverride(ctx.CapturedName, "Custom");
+                    _window.ViewModel.SetReShadeChannelOverride(ctx.CapturedName, "Custom", ctx.Card.Source);
                     if (targetCardCustom != null && targetCardCustom.UseNormalReShade)
                         _window.ViewModel.SetUseNormalReShade(targetCardCustom, false);
 
@@ -395,7 +398,7 @@ public partial class DetailPanelBuilder
                 {
                     _window.ViewModel.SetUseNormalReShade(targetCardNoAddon, true);
                     // Clear any channel override since we're switching to normal
-                    _window.ViewModel.SetReShadeChannelOverride(ctx.CapturedName, null);
+                    _window.ViewModel.SetReShadeChannelOverride(ctx.CapturedName, null, ctx.Card.Source);
                     // Auto-install the normal (no-addon) version
                     if (targetCardNoAddon.RsStatus == GameStatus.NotInstalled || targetCardNoAddon.IsRsInstalled)
                         await _window.ViewModel.InstallReShadeCommand.ExecuteAsync(targetCardNoAddon);
@@ -457,7 +460,7 @@ public partial class DetailPanelBuilder
                 // Apply override (or clear it) on ALL Vulkan games
                 foreach (var vCard in _window.ViewModel.AllCards.Where(c => c.RequiresVulkanInstall))
                 {
-                    _window.ViewModel.SetReShadeChannelOverride(vCard.GameName, channelValue);
+                    _window.ViewModel.SetReShadeChannelOverride(vCard.GameName, channelValue, vCard.Source);
                     vCard.NotifyAll();
                 }
 
@@ -500,7 +503,7 @@ public partial class DetailPanelBuilder
             {
                 // ── Non-Vulkan game: per-game only ──
                 CrashReporter.Log($"[DetailPanelBuilder.RSChannel] '{ctx.CapturedName}' → setting per-game override to: {channelValue ?? "(null/Global)"}");
-                _window.ViewModel.SetReShadeChannelOverride(ctx.CapturedName, channelValue);
+                _window.ViewModel.SetReShadeChannelOverride(ctx.CapturedName, channelValue, ctx.Card.Source);
 
                 // Auto-reinstall ReShade with the new channel if it's currently installed
                 if (targetCard != null && targetCard.IsRsInstalled)
@@ -545,7 +548,8 @@ public partial class DetailPanelBuilder
                     BuildOverridesPanel(refreshCard);
                 }
             },
-            isDxvkEnabled: card.DxvkEnabled);
+            isDxvkEnabled: card.DxvkEnabled,
+            store: card.Source ?? "");
 
         var toggleRow = new StackPanel { Spacing = 0 };
         ToolTipService.SetToolTip(updateInclusionBtn, "Choose which components are included in Update All for this game.");

@@ -554,8 +554,8 @@ public partial class MainViewModel
                 Is32Bit                = is32Bit,
                 GraphicsApi            = graphicsApi,
                 DetectedApis           = detectedApis,
-                IsHidden               = _hiddenGames.Contains(game.Name),
-                IsFavourite            = _favouriteGames.Contains(game.Name),
+                IsHidden               = _hiddenGames.Contains(savedLibKey),
+                IsFavourite            = _favouriteGames.Contains(savedLibKey),
                 IsManuallyAdded        = game.IsManuallyAdded,
                 IsREEngineGame         = engine == EngineType.REEngine,
 
@@ -566,18 +566,18 @@ public partial class MainViewModel
                 RsInstalledVersion     = savedLib.RsInstalledVersions?.TryGetValue(savedLibKey, out var rsVer) == true ? rsVer : null, // Cached from last session; Phase 2 updates if file changed
 
                 // Per-game settings from GameNameService
-                ExcludeFromUpdateAllReShade = _gameNameService.UpdateAllExcludedReShade.Contains(game.Name),
-                ExcludeFromUpdateAllRenoDx  = _gameNameService.UpdateAllExcludedRenoDx.Contains(game.Name),
-                ExcludeFromUpdateAllUl      = _gameNameService.UpdateAllExcludedUl.Contains(game.Name),
-                ExcludeFromUpdateAllDc      = _gameNameService.UpdateAllExcludedDc.Contains(game.Name),
-                ExcludeFromUpdateAllOs      = _gameNameService.UpdateAllExcludedOs.Contains(game.Name),
-                ExcludeFromUpdateAllRef     = _gameNameService.UpdateAllExcludedRef.Contains(game.Name),
-                UseNormalReShade           = _gameNameService.NormalReShadeGames.Contains(game.Name),
+                ExcludeFromUpdateAllReShade = _gameNameService.UpdateAllExcludedReShade.Contains(savedLibKey),
+                ExcludeFromUpdateAllRenoDx  = _gameNameService.UpdateAllExcludedRenoDx.Contains(savedLibKey),
+                ExcludeFromUpdateAllUl      = _gameNameService.UpdateAllExcludedUl.Contains(savedLibKey),
+                ExcludeFromUpdateAllDc      = _gameNameService.UpdateAllExcludedDc.Contains(savedLibKey),
+                ExcludeFromUpdateAllOs      = _gameNameService.UpdateAllExcludedOs.Contains(savedLibKey),
+                ExcludeFromUpdateAllRef     = _gameNameService.UpdateAllExcludedRef.Contains(savedLibKey),
+                UseNormalReShade           = _gameNameService.NormalReShadeGames.Contains(savedLibKey),
                 ShaderModeOverride     = _perGameShaderMode.TryGetValue(savedLibKey, out var smCache) ? smCache : null,
                 VulkanRenderingPath    = _vulkanRenderingPaths.TryGetValue(savedLibKey, out var vrpCache) ? vrpCache : "DirectX",
                 DllOverrideEnabled     = _dllOverrides.ContainsKey(savedLibKey),
                 LumaFeatureEnabled     = LumaFeatureEnabled,
-                IsLumaMode             = _lumaEnabledGames.Contains(game.Name),
+                IsLumaMode             = _lumaEnabledGames.Contains(savedLibKey),
                 LumaRenodxCompatible   = cachedManifest?.LumaRenodxCompat?.Contains(game.Name) == true,
 
                 // Wiki/mod data left empty — Phase 2 MergeCards will fill these in:
@@ -754,7 +754,7 @@ public partial class MainViewModel
             if (lumaMatch != null)
             {
                 newCard.LumaMod = lumaMatch;
-                newCard.IsLumaMode = _lumaEnabledGames.Contains(game.Name);
+                newCard.IsLumaMode = _lumaEnabledGames.Contains(savedLibKey);
                 // Luma install record is checked by path — uses a local JSON file read
                 var lumaRec = LumaService.GetRecordByPath(installPath);
                 if (lumaRec != null)

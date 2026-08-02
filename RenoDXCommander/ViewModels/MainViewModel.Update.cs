@@ -743,7 +743,7 @@ public partial class MainViewModel
             },
             shaderResolver: ResolveShaderSelection,
             manifestDllResolver: GetManifestDllNames,
-            channelResolver: (gameName) => ResolveReShadeChannel(gameName));
+            channelResolver: (gameName, store) => ResolveReShadeChannel(gameName, store ?? ""));
     }
 
     public async Task UpdateAllUlAsync()
@@ -807,7 +807,7 @@ public partial class MainViewModel
             try
             {
                 // Resolve per-game variant (may differ from global)
-                var effectiveVariant = ResolveDxvkVariant(card.GameName);
+                var effectiveVariant = ResolveDxvkVariant(card.GameName, card.Source ?? "");
                 if (effectiveVariant != globalVariant)
                 {
                     // Switch to per-game variant, ensure its staging is ready
@@ -1114,7 +1114,7 @@ public partial class MainViewModel
         {
             var dxvkCards = cards.Where(c => c.DxvkStatus == GameStatus.Installed).ToList();
             var variantsInUse = dxvkCards
-                .Select(c => ResolveDxvkVariant(c.GameName))
+                .Select(c => ResolveDxvkVariant(c.GameName, c.Source ?? ""))
                 .Distinct()
                 .ToList();
 
@@ -1139,7 +1139,7 @@ public partial class MainViewModel
                         int flagged = 0;
                         foreach (var card in dxvkCards)
                         {
-                            var resolvedVariant = ResolveDxvkVariant(card.GameName);
+                            var resolvedVariant = ResolveDxvkVariant(card.GameName, card.Source ?? "");
                             if (resolvedVariant == capturedVariant)
                             {
                                 card.DxvkStatus = GameStatus.UpdateAvailable;

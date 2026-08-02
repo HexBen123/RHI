@@ -3,6 +3,7 @@
 ### New
 
 - **New Mods Alert** — a green "New Mods Available" button now appears in the toolbar when new RenoDX mods are added to the wiki since your last check. Click to see the list of new mods, then either dismiss (hides until more mods are added) or close (keeps the button visible). Checks run on app launch, Refresh, Check for Updates, and the 4-hour auto-scan.
+- **Multi-Store Support** — the same game installed from different storefronts (Steam, Xbox, Epic, etc.) now appears as separate entries with independent install records and per-game settings. Each store installation gets its own ReShade channel, shader mode, DXVK variant, and other overrides. Store badges distinguish between copies. Legacy single-game settings are automatically migrated.
 
 ### Bug Fixes
 

@@ -74,10 +74,10 @@ public partial class MainViewModel
 
         // ── Install ──────────────────────────────────────────────────────
         // Resolve the per-game DXVK variant and set it on the service before install
-        var resolvedVariant = ResolveDxvkVariant(card.GameName);
+        var resolvedVariant = ResolveDxvkVariant(card.GameName, card.Source ?? "");
         var savedVariant = _dxvkService.SelectedVariant;
         _dxvkService.SelectedVariant = resolvedVariant;
-        _dxvkService.LiliumPresetIndex = GetLiliumPreset(card.GameName);
+        _dxvkService.LiliumPresetIndex = GetLiliumPreset(card.GameName, card.Source ?? "");
 
         card.DxvkIsInstalling = true;
         card.DxvkActionMessage = "Installing DXVK...";
@@ -167,7 +167,7 @@ public partial class MainViewModel
         try
         {
             // Resolve per-game variant and switch before update
-            var resolvedVariant = ResolveDxvkVariant(card.GameName);
+            var resolvedVariant = ResolveDxvkVariant(card.GameName, card.Source ?? "");
             var savedVariant = _dxvkService.SelectedVariant;
             _dxvkService.SelectedVariant = resolvedVariant;
 

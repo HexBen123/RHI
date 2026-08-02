@@ -41,7 +41,7 @@ public partial class DetailPanelBuilder
             }
             else
             {
-                var currentDxvkOverride = _window.ViewModel.GetDxvkVariantOverride(gameName);
+                var currentDxvkOverride = _window.ViewModel.GetDxvkVariantOverride(gameName, card.Source);
                 if (currentDxvkOverride != null)
                 {
                     defaultDxvkSelection = currentDxvkOverride switch
@@ -94,7 +94,7 @@ public partial class DetailPanelBuilder
                     if (targetCard.DxvkEnabled)
                     {
                         await _window.ViewModel.HandleDxvkToggleAsync(targetCard, false, _window.Content.XamlRoot);
-                        _window.ViewModel.SetDxvkVariantOverride(capturedName, null);
+                        _window.ViewModel.SetDxvkVariantOverride(capturedName, null, targetCard.Source);
                         _window.PopulateDetailPanel(targetCard);
                         BuildOverridesPanel(targetCard);
                     }
@@ -108,11 +108,11 @@ public partial class DetailPanelBuilder
                         "Lilium HDR" => "LiliumHdr",
                         _ => null,
                     };
-                    _window.ViewModel.SetDxvkVariantOverride(capturedName, variantValue);
+                    _window.ViewModel.SetDxvkVariantOverride(capturedName, variantValue, targetCard.Source);
 
                     if (!targetCard.DxvkEnabled)
                     {
-                        var resolvedVariant = _window.ViewModel.ResolveDxvkVariant(capturedName);
+                        var resolvedVariant = _window.ViewModel.ResolveDxvkVariant(capturedName, targetCard.Source);
                         var savedVariant = _dxvkService.SelectedVariant;
                         _dxvkService.SelectedVariant = resolvedVariant;
                         await _window.ViewModel.HandleDxvkToggleAsync(targetCard, true, _window.Content.XamlRoot);
@@ -123,7 +123,7 @@ public partial class DetailPanelBuilder
                     }
                     else
                     {
-                        var resolvedVariant = _window.ViewModel.ResolveDxvkVariant(capturedName);
+                        var resolvedVariant = _window.ViewModel.ResolveDxvkVariant(capturedName, targetCard.Source);
                         var savedVariant = _dxvkService.SelectedVariant;
                         _dxvkService.SelectedVariant = resolvedVariant;
                         await _dxvkService.EnsureStagingAsync();
@@ -158,7 +158,7 @@ public partial class DetailPanelBuilder
 
             // Right column — Lilium HDR Preset (only visible when Lilium HDR is active)
             var isLiliumActive = card.DxvkEnabled && card.DxvkRecord?.IsLiliumHdrMode == true;
-            if (isLiliumActive || (card.DxvkEnabled && _window.ViewModel.GetDxvkVariantOverride(gameName) == "LiliumHdr"))
+            if (isLiliumActive || (card.DxvkEnabled && _window.ViewModel.GetDxvkVariantOverride(gameName, card.Source) == "LiliumHdr"))
             {
                 var liliumPresetCol = new StackPanel { Spacing = 6 };
                 liliumPresetCol.Children.Add(new TextBlock
@@ -174,7 +174,7 @@ public partial class DetailPanelBuilder
                                || card.GraphicsApi is GraphicsApiType.DirectX8 or GraphicsApiType.DirectX9;
                 var presetArray = isDx9Api ? DxvkService.LiliumD3d9Presets : DxvkService.LiliumD3d11Presets;
                 var presetNames = presetArray.Select(p => p.Name).ToList();
-                int currentPreset = _window.ViewModel.GetLiliumPreset(gameName);
+                int currentPreset = _window.ViewModel.GetLiliumPreset(gameName, card.Source);
                 var liliumPresetCombo = new ComboBox
                 {
                     ItemsSource = presetNames,
@@ -193,11 +193,12 @@ public partial class DetailPanelBuilder
                     if (liliumComboInit) return;
                     int idx = liliumPresetCombo.SelectedIndex;
                     if (idx < 0) return;
-                    _window.ViewModel.SetLiliumPreset(capturedName, idx);
+                    var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
+                        c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase)
+                        && (c.Source ?? "").Equals(card.Source ?? "", StringComparison.OrdinalIgnoreCase));
+                    _window.ViewModel.SetLiliumPreset(capturedName, idx, targetCard?.Source ?? "");
 
                     // Re-deploy dxvk.conf with the new preset
-                    var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
-                        c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
                     if (targetCard != null && !string.IsNullOrEmpty(targetCard.InstallPath))
                     {
                         var confPath = Path.Combine(targetCard.InstallPath, "dxvk.conf");

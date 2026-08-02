@@ -342,7 +342,7 @@ public partial class MainViewModel
     public void ToggleHideGame(GameCardViewModel? card)
     {
         if (card == null) return;
-        var key = card.GameName;
+        var key = GameKey.FromCard(card.GameName, card.Source).ToKey();
         _crashReporter.Log($"[MainViewModel.ToggleHide] {key} (currently hidden={card.IsHidden})");
         if (_hiddenGames.Contains(key))
             _hiddenGames.Remove(key);
@@ -359,7 +359,7 @@ public partial class MainViewModel
     public void ToggleFavourite(GameCardViewModel? card)
     {
         if (card == null) return;
-        var key = card.GameName;
+        var key = GameKey.FromCard(card.GameName, card.Source).ToKey();
         if (_favouriteGames.Contains(key))
             _favouriteGames.Remove(key);
         else
@@ -667,16 +667,16 @@ public partial class MainViewModel
                               : effectiveMod?.DiscordUrl,
             NameUrl         = effectiveMod?.NameUrl,
             IsManuallyAdded = true,
-            IsFavourite            = _favouriteGames.Contains(game.Name),
+            IsFavourite            = _favouriteGames.Contains(GameKey.FromCard(game.Name, "Manual").ToKey()),
             UseUeExtended          = useUeExt,
             IsNativeHdrGame        = isNativeHdr,
             IsManifestUeExtended   = useUeExt && !isNativeHdr,
             LumaRenodxCompatible   = _manifest?.LumaRenodxCompat?.Contains(game.Name) == true,
             EngineIniProjectOverride = _manifest?.EngineIniPathOverrides?.TryGetValue(game.Name, out var eiOverride2) == true ? eiOverride2 : null,
-            ExcludeFromUpdateAllReShade = _gameNameService.UpdateAllExcludedReShade.Contains(game.Name),
-            ExcludeFromUpdateAllRenoDx  = _gameNameService.UpdateAllExcludedRenoDx.Contains(game.Name),
-            ExcludeFromUpdateAllUl      = _gameNameService.UpdateAllExcludedUl.Contains(game.Name),
-            ExcludeFromUpdateAllRef     = _gameNameService.UpdateAllExcludedRef.Contains(game.Name),
+            ExcludeFromUpdateAllReShade = _gameNameService.UpdateAllExcludedReShade.Contains(GameKey.FromCard(game.Name, "Manual").ToKey()),
+            ExcludeFromUpdateAllRenoDx  = _gameNameService.UpdateAllExcludedRenoDx.Contains(GameKey.FromCard(game.Name, "Manual").ToKey()),
+            ExcludeFromUpdateAllUl      = _gameNameService.UpdateAllExcludedUl.Contains(GameKey.FromCard(game.Name, "Manual").ToKey()),
+            ExcludeFromUpdateAllRef     = _gameNameService.UpdateAllExcludedRef.Contains(GameKey.FromCard(game.Name, "Manual").ToKey()),
             ShaderModeOverride     = _perGameShaderMode.TryGetValue(GameKey.FromCard(game.Name, "Manual").ToKey(), out var smO) ? smO : null,
             Is32Bit                = ResolveIs32Bit(game.Name, manualMachine),
             GraphicsApi            = DetectGraphicsApi(scanPath, engine, game.Name),

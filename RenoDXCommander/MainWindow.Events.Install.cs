@@ -280,7 +280,7 @@ public sealed partial class MainWindow
         var card = ViewModel.SelectedGame;
         if (card == null || !card.IsDxvkInstalled) return;
 
-        var variant = ViewModel.ResolveDxvkVariant(card.GameName);
+        var variant = ViewModel.ResolveDxvkVariant(card.GameName, card.Source ?? "");
         var url = variant switch
         {
             Models.DxvkVariant.LiliumHdr => "https://github.com/EndlesslyFlowering/dxvk/releases",
@@ -931,7 +931,7 @@ public sealed partial class MainWindow
             if (card.DetectedGame != null)
                 card.DetectedGame.InstallPath = folder;
             // Persist the override so it survives Refresh / app restart
-            ViewModel.SetFolderOverride(card.GameName, folder);
+            ViewModel.SetFolderOverride(card.GameName, folder, card.Source);
         }
     }
 

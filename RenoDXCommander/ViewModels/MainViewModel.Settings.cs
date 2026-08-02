@@ -217,11 +217,12 @@ public partial class MainViewModel
     /// <summary>Per-game install folder overrides. Key = game name, Value = "overridePath|originalPath".</summary>
     private Dictionary<string, string> _folderOverrides => _gameNameService.FolderOverrides;
 
-    public void SetFolderOverride(string gameName, string folderPath)
+    public void SetFolderOverride(string gameName, string folderPath, string store = "")
     {
+        var key = GameKey.From(gameName, store).ToKey();
         // Preserve the original path if this is the first override
         string original = "";
-        if (_folderOverrides.TryGetValue(gameName, out var existing))
+        if (_folderOverrides.TryGetValue(key, out var existing))
         {
             var parts = existing.Split('|');
             original = parts.Length > 1 ? parts[1] : parts[0];
@@ -230,10 +231,11 @@ public partial class MainViewModel
         {
             // First time — find the current card's path as original
             var card = _allCards.FirstOrDefault(c =>
-                c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
+                c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase)
+                && (c.Source ?? "").Equals(store ?? "", StringComparison.OrdinalIgnoreCase));
             original = card?.DetectedGame?.InstallPath ?? card?.InstallPath ?? "";
         }
-        _folderOverrides[gameName] = $"{folderPath}|{original}";
+        _folderOverrides[key] = $"{folderPath}|{original}";
         SaveNameMappings();
         SaveLibrary();
     }
@@ -250,15 +252,16 @@ public partial class MainViewModel
             return;
         }
 
+        var key = GameKey.FromCard(card.GameName, card.Source).ToKey();
         // Retrieve original path
         var originalPath = "";
-        if (_folderOverrides.TryGetValue(card.GameName, out var stored))
+        if (_folderOverrides.TryGetValue(key, out var stored))
         {
             var parts = stored.Split('|');
             originalPath = parts.Length > 1 ? parts[1] : "";
         }
 
-        _folderOverrides.Remove(card.GameName);
+        _folderOverrides.Remove(key);
 
         if (!string.IsNullOrEmpty(originalPath))
         {
@@ -272,9 +275,10 @@ public partial class MainViewModel
         card.NotifyAll();
     }
 
-    public string? GetFolderOverride(string gameName)
+    public string? GetFolderOverride(string gameName, string store = "")
     {
-        if (_folderOverrides.TryGetValue(gameName, out var stored))
+        var key = GameKey.From(gameName, store).ToKey();
+        if (_folderOverrides.TryGetValue(key, out var stored))
         {
             var parts = stored.Split('|');
             return parts[0]; // Return just the override path
@@ -595,23 +599,32 @@ public partial class MainViewModel
     public string UpdateAllBtnForeground  => AnyUpdateAvailable ? "#B898E8" : "#6B7A8E";
     public string UpdateAllBtnBorder      => AnyUpdateAvailable ? "#3A2860" : "#283240";
 
-    public bool IsUpdateAllExcludedReShade(string gameName) => _updateAllExcludedReShade.Contains(gameName);
-    public bool IsUpdateAllExcludedRenoDx(string gameName) => _updateAllExcludedRenoDx.Contains(gameName);
-    public bool IsUpdateAllExcludedUl(string gameName) => _updateAllExcludedUl.Contains(gameName);
-    public bool IsUpdateAllExcludedDc(string gameName) => _updateAllExcludedDc.Contains(gameName);
-    public bool IsUpdateAllExcludedOs(string gameName) => _updateAllExcludedOs.Contains(gameName);
-    public bool IsUpdateAllExcludedRef(string gameName) => _updateAllExcludedRef.Contains(gameName);
+    public bool IsUpdateAllExcludedReShade(string gameName, string store = "") => 
+        _updateAllExcludedReShade.Contains(GameKey.From(gameName, store).ToKey());
+    public bool IsUpdateAllExcludedRenoDx(string gameName, string store = "") => 
+        _updateAllExcludedRenoDx.Contains(GameKey.From(gameName, store).ToKey());
+    public bool IsUpdateAllExcludedUl(string gameName, string store = "") => 
+        _updateAllExcludedUl.Contains(GameKey.From(gameName, store).ToKey());
+    public bool IsUpdateAllExcludedDc(string gameName, string store = "") => 
+        _updateAllExcludedDc.Contains(GameKey.From(gameName, store).ToKey());
+    public bool IsUpdateAllExcludedOs(string gameName, string store = "") => 
+        _updateAllExcludedOs.Contains(GameKey.From(gameName, store).ToKey());
+    public bool IsUpdateAllExcludedRef(string gameName, string store = "") => 
+        _updateAllExcludedRef.Contains(GameKey.From(gameName, store).ToKey());
 
     /// <summary>Returns true if the game is configured to use normal (non-addon) ReShade.</summary>
-    public bool IsNormalReShadeGame(string gameName) => _normalReShadeGames.Contains(gameName);
+    public bool IsNormalReShadeGame(string gameName, string store = "") => 
+        _normalReShadeGames.Contains(GameKey.From(gameName, store).ToKey());
 
-    public void ToggleUpdateAllExclusionReShade(string gameName)
+    public void ToggleUpdateAllExclusionReShade(string gameName, string store = "")
     {
+        var key = GameKey.From(gameName, store).ToKey();
         var set = _gameNameService.UpdateAllExcludedReShade;
-        if (!set.Remove(gameName)) set.Add(gameName);
-        bool isExcluded = set.Contains(gameName);
+        if (!set.Remove(key)) set.Add(key);
+        bool isExcluded = set.Contains(key);
 
-        var card = _allCards.FirstOrDefault(c => c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
+        var card = _allCards.FirstOrDefault(c => c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase)
+            && (c.Source ?? "").Equals(store ?? "", StringComparison.OrdinalIgnoreCase));
         if (card != null) card.ExcludeFromUpdateAllReShade = isExcluded;
 
         // Vulkan games share a global layer — propagate exclusion to ALL Vulkan games
@@ -619,10 +632,11 @@ public partial class MainViewModel
         {
             foreach (var vCard in _allCards.Where(c => c.RequiresVulkanInstall && !c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase)))
             {
+                var vKey = GameKey.FromCard(vCard.GameName, vCard.Source).ToKey();
                 if (isExcluded)
-                    set.Add(vCard.GameName);
+                    set.Add(vKey);
                 else
-                    set.Remove(vCard.GameName);
+                    set.Remove(vKey);
                 vCard.ExcludeFromUpdateAllReShade = isExcluded;
             }
         }
@@ -631,65 +645,77 @@ public partial class MainViewModel
         NotifyUpdateButtonChanged();
     }
 
-    public void ToggleUpdateAllExclusionRenoDx(string gameName)
+    public void ToggleUpdateAllExclusionRenoDx(string gameName, string store = "")
     {
+        var key = GameKey.From(gameName, store).ToKey();
         var set = _gameNameService.UpdateAllExcludedRenoDx;
-        if (!set.Remove(gameName)) set.Add(gameName);
+        if (!set.Remove(key)) set.Add(key);
         SaveNameMappings();
-        var card = _allCards.FirstOrDefault(c => c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
-        if (card != null) card.ExcludeFromUpdateAllRenoDx = set.Contains(gameName);
+        var card = _allCards.FirstOrDefault(c => c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase)
+            && (c.Source ?? "").Equals(store ?? "", StringComparison.OrdinalIgnoreCase));
+        if (card != null) card.ExcludeFromUpdateAllRenoDx = set.Contains(key);
         NotifyUpdateButtonChanged();
     }
 
-    public void ToggleUpdateAllExclusionUl(string gameName)
+    public void ToggleUpdateAllExclusionUl(string gameName, string store = "")
     {
+        var key = GameKey.From(gameName, store).ToKey();
         var set = _gameNameService.UpdateAllExcludedUl;
-        if (!set.Remove(gameName)) set.Add(gameName);
+        if (!set.Remove(key)) set.Add(key);
         SaveNameMappings();
-        var card = _allCards.FirstOrDefault(c => c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
+        var card = _allCards.FirstOrDefault(c => c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase)
+            && (c.Source ?? "").Equals(store ?? "", StringComparison.OrdinalIgnoreCase));
         if (card != null) card.ExcludeFromUpdateAllUl = set.Contains(gameName);
         NotifyUpdateButtonChanged();
     }
 
-    public void ToggleUpdateAllExclusionDc(string gameName)
+    public void ToggleUpdateAllExclusionDc(string gameName, string store = "")
     {
+        var key = GameKey.From(gameName, store).ToKey();
         var set = _gameNameService.UpdateAllExcludedDc;
-        if (!set.Remove(gameName)) set.Add(gameName);
+        if (!set.Remove(key)) set.Add(key);
         SaveNameMappings();
-        var card = _allCards.FirstOrDefault(c => c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
-        if (card != null) card.ExcludeFromUpdateAllDc = set.Contains(gameName);
+        var card = _allCards.FirstOrDefault(c => c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase)
+            && (c.Source ?? "").Equals(store ?? "", StringComparison.OrdinalIgnoreCase));
+        if (card != null) card.ExcludeFromUpdateAllDc = set.Contains(key);
         NotifyUpdateButtonChanged();
     }
 
-    public void ToggleUpdateAllExclusionOs(string gameName)
+    public void ToggleUpdateAllExclusionOs(string gameName, string store = "")
     {
+        var key = GameKey.From(gameName, store).ToKey();
         var set = _gameNameService.UpdateAllExcludedOs;
-        if (!set.Remove(gameName)) set.Add(gameName);
+        if (!set.Remove(key)) set.Add(key);
         SaveNameMappings();
-        var card = _allCards.FirstOrDefault(c => c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
-        if (card != null) card.ExcludeFromUpdateAllOs = set.Contains(gameName);
+        var card = _allCards.FirstOrDefault(c => c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase)
+            && (c.Source ?? "").Equals(store ?? "", StringComparison.OrdinalIgnoreCase));
+        if (card != null) card.ExcludeFromUpdateAllOs = set.Contains(key);
         NotifyUpdateButtonChanged();
     }
 
-    public void ToggleUpdateAllExclusionRef(string gameName)
+    public void ToggleUpdateAllExclusionRef(string gameName, string store = "")
     {
+        var key = GameKey.From(gameName, store).ToKey();
         var set = _gameNameService.UpdateAllExcludedRef;
-        if (!set.Remove(gameName)) set.Add(gameName);
+        if (!set.Remove(key)) set.Add(key);
         SaveNameMappings();
-        var card = _allCards.FirstOrDefault(c => c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
-        if (card != null) card.ExcludeFromUpdateAllRef = set.Contains(gameName);
+        var card = _allCards.FirstOrDefault(c => c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase)
+            && (c.Source ?? "").Equals(store ?? "", StringComparison.OrdinalIgnoreCase));
+        if (card != null) card.ExcludeFromUpdateAllRef = set.Contains(key);
         NotifyUpdateButtonChanged();
     }
 
-    public bool IsUpdateAllExcludedDxvk(string gameName)
+    public bool IsUpdateAllExcludedDxvk(string gameName, string store = "")
     {
-        var card = _allCards.FirstOrDefault(c => c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
+        var card = _allCards.FirstOrDefault(c => c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase)
+            && (c.Source ?? "").Equals(store ?? "", StringComparison.OrdinalIgnoreCase));
         return card?.ExcludeFromUpdateAllDxvk ?? false;
     }
 
-    public void ToggleUpdateAllExclusionDxvk(string gameName)
+    public void ToggleUpdateAllExclusionDxvk(string gameName, string store = "")
     {
-        var card = _allCards.FirstOrDefault(c => c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
+        var card = _allCards.FirstOrDefault(c => c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase)
+            && (c.Source ?? "").Equals(store ?? "", StringComparison.OrdinalIgnoreCase));
         if (card != null)
         {
             card.ExcludeFromUpdateAllDxvk = !card.ExcludeFromUpdateAllDxvk;

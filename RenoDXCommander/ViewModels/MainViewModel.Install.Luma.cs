@@ -118,7 +118,7 @@ public partial class MainViewModel
                     : (GetManifestDllNames(card.GameName)?.ReShade is { Length: > 0 } mRs
                         ? mRs
                         : ResolveAutoReShadeFilename(card.DetectedApis));
-            var effectiveChannel = card.UseNormalReShade ? "(Normal/NoAddons)" : ResolveReShadeChannel(card.GameName);
+            var effectiveChannel = card.UseNormalReShade ? "(Normal/NoAddons)" : ResolveReShadeChannel(card.GameName, card.Source ?? "");
             var filenameSource = card.DllOverrideEnabled ? "UserDllOverride"
                 : (GetManifestDllNames(card.GameName)?.ReShade is { Length: > 0 } ? "ManifestDllOverride" : "AutoDetect");
             _crashReporter.Log($"[InstallReShadeAsync] {card.GameName}: " +
@@ -137,7 +137,7 @@ public partial class MainViewModel
                 useNormalReShade: card.UseNormalReShade,
                 overlayHotkey: _settingsViewModel.OverlayHotkey,
                 screenshotHotkey: _settingsViewModel.ScreenshotHotkey,
-                channel: card.UseNormalReShade ? null : ResolveReShadeChannel(card.GameName),
+                channel: card.UseNormalReShade ? null : ResolveReShadeChannel(card.GameName, card.Source ?? ""),
                 store: card.Source);
 
             DispatcherQueue?.TryEnqueue(() =>
@@ -585,7 +585,8 @@ public partial class MainViewModel
         return null;
     }
 
-    public bool IsLumaEnabled(string gameName) => _lumaEnabledGames.Contains(gameName);
+    public bool IsLumaEnabled(string gameName, string store = "") =>
+        _lumaEnabledGames.Contains(GameKey.From(gameName, store).ToKey());
 
     /// <summary>
     /// Toggles Luma mode for a game. When enabling: uninstalls RenoDX, ReShade, and
@@ -599,8 +600,8 @@ public partial class MainViewModel
 
         if (card.IsLumaMode)
         {
-            _lumaEnabledGames.Add(card.GameName);
-            _lumaDisabledGames.Remove(card.GameName);
+            _lumaEnabledGames.Add(GameKey.FromCard(card.GameName, card.Source).ToKey());
+            _lumaDisabledGames.Remove(GameKey.FromCard(card.GameName, card.Source).ToKey());
 
             // Remove RenoDX mod if installed (skip for lumaRenodxCompat games)
             if (card.InstalledRecord != null && !card.LumaRenodxCompatible)
@@ -632,8 +633,8 @@ public partial class MainViewModel
         }
         else
         {
-            _lumaEnabledGames.Remove(card.GameName);
-            _lumaDisabledGames.Add(card.GameName);
+            _lumaEnabledGames.Remove(GameKey.FromCard(card.GameName, card.Source).ToKey());
+            _lumaDisabledGames.Add(GameKey.FromCard(card.GameName, card.Source).ToKey());
 
             // Uninstall Luma files if installed
             if (card.LumaRecord != null)
@@ -903,7 +904,7 @@ public partial class MainViewModel
             }
 
             // 3. Persist the flag — do NOT install normal ReShade
-            _normalReShadeGames.Add(card.GameName);
+            _normalReShadeGames.Add(GameKey.FromCard(card.GameName, card.Source).ToKey());
             SaveNameMappings();
 
             card.UseNormalReShade = true;
@@ -939,7 +940,7 @@ public partial class MainViewModel
             }
 
             // 2. Clear the flag — do NOT install addon ReShade
-            _normalReShadeGames.Remove(card.GameName);
+            _normalReShadeGames.Remove(GameKey.FromCard(card.GameName, card.Source).ToKey());
             SaveNameMappings();
 
             card.UseNormalReShade = false;

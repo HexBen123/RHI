@@ -625,6 +625,9 @@ public partial class MainViewModel
                 }
             }
 
+            // Composite key for per-game settings lookups
+            var gameKey = GameKey.FromCard(game.Name, game.Source).ToKey();
+
             var newCard = new GameCardViewModel
             {
                 GameName               = game.Name,
@@ -653,8 +656,8 @@ public partial class MainViewModel
                 Notes                  = effectiveMod != null ? BuildNotes(game.Name, effectiveMod, fallback, genericNotes, isNativeHdr) : "",
                 InstalledAddonFileName = record?.AddonFileName,
                 RdxInstalledVersion = record != null ? AuxInstallService.ReadInstalledVersion(record.InstallPath, record.AddonFileName) : null,
-                IsHidden               = _hiddenGames.Contains(game.Name),
-                IsFavourite            = _favouriteGames.Contains(game.Name),
+                IsHidden               = _hiddenGames.Contains(gameKey),
+                IsFavourite            = _favouriteGames.Contains(gameKey),
                 IsManuallyAdded        = game.IsManuallyAdded,
                 UseUeExtended          = useUeExt,
                 IsRtxHdrEnabled        = _gameNameService.RtxHdrGames.Contains(game.Name),
@@ -673,19 +676,19 @@ public partial class MainViewModel
                                          ? null
                                          : effectiveMod?.DiscordUrl,
                 NameUrl                = effectiveMod?.NameUrl,
-                ExcludeFromUpdateAllReShade = _gameNameService.UpdateAllExcludedReShade.Contains(game.Name),
-                ExcludeFromUpdateAllRenoDx  = _gameNameService.UpdateAllExcludedRenoDx.Contains(game.Name),
-                ExcludeFromUpdateAllUl      = _gameNameService.UpdateAllExcludedUl.Contains(game.Name),
-                ExcludeFromUpdateAllDc      = _gameNameService.UpdateAllExcludedDc.Contains(game.Name),
-                ExcludeFromUpdateAllOs      = _gameNameService.UpdateAllExcludedOs.Contains(game.Name),
-                ExcludeFromUpdateAllRef     = _gameNameService.UpdateAllExcludedRef.Contains(game.Name),
-                UseNormalReShade           = _gameNameService.NormalReShadeGames.Contains(game.Name),
-                ShaderModeOverride     = _perGameShaderMode.TryGetValue(GameKey.FromCard(game.Name, game.Source).ToKey(), out var smBc) ? smBc : null,
+                ExcludeFromUpdateAllReShade = _gameNameService.UpdateAllExcludedReShade.Contains(gameKey),
+                ExcludeFromUpdateAllRenoDx  = _gameNameService.UpdateAllExcludedRenoDx.Contains(gameKey),
+                ExcludeFromUpdateAllUl      = _gameNameService.UpdateAllExcludedUl.Contains(gameKey),
+                ExcludeFromUpdateAllDc      = _gameNameService.UpdateAllExcludedDc.Contains(gameKey),
+                ExcludeFromUpdateAllOs      = _gameNameService.UpdateAllExcludedOs.Contains(gameKey),
+                ExcludeFromUpdateAllRef     = _gameNameService.UpdateAllExcludedRef.Contains(gameKey),
+                UseNormalReShade           = _gameNameService.NormalReShadeGames.Contains(gameKey),
+                ShaderModeOverride     = _perGameShaderMode.TryGetValue(gameKey, out var smBc) ? smBc : null,
                 Is32Bit                = ResolveIs32Bit(game.Name, detectedMachine),
                 GraphicsApi            = DetectGraphicsApi(installPath, engine, game.Name),
                 DetectedApis           = _DetectAllApisForCard(installPath, game.Name),
-                VulkanRenderingPath    = _vulkanRenderingPaths.TryGetValue(GameKey.FromCard(game.Name, game.Source).ToKey(), out var vrpBc) ? vrpBc : "DirectX",
-                DllOverrideEnabled     = _dllOverrides.ContainsKey(GameKey.FromCard(game.Name, game.Source).ToKey()),
+                VulkanRenderingPath    = _vulkanRenderingPaths.TryGetValue(gameKey, out var vrpBc) ? vrpBc : "DirectX",
+                DllOverrideEnabled     = _dllOverrides.ContainsKey(gameKey),
                 IsNativeHdrGame        = isNativeHdr,
                 IsManifestUeExtended   = useUeExt && !isNativeHdr,
                 LumaRenodxCompatible   = _manifest?.LumaRenodxCompat?.Contains(game.Name) == true,
@@ -1138,15 +1141,16 @@ public partial class MainViewModel
                 newCard.LumaMod = lumaMatch;
 
                 // Auto-enable Luma for manifest-listed games (unless user explicitly disabled)
+                var lumaKey = GameKey.FromCard(game.Name, game.Source).ToKey();
                 if (_manifest?.LumaDefaultGames != null
-                    && !_lumaEnabledGames.Contains(game.Name)
-                    && !_lumaDisabledGames.Contains(game.Name)
+                    && !_lumaEnabledGames.Contains(lumaKey)
+                    && !_lumaDisabledGames.Contains(lumaKey)
                     && _manifest.LumaDefaultGames.Any(g => g.Equals(game.Name, StringComparison.OrdinalIgnoreCase)))
                 {
-                    _lumaEnabledGames.Add(game.Name);
+                    _lumaEnabledGames.Add(lumaKey);
                 }
 
-                newCard.IsLumaMode = _lumaEnabledGames.Contains(game.Name);
+                newCard.IsLumaMode = _lumaEnabledGames.Contains(lumaKey);
                 // Check if Luma is installed on disk
                 var lumaRec = LumaService.GetRecordByPath(installPath);
                 if (lumaRec != null)
