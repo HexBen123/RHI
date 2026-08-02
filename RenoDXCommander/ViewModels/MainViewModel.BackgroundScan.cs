@@ -169,6 +169,22 @@ public partial class MainViewModel
                 _crashReporter.Log("[RunBackgroundScanAndMergeAsync] Wiki fetch failed, skipping new mods check");
             }
 
+            // ── Detect new Ultra+ mods ────────────────────────────────────────────
+            {
+                var currentUltraPlusMods = _ultraPlusService.GetAllGameNames().ToList();
+                _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Ultra+ mods check: {currentUltraPlusMods.Count} mods");
+
+                _seenUltraPlusModsService.SeedIfEmpty(currentUltraPlusMods);
+
+                var newUltraPlusMods = _seenUltraPlusModsService.GetNewMods(currentUltraPlusMods);
+                _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] New Ultra+ mods: {newUltraPlusMods.Count} (seen: {_seenUltraPlusModsService.GetSeenMods().Count})");
+                if (newUltraPlusMods.Count > 0)
+                {
+                    _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] New Ultra+ mods: {string.Join(", ", newUltraPlusMods.Take(10))}{(newUltraPlusMods.Count > 10 ? "..." : "")}");
+                    DispatcherQueue?.TryEnqueue(() => NewUltraPlusMods = newUltraPlusMods);
+                }
+            }
+
             // Store manifest
             // (_manifest already assigned above in the try block)
 

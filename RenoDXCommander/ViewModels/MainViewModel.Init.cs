@@ -382,6 +382,22 @@ public partial class MainViewModel
                 _crashReporter.Log("[MainViewModel.InitializeAsync] Wiki fetch failed, skipping new mods check");
             }
 
+            // Check for new Ultra+ mods
+            {
+                var currentUltraPlusMods = _ultraPlusService.GetAllGameNames().ToList();
+                _crashReporter.Log($"[MainViewModel.InitializeAsync] Ultra+ mods check: {currentUltraPlusMods.Count} mods");
+
+                _seenUltraPlusModsService.SeedIfEmpty(currentUltraPlusMods);
+
+                var newUltraPlusMods = _seenUltraPlusModsService.GetNewMods(currentUltraPlusMods);
+                _crashReporter.Log($"[MainViewModel.InitializeAsync] New Ultra+ mods: {newUltraPlusMods.Count} (seen: {_seenUltraPlusModsService.GetSeenMods().Count})");
+                if (newUltraPlusMods.Count > 0)
+                {
+                    _crashReporter.Log($"[MainViewModel.InitializeAsync] New Ultra+ mods: {string.Join(", ", newUltraPlusMods.Take(10))}{(newUltraPlusMods.Count > 10 ? "..." : "")}");
+                    DispatcherQueue?.TryEnqueue(() => NewUltraPlusMods = newUltraPlusMods);
+                }
+            }
+
             // 6. Merge or use directly based on cache
             ApplyGameRenames(freshGames);
             if (hasCachedLibrary)

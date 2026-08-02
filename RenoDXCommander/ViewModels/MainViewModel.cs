@@ -45,6 +45,7 @@ public partial class MainViewModel : ObservableObject
     private readonly DofFixService _dofFixService;
     private readonly CustomReShadeHashService _customReShadeHashService;
     private readonly SeenWikiModsService _seenWikiModsService;
+    private readonly SeenUltraPlusModsService _seenUltraPlusModsService;
     private readonly GitHubETagCache _etagCache;
     /// <summary>
     /// Task that tracks the background shader pack download/extraction.
@@ -99,16 +100,22 @@ public partial class MainViewModel : ObservableObject
     /// <summary>List of new wiki mods detected since last dismiss.</summary>
     [ObservableProperty] private List<string> _newWikiMods = new();
 
+    /// <summary>List of new Ultra+ mods detected since last dismiss.</summary>
+    [ObservableProperty] private List<string> _newUltraPlusMods = new();
+
     public Visibility HasUpdatesAvailableVisibility =>
         HasUpdatesAvailable ? Visibility.Visible : Visibility.Collapsed;
 
     public Visibility NewWikiModsButtonVisibility =>
-        NewWikiMods.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        NewWikiMods.Count > 0 || NewUltraPlusMods.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
     partial void OnHasUpdatesAvailableChanged(bool value)
         => OnPropertyChanged(nameof(HasUpdatesAvailableVisibility));
 
     partial void OnNewWikiModsChanged(List<string> value)
+        => OnPropertyChanged(nameof(NewWikiModsButtonVisibility));
+
+    partial void OnNewUltraPlusModsChanged(List<string> value)
         => OnPropertyChanged(nameof(NewWikiModsButtonVisibility));
 
     public Visibility DetailPanelVisibility =>
@@ -234,6 +241,27 @@ public partial class MainViewModel : ObservableObject
         _seenWikiModsService.MarkAsSeen(NewWikiMods);
         NewWikiMods = new List<string>();
         _crashReporter.Log("[MainViewModel.DismissNewWikiMods] Marked new mods as seen");
+    }
+
+    /// <summary>
+    /// Marks all current new Ultra+ mods as "seen" and hides the notification button.
+    /// Called when the user clicks "Dismiss" in the new mods dialog.
+    /// </summary>
+    public void DismissNewUltraPlusMods()
+    {
+        if (NewUltraPlusMods.Count == 0) return;
+        _seenUltraPlusModsService.MarkAsSeen(NewUltraPlusMods);
+        NewUltraPlusMods = new List<string>();
+        _crashReporter.Log("[MainViewModel.DismissNewUltraPlusMods] Marked new Ultra+ mods as seen");
+    }
+
+    /// <summary>
+    /// Marks both wiki and Ultra+ mods as seen.
+    /// </summary>
+    public void DismissAllNewMods()
+    {
+        DismissNewWikiMods();
+        DismissNewUltraPlusMods();
     }
 
     /// <summary>
@@ -487,7 +515,8 @@ public partial class MainViewModel : ObservableObject
         IDlssStreamlineService dlssStreamlineService,
         DlssPresetService dlssPresetService,
         GitHubETagCache etagCache,
-        SeenWikiModsService seenWikiModsService)
+        SeenWikiModsService seenWikiModsService,
+        SeenUltraPlusModsService seenUltraPlusModsService)
     {
         _http = http;
         _installer = installer;
@@ -526,6 +555,7 @@ public partial class MainViewModel : ObservableObject
         _dofFixService = App.Services.GetRequiredService<DofFixService>();
         _customReShadeHashService = App.Services.GetRequiredService<CustomReShadeHashService>();
         _seenWikiModsService = seenWikiModsService;
+        _seenUltraPlusModsService = seenUltraPlusModsService;
         _etagCache = etagCache;
         // Wire up SettingsChanged so property changes trigger a full save
         _settingsViewModel.SettingsChanged = () => SaveNameMappings();

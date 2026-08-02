@@ -19,4 +19,9 @@ public interface IUltraPlusService
     /// Checks manifest overrides first, then the normalized-name dictionary.
     /// </summary>
     string? ResolveUrl(string gameName, RemoteManifest? manifest);
+
+    /// <summary>
+    /// Returns all game names in the Ultra+ dictionary (for new mods detection).
+    /// </summary>
+    IReadOnlyCollection<string> GetAllGameNames();
 }

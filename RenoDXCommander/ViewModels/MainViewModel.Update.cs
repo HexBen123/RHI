@@ -63,6 +63,22 @@ public partial class MainViewModel
                 }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel] Periodic wiki fetch failed — {ex.Message}"); }
 
+                // Re-fetch Ultra+ mods and detect new ones
+                try
+                {
+                    await _ultraPlusService.InitAsync();
+                    var currentUltraPlusMods = _ultraPlusService.GetAllGameNames().ToList();
+                    _crashReporter.Log($"[MainViewModel] Periodic Ultra+ mods check: {currentUltraPlusMods.Count} mods");
+                    var newUltraPlusMods = _seenUltraPlusModsService.GetNewMods(currentUltraPlusMods);
+                    _crashReporter.Log($"[MainViewModel] Periodic new Ultra+ mods: {newUltraPlusMods.Count} (seen: {_seenUltraPlusModsService.GetSeenMods().Count})");
+                    if (newUltraPlusMods.Count > 0)
+                    {
+                        _crashReporter.Log($"[MainViewModel] Periodic new Ultra+ mods: {string.Join(", ", newUltraPlusMods.Take(10))}{(newUltraPlusMods.Count > 10 ? "..." : "")}");
+                        DispatcherQueue?.TryEnqueue(() => NewUltraPlusMods = newUltraPlusMods);
+                    }
+                }
+                catch (Exception ex) { _crashReporter.Log($"[MainViewModel] Periodic Ultra+ fetch failed — {ex.Message}"); }
+
                 // Re-fetch DLSS manifest
                 try { await _dlssStreamlineService.FetchManifestAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel] Periodic DLSS manifest fetch failed — {ex.Message}"); }
