@@ -131,6 +131,10 @@ public partial class MainViewModel
         try
         {
             _dxvkService.Uninstall(card);
+            
+            // Clear persisted Vulkan rendering path — Lilium HDR uninstall resets to DirectX
+            SetVulkanRenderingPath(card.GameName, "DirectX");
+            
             card.DxvkActionMessage = "✖ DXVK removed.";
             card.NotifyAll();
             card.FadeMessage(m => card.DxvkActionMessage = m, card.DxvkActionMessage);
@@ -253,10 +257,6 @@ public partial class MainViewModel
                 card.IsDualApiGame = GraphicsApiDetector.IsDualApi(card.DetectedApis);
                 card.GraphicsApi = DetectGraphicsApi(card.InstallPath, EngineType.Unknown, card.GameName);
             }
-
-            // Clear persisted Vulkan rendering path (Lilium HDR uninstall resets to DirectX)
-            if (card.VulkanRenderingPath == "DirectX")
-                SetVulkanRenderingPath(card.GameName, "DirectX");
 
             // Deploy shaders after ReShade is restored as DX proxy.
             // The DxvkService reinstalls ReShade but can't resolve shader packs,

@@ -1,8 +1,17 @@
 ## v2.2.9
 
+### New
+
+- **New Mods Alert** — a green "New Mods Available" button now appears in the toolbar when new RenoDX mods are added to the wiki since your last check. Click to see the list of new mods, then either dismiss (hides until more mods are added) or close (keeps the button visible). Checks run on app launch, Refresh, Check for Updates, and the 4-hour auto-scan.
+
+### Bug Fixes
+
+- Fixed DXVK uninstall not clearing persisted Vulkan rendering path — games would remain stuck installing Vulkan ReShade even after DXVK was removed.
+
 ### Manifest Updates
 
-- Fixed Watch Dogs 2 install path detection — added `Watch_Dogs2` and `WATCH_DOGS2` variants for Ubisoft Connect folder naming.
+- Fixed Mass Effect Andromeda `lumaRenodxCompat` matching — added both colon and non-colon variants to cover different store detections.
+- Added DristoforColumb donation link.
 
 ---
 

@@ -36,6 +36,33 @@ public partial class MainViewModel
                 }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel] Periodic manifest fetch failed — {ex.Message}"); }
 
+                // Re-fetch wiki to detect new mods
+                try
+                {
+                    var wikiResult = await _wikiService.FetchAllAsync();
+                    if (wikiResult.Mods != null)
+                    {
+                        _allMods = wikiResult.Mods;
+                        _genericNotes = wikiResult.GenericNotes ?? new();
+                        _crashReporter.Log($"[MainViewModel] Periodic wiki refresh complete — {_allMods.Count} mods");
+
+                        // Detect new wiki mods
+                        var currentModNames = _allMods
+                            .Where(m => m.SnapshotUrl != null)
+                            .Select(m => m.Name)
+                            .ToList();
+                        _crashReporter.Log($"[MainViewModel] Periodic wiki mods check: {currentModNames.Count} downloadable mods");
+                        var newMods = _seenWikiModsService.GetNewMods(currentModNames);
+                        _crashReporter.Log($"[MainViewModel] Periodic new wiki mods: {newMods.Count} (seen: {_seenWikiModsService.GetSeenMods().Count})");
+                        if (newMods.Count > 0)
+                        {
+                            _crashReporter.Log($"[MainViewModel] Periodic new mods: {string.Join(", ", newMods.Take(10))}{(newMods.Count > 10 ? "..." : "")}");
+                            DispatcherQueue?.TryEnqueue(() => NewWikiMods = newMods);
+                        }
+                    }
+                }
+                catch (Exception ex) { _crashReporter.Log($"[MainViewModel] Periodic wiki fetch failed — {ex.Message}"); }
+
                 // Re-fetch DLSS manifest
                 try { await _dlssStreamlineService.FetchManifestAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel] Periodic DLSS manifest fetch failed — {ex.Message}"); }

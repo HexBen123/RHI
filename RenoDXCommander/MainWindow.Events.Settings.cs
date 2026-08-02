@@ -1455,6 +1455,68 @@ public sealed partial class MainWindow
     private void AboutBack_Click(object sender, RoutedEventArgs e)
         => ViewModel.NavigateToGameViewCommand.Execute(null);
 
+    private async void NewModsButton_Click(object sender, RoutedEventArgs e)
+    {
+        var newMods = ViewModel.NewWikiMods;
+        if (newMods.Count == 0) return;
+
+        // Build scrollable list of new mod names
+        var listPanel = new StackPanel { Spacing = 4 };
+        foreach (var modName in newMods.Take(50)) // Cap at 50 for performance
+        {
+            listPanel.Children.Add(new TextBlock
+            {
+                Text = $"• {modName}",
+                FontSize = 12,
+                Foreground = (SolidColorBrush)Application.Current.Resources["TextSecondaryBrush"],
+            });
+        }
+        if (newMods.Count > 50)
+        {
+            listPanel.Children.Add(new TextBlock
+            {
+                Text = $"... and {newMods.Count - 50} more",
+                FontSize = 12,
+                FontStyle = Windows.UI.Text.FontStyle.Italic,
+                Foreground = (SolidColorBrush)Application.Current.Resources["TextTertiaryBrush"],
+            });
+        }
+
+        var scrollViewer = new ScrollViewer
+        {
+            Content = listPanel,
+            MaxHeight = 300,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+        };
+
+        var contentPanel = new StackPanel { Spacing = 12 };
+        contentPanel.Children.Add(new TextBlock
+        {
+            Text = $"{newMods.Count} new RenoDX mod{(newMods.Count == 1 ? "" : "s")} added to the wiki:",
+            FontSize = 13,
+            Foreground = (SolidColorBrush)Application.Current.Resources["TextPrimaryBrush"],
+        });
+        contentPanel.Children.Add(scrollViewer);
+
+        var dialog = new ContentDialog
+        {
+            Title = "New RenoDX Mods Available",
+            Content = contentPanel,
+            PrimaryButtonText = "Dismiss",
+            CloseButtonText = "Close",
+            XamlRoot = Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+
+        var result = await DialogService.ShowSafeAsync(dialog);
+
+        // "Dismiss" marks as seen and hides button; "Close" just closes (button stays visible)
+        if (result == ContentDialogResult.Primary)
+        {
+            ViewModel.DismissNewWikiMods();
+        }
+    }
+
     private void FaqButton_Click(object sender, RoutedEventArgs e)
     {
         BuildFaqContent();

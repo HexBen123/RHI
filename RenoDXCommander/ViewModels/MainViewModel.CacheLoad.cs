@@ -561,6 +561,7 @@ public partial class MainViewModel
                 DllOverrideEnabled     = _dllOverrides.ContainsKey(game.Name),
                 LumaFeatureEnabled     = LumaFeatureEnabled,
                 IsLumaMode             = _lumaEnabledGames.Contains(game.Name),
+                LumaRenodxCompatible   = cachedManifest?.LumaRenodxCompat?.Contains(game.Name) == true,
 
                 // Wiki/mod data left empty — Phase 2 MergeCards will fill these in:
                 // Mod, WikiStatus, Maintainer, Notes, IsGenericMod, IsExternalOnly,

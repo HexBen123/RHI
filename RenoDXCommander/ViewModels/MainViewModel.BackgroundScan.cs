@@ -143,6 +143,32 @@ public partial class MainViewModel
             try { _lumaMods = lumaTask.IsCompletedSuccessfully ? await lumaTask : new(); }
             catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Luma mods deserialization failed — {ex.Message}"); _lumaMods = new(); }
 
+            // ── Detect new wiki mods ────────────────────────────────────────────
+            if (!wikiFetchFailed)
+            {
+                var currentModNames = _allMods
+                    .Where(m => m.SnapshotUrl != null) // Only mods with downloadable addons
+                    .Select(m => m.Name)
+                    .ToList();
+
+                _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Wiki mods check: {currentModNames.Count} downloadable mods");
+
+                // Seed on first launch so everything isn't shown as "new"
+                _seenWikiModsService.SeedIfEmpty(currentModNames);
+
+                var newMods = _seenWikiModsService.GetNewMods(currentModNames);
+                _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] New wiki mods: {newMods.Count} (seen: {_seenWikiModsService.GetSeenMods().Count})");
+                if (newMods.Count > 0)
+                {
+                    _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] New mods: {string.Join(", ", newMods.Take(10))}{(newMods.Count > 10 ? "..." : "")}");
+                    DispatcherQueue?.TryEnqueue(() => NewWikiMods = newMods);
+                }
+            }
+            else
+            {
+                _crashReporter.Log("[RunBackgroundScanAndMergeAsync] Wiki fetch failed, skipping new mods check");
+            }
+
             // Store manifest
             // (_manifest already assigned above in the try block)
 

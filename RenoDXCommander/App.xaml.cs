@@ -109,6 +109,7 @@ public partial class App : Application
         services.AddSingleton<DlssPresetService>();
         services.AddSingleton<DofFixService>();
         services.AddSingleton<CustomReShadeHashService>();
+        services.AddSingleton<SeenWikiModsService>();
         // Lazy<IDlssStreamlineService> breaks the circular dependency between OptiScalerService ↔ DlssStreamlineService
         services.AddSingleton<Lazy<IDlssStreamlineService>>(sp => new Lazy<IDlssStreamlineService>(() => sp.GetRequiredService<IDlssStreamlineService>()));
 

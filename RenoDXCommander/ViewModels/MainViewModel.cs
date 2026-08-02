@@ -44,6 +44,7 @@ public partial class MainViewModel : ObservableObject
     private readonly DlssPresetService _dlssPresetService;
     private readonly DofFixService _dofFixService;
     private readonly CustomReShadeHashService _customReShadeHashService;
+    private readonly SeenWikiModsService _seenWikiModsService;
     private readonly GitHubETagCache _etagCache;
     /// <summary>
     /// Task that tracks the background shader pack download/extraction.
@@ -95,11 +96,20 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private ViewLayout _currentViewLayout = ViewLayout.Compact;
     [ObservableProperty] private int _compactPageIndex = 0;
 
+    /// <summary>List of new wiki mods detected since last dismiss.</summary>
+    [ObservableProperty] private List<string> _newWikiMods = new();
+
     public Visibility HasUpdatesAvailableVisibility =>
         HasUpdatesAvailable ? Visibility.Visible : Visibility.Collapsed;
 
+    public Visibility NewWikiModsButtonVisibility =>
+        NewWikiMods.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+
     partial void OnHasUpdatesAvailableChanged(bool value)
         => OnPropertyChanged(nameof(HasUpdatesAvailableVisibility));
+
+    partial void OnNewWikiModsChanged(List<string> value)
+        => OnPropertyChanged(nameof(NewWikiModsButtonVisibility));
 
     public Visibility DetailPanelVisibility =>
         CurrentViewLayout == ViewLayout.Detail ? Visibility.Visible : Visibility.Collapsed;
@@ -212,6 +222,18 @@ public partial class MainViewModel : ObservableObject
     {
         get => _settingsViewModel.IsLoadingSettings;
         set => _settingsViewModel.IsLoadingSettings = value;
+    }
+
+    /// <summary>
+    /// Marks all current new wiki mods as "seen" and hides the notification button.
+    /// Called when the user clicks "Dismiss" in the new mods dialog.
+    /// </summary>
+    public void DismissNewWikiMods()
+    {
+        if (NewWikiMods.Count == 0) return;
+        _seenWikiModsService.MarkAsSeen(NewWikiMods);
+        NewWikiMods = new List<string>();
+        _crashReporter.Log("[MainViewModel.DismissNewWikiMods] Marked new mods as seen");
     }
 
     /// <summary>
@@ -464,7 +486,8 @@ public partial class MainViewModel : ObservableObject
         INexusUpdateService nexusUpdateService,
         IDlssStreamlineService dlssStreamlineService,
         DlssPresetService dlssPresetService,
-        GitHubETagCache etagCache)
+        GitHubETagCache etagCache,
+        SeenWikiModsService seenWikiModsService)
     {
         _http = http;
         _installer = installer;
@@ -502,6 +525,7 @@ public partial class MainViewModel : ObservableObject
         _dlssPresetService = dlssPresetService;
         _dofFixService = App.Services.GetRequiredService<DofFixService>();
         _customReShadeHashService = App.Services.GetRequiredService<CustomReShadeHashService>();
+        _seenWikiModsService = seenWikiModsService;
         _etagCache = etagCache;
         // Wire up SettingsChanged so property changes trigger a full save
         _settingsViewModel.SettingsChanged = () => SaveNameMappings();

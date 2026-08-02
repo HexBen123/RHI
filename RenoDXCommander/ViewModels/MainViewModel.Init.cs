@@ -356,6 +356,32 @@ public partial class MainViewModel
             _genericNotes = wikiResult.GenericNotes ?? new();
             try { _lumaMods = lumaTask.IsCompletedSuccessfully ? await lumaTask : new(); } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Luma mods deserialization failed — {ex.Message}"); _lumaMods = new(); }
 
+            // ── Detect new wiki mods ────────────────────────────────────────────
+            if (!wikiFetchFailed)
+            {
+                var currentModNames = _allMods
+                    .Where(m => m.SnapshotUrl != null) // Only mods with downloadable addons
+                    .Select(m => m.Name)
+                    .ToList();
+
+                _crashReporter.Log($"[MainViewModel.InitializeAsync] Wiki mods check: {currentModNames.Count} downloadable mods");
+
+                // Seed on first launch so everything isn't shown as "new"
+                _seenWikiModsService.SeedIfEmpty(currentModNames);
+
+                var newMods = _seenWikiModsService.GetNewMods(currentModNames);
+                _crashReporter.Log($"[MainViewModel.InitializeAsync] New wiki mods: {newMods.Count} (seen: {_seenWikiModsService.GetSeenMods().Count})");
+                if (newMods.Count > 0)
+                {
+                    _crashReporter.Log($"[MainViewModel.InitializeAsync] New mods: {string.Join(", ", newMods.Take(10))}{(newMods.Count > 10 ? "..." : "")}");
+                    DispatcherQueue?.TryEnqueue(() => NewWikiMods = newMods);
+                }
+            }
+            else
+            {
+                _crashReporter.Log("[MainViewModel.InitializeAsync] Wiki fetch failed, skipping new mods check");
+            }
+
             // 6. Merge or use directly based on cache
             ApplyGameRenames(freshGames);
             if (hasCachedLibrary)
