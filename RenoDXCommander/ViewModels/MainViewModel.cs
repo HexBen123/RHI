@@ -608,8 +608,9 @@ public partial class MainViewModel : ObservableObject
             newValue.IsSelected = true;
             // Only persist the selection after initial load is complete,
             // so the saved LastSelectedGameName isn't overwritten by auto-select.
+            // Store as composite key: "GameName|Store"
             if (HasInitialized)
-                LastSelectedGameName = newValue.GameName;
+                LastSelectedGameName = GameKey.FromCard(newValue.GameName, newValue.Source).ToKey();
         }
     }
 

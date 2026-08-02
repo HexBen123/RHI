@@ -172,6 +172,7 @@ public partial class DxvkService
                 {
                     GameName = card.GameName,
                     InstallPath = card.InstallPath,
+                    Store = card.Source ?? "",
                     DxvkVersion = FormatVersionForDisplay(StagedVersion),
                     InstalledDlls = new List<string> { "d3d9.dll" },
                     PluginFolderDlls = new List<string>(),
@@ -293,6 +294,7 @@ public partial class DxvkService
             {
                 GameName = card.GameName,
                 InstallPath = card.InstallPath,
+                Store = card.Source ?? "",
                 DxvkVersion = FormatVersionForDisplay(StagedVersion),
                 InstalledDlls = new List<string>(rootDlls),
                 PluginFolderDlls = new List<string>(pluginDlls),
@@ -944,7 +946,8 @@ public partial class DxvkService
                     card.InstallPath,
                     shaderModeOverride: card.ShaderModeOverride,
                     use32Bit: card.Is32Bit,
-                    filenameOverride: rsFilename);
+                    filenameOverride: rsFilename,
+                    store: card.Source);
                 card.RsRecord = record;
                 card.RsInstalledFile = record.InstalledAs;
                 card.RsStatus = GameStatus.Installed;

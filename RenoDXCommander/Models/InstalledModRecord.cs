@@ -4,6 +4,8 @@ public class InstalledModRecord
 {
     public string GameName { get; set; } = "";
     public string InstallPath { get; set; } = "";
+    /// <summary>Store/platform where this game is installed (Steam, Xbox, Epic, etc.).</summary>
+    public string Store { get; set; } = "";
     public string AddonFileName { get; set; } = "";
     public string? FileHash { get; set; }
     public DateTime InstalledAt { get; set; }

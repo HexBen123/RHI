@@ -15,9 +15,55 @@ public class GameLibraryService : IGameLibraryService
         try
         {
             if (!File.Exists(LibraryPath)) return null;
-            return JsonSerializer.Deserialize<SavedGameLibrary>(File.ReadAllText(LibraryPath));
+            var lib = JsonSerializer.Deserialize<SavedGameLibrary>(File.ReadAllText(LibraryPath));
+            if (lib != null)
+                MigrateLegacyKeys(lib);
+            return lib;
         }
         catch (Exception ex) { CrashReporter.Log($"[GameLibraryService.Load] Failed to load game library from '{LibraryPath}' — {ex.Message}"); return null; }
+    }
+
+    /// <summary>
+    /// Migrates legacy game-name keys (without "|") to composite key format ("GameName|Store").
+    /// Legacy keys are migrated to "GameName|" (empty store) since we don't know the original store.
+    /// </summary>
+    private static void MigrateLegacyKeys(SavedGameLibrary lib)
+    {
+        // Migrate HashSets
+        lib.DxvkEnabledGames = MigrateHashSet(lib.DxvkEnabledGames);
+        lib.ExcludeFromUpdateAllDxvk = MigrateHashSet(lib.ExcludeFromUpdateAllDxvk);
+        lib.HiddenGames = MigrateHashSet(lib.HiddenGames);
+        lib.FavouriteGames = MigrateHashSet(lib.FavouriteGames);
+
+        // Migrate Dictionaries
+        lib.DxvkInstalledVersions = MigrateDict(lib.DxvkInstalledVersions);
+        lib.UpdateAvailableSnapshot = MigrateDict(lib.UpdateAvailableSnapshot);
+        lib.DlssPathsCache = MigrateDict(lib.DlssPathsCache);
+        if (lib.RsInstalledVersions != null)
+            lib.RsInstalledVersions = MigrateDict(lib.RsInstalledVersions);
+        if (lib.RdxInstalledVersions != null)
+            lib.RdxInstalledVersions = MigrateDict(lib.RdxInstalledVersions);
+
+        // Migrate LastSelectedGame to composite format
+        if (!string.IsNullOrEmpty(lib.LastSelectedGame) && !lib.LastSelectedGame.Contains('|'))
+            lib.LastSelectedGame = $"{lib.LastSelectedGame}|";
+    }
+
+    private static HashSet<string> MigrateHashSet(HashSet<string>? set)
+    {
+        if (set == null) return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        return new HashSet<string>(
+            set.Select(k => k.Contains('|') ? k : $"{k}|"),
+            StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static Dictionary<string, T> MigrateDict<T>(Dictionary<string, T>? dict)
+    {
+        if (dict == null) return new Dictionary<string, T>(StringComparer.OrdinalIgnoreCase);
+        return dict.ToDictionary(
+            kv => kv.Key.Contains('|') ? kv.Key : $"{kv.Key}|",
+            kv => kv.Value,
+            StringComparer.OrdinalIgnoreCase);
     }
 
     public void Save(List<DetectedGame> games, Dictionary<string, bool> addonCache,

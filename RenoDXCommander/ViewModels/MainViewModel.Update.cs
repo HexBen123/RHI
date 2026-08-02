@@ -743,7 +743,7 @@ public partial class MainViewModel
             },
             shaderResolver: ResolveShaderSelection,
             manifestDllResolver: GetManifestDllNames,
-            channelResolver: ResolveReShadeChannel);
+            channelResolver: (gameName) => ResolveReShadeChannel(gameName));
     }
 
     public async Task UpdateAllUlAsync()

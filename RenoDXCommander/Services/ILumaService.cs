@@ -17,7 +17,8 @@ public interface ILumaService
         string? overlayHotkey = null,
         string? screenshotHotkey = null,
         string? gameName = null,
-        IProgress<(string message, double percent)>? progress = null);
+        IProgress<(string message, double percent)>? progress = null,
+        string? store = null);
 
     void Uninstall(LumaInstalledRecord record);
 
@@ -36,7 +37,8 @@ public interface ILumaService
         string? overlayHotkey = null,
         string? screenshotHotkey = null,
         string? gameName = null,
-        Func<List<string>, Task<string?>>? folderPicker = null);
+        Func<List<string>, Task<string?>>? folderPicker = null,
+        string? store = null);
 
     void SaveLumaRecord(LumaInstalledRecord record);
 

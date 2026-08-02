@@ -140,11 +140,13 @@ public sealed partial class MainWindow
             }
         }
 
-        // Restore last selected game from previous session
+        // Restore last selected game from previous session (composite key format: "GameName|Store")
         if (GameList.SelectedItem == null && ViewModel.LastSelectedGameName != null)
         {
-            var lastMatch = ViewModel.DisplayedGames.FirstOrDefault(c =>
-                c.GameName.Equals(ViewModel.LastSelectedGameName, StringComparison.OrdinalIgnoreCase));
+            var key = GameKey.Parse(ViewModel.LastSelectedGameName);
+            // Prefer exact match (name + store), fallback to name-only match
+            var lastMatch = ViewModel.DisplayedGames.FirstOrDefault(c => key.Matches(c.GameName, c.Source))
+                         ?? ViewModel.DisplayedGames.FirstOrDefault(c => key.MatchesName(c.GameName));
             if (lastMatch != null)
             {
                 GameList.SelectedItem = lastMatch;

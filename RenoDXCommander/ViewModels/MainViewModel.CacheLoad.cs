@@ -275,24 +275,26 @@ public partial class MainViewModel
                 _addonFileCache[key] = "";
         }
 
-        // Collect DXVK state from cards for persistence
+        // Collect DXVK state from cards for persistence (using composite keys: "GameName|Store")
         var dxvkEnabledGames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var dxvkInstalledVersions = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var excludeFromUpdateAllDxvk = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var c in _allCards)
         {
+            var compositeKey = GameKey.FromCard(c.GameName, c.Source).ToKey();
             if (c.DxvkEnabled)
-                dxvkEnabledGames.Add(c.GameName);
+                dxvkEnabledGames.Add(compositeKey);
             if (!string.IsNullOrEmpty(c.DxvkInstalledVersion))
-                dxvkInstalledVersions[c.GameName] = c.DxvkInstalledVersion;
+                dxvkInstalledVersions[compositeKey] = c.DxvkInstalledVersion;
             if (c.ExcludeFromUpdateAllDxvk)
-                excludeFromUpdateAllDxvk.Add(c.GameName);
+                excludeFromUpdateAllDxvk.Add(compositeKey);
         }
 
-        // Collect update-available snapshot from cards for persistence across restarts
+        // Collect update-available snapshot from cards for persistence across restarts (using composite keys)
         var updateSnapshot = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var c in _allCards)
         {
+            var compositeKey = GameKey.FromCard(c.GameName, c.Source).ToKey();
             var flags = new List<string>();
             // Don't persist RDX UpdateAvailable for external-only games — those are
             // handled by NexusUpdateService baselines and shouldn't trigger Update All
@@ -305,16 +307,17 @@ public partial class MainViewModel
             if (c.DxvkStatus == GameStatus.UpdateAvailable) flags.Add("DXVK");
             if (c.LumaStatus == GameStatus.UpdateAvailable) flags.Add("LUMA");
             if (flags.Count > 0)
-                updateSnapshot[c.GameName] = string.Join(",", flags);
+                updateSnapshot[compositeKey] = string.Join(",", flags);
         }
 
-        // Collect DLSS/Streamline path cache from cards for fast restore on next launch
+        // Collect DLSS/Streamline path cache from cards for fast restore on next launch (using composite keys)
         var dlssPathsCache = new Dictionary<string, DlssPathCache>(StringComparer.OrdinalIgnoreCase);
         foreach (var c in _allCards)
         {
             if (c.DlssDetection != null && c.DlssDetection.HasAny)
             {
-                dlssPathsCache[c.GameName] = new DlssPathCache
+                var compositeKey = GameKey.FromCard(c.GameName, c.Source).ToKey();
+                dlssPathsCache[compositeKey] = new DlssPathCache
                 {
                     DlssPath = c.DlssDetection.DlssPath,
                     DlssdPath = c.DlssDetection.DlssdPath,
@@ -325,15 +328,16 @@ public partial class MainViewModel
             }
         }
 
-        // Collect RS/RDX installed versions from cards for instant display on next startup
+        // Collect RS/RDX installed versions from cards for instant display on next startup (using composite keys)
         var rsVersions = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var rdxVersions = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var c in _allCards)
         {
+            var compositeKey = GameKey.FromCard(c.GameName, c.Source).ToKey();
             if (!string.IsNullOrEmpty(c.RsInstalledVersion))
-                rsVersions[c.GameName] = c.RsInstalledVersion;
+                rsVersions[compositeKey] = c.RsInstalledVersion;
             if (!string.IsNullOrEmpty(c.RdxInstalledVersion))
-                rdxVersions[c.GameName] = c.RdxInstalledVersion;
+                rdxVersions[compositeKey] = c.RdxInstalledVersion;
         }
 
         _gameLibraryService.Save(detectedGames, addonCache, _hiddenGames, _favouriteGames, _manualGames,
@@ -422,25 +426,11 @@ public partial class MainViewModel
         //    network/filesystem-dependent data.
         _crashReporter.Log($"[MainViewModel.LoadCacheAndBuildCardsAsync] Building lightweight cards for {allGames.Count} cached games...");
 
-        // Pre-index records by game name for O(1) lookup
-        var recordsByName = records
-            .GroupBy(r => r.GameName, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
-        var auxByNameType = auxRecords
-            .GroupBy(r => (r.GameName.ToLowerInvariant(), r.AddonType))
-            .ToDictionary(g => g.Key, g => g.First());
-
         // Load RE Framework + Luma records for matching
         var refRecords = _refService.GetRecords();
-        var refByName = refRecords
-            .GroupBy(r => r.GameName, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
 
         // Load DXVK installed records for matching
         var dxvkRecords = _dxvkService.LoadAllRecords();
-        var dxvkByName = dxvkRecords
-            .GroupBy(r => r.GameName, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
 
         var cards = new List<GameCardViewModel>(allGames.Count);
 
@@ -497,21 +487,45 @@ public partial class MainViewModel
                 detectedApis = cachedApi.All;
             }
 
-            // Look up installed RenoDX record
-            recordsByName.TryGetValue(game.Name, out var record);
-            // Fallback: match by install path for records saved with mod name
+            // Look up installed RenoDX record: prefer Name+Store match, fallback to Name+InstallPath
+            var record = records.FirstOrDefault(r =>
+                r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
+                r.Store.Equals(game.Source ?? "", StringComparison.OrdinalIgnoreCase))
+                ?? records.FirstOrDefault(r =>
+                    r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
+                    r.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase));
+            // Final fallback: match by install path only for records saved with mod name
             if (record == null)
             {
                 record = records.FirstOrDefault(r =>
                     r.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase));
             }
 
-            // Look up aux records (ReShade, DC, OptiScaler)
-            auxByNameType.TryGetValue((game.Name.ToLowerInvariant(), AuxInstallService.TypeReShade), out var rsRec);
-            if (rsRec == null)
-                auxByNameType.TryGetValue((game.Name.ToLowerInvariant(), AuxInstallService.TypeReShadeNormal), out rsRec);
-            auxByNameType.TryGetValue((game.Name.ToLowerInvariant(), "DisplayCommander"), out var dcRec);
-            auxByNameType.TryGetValue((game.Name.ToLowerInvariant(), OptiScalerService.AddonType), out var osRec);
+            // Look up aux records (ReShade, DC, OptiScaler): prefer Name+Store match, fallback to Name+InstallPath
+            var rsRec = auxRecords.FirstOrDefault(r =>
+                r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
+                r.Store.Equals(game.Source ?? "", StringComparison.OrdinalIgnoreCase) &&
+                (r.AddonType == AuxInstallService.TypeReShade || r.AddonType == AuxInstallService.TypeReShadeNormal))
+                ?? auxRecords.FirstOrDefault(r =>
+                    r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
+                    r.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase) &&
+                    (r.AddonType == AuxInstallService.TypeReShade || r.AddonType == AuxInstallService.TypeReShadeNormal));
+            var dcRec = auxRecords.FirstOrDefault(r =>
+                r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
+                r.Store.Equals(game.Source ?? "", StringComparison.OrdinalIgnoreCase) &&
+                r.AddonType == "DisplayCommander")
+                ?? auxRecords.FirstOrDefault(r =>
+                    r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
+                    r.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase) &&
+                    r.AddonType == "DisplayCommander");
+            var osRec = auxRecords.FirstOrDefault(r =>
+                r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
+                r.Store.Equals(game.Source ?? "", StringComparison.OrdinalIgnoreCase) &&
+                r.AddonType == OptiScalerService.AddonType)
+                ?? auxRecords.FirstOrDefault(r =>
+                    r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
+                    r.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase) &&
+                    r.AddonType == OptiScalerService.AddonType);
 
             // Build engine hint string
             var engineHint = engineOverrideLabel != null
@@ -523,6 +537,9 @@ public partial class MainViewModel
 
             var is32Bit = ResolveIs32Bit(game.Name, machineType);
 
+            // Build composite key for savedLib lookups (collections now use "GameName|Store" format)
+            var savedLibKey = GameKey.FromCard(game.Name, game.Source).ToKey();
+
             var newCard = new GameCardViewModel
             {
                 GameName               = game.Name,
@@ -532,7 +549,7 @@ public partial class MainViewModel
                 InstalledRecord        = record,
                 Status                 = record != null ? GameStatus.Installed : GameStatus.Available,
                 InstalledAddonFileName = record?.AddonFileName,
-                RdxInstalledVersion    = savedLib.RdxInstalledVersions?.TryGetValue(game.Name, out var rdxVer) == true ? rdxVer : null, // Cached from last session; Phase 2 updates if file changed
+                RdxInstalledVersion    = savedLib.RdxInstalledVersions?.TryGetValue(savedLibKey, out var rdxVer) == true ? rdxVer : null, // Cached from last session; Phase 2 updates if file changed
                 EngineHint             = engineHint,
                 Is32Bit                = is32Bit,
                 GraphicsApi            = graphicsApi,
@@ -546,7 +563,7 @@ public partial class MainViewModel
                 RsRecord               = rsRec,
                 RsStatus               = rsRec != null ? GameStatus.Installed : GameStatus.NotInstalled,
                 RsInstalledFile        = rsRec?.InstalledAs,
-                RsInstalledVersion     = savedLib.RsInstalledVersions?.TryGetValue(game.Name, out var rsVer) == true ? rsVer : null, // Cached from last session; Phase 2 updates if file changed
+                RsInstalledVersion     = savedLib.RsInstalledVersions?.TryGetValue(savedLibKey, out var rsVer) == true ? rsVer : null, // Cached from last session; Phase 2 updates if file changed
 
                 // Per-game settings from GameNameService
                 ExcludeFromUpdateAllReShade = _gameNameService.UpdateAllExcludedReShade.Contains(game.Name),
@@ -556,9 +573,9 @@ public partial class MainViewModel
                 ExcludeFromUpdateAllOs      = _gameNameService.UpdateAllExcludedOs.Contains(game.Name),
                 ExcludeFromUpdateAllRef     = _gameNameService.UpdateAllExcludedRef.Contains(game.Name),
                 UseNormalReShade           = _gameNameService.NormalReShadeGames.Contains(game.Name),
-                ShaderModeOverride     = _perGameShaderMode.TryGetValue(game.Name, out var smCache) ? smCache : null,
-                VulkanRenderingPath    = _vulkanRenderingPaths.TryGetValue(game.Name, out var vrpCache) ? vrpCache : "DirectX",
-                DllOverrideEnabled     = _dllOverrides.ContainsKey(game.Name),
+                ShaderModeOverride     = _perGameShaderMode.TryGetValue(savedLibKey, out var smCache) ? smCache : null,
+                VulkanRenderingPath    = _vulkanRenderingPaths.TryGetValue(savedLibKey, out var vrpCache) ? vrpCache : "DirectX",
+                DllOverrideEnabled     = _dllOverrides.ContainsKey(savedLibKey),
                 LumaFeatureEnabled     = LumaFeatureEnabled,
                 IsLumaMode             = _lumaEnabledGames.Contains(game.Name),
                 LumaRenodxCompatible   = cachedManifest?.LumaRenodxCompat?.Contains(game.Name) == true,
@@ -607,16 +624,31 @@ public partial class MainViewModel
                 newCard.OsInstalledVersion = _optiScalerService.StagedVersion;
             }
 
-            // RE Framework from records
-            if (newCard.IsREEngineGame && refByName.TryGetValue(game.Name, out var refRec))
+            // RE Framework from records: prefer Name+Store match, fallback to Name+InstallPath
+            if (newCard.IsREEngineGame)
             {
-                newCard.RefRecord = refRec;
-                newCard.RefStatus = GameStatus.Installed;
-                newCard.RefInstalledVersion = refRec.InstalledVersion;
+                var refRec = refRecords.FirstOrDefault(r =>
+                    r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
+                    r.Store.Equals(game.Source ?? "", StringComparison.OrdinalIgnoreCase))
+                    ?? refRecords.FirstOrDefault(r =>
+                        r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
+                        r.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase));
+                if (refRec != null)
+                {
+                    newCard.RefRecord = refRec;
+                    newCard.RefStatus = GameStatus.Installed;
+                    newCard.RefInstalledVersion = refRec.InstalledVersion;
+                }
             }
 
-            // DXVK state from tracking records + saved library
-            if (dxvkByName.TryGetValue(game.Name, out var dxvkRec))
+            // DXVK state from tracking records + saved library: prefer Name+Store match, fallback to Name+InstallPath
+            var dxvkRec = dxvkRecords.FirstOrDefault(r =>
+                r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
+                r.Store.Equals(game.Source ?? "", StringComparison.OrdinalIgnoreCase))
+                ?? dxvkRecords.FirstOrDefault(r =>
+                    r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
+                    r.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase));
+            if (dxvkRec != null)
             {
                 newCard.DxvkRecord = dxvkRec;
                 newCard.DxvkStatus = GameStatus.Installed;
@@ -629,11 +661,12 @@ public partial class MainViewModel
                     newCard.GraphicsApi = GraphicsApiType.Vulkan;
                 }
             }
-            if (savedLib.DxvkEnabledGames.Contains(game.Name))
+            // Game-name-keyed collections use composite keys: "GameName|Store"
+            if (savedLib.DxvkEnabledGames.Contains(savedLibKey))
                 newCard.DxvkEnabled = true;
-            if (savedLib.DxvkInstalledVersions.TryGetValue(game.Name, out var savedDxvkVer) && newCard.DxvkInstalledVersion == null)
+            if (savedLib.DxvkInstalledVersions.TryGetValue(savedLibKey, out var savedDxvkVer) && newCard.DxvkInstalledVersion == null)
                 newCard.DxvkInstalledVersion = savedDxvkVer;
-            if (savedLib.ExcludeFromUpdateAllDxvk.Contains(game.Name))
+            if (savedLib.ExcludeFromUpdateAllDxvk.Contains(savedLibKey))
                 newCard.ExcludeFromUpdateAllDxvk = true;
 
             // Vulkan RS detection: if Lilium HDR mode set the game to Vulkan, RS status
@@ -644,7 +677,7 @@ public partial class MainViewModel
                 if (rsIniExists)
                 {
                     newCard.RsStatus = GameStatus.Installed;
-                    newCard.RsInstalledVersion = savedLib.RsInstalledVersions?.TryGetValue(game.Name, out var vulkanVer) == true
+                    newCard.RsInstalledVersion = savedLib.RsInstalledVersions?.TryGetValue(savedLibKey, out var vulkanVer) == true
                         ? vulkanVer
                         : AuxInstallService.ReadInstalledVersion(VulkanLayerService.LayerDirectory, VulkanLayerService.LayerDllName);
                 }
@@ -671,7 +704,7 @@ public partial class MainViewModel
             }
 
             // DLSS / Streamline: restore from cached paths (fast — just reads file versions, no directory scan)
-            if (savedLib.DlssPathsCache != null && savedLib.DlssPathsCache.TryGetValue(game.Name, out var dlssCache))
+            if (savedLib.DlssPathsCache != null && savedLib.DlssPathsCache.TryGetValue(savedLibKey, out var dlssCache))
             {
                 var detection = new DlssDetectionResult
                 {
@@ -733,7 +766,7 @@ public partial class MainViewModel
 
             // Restore update-available statuses from the saved snapshot
             if (savedLib.UpdateAvailableSnapshot != null
-                && savedLib.UpdateAvailableSnapshot.TryGetValue(game.Name, out var updateFlags))
+                && savedLib.UpdateAvailableSnapshot.TryGetValue(savedLibKey, out var updateFlags))
             {
                 var flags = updateFlags.Split(',');
                 foreach (var flag in flags)
@@ -793,11 +826,13 @@ public partial class MainViewModel
         // sees HasInitialized=false and calls RemoveSkeletons().
         IsLoading = false;
 
-        // 13. Restore selection from LastSelectedGameName
+        // 13. Restore selection from LastSelectedGameName (composite key format: "GameName|Store")
         if (!string.IsNullOrEmpty(LastSelectedGameName))
         {
-            var match = _allCards.FirstOrDefault(c =>
-                c.GameName.Equals(LastSelectedGameName, StringComparison.OrdinalIgnoreCase));
+            var key = GameKey.Parse(LastSelectedGameName);
+            // Prefer exact match (name + store), fallback to name-only match
+            var match = _allCards.FirstOrDefault(c => key.Matches(c.GameName, c.Source))
+                     ?? _allCards.FirstOrDefault(c => key.MatchesName(c.GameName));
             if (match != null)
                 SelectedGame = match;
         }

@@ -102,7 +102,7 @@ public partial class MainViewModel
 
             // Persist Vulkan rendering path if direct DX9 mode switched the game to Vulkan
             if (card.DxvkRecord?.InstalledDlls.Contains("d3d9.dll") == true && card.VulkanRenderingPath == "Vulkan")
-                SetVulkanRenderingPath(card.GameName, "Vulkan");
+                SetVulkanRenderingPath(card.GameName, "Vulkan", card.Source ?? "");
         }
         catch (Exception ex)
         {
@@ -133,7 +133,7 @@ public partial class MainViewModel
             _dxvkService.Uninstall(card);
             
             // Clear persisted Vulkan rendering path — Lilium HDR uninstall resets to DirectX
-            SetVulkanRenderingPath(card.GameName, "DirectX");
+            SetVulkanRenderingPath(card.GameName, "DirectX", card.Source ?? "");
             
             card.DxvkActionMessage = "✖ DXVK removed.";
             card.NotifyAll();

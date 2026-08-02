@@ -2,6 +2,10 @@ using RenoDXCommander.Services;
 
 namespace RenoDXCommander.Models;
 
+// Game-name-keyed collections use composite key format: "GameName|Store"
+// Legacy entries without "|" are migrated to "GameName|" (empty store) on load
+// This enables multi-store support where the same game can exist on different storefronts.
+
 public class SavedGameLibrary
 {
     public DateTime LastScanned { get; set; }

@@ -452,10 +452,15 @@ public partial class MainViewModel
         var effectiveMod = mod ?? fallback; // null for unknown-engine / legacy games not on wiki
 
         var records = _installer.LoadAll();
-        var record  = records.FirstOrDefault(r => r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase));
+        var scanPath = installPath.Length > 0 ? installPath : game.InstallPath;
+        var record  = records.FirstOrDefault(r =>
+            r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
+            r.Store.Equals(game.Source ?? "", StringComparison.OrdinalIgnoreCase))
+            ?? records.FirstOrDefault(r =>
+                r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
+                r.InstallPath.Equals(scanPath, StringComparison.OrdinalIgnoreCase));
 
         // Fallback: match by InstallPath for records saved with mod name instead of game name
-        var scanPath = installPath.Length > 0 ? installPath : game.InstallPath;
         if (record == null)
         {
             record = records.FirstOrDefault(r =>
@@ -477,6 +482,7 @@ public partial class MainViewModel
             {
                 GameName      = game.Name,
                 InstallPath   = scanPath,
+                Store         = game.Source ?? "",
                 AddonFileName = addonOnDisk,
                 InstalledAt   = File.GetLastWriteTimeUtc(Path.Combine(scanPath, addonOnDisk)),
                 SnapshotUrl   = ResolveAddonUrl(addonOnDisk),
@@ -599,7 +605,12 @@ public partial class MainViewModel
         var auxRecordsManual = _auxInstaller.LoadAll();
         var rsRecManual = auxRecordsManual.FirstOrDefault(r =>
             r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
-            r.AddonType == AuxInstallService.TypeReShade);
+            r.Store.Equals(game.Source ?? "", StringComparison.OrdinalIgnoreCase) &&
+            r.AddonType == AuxInstallService.TypeReShade)
+            ?? auxRecordsManual.FirstOrDefault(r =>
+                r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
+                r.InstallPath.Equals(scanPath, StringComparison.OrdinalIgnoreCase) &&
+                r.AddonType == AuxInstallService.TypeReShade);
 
         // Drop stale records whose files no longer exist on disk
         if (rsRecManual != null && !File.Exists(Path.Combine(rsRecManual.InstallPath, rsRecManual.InstalledAs)))
@@ -666,11 +677,11 @@ public partial class MainViewModel
             ExcludeFromUpdateAllRenoDx  = _gameNameService.UpdateAllExcludedRenoDx.Contains(game.Name),
             ExcludeFromUpdateAllUl      = _gameNameService.UpdateAllExcludedUl.Contains(game.Name),
             ExcludeFromUpdateAllRef     = _gameNameService.UpdateAllExcludedRef.Contains(game.Name),
-            ShaderModeOverride     = _perGameShaderMode.TryGetValue(game.Name, out var smO) ? smO : null,
+            ShaderModeOverride     = _perGameShaderMode.TryGetValue(GameKey.FromCard(game.Name, "Manual").ToKey(), out var smO) ? smO : null,
             Is32Bit                = ResolveIs32Bit(game.Name, manualMachine),
             GraphicsApi            = DetectGraphicsApi(scanPath, engine, game.Name),
             DetectedApis           = _DetectAllApisForCard(scanPath, game.Name),
-            VulkanRenderingPath    = _vulkanRenderingPaths.TryGetValue(game.Name, out var vrpManual) ? vrpManual : "DirectX",
+            VulkanRenderingPath    = _vulkanRenderingPaths.TryGetValue(GameKey.FromCard(game.Name, "Manual").ToKey(), out var vrpManual) ? vrpManual : "DirectX",
             LumaFeatureEnabled     = LumaFeatureEnabled,
             RsRecord        = rsRecManual,
             RsStatus        = rsRecManual != null ? GameStatus.Installed : GameStatus.NotInstalled,
@@ -749,7 +760,11 @@ public partial class MainViewModel
         {
             var refRecords = _refService.GetRecords();
             var refRec = refRecords.FirstOrDefault(r =>
-                r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase));
+                r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
+                r.Store.Equals(game.Source ?? "", StringComparison.OrdinalIgnoreCase))
+                ?? refRecords.FirstOrDefault(r =>
+                    r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
+                    r.InstallPath.Equals(scanPath, StringComparison.OrdinalIgnoreCase));
             if (refRec != null)
             {
                 card.RefRecord = refRec;
@@ -819,7 +834,7 @@ public partial class MainViewModel
                 card.ActionMessage   = p.msg;
                 card.InstallProgress = p.pct;
             });
-            var record = await _installer.InstallAsync(card.Mod, card.InstallPath, progress, card.GameName);
+            var record = await _installer.InstallAsync(card.Mod, card.InstallPath, progress, card.GameName, card.Source);
 
             // Preserve per-game Engine.ini toggle state from the previous record
             if (card.InstalledRecord != null)

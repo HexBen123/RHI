@@ -137,7 +137,8 @@ public partial class MainViewModel
                 useNormalReShade: card.UseNormalReShade,
                 overlayHotkey: _settingsViewModel.OverlayHotkey,
                 screenshotHotkey: _settingsViewModel.ScreenshotHotkey,
-                channel: card.UseNormalReShade ? null : ResolveReShadeChannel(card.GameName));
+                channel: card.UseNormalReShade ? null : ResolveReShadeChannel(card.GameName),
+                store: card.Source);
 
             DispatcherQueue?.TryEnqueue(() =>
             {
@@ -467,7 +468,7 @@ public partial class MainViewModel
                 card.RefActionMessage = p.msg;
                 card.RefProgress = p.pct;
             });
-            var record = await _refService.InstallAsync(card.GameName, card.InstallPath, progress);
+            var record = await _refService.InstallAsync(card.GameName, card.InstallPath, progress, card.Source);
             DispatcherQueue?.TryEnqueue(() =>
             {
                 card.RefRecord = record;
@@ -742,7 +743,8 @@ public partial class MainViewModel
                         card.LumaActionMessage = p.msg;
                         card.LumaProgress = p.pct;
                     });
-                }));
+                }),
+                card.Source);
 
             card.LumaRecord = record;
             card.LumaStatus = GameStatus.Installed;

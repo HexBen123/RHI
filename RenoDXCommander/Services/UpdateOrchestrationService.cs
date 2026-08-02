@@ -74,7 +74,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                     card.ActionMessage   = p.msg;
                     card.InstallProgress = p.pct;
                 });
-                var record = await _installer.InstallAsync(card.Mod!, card.InstallPath, progress, card.GameName).ConfigureAwait(false);
+                var record = await _installer.InstallAsync(card.Mod!, card.InstallPath, progress, card.GameName, card.Source).ConfigureAwait(false);
 
                 // Preserve per-game Engine.ini toggle state from the previous record
                 if (card.InstalledRecord != null)
@@ -205,7 +205,8 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                     selectedPackIds: shaderResolver?.Invoke(card.GameName, card.ShaderModeOverride),
                     progress:       progress,
                     useNormalReShade: card.UseNormalReShade,
-                    channel: effectiveChannel).ConfigureAwait(false);
+                    channel: effectiveChannel,
+                    store: card.Source).ConfigureAwait(false);
                 dispatcherQueue?.TryEnqueue(() =>
                 {
                     card.RsRecord           = record;
@@ -426,7 +427,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                     card.RefActionMessage = p.msg;
                     card.RefProgress = p.pct;
                 });
-                var record = await _refService.InstallAsync(card.GameName, card.InstallPath, progress).ConfigureAwait(false);
+                var record = await _refService.InstallAsync(card.GameName, card.InstallPath, progress, card.Source).ConfigureAwait(false);
                 dispatcherQueue?.TryEnqueue(() =>
                 {
                     card.RefRecord = record;

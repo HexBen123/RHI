@@ -348,11 +348,11 @@ public partial class MainViewModel
                                     useGlobalSet: true, perGameSelection: new List<string>()));
                             }
 
-                            string addonMode = GetPerGameAddonMode(card.GameName);
+                            string addonMode = GetPerGameAddonMode(card.GameName, card.Source ?? "");
                             bool useGlobalSet = addonMode != "Select";
                             List<string>? selection = useGlobalSet
                                 ? _settingsViewModel.EnabledGlobalAddons
-                                : (_gameNameService.PerGameAddonSelection.TryGetValue(card.GameName, out var sel) ? sel : null);
+                                : (_gameNameService.PerGameAddonSelection.TryGetValue(GameKey.FromCard(card.GameName, card.Source).ToKey(), out var sel) ? sel : null);
                             return Task.Run(() => _addonPackService.DeployAddonsForGame(
                                 card.GameName, card.InstallPath, card.Is32Bit, useGlobalSet, selection));
                         });

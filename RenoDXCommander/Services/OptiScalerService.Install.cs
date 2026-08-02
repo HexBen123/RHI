@@ -293,6 +293,7 @@ public partial class OptiScalerService
             {
                 GameName       = card.GameName,
                 InstallPath    = card.InstallPath,
+                Store          = card.Source ?? "",
                 AddonType      = AddonType,
                 InstalledAs    = effectiveDllName,
                 SourceUrl      = null,

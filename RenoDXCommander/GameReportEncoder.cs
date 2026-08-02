@@ -369,8 +369,8 @@ public static class GameReportEncoder
         }
 
         // Overrides
-        var shaderMode = vm.GetPerGameShaderMode(gameName);
-        var addonMode = vm.GetPerGameAddonMode(gameName);
+        var shaderMode = vm.GetPerGameShaderMode(gameName, card.Source ?? "");
+        var addonMode = vm.GetPerGameAddonMode(gameName, card.Source ?? "");
         var overrides = new Dictionary<string, object?>
         {
             ["shaderMode"] = shaderMode,

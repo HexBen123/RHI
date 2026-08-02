@@ -65,7 +65,8 @@ public class ModInstallService : IModInstallService
         GameMod mod,
         string gameInstallPath,
         IProgress<(string message, double percent)>? progress = null,
-        string? gameName = null)
+        string? gameName = null,
+        string? store = null)
     {
         if (mod.SnapshotUrl == null)
             throw new InvalidOperationException($"{mod.Name} has no Snapshot download URL.");
@@ -231,6 +232,7 @@ public class ModInstallService : IModInstallService
         {
             GameName       = gameName ?? mod.Name,
             InstallPath    = gameInstallPath,
+            Store          = store ?? "",
             AddonFileName  = fileName,
             FileHash       = hash,
             InstalledAt    = DateTime.UtcNow,

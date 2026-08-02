@@ -46,7 +46,12 @@ public partial class MainViewModel
             {
                 var dcRec = auxRecords.FirstOrDefault(r =>
                     r.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase) &&
-                    r.AddonType == "DisplayCommander");
+                    r.Store.Equals(card.Source ?? "", StringComparison.OrdinalIgnoreCase) &&
+                    r.AddonType == "DisplayCommander")
+                    ?? auxRecords.FirstOrDefault(r =>
+                        r.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase) &&
+                        r.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase) &&
+                        r.AddonType == "DisplayCommander");
                 if (dcRec != null && File.Exists(Path.Combine(dcRec.InstallPath, dcRec.InstalledAs)))
                 {
                     dcStatus = GameStatus.Installed;
@@ -62,7 +67,12 @@ public partial class MainViewModel
 
             var osRec = auxRecords.FirstOrDefault(r =>
                 r.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase) &&
-                r.AddonType == OptiScalerService.AddonType);
+                r.Store.Equals(card.Source ?? "", StringComparison.OrdinalIgnoreCase) &&
+                r.AddonType == OptiScalerService.AddonType)
+                ?? auxRecords.FirstOrDefault(r =>
+                    r.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase) &&
+                    r.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase) &&
+                    r.AddonType == OptiScalerService.AddonType);
             if (osRec != null && File.Exists(Path.Combine(osRec.InstallPath, osRec.InstalledAs)))
             {
                 osStatus = GameStatus.Installed;
@@ -74,7 +84,11 @@ public partial class MainViewModel
             string? dxvkVersion = null;
             var dxvkRecords = _dxvkService.LoadAllRecords();
             var dxvkRec = dxvkRecords.FirstOrDefault(r =>
-                r.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
+                r.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase) &&
+                r.Store.Equals(card.Source ?? "", StringComparison.OrdinalIgnoreCase))
+                ?? dxvkRecords.FirstOrDefault(r =>
+                    r.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase) &&
+                    r.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase));
             if (dxvkRec != null)
             {
                 dxvkVersion = dxvkRec.DxvkVersion;
@@ -804,6 +818,7 @@ public partial class MainViewModel
             {
                 GameName    = card.GameName,
                 InstallPath = card.InstallPath,
+                Store       = card.Source ?? "",
                 AddonType   = "DisplayCommander",
                 InstalledAs = targetFileName,
                 InstalledAt = DateTime.UtcNow,
