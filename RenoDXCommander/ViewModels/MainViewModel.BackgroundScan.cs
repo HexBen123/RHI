@@ -412,25 +412,26 @@ public partial class MainViewModel
             return;
         }
 
-        // Build lookup of existing cards by GameName (case-insensitive)
-        var existingByName = new Dictionary<string, GameCardViewModel>(StringComparer.OrdinalIgnoreCase);
+        // Build lookup of existing cards by composite key (GameName|Source) for multi-store support
+        var existingByKey = new Dictionary<string, GameCardViewModel>(StringComparer.OrdinalIgnoreCase);
         foreach (var card in _allCards)
         {
-            // First card wins if duplicates exist
-            existingByName.TryAdd(card.GameName, card);
+            var key = GameKey.FromCard(card.GameName, card.Source).ToKey();
+            existingByKey.TryAdd(key, card);
         }
 
-        // Build set of fresh game names for stale detection
-        var freshNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        // Build set of fresh composite keys for stale detection
+        var freshKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var fc in freshCards)
-            freshNames.Add(fc.GameName);
+            freshKeys.Add(GameKey.FromCard(fc.GameName, fc.Source).ToKey());
 
         var cardsToAdd = new List<GameCardViewModel>();
 
         // For each fresh card: update existing or mark as new
         foreach (var fresh in freshCards)
         {
-            if (existingByName.TryGetValue(fresh.GameName, out var existing))
+            var freshKey = GameKey.FromCard(fresh.GameName, fresh.Source).ToKey();
+            if (existingByKey.TryGetValue(freshKey, out var existing))
             {
                 // Update mutable properties in-place so WinUI bindings fire
                 // Preserve UpdateAvailable status if the fresh scan shows Installed
@@ -522,7 +523,7 @@ public partial class MainViewModel
 
         // Remove stale games (not in fresh set AND not manually added)
         var cardsToRemove = _allCards
-            .Where(c => !freshNames.Contains(c.GameName) && !c.IsManuallyAdded)
+            .Where(c => !freshKeys.Contains(GameKey.FromCard(c.GameName, c.Source).ToKey()) && !c.IsManuallyAdded)
             .ToList();
 
         foreach (var stale in cardsToRemove)

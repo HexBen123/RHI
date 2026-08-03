@@ -9,8 +9,6 @@
 
 - Fixed DXVK uninstall not clearing persisted Vulkan rendering path — games would remain stuck installing Vulkan ReShade even after DXVK was removed.
 - Fixed mod author badges not updating when toggling Luma mode — the detail panel now refreshes immediately to show the correct author (RenoDX vs Luma).
-- Fixed per-game settings (HDR toggle, custom launch paths, favorites, hidden, etc.) being reset after upgrading to multi-store version — legacy settings are now preserved and work seamlessly.
-- Fixed wrong game lighting up green (IsRunning) when launching a game that exists on multiple stores — now correctly identifies which store version was launched.
 
 ### Manifest Updates
 
