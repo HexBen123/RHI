@@ -830,11 +830,20 @@ public partial class MainViewModel
         if (!string.IsNullOrEmpty(LastSelectedGameName))
         {
             var key = GameKey.Parse(LastSelectedGameName);
+            _crashReporter.Log($"[CacheLoad.Selection] Restoring from LastSelectedGameName='{LastSelectedGameName}' → parsed key Name='{key.Name}', Store='{key.Store}'");
+            
             // Prefer exact match (name + store), fallback to name-only match
-            var match = _allCards.FirstOrDefault(c => key.Matches(c.GameName, c.Source))
-                     ?? _allCards.FirstOrDefault(c => key.MatchesName(c.GameName));
+            var exactMatch = _allCards.FirstOrDefault(c => key.Matches(c.GameName, c.Source));
+            var nameOnlyMatch = _allCards.FirstOrDefault(c => key.MatchesName(c.GameName));
+            
+            _crashReporter.Log($"[CacheLoad.Selection] exactMatch={(exactMatch != null ? $"'{exactMatch.GameName}|{exactMatch.Source}'" : "null")}, nameOnlyMatch={(nameOnlyMatch != null ? $"'{nameOnlyMatch.GameName}|{nameOnlyMatch.Source}'" : "null")}");
+            
+            var match = exactMatch ?? nameOnlyMatch;
             if (match != null)
+            {
+                _crashReporter.Log($"[CacheLoad.Selection] Selected '{match.GameName}|{match.Source}'");
                 SelectedGame = match;
+            }
         }
 
         // 14. Set StatusText to show cached game count

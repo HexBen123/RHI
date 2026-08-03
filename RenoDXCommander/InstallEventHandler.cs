@@ -377,13 +377,25 @@ public class InstallEventHandler
     public void LumaToggle_Click(object sender, RoutedEventArgs e)
     {
         if (_window.DetailPanelBuilderInstance.CurrentDetailCard != null)
-            ViewModel.ToggleLumaMode(_window.DetailPanelBuilderInstance.CurrentDetailCard);
+        {
+            var card = _window.DetailPanelBuilderInstance.CurrentDetailCard;
+            ViewModel.ToggleLumaMode(card);
+            // Rebuild detail panel to update author badges
+            _window.PopulateDetailPanel(card);
+            _window.BuildOverridesPanel(card);
+        }
     }
 
     public void SwitchToLumaButton_Click(object sender, RoutedEventArgs e)
     {
         var card = (sender as FrameworkElement)?.Tag as GameCardViewModel;
-        if (card != null) ViewModel.ToggleLumaMode(card);
+        if (card != null)
+        {
+            ViewModel.ToggleLumaMode(card);
+            // Rebuild detail panel to update author badges
+            _window.PopulateDetailPanel(card);
+            _window.BuildOverridesPanel(card);
+        }
     }
 
     public void UeExtendedFlyoutItem_Click(object sender, RoutedEventArgs e)

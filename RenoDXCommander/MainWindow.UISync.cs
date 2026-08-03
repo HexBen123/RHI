@@ -144,11 +144,18 @@ public sealed partial class MainWindow
         if (GameList.SelectedItem == null && ViewModel.LastSelectedGameName != null)
         {
             var key = GameKey.Parse(ViewModel.LastSelectedGameName);
+            _crashReporter.Log($"[UISync.SyncSelection] Restoring selection from LastSelectedGameName='{ViewModel.LastSelectedGameName}' → parsed key Name='{key.Name}', Store='{key.Store}'");
+            
             // Prefer exact match (name + store), fallback to name-only match
-            var lastMatch = ViewModel.DisplayedGames.FirstOrDefault(c => key.Matches(c.GameName, c.Source))
-                         ?? ViewModel.DisplayedGames.FirstOrDefault(c => key.MatchesName(c.GameName));
+            var exactMatch = ViewModel.DisplayedGames.FirstOrDefault(c => key.Matches(c.GameName, c.Source));
+            var nameOnlyMatch = ViewModel.DisplayedGames.FirstOrDefault(c => key.MatchesName(c.GameName));
+            
+            _crashReporter.Log($"[UISync.SyncSelection] exactMatch={(exactMatch != null ? $"'{exactMatch.GameName}|{exactMatch.Source}'" : "null")}, nameOnlyMatch={(nameOnlyMatch != null ? $"'{nameOnlyMatch.GameName}|{nameOnlyMatch.Source}'" : "null")}");
+            
+            var lastMatch = exactMatch ?? nameOnlyMatch;
             if (lastMatch != null)
             {
+                _crashReporter.Log($"[UISync.SyncSelection] Selected '{lastMatch.GameName}|{lastMatch.Source}'");
                 GameList.SelectedItem = lastMatch;
                 GameList.ScrollIntoView(lastMatch);
                 return;

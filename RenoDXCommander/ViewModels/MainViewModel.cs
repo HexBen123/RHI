@@ -640,7 +640,11 @@ public partial class MainViewModel : ObservableObject
             // so the saved LastSelectedGameName isn't overwritten by auto-select.
             // Store as composite key: "GameName|Store"
             if (HasInitialized)
-                LastSelectedGameName = GameKey.FromCard(newValue.GameName, newValue.Source).ToKey();
+            {
+                var newKey = GameKey.FromCard(newValue.GameName, newValue.Source).ToKey();
+                _crashReporter.Log($"[MainViewModel.OnSelectedGameChanged] Saving selection: '{newKey}' (was: '{LastSelectedGameName}')");
+                LastSelectedGameName = newKey;
+            }
         }
     }
 

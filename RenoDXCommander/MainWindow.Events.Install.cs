@@ -649,7 +649,7 @@ public sealed partial class MainWindow
                     Arguments = launchArgs ?? "",
                     UseShellExecute = true,
                 });
-                MonitorProcessForHdr(proc, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.InstallPath, hdrTargets);
+                MonitorProcessForHdr(proc, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.Source, card.InstallPath, hdrTargets);
                 return;
             }
 
@@ -701,7 +701,7 @@ public sealed partial class MainWindow
                     _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via Steam: {steamUri}");
                     System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(steamUri) { UseShellExecute = true });
                 }
-                MonitorProcessForHdr(null, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.InstallPath, hdrTargets);
+                MonitorProcessForHdr(null, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.Source, card.InstallPath, hdrTargets);
                 return;
             }
 
@@ -711,7 +711,7 @@ public sealed partial class MainWindow
                 var epicUri = $"com.epicgames.launcher://apps/{card.DetectedGame.EpicAppName}?action=launch&silent=true";
                 _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via Epic protocol: {epicUri}");
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(epicUri) { UseShellExecute = true });
-                MonitorProcessForHdr(null, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.InstallPath, hdrTargets);
+                MonitorProcessForHdr(null, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.Source, card.InstallPath, hdrTargets);
                 return;
             }
 
@@ -723,7 +723,7 @@ public sealed partial class MainWindow
                 var uri = $"shell:AppsFolder\\{card.DetectedGame.XboxAumid}";
                 _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via Xbox AUMID: {card.DetectedGame.XboxAumid}");
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(uri) { UseShellExecute = true });
-                MonitorProcessForHdr(null, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.InstallPath, hdrTargets);
+                MonitorProcessForHdr(null, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.Source, card.InstallPath, hdrTargets);
                 return;
             }
 
@@ -746,7 +746,7 @@ public sealed partial class MainWindow
                         Arguments = launchArgs ?? "",
                         UseShellExecute = true,
                     });
-                    MonitorProcessForHdr(proc, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.InstallPath, hdrTargets);
+                    MonitorProcessForHdr(proc, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.Source, card.InstallPath, hdrTargets);
                     return;
                 }
             }
@@ -777,11 +777,12 @@ public sealed partial class MainWindow
     /// Monitors a launched process and disables HDR when it exits (if we enabled it).
     /// For protocol launches (Steam/Epic URL) where proc is null, polls for the game exe by name.
     /// </summary>
-    private void MonitorProcessForHdr(System.Diagnostics.Process? proc, bool shouldToggle, bool wasAlreadyOn, string gameName, string? installPath = null, List<uint>? hdrTargets = null)
+    private void MonitorProcessForHdr(System.Diagnostics.Process? proc, bool shouldToggle, bool wasAlreadyOn, string gameName, string? store, string? installPath = null, List<uint>? hdrTargets = null)
     {
-        // Find the card to set IsRunning
+        // Find the card to set IsRunning — match both name and store for multi-store support
         var card = ViewModel.AllCards.FirstOrDefault(c =>
-            c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
+            c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase) &&
+            (string.IsNullOrEmpty(store) || c.Source == store));
 
         if (proc != null)
         {

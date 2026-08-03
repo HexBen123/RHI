@@ -204,28 +204,22 @@ public class GameNameService : IGameNameService
             Load<List<string>>("UeExtendedOptOutGames", new()), StringComparer.OrdinalIgnoreCase);
 
         _updateAllExcludedReShade = new HashSet<string>(
-            Load<List<string>>("UpdateAllExcludedReShade", new())
-                .Select(k => k.Contains('|') ? k : $"{k}|"), // Migrate legacy keys
+            Load<List<string>>("UpdateAllExcludedReShade", new()),
             StringComparer.OrdinalIgnoreCase);
         _updateAllExcludedRenoDx = new HashSet<string>(
-            Load<List<string>>("UpdateAllExcludedRenoDx", new())
-                .Select(k => k.Contains('|') ? k : $"{k}|"), // Migrate legacy keys
+            Load<List<string>>("UpdateAllExcludedRenoDx", new()),
             StringComparer.OrdinalIgnoreCase);
         _updateAllExcludedUl = new HashSet<string>(
-            Load<List<string>>("UpdateAllExcludedUl", new())
-                .Select(k => k.Contains('|') ? k : $"{k}|"), // Migrate legacy keys
+            Load<List<string>>("UpdateAllExcludedUl", new()),
             StringComparer.OrdinalIgnoreCase);
         _updateAllExcludedDc = new HashSet<string>(
-            Load<List<string>>("UpdateAllExcludedDc", new())
-                .Select(k => k.Contains('|') ? k : $"{k}|"), // Migrate legacy keys
+            Load<List<string>>("UpdateAllExcludedDc", new()),
             StringComparer.OrdinalIgnoreCase);
         _updateAllExcludedOs = new HashSet<string>(
-            Load<List<string>>("UpdateAllExcludedOs", new())
-                .Select(k => k.Contains('|') ? k : $"{k}|"), // Migrate legacy keys
+            Load<List<string>>("UpdateAllExcludedOs", new()),
             StringComparer.OrdinalIgnoreCase);
         _updateAllExcludedRef = new HashSet<string>(
-            Load<List<string>>("UpdateAllExcludedRef", new())
-                .Select(k => k.Contains('|') ? k : $"{k}|"), // Migrate legacy keys
+            Load<List<string>>("UpdateAllExcludedRef", new()),
             StringComparer.OrdinalIgnoreCase);
 
         // Legacy migration: if old key exists and new sets are empty, copy legacy entries
@@ -235,9 +229,8 @@ public class GameNameService : IGameNameService
         {
             foreach (var name in legacy)
             {
-                var key = $"{name}|"; // Migrate to composite key format
-                _updateAllExcludedReShade.Add(key);
-                _updateAllExcludedRenoDx.Add(key);
+                _updateAllExcludedReShade.Add(name);
+                _updateAllExcludedRenoDx.Add(name);
             }
         }
 
@@ -246,10 +239,7 @@ public class GameNameService : IGameNameService
         if (pgsmDict != null)
         {
             foreach (var kv in pgsmDict)
-            {
-                var key = kv.Key.Contains('|') ? kv.Key : $"{kv.Key}|"; // Migrate legacy keys
-                _perGameShaderMode[key] = kv.Value;
-            }
+                _perGameShaderMode[kv.Key] = kv.Value;
         }
 
         var pgssDict = Load<Dictionary<string, List<string>>?>("PerGameShaderSelection", null);
@@ -258,9 +248,8 @@ public class GameNameService : IGameNameService
             _perGameShaderSelection = new(StringComparer.OrdinalIgnoreCase);
             foreach (var kv in pgssDict)
             {
-                var key = kv.Key.Contains('|') ? kv.Key : $"{kv.Key}|"; // Migrate legacy keys
-                if (_perGameShaderMode.ContainsKey(key))
-                    _perGameShaderSelection[key] = kv.Value;
+                if (_perGameShaderMode.ContainsKey(kv.Key))
+                    _perGameShaderSelection[kv.Key] = kv.Value;
             }
         }
 
@@ -269,10 +258,7 @@ public class GameNameService : IGameNameService
         if (pgamDict != null)
         {
             foreach (var kv in pgamDict)
-            {
-                var key = kv.Key.Contains('|') ? kv.Key : $"{kv.Key}|"; // Migrate legacy keys
-                _perGameAddonMode[key] = kv.Value;
-            }
+                _perGameAddonMode[kv.Key] = kv.Value;
         }
 
         var pgasDict = Load<Dictionary<string, List<string>>?>("PerGameAddonSelection", null);
@@ -281,27 +267,23 @@ public class GameNameService : IGameNameService
             _perGameAddonSelection = new(StringComparer.OrdinalIgnoreCase);
             foreach (var kv in pgasDict)
             {
-                var key = kv.Key.Contains('|') ? kv.Key : $"{kv.Key}|"; // Migrate legacy keys
-                if (_perGameAddonMode.ContainsKey(key))
-                    _perGameAddonSelection[key] = kv.Value;
+                if (_perGameAddonMode.ContainsKey(kv.Key))
+                    _perGameAddonSelection[kv.Key] = kv.Value;
             }
         }
 
         settingsViewModel.LoadSettingsFromDict(s);
 
         _lumaEnabledGames = new HashSet<string>(
-            Load<List<string>>("LumaEnabledGames", new())
-                .Select(k => k.Contains('|') ? k : $"{k}|"), // Migrate legacy keys
+            Load<List<string>>("LumaEnabledGames", new()),
             StringComparer.OrdinalIgnoreCase);
 
         _lumaDisabledGames = new HashSet<string>(
-            Load<List<string>>("LumaDisabledGames", new())
-                .Select(k => k.Contains('|') ? k : $"{k}|"), // Migrate legacy keys
+            Load<List<string>>("LumaDisabledGames", new()),
             StringComparer.OrdinalIgnoreCase);
 
         _normalReShadeGames = new HashSet<string>(
-            Load<List<string>>("NormalReShadeGames", new())
-                .Select(k => k.Contains('|') ? k : $"{k}|"), // Migrate legacy keys
+            Load<List<string>>("NormalReShadeGames", new()),
             StringComparer.OrdinalIgnoreCase);
 
         _gameRenames = new(Load<Dictionary<string, string>>("GameRenames",
@@ -317,48 +299,33 @@ public class GameNameService : IGameNameService
             new(StringComparer.OrdinalIgnoreCase));
         _folderOverrides = new(StringComparer.OrdinalIgnoreCase);
         foreach (var kv in folderOvDict)
-        {
-            var key = kv.Key.Contains('|') ? kv.Key : $"{kv.Key}|"; // Migrate legacy keys
-            _folderOverrides[key] = kv.Value;
-        }
+            _folderOverrides[kv.Key] = kv.Value;
 
         var vulkanPathsDict = Load<Dictionary<string, string>>("VulkanRenderingPaths",
             new(StringComparer.OrdinalIgnoreCase));
         _vulkanRenderingPaths = new(StringComparer.OrdinalIgnoreCase);
         foreach (var kv in vulkanPathsDict)
-        {
-            var key = kv.Key.Contains('|') ? kv.Key : $"{kv.Key}|"; // Migrate legacy keys
-            _vulkanRenderingPaths[key] = kv.Value;
-        }
+            _vulkanRenderingPaths[kv.Key] = kv.Value;
 
         var bitnessOvDict = Load<Dictionary<string, string>>("BitnessOverrides",
             new(StringComparer.OrdinalIgnoreCase));
         _bitnessOverrides = new(StringComparer.OrdinalIgnoreCase);
         foreach (var kv in bitnessOvDict)
-        {
-            var key = kv.Key.Contains('|') ? kv.Key : $"{kv.Key}|"; // Migrate legacy keys
-            _bitnessOverrides[key] = kv.Value;
-        }
+            _bitnessOverrides[kv.Key] = kv.Value;
 
         var apiOvDict = Load<Dictionary<string, List<string>>?>("ApiOverrides", null);
         _apiOverrides = new(StringComparer.OrdinalIgnoreCase);
         if (apiOvDict != null)
         {
             foreach (var kv in apiOvDict)
-            {
-                var key = kv.Key.Contains('|') ? kv.Key : $"{kv.Key}|"; // Migrate legacy keys
-                _apiOverrides[key] = kv.Value;
-            }
+                _apiOverrides[kv.Key] = kv.Value;
         }
 
         var rsChannelOvDict = Load<Dictionary<string, string>>("ReShadeChannelOverrides",
             new(StringComparer.OrdinalIgnoreCase));
         _reShadeChannelOverrides = new(StringComparer.OrdinalIgnoreCase);
         foreach (var kv in rsChannelOvDict)
-        {
-            var key = kv.Key.Contains('|') ? kv.Key : $"{kv.Key}|"; // Migrate legacy keys
-            _reShadeChannelOverrides[key] = kv.Value;
-        }
+            _reShadeChannelOverrides[kv.Key] = kv.Value;
 
         // ── Migration: global Nightly → per-game Nightly ──────────────────────────
         // The global ReShade channel setting has been removed. Users who had Nightly
@@ -379,73 +346,50 @@ public class GameNameService : IGameNameService
             new(StringComparer.OrdinalIgnoreCase));
         _dxvkVariantOverrides = new(StringComparer.OrdinalIgnoreCase);
         foreach (var kv in dxvkVariantOvDict)
-        {
-            var key = kv.Key.Contains('|') ? kv.Key : $"{kv.Key}|"; // Migrate legacy keys
-            _dxvkVariantOverrides[key] = kv.Value;
-        }
+            _dxvkVariantOverrides[kv.Key] = kv.Value;
 
         var liliumPresetOvDict = Load<Dictionary<string, int>>("LiliumPresetOverrides",
             new(StringComparer.OrdinalIgnoreCase));
         _liliumPresetOverrides = new(StringComparer.OrdinalIgnoreCase);
         foreach (var kv in liliumPresetOvDict)
-        {
-            var key = kv.Key.Contains('|') ? kv.Key : $"{kv.Key}|"; // Migrate legacy keys
-            _liliumPresetOverrides[key] = kv.Value;
-        }
+            _liliumPresetOverrides[kv.Key] = kv.Value;
 
         var hdrToggleOvDict = Load<Dictionary<string, string>>("HdrToggleOverrides",
             new(StringComparer.OrdinalIgnoreCase));
         _hdrToggleOverrides = new(StringComparer.OrdinalIgnoreCase);
         foreach (var kv in hdrToggleOvDict)
-        {
-            var key = kv.Key.Contains('|') ? kv.Key : $"{kv.Key}|"; // Migrate legacy keys
-            _hdrToggleOverrides[key] = kv.Value;
-        }
+            _hdrToggleOverrides[kv.Key] = kv.Value;
 
         var launchExeOvDict = Load<Dictionary<string, string>>("LaunchExeOverrides",
             new(StringComparer.OrdinalIgnoreCase));
         _launchExeOverrides = new(StringComparer.OrdinalIgnoreCase);
         foreach (var kv in launchExeOvDict)
-        {
-            var key = kv.Key.Contains('|') ? kv.Key : $"{kv.Key}|"; // Migrate legacy keys
-            _launchExeOverrides[key] = kv.Value;
-        }
+            _launchExeOverrides[kv.Key] = kv.Value;
 
         var launchArgsOvDict = Load<Dictionary<string, string>>("LaunchArgsOverrides",
             new(StringComparer.OrdinalIgnoreCase));
         _launchArgsOverrides = new(StringComparer.OrdinalIgnoreCase);
         foreach (var kv in launchArgsOvDict)
-        {
-            var key = kv.Key.Contains('|') ? kv.Key : $"{kv.Key}|"; // Migrate legacy keys
-            _launchArgsOverrides[key] = kv.Value;
-        }
+            _launchArgsOverrides[kv.Key] = kv.Value;
 
         var engineVersionOvDict = Load<Dictionary<string, string>>("EngineVersionOverrides",
             new(StringComparer.OrdinalIgnoreCase));
         _engineVersionOverrides = new(StringComparer.OrdinalIgnoreCase);
         foreach (var kv in engineVersionOvDict)
-        {
-            var key = kv.Key.Contains('|') ? kv.Key : $"{kv.Key}|"; // Migrate legacy keys
-            _engineVersionOverrides[key] = kv.Value;
-        }
+            _engineVersionOverrides[kv.Key] = kv.Value;
 
         var customReShadeSelDict = Load<Dictionary<string, string>>("CustomReShadeSelection",
             new(StringComparer.OrdinalIgnoreCase));
         _customReShadeSelection = new(StringComparer.OrdinalIgnoreCase);
         foreach (var kv in customReShadeSelDict)
-        {
-            var key = kv.Key.Contains('|') ? kv.Key : $"{kv.Key}|"; // Migrate legacy keys
-            _customReShadeSelection[key] = kv.Value;
-        }
+            _customReShadeSelection[kv.Key] = kv.Value;
 
         _hiddenGames = new HashSet<string>(
-            Load<List<string>>("HiddenGames", _hiddenGames?.ToList() ?? new())
-                .Select(k => k.Contains('|') ? k : $"{k}|"), // Migrate legacy keys
+            Load<List<string>>("HiddenGames", _hiddenGames?.ToList() ?? new()),
             StringComparer.OrdinalIgnoreCase);
 
         _favouriteGames = new HashSet<string>(
-            Load<List<string>>("FavouriteGames", _favouriteGames?.ToList() ?? new())
-                .Select(k => k.Contains('|') ? k : $"{k}|"), // Migrate legacy keys
+            Load<List<string>>("FavouriteGames", _favouriteGames?.ToList() ?? new()),
             StringComparer.OrdinalIgnoreCase);
 
         _rtxHdrGames = new HashSet<string>(
