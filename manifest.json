@@ -293,7 +293,9 @@
     "FINAL FANTASY XII THE ZODIAC AGE",
     "Dishonored 2",
     "Watch_Dogs 2",
-    "Watch_Dogs® 2"
+    "Watch_Dogs® 2",
+    "Grand Theft Auto V",
+    "Grand Theft Auto V Legacy"
   ],
 
   "_comment_overrides": "=== NAME, PATH & ENGINE OVERRIDES ===",
@@ -327,6 +329,7 @@
     "Grand Theft Auto III – The Definitive Edition": "Grand Theft Auto: The Trilogy – The Definitive Edition (III, Vice City, San Andreas)",
     "Grand Theft Auto: San Andreas – The Definitive Edition": "Grand Theft Auto: The Trilogy – The Definitive Edition (III, Vice City, San Andreas)",
     "Grand Theft Auto: Vice City – The Definitive Edition": "Grand Theft Auto: The Trilogy – The Definitive Edition (III, Vice City, San Andreas)",
+    "Grand Theft Auto V Enhanced": "Grand Theft Auto V : Enhanced",
     "Hades II": "Hades 2",
     "Jedi Survivor": "STAR WARS Jedi: Survivor™",
     "LEGO® City Undercover": "Lego City: Undercover",
