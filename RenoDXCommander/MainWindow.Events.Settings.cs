@@ -1490,7 +1490,7 @@ public sealed partial class MainWindow
             var wikiSection = new StackPanel { Spacing = 8 };
             wikiSection.Children.Add(new TextBlock
             {
-                Text = $"🎮 {newWikiMods.Count} new RenoDX mod{(newWikiMods.Count == 1 ? "" : "s")}:",
+                Text = $"🖥️ {newWikiMods.Count} new RenoDX mod{(newWikiMods.Count == 1 ? "" : "s")}:",
                 FontSize = 13,
                 FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
                 Foreground = (SolidColorBrush)Application.Current.Resources["TextPrimaryBrush"],
@@ -1534,7 +1534,7 @@ public sealed partial class MainWindow
             var ultraPlusHeader = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
             ultraPlusHeader.Children.Add(new Image
             {
-                Source = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage(new Uri("ms-appx:///Assets/icons/Ultra+.ico")),
+                Source = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage(new Uri("ms-appx:///Assets/icons/Ultra+.png")),
                 Width = 16,
                 Height = 16,
                 VerticalAlignment = VerticalAlignment.Center,
