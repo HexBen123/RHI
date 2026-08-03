@@ -13,6 +13,8 @@
 
 - Fixed Mass Effect Andromeda `lumaRenodxCompat` matching — added both colon and non-colon variants to cover different store detections.
 - Added DristoforColumb donation link.
+- Fixed Grand Theft Auto V Legacy incorrectly showing as having RenoDX — added to `wikiUnlinks`. The RenoDX mod is only for GTA V Enhanced.
+- Added `wikiNameOverride` for Grand Theft Auto V Enhanced to match the wiki entry name.
 
 ---
 
