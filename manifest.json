@@ -1145,6 +1145,10 @@
     "DOOM Eternal": [
       { "name": "DOOM Eternal", "subPath": "" },
       { "name": "DOOM Eternal Sandbox", "subPath": "doomSandBox" }
+    ],
+    "Quake": [
+      { "name": "Quake", "subPath": "" },
+      { "name": "Quake (New)", "subPath": "rerelease" }
     ]
   },
 
