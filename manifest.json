@@ -4,7 +4,8 @@
   "rtxHdrInfoUrl": "https://www.reddit.com/r/nvidia/comments/1b03yfg/rtx_hdr_paper_white_gamma_reference_settings/",
 
   "ueExtendedCompatibility": {
-    "Beast of Reincarnation": { "hdr": false }
+    "Beast of Reincarnation": { "hdr": false },
+    "Palworld": { "hdr": false }
   },
 
   "_comment_lists": "=== GAME CLASSIFICATION LISTS ===",
