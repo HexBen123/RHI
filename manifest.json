@@ -6,7 +6,7 @@
   "ueExtendedCompatibility": {
     "Beast of Reincarnation": { "hdr": false },
     "Palworld": { "hdr": false },
-    "Stellar Blade": { "hdr": false }
+    "Stellar Blade™": { "hdr": false }
   },
 
   "_comment_lists": "=== GAME CLASSIFICATION LISTS ===",
@@ -163,7 +163,7 @@
     "Halo: Campaign Evolved": "Unreal Engine 5.5.4",
     "Palworld": "Unreal Engine 5.1.1",
     "Shin Megami Tensei V: Vengeance": "Unreal Engine 4.27.2",
-    "Stellar Blade": "Unreal Engine 4.26.2"
+    "Stellar Blade™": "Unreal Engine 4.26.2"
   },
 
   "emulatorGames": {
@@ -441,7 +441,7 @@
     "Of Ash and Steel": "ofAshAndSteelGame\\Binaries\\Win64",
     "Project Motor Racing": "x64",
     "SILENT HILL 2": "SHProto\\Binaries\\Win64",
-    "Stellar Blade": "SB\\Binaries\\Win64",
+    "Stellar Blade™": "SB\\Binaries\\Win64",
     "Satisfactory": "Engine\\Binaries\\Win64",
     "The Witcher 3: Wild Hunt": "bin\\x64_dx12",
     "The Witcher 3: Wild Hunt - Game of the Year Edition": "bin\\x64_dx12",
@@ -541,7 +541,7 @@
     "Satisfactory": "Unreal",
     "Shadow of the Tomb Raider: Definitive Edition": "Foundation",
     "Starfield": "Creation Engine",
-    "Stellar Blade": "Unreal Engine",
+    "Stellar Blade™": "Unreal Engine",
     "Terraria": "Scrungus Engine",
     "The Elder Scrolls III: Morrowind": "Creation Engine",
     "The Elder Scrolls V: Skyrim Special Edition": "Creation Engine",
@@ -1004,7 +1004,7 @@
     "Denshattack!": "https://www.pcgamingwiki.com/wiki/Denshattack!",
     "Halo: Campaign Evolved": "https://www.pcgamingwiki.com/wiki/Halo:_Campaign_Evolved",
     "Halo: The Master Chief Collection": "https://www.pcgamingwiki.com/wiki/Halo:_The_Master_Chief_Collection",
-    "Stellar Blade": "https://www.pcgamingwiki.com/wiki/Stellar_Blade"
+    "Stellar Blade™": "https://www.pcgamingwiki.com/wiki/Stellar_Blade"
   },
 
   "uwFixUrlOverrides": {
@@ -1155,7 +1155,7 @@
     "ZERO PARADES: For Dead Spies": {
       "Upgrade_R8G8B8A8_TYPELESS": "1"
     },
-    "Stellar Blade": {
+    "Stellar Blade™": {
       "Set_Path": "1"
     }
   },
