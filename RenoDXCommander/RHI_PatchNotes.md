@@ -1,3 +1,14 @@
+## v2.3.0
+
+### Manifest Updates
+
+- Fixed Enshrouded showing DX11/12 — now correctly shows Vulkan. Added Holistic engine tag.
+- Fixed Guild Wars 2 ReShade install — now deploys as `d3d11.dll`.
+- Added Stellar Blade™ — PCGW link, engine version (UE 4.26.2), UE-Extended with SDR upgrade path.
+- Added Quake split entries — original and rerelease (`rerelease` subfolder) as separate installs.
+
+---
+
 ## v2.2.9
 
 ### New

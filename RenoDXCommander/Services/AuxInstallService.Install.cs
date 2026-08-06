@@ -74,7 +74,7 @@ public partial class AuxInstallService
         if (!useNormalReShade && string.Equals(effectiveChannel, ChannelCustom, StringComparison.OrdinalIgnoreCase))
         {
             // Look up per-game custom selection via static accessor (set by the caller/DI)
-            var customSelection = CustomReShadeSelectionResolver?.Invoke(gameName);
+            var customSelection = CustomReShadeSelectionResolver?.Invoke(gameName, store ?? "");
             if (!string.IsNullOrEmpty(customSelection))
             {
                 var customFilePath = GetCustomReShadePathForFile(customSelection);

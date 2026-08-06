@@ -79,6 +79,9 @@ public sealed partial class MainWindow
                     UpdateBtn.Background  = UIFactory.GetBrush(ViewModel.UpdateAllBtnBackground);
                     UpdateBtn.Foreground  = UIFactory.GetBrush(ViewModel.UpdateAllBtnForeground);
                     UpdateBtn.BorderBrush = UIFactory.GetBrush(ViewModel.UpdateAllBtnBorder);
+                    // Force WinUI to re-evaluate the Normal visual state so it picks up
+                    // the new brushes immediately instead of waiting for pointer interaction.
+                    Microsoft.UI.Xaml.VisualStateManager.GoToState(UpdateBtn, "Normal", false);
                     break;
                 case nameof(ViewModel.CurrentPage):
                     UpdatePageVisibility();

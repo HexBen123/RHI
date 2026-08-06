@@ -99,18 +99,20 @@ public partial class MainViewModel
         if (isExcluded && !wasExcluded)
         {
             // Entering legacy/custom — exclude from ReShade updates
-            if (!_updateAllExcludedReShade.Contains(gameName))
+            if (!_updateAllExcludedReShade.Contains(key))
             {
-                _updateAllExcludedReShade.Add(gameName);
-                var card = _allCards.FirstOrDefault(c => c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
+                _updateAllExcludedReShade.Add(key);
+                var card = _allCards.FirstOrDefault(c => c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase)
+                    && (string.IsNullOrEmpty(store) || c.Source == store));
                 if (card != null) card.ExcludeFromUpdateAllReShade = true;
             }
         }
         else if (!isExcluded && wasExcluded)
         {
             // Leaving legacy/custom — re-include in ReShade updates
-            _updateAllExcludedReShade.Remove(gameName);
-            var card = _allCards.FirstOrDefault(c => c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
+            _updateAllExcludedReShade.Remove(key);
+            var card = _allCards.FirstOrDefault(c => c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase)
+                && (string.IsNullOrEmpty(store) || c.Source == store));
             if (card != null) card.ExcludeFromUpdateAllReShade = false;
         }
     }
@@ -665,7 +667,7 @@ public partial class MainViewModel
         SaveNameMappings();
         var card = _allCards.FirstOrDefault(c => c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase)
             && (c.Source ?? "").Equals(store ?? "", StringComparison.OrdinalIgnoreCase));
-        if (card != null) card.ExcludeFromUpdateAllUl = set.Contains(gameName);
+        if (card != null) card.ExcludeFromUpdateAllUl = set.Contains(key);
         NotifyUpdateButtonChanged();
     }
 

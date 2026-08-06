@@ -28,7 +28,7 @@ public partial class AuxInstallService : IAuxInstallService, IAuxFileService
     /// Delegate to resolve per-game custom ReShade DLL selection. Set during app initialization
     /// to read from GameNameService.CustomReShadeSelection. Returns the filename (not full path) or null.
     /// </summary>
-    public static Func<string, string?>? CustomReShadeSelectionResolver { get; set; }
+    public static Func<string, string, string?>? CustomReShadeSelectionResolver { get; set; }
 
     // ── URLs & filenames ──────────────────────────────────────────────────────────
 

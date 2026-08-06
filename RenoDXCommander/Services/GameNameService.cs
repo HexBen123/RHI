@@ -613,11 +613,12 @@ public class GameNameService : IGameNameService
         MigrateCompositeDict(_reShadeChannelOverrides, oldName, newName);
         MigrateCompositeDict(_dxvkVariantOverrides, oldName, newName);
         MigrateCompositeDict(_liliumPresetOverrides, oldName, newName);
-        MigrateCompositeDict(_hdrToggleOverrides, oldName, newName);
-        MigrateCompositeDict(_launchExeOverrides, oldName, newName);
-        MigrateCompositeDict(_launchArgsOverrides, oldName, newName);
-        MigrateCompositeDict(_engineVersionOverrides, oldName, newName);
         MigrateCompositeDict(_customReShadeSelection, oldName, newName);
+        // These four are name-only (not per-store) — use name-only migration
+        MigrateDict(_hdrToggleOverrides, oldName, newName);
+        MigrateDict(_launchExeOverrides, oldName, newName);
+        MigrateDict(_launchArgsOverrides, oldName, newName);
+        MigrateDict(_engineVersionOverrides, oldName, newName);
 
         // Migrate name-only Dictionaries (shared across stores)
         MigrateDict(_nameMappings, oldName, newName);
@@ -700,7 +701,12 @@ public class GameNameService : IGameNameService
         if (_folderOverrides.Count == 0) return;
         foreach (var g in games)
         {
-            if (_folderOverrides.TryGetValue(g.Name, out var stored))
+            // Try composite key first (name|store), fall back to name-only for legacy entries
+            var compositeKey = Models.GameKey.From(g.Name, g.Source ?? "").ToKey();
+            if (!_folderOverrides.TryGetValue(compositeKey, out var stored))
+                _folderOverrides.TryGetValue(g.Name, out stored);
+
+            if (stored != null)
             {
                 var overridePath = stored.Split('|')[0];
                 if (!string.IsNullOrEmpty(overridePath))

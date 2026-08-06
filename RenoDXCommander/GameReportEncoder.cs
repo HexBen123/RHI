@@ -299,12 +299,13 @@ public static class GameReportEncoder
             ["wikiMatch"] = card.NameUrl != null ? card.GameName : null,
         };
 
-        // Corrected (user override) values
-        var bitnessOv = gns.BitnessOverrides.TryGetValue(gameName, out var bv) ? bv : "Auto";
-        var apiOv = gns.ApiOverrides.TryGetValue(gameName, out var av) ? string.Join(", ", av) : "Auto";
-        var channelOv = gns.ReShadeChannelOverrides.TryGetValue(gameName, out var chv) ? chv : "Global";
-        var dxvkVariantOv = gns.DxvkVariantOverrides.TryGetValue(gameName, out var dvv) ? dvv : "Global";
-        var folderOv = gns.FolderOverrides.TryGetValue(gameName, out var fv) ? fv : "";
+        // Corrected (user override) values — use composite key for per-store overrides
+        var storeKey = Models.GameKey.From(gameName, card.Source ?? "").ToKey();
+        var bitnessOv = gns.BitnessOverrides.TryGetValue(storeKey, out var bv) ? bv : "Auto";
+        var apiOv = gns.ApiOverrides.TryGetValue(storeKey, out var av) ? string.Join(", ", av) : "Auto";
+        var channelOv = gns.ReShadeChannelOverrides.TryGetValue(storeKey, out var chv) ? chv : "Global";
+        var dxvkVariantOv = gns.DxvkVariantOverrides.TryGetValue(storeKey, out var dvv) ? dvv : "Global";
+        var folderOv = gns.FolderOverrides.TryGetValue(storeKey, out var fv) ? fv : "";
         var wikiOv = vm.GetNameMapping(gameName);
         var dllOv = card.DllOverrideEnabled ? (card.RsInstalledFile ?? "") : "";
         var dcDllOv = "";
@@ -394,7 +395,7 @@ public static class GameReportEncoder
         // Addons
         var enabledAddons = vm.Settings.EnabledGlobalAddons;
         List<string>? perGameAddons = null;
-        gns.PerGameAddonSelection.TryGetValue(gameName, out perGameAddons);
+        gns.PerGameAddonSelection.TryGetValue(storeKey, out perGameAddons);
         var addons = new Dictionary<string, object?>
         {
             ["mode"] = addonMode,

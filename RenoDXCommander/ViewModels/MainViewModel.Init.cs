@@ -164,8 +164,13 @@ public partial class MainViewModel
         AuxInstallService.GlobalPeakNitsPresets = _settingsViewModel.PeakNitsPresets;
 
         // Wire up per-game custom ReShade DLL selection resolver
-        AuxInstallService.CustomReShadeSelectionResolver = (gameName) =>
-            _gameNameService.CustomReShadeSelection.TryGetValue(gameName, out var sel) ? sel : null;
+        AuxInstallService.CustomReShadeSelectionResolver = (gameName, store) =>
+        {
+            // Try composite key first (name|store), fall back to name-only for legacy entries
+            var compositeKey = GameKey.FromCard(gameName, store).ToKey();
+            if (_gameNameService.CustomReShadeSelection.TryGetValue(compositeKey, out var sel)) return sel;
+            return _gameNameService.CustomReShadeSelection.TryGetValue(gameName, out sel) ? sel : null;
+        };
 
         // Clear API caches on full refresh so all detection runs fresh
         if (forceRescan)
