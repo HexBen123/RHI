@@ -117,9 +117,6 @@ public partial class DetailPanelBuilder
     {
         bool isLumaMode = card.LumaFeatureEnabled && card.IsLumaMode;
 
-        // DEBUG: Log RenoDX row visibility decision
-        RenoDXCommander.Services.CrashReporter.Log($"[DetailPanelBuilder.UpdateDetailComponentRows] Game={card.GameName}, isLumaMode={isLumaMode}, LumaRenodxCompatible={card.LumaRenodxCompatible}, showRdx={!isLumaMode || card.LumaRenodxCompatible}");
-
         // RE Framework row — visible only for RE Engine games when not in Luma mode
         _window.DetailRefRow.Visibility = card.RefRowVisibility;
         if (card.RefRowVisibility == Visibility.Visible)

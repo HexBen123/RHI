@@ -1,33 +1,34 @@
-## v2.2.9-beta
+## v2.2.9
 
 ### New
 
-- **New Mods Alert** — a green "New Mods Available" button now appears in the toolbar when new RenoDX mods or Ultra+ mods are added since your last check. Click to see the list of new mods by category, then either dismiss (hides until more mods are added) or close (keeps the button visible). Checks run on app launch, Refresh, Check for Updates, and the 4-hour auto-scan.
-- **Multi-Store Support** — the same game installed from different storefronts (Steam, Xbox, Epic, etc.) now appears as separate entries with independent install records and per-game settings. Each store installation gets its own ReShade channel, shader mode, DXVK variant, and other overrides. Store badges distinguish between copies. Legacy single-game settings are automatically migrated.
-- **DXVK — Prefer DXGI Swapchain** — new setting in the DXVK cog. Sets the Vulkan/OpenGL Present Method driver profile setting to "Preferred layered on DXGI Swapchain" for the game. Recommended for DXVK games — improves compatibility and HDR support. Included in profile export/import.
+- **New Mods Alert** — a green "New Mods Available" button now appears in the toolbar when new RenoDX mods or Ultra+ mods are added since your last check. Click to see the list, then dismiss (hides until more arrive) or close (keeps the button visible). Checks run on launch, Refresh, Check for Updates, and every 4 hours.
+- **Multi-Store Support** — the same game installed from different storefronts (Steam, Xbox, Epic, etc.) now appears as separate entries with independent settings. Each copy gets its own ReShade channel, shader mode, DXVK variant, and other per-game overrides. Store badges tell them apart. Your existing settings carry over automatically.
+- **DXVK — Prefer DXGI Swapchain** — new setting in the DXVK ⚙ cog. Improves compatibility and HDR support for DXVK games by setting the correct Vulkan present method in the NVIDIA driver profile. Saved with your profile export/import.
 
 ### Changes
 
-- Engine.ini is now deployed to the correct platform folder for Game Pass games (`WinGDK`) instead of always using `Windows`. Affects UE-Extended HDR and LUT settings on install, update, and uninstall.
-- Engine.ini Settings section in the RenoDX cog now shows for UE-Extended games even when a mod update is pending (previously only showed when status was Installed).
+- Game Pass games now get Engine.ini deployed to the correct folder (`WinGDK`) — previously it was always written to `Windows`, which some games don't read.
+- Engine.ini settings (HDR keys, LUT) now show in the RenoDX ⚙ cog even when a mod update is pending.
+- Beast of Reincarnation and Palworld now get UE-Extended installed with only the LUT setting deployed — HDR keys are skipped since both games have their own in-engine HDR option.
 
 ### Bug Fixes
 
-- Fixed DXVK uninstall not clearing persisted Vulkan rendering path — games would remain stuck installing Vulkan ReShade even after DXVK was removed.
-- Fixed mod author badges not updating when toggling Luma mode — the detail panel now refreshes immediately to show the correct author (RenoDX vs Luma).
-- Fixed NativeHDR games (e.g. Borderlands 4) installing a named wiki mod instead of UE-Extended — the manifest `nativeHdrGames` declaration now correctly takes priority over wiki-matched named mods.
+- Fixed DXVK uninstall leaving the game stuck on Vulkan ReShade — the Vulkan rendering path is now correctly cleared on uninstall.
+- Fixed mod author badges not updating immediately when switching between Luma and RenoDX mode.
+- Fixed games like Borderlands 4 installing the wrong RenoDX addon — games marked as native HDR now always get UE-Extended, even if a named mod exists on the wiki.
 
 ### Manifest Updates
 
-- Fixed Mass Effect Andromeda `lumaRenodxCompat` matching — added both colon and non-colon variants to cover different store detections.
+- Fixed Mass Effect Andromeda not being recognized for Luma/RenoDX compatibility (store detection returned slightly different names).
 - Added DristoforColumb donation link.
-- Fixed Grand Theft Auto V Legacy incorrectly showing as having RenoDX — added to `wikiUnlinks`. The RenoDX mod is only for GTA V Enhanced.
-- Added `wikiNameOverride` for Grand Theft Auto V Enhanced to match the wiki entry name.
-- Added ultrawide fix URL for Beast of Reincarnation.
-- Fixed Denshattack! incorrectly installing the standard generic UE addon — now correctly installs `renodx-ue-extended.addon64`.
-- Added Monster Hunter Wilds RE Engine tag — now correctly shows RE Engine badge and RE Framework row.
-- Added Beast of Reincarnation engine hint (Unreal Engine 5.4.4) and added to native HDR games list.
-- Added `ueExtendedCompatibility` manifest field — per-game UE-Extended compatibility overrides (e.g. Beast of Reincarnation with `hdr: false`).
+- Fixed Grand Theft Auto V Legacy incorrectly showing as having a RenoDX mod — the mod is for GTA V Enhanced only.
+- Fixed wiki name matching for Grand Theft Auto V Enhanced.
+- Added ultrawide fix link for Beast of Reincarnation.
+- Fixed Denshattack! installing the wrong addon — now correctly installs UE-Extended.
+- Added Monster Hunter Wilds RE Engine tag — RE Framework row now appears correctly.
+- Added Beast of Reincarnation engine version (UE 5.4.4) and native HDR flag.
+- Added ReShade 6.7.3 to the legacy version picker.
 
 ---
 
