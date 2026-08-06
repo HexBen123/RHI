@@ -865,20 +865,23 @@ public partial class MainViewModel
                 AuxInstallService.ApplyRenodxIniOverrides(card.InstallPath, iniOverrides);
 
             // Deploy Engine.ini HDR settings for UE-Extended games
-            // UE4: skip HDR keys (no native HDR pipeline) — user can still enable manually via cog
-            // UE5: deploy HDR keys (enable native HDR output)
+            // Priority: ueExtendedCompatibility entry > UE4 detection > default (deploy for UE5)
             bool isUe4Game = card.EngineHint?.Contains("Unreal Engine 4") == true;
-            if (card.UseUeExtended && record.EngineIniHdr != false && !isUe4Game)
+            var compatEntry = _manifestUeExtendedCompat.TryGetValue(card.GameName, out var ce) ? ce : null;
+            bool deployHdr = compatEntry?.Hdr ?? !isUe4Game;  // compat overrides; else UE4=false, UE5=true
+            bool deployLut = compatEntry?.Lut ?? true;         // compat overrides; else always true
+
+            if (card.UseUeExtended && record.EngineIniHdr != false && deployHdr)
                 AuxInstallService.ApplyEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName, card.Source);
-            else if (card.UseUeExtended && isUe4Game)
+            else if (card.UseUeExtended && !deployHdr)
             {
-                // UE4: record that HDR was intentionally not deployed (so cog dialog shows "Off")
+                // HDR intentionally not deployed — record Off so cog dialog shows correctly
                 record.EngineIniHdr = false;
                 _installer.SaveRecordPublic(record);
             }
 
-            // Always deploy r.LUT.UpdateEveryFrame=1 for any Unreal Engine game with a RenoDX mod (skip if user disabled it)
-            if (card.EngineHint?.Contains("Unreal") == true && card.InstalledRecord?.EngineIniLut != false)
+            // Deploy r.LUT.UpdateEveryFrame=1 (skip if user disabled or compat entry says no)
+            if (card.EngineHint?.Contains("Unreal") == true && card.InstalledRecord?.EngineIniLut != false && deployLut)
                 AuxInstallService.ApplyEngineIniLutSetting(card.InstallPath, card.EngineIniProjectOverride, card.GameName, card.Source);
 
             // Update only this card's observable properties in-place.

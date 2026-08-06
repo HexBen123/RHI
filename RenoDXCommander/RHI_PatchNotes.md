@@ -15,6 +15,7 @@
 
 - Fixed DXVK uninstall not clearing persisted Vulkan rendering path — games would remain stuck installing Vulkan ReShade even after DXVK was removed.
 - Fixed mod author badges not updating when toggling Luma mode — the detail panel now refreshes immediately to show the correct author (RenoDX vs Luma).
+- Fixed NativeHDR games (e.g. Borderlands 4) installing a named wiki mod instead of UE-Extended — the manifest `nativeHdrGames` declaration now correctly takes priority over wiki-matched named mods.
 
 ### Manifest Updates
 
@@ -25,7 +26,8 @@
 - Added ultrawide fix URL for Beast of Reincarnation.
 - Fixed Denshattack! incorrectly installing the standard generic UE addon — now correctly installs `renodx-ue-extended.addon64`.
 - Added Monster Hunter Wilds RE Engine tag — now correctly shows RE Engine badge and RE Framework row.
-- Added Beast of Reincarnation engine hint (Unreal Engine 5.4.4).
+- Added Beast of Reincarnation engine hint (Unreal Engine 5.4.4) and added to native HDR games list.
+- Added `ueExtendedCompatibility` manifest field — per-game UE-Extended compatibility overrides (e.g. Beast of Reincarnation with `hdr: false`).
 
 ---
 

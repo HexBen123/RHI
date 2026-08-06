@@ -104,13 +104,18 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                     AuxInstallService.ApplyRenodxIniOverrides(card.InstallPath, iniOverrides);
 
                 // Deploy Engine.ini HDR settings for UE-Extended games
-                // UE4: skip HDR keys on fresh install (handled in InstallModAsync), but respect existing user choice on update
+                // Priority: ueExtendedCompatibility entry > UE4 detection > default (deploy for UE5)
                 bool isUe4Update = card.EngineHint?.Contains("Unreal Engine 4") == true;
-                if (card.UseUeExtended && card.InstalledRecord?.EngineIniHdr != false && !isUe4Update)
+                var compatUpdate = AuxInstallService.GlobalManifest?.UeExtendedCompatibility
+                    ?.TryGetValue(card.GameName, out var ceu) == true ? ceu : null;
+                bool deployHdrUpdate = compatUpdate?.Hdr ?? !isUe4Update;
+                bool deployLutUpdate = compatUpdate?.Lut ?? true;
+
+                if (card.UseUeExtended && card.InstalledRecord?.EngineIniHdr != false && deployHdrUpdate)
                     AuxInstallService.ApplyEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName, card.Source);
 
-                // Always deploy r.LUT.UpdateEveryFrame=1 for any Unreal Engine game with a RenoDX mod (skip if user disabled it)
-                if (card.EngineHint?.Contains("Unreal") == true && card.InstalledRecord?.EngineIniLut != false)
+                // Deploy r.LUT.UpdateEveryFrame=1 (skip if user disabled or compat entry says no)
+                if (card.EngineHint?.Contains("Unreal") == true && card.InstalledRecord?.EngineIniLut != false && deployLutUpdate)
                     AuxInstallService.ApplyEngineIniLutSetting(card.InstallPath, card.EngineIniProjectOverride, card.GameName, card.Source);
 
                 dispatcherQueue?.TryEnqueue(() =>

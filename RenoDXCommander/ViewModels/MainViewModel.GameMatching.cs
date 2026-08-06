@@ -713,7 +713,8 @@ public partial class MainViewModel
             _manifestDllNameOverrides,
             _manifestWikiUnlinks,
             _installPathOverrides,
-            NormalizeForLookup);
+            NormalizeForLookup,
+            _manifestUeExtendedCompat);
     }
 
     /// <summary>

@@ -158,7 +158,8 @@ public class GameInitializationService : IGameInitializationService
         Dictionary<string, ManifestDllNames> manifestDllNameOverrides,
         HashSet<string> manifestWikiUnlinks,
         Dictionary<string, string> installPathOverrides,
-        Func<string, string> normalizeForLookup)
+        Func<string, string> normalizeForLookup,
+        Dictionary<string, UeExtendedCompatEntry>? manifestUeExtendedCompat = null)
     {
         manifestNativeHdrGames.Clear();
         manifestNoUeExtendedGames.Clear();
@@ -189,6 +190,19 @@ public class GameInitializationService : IGameInitializationService
         if (manifest.NativeHdrGames != null)
             foreach (var game in manifest.NativeHdrGames)
                 manifestNativeHdrGames.Add(game);
+
+        // ueExtendedCompatibility — highest priority UE-Extended config.
+        // Entries also get added to manifestNativeHdrGames so isNativeHdr=true fires correctly
+        // (toggle hidden, correct label, hasNamedMod bypass).
+        if (manifest.UeExtendedCompatibility != null && manifestUeExtendedCompat != null)
+        {
+            manifestUeExtendedCompat.Clear();
+            foreach (var (game, entry) in manifest.UeExtendedCompatibility)
+            {
+                manifestUeExtendedCompat[game] = entry;
+                manifestNativeHdrGames.Add(game); // ensures isNativeHdr=true
+            }
+        }
 
         if (manifest.NoUeExtendedGames != null)
             foreach (var g in manifest.NoUeExtendedGames)
@@ -234,6 +248,7 @@ public class GameInitializationService : IGameInitializationService
             $"+{manifest.WikiNameOverrides?.Count ?? 0} name overrides, " +
             $"+{manifest.UeExtendedGames?.Count ?? 0} UE-Ext, " +
             $"+{manifest.NativeHdrGames?.Count ?? 0} NativeHDR, " +
+            $"+{manifest.UeExtendedCompatibility?.Count ?? 0} UE-Compat, " +
             $"+{manifest.ThirtyTwoBitGames?.Count ?? 0} 32-bit, " +
             $"+{manifest.SixtyFourBitGames?.Count ?? 0} 64-bit, " +
             $"+{manifest.Blacklist?.Count ?? 0} blacklisted, " +

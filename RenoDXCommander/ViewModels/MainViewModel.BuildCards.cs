@@ -445,7 +445,7 @@ public partial class MainViewModel
                     DiscordUrl = "https://discord.gg/gF4GRJWZ2A",
                 };
             }
-            bool useUeExt = !noUeExtended && !hasNamedMod && !hasNamedAddonOnDisk
+            bool useUeExt = !noUeExtended && (!hasNamedMod || isNativeHdr) && !hasNamedAddonOnDisk
                          && ((addonOnDisk == UeExtendedFile)
                              || IsUeExtendedGameMatch(game.Name)
                              || isNativeHdr
