@@ -530,7 +530,16 @@ public sealed partial class MainWindow
                 Text = lumaLabel,
                 Tag = card,
             };
-            lumaItem.Click += (s, ev) => ViewModel.ToggleLumaMode(card);
+            lumaItem.Click += (s, ev) =>
+            {
+                ViewModel.ToggleLumaMode(card);
+                // Rebuild detail panel if this card is currently displayed
+                if (ViewModel.SelectedGame == card && ViewModel.CurrentViewLayout == Models.ViewLayout.Detail)
+                {
+                    PopulateDetailPanel(card);
+                    BuildOverridesPanel(card);
+                }
+            };
             menu.Items.Add(lumaItem);
         }
 

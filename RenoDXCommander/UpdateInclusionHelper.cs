@@ -23,21 +23,22 @@ public static class UpdateInclusionHelper
         MainViewModel viewModel,
         string gameName,
         bool isREEngineGame,
-        bool isDxvkEnabled = false)
+        bool isDxvkEnabled = false,
+        string store = "")
     {
         summaryTb.Inlines.Clear();
         var items = new List<(string label, bool isOn)>
         {
-            ("RS", !viewModel.IsUpdateAllExcludedReShade(gameName)),
-            ("RDX", !viewModel.IsUpdateAllExcludedRenoDx(gameName)),
-            ("RL", !viewModel.IsUpdateAllExcludedUl(gameName)),
-            ("DC", !viewModel.IsUpdateAllExcludedDc(gameName)),
-            ("OS", !viewModel.IsUpdateAllExcludedOs(gameName)),
+            ("RS", !viewModel.IsUpdateAllExcludedReShade(gameName, store)),
+            ("RDX", !viewModel.IsUpdateAllExcludedRenoDx(gameName, store)),
+            ("RL", !viewModel.IsUpdateAllExcludedUl(gameName, store)),
+            ("DC", !viewModel.IsUpdateAllExcludedDc(gameName, store)),
+            ("OS", !viewModel.IsUpdateAllExcludedOs(gameName, store)),
         };
         if (isDxvkEnabled)
-            items.Add(("DXVK", !viewModel.IsUpdateAllExcludedDxvk(gameName)));
+            items.Add(("DXVK", !viewModel.IsUpdateAllExcludedDxvk(gameName, store)));
         if (isREEngineGame)
-            items.Add(("REF", !viewModel.IsUpdateAllExcludedRef(gameName)));
+            items.Add(("REF", !viewModel.IsUpdateAllExcludedRef(gameName, store)));
         for (int i = 0; i < items.Count; i++)
         {
             var (label, isOn) = items[i];
@@ -72,7 +73,8 @@ public static class UpdateInclusionHelper
         bool isREEngineGame,
         XamlRoot xamlRoot,
         Action? onSaved = null,
-        bool isDxvkEnabled = false)
+        bool isDxvkEnabled = false,
+        string store = "")
     {
         var summaryText = new TextBlock
         {
@@ -81,7 +83,7 @@ public static class UpdateInclusionHelper
             Margin = new Thickness(0, 4, 0, 0),
         };
 
-        RefreshSummary(summaryText, viewModel, gameName, isREEngineGame, isDxvkEnabled);
+        RefreshSummary(summaryText, viewModel, gameName, isREEngineGame, isDxvkEnabled, store);
 
         var button = new Button
         {
@@ -106,16 +108,16 @@ public static class UpdateInclusionHelper
                 CrashReporter.Log("[UpdateInclusionHelper] Cannot show dialog — XamlRoot is null");
                 return;
             }
-            var rsCheck = new CheckBox { Content = "ReShade", IsChecked = !viewModel.IsUpdateAllExcludedReShade(gameName), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
-            var rdxCheck = new CheckBox { Content = "RenoDX", IsChecked = !viewModel.IsUpdateAllExcludedRenoDx(gameName), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
-            var ulCheck = new CheckBox { Content = "ReLimiter", IsChecked = !viewModel.IsUpdateAllExcludedUl(gameName), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
-            var dcCheck = new CheckBox { Content = "Display Commander", IsChecked = !viewModel.IsUpdateAllExcludedDc(gameName), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
-            var osCheck = new CheckBox { Content = "OptiScaler", IsChecked = !viewModel.IsUpdateAllExcludedOs(gameName), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
+            var rsCheck = new CheckBox { Content = "ReShade", IsChecked = !viewModel.IsUpdateAllExcludedReShade(gameName, store), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
+            var rdxCheck = new CheckBox { Content = "RenoDX", IsChecked = !viewModel.IsUpdateAllExcludedRenoDx(gameName, store), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
+            var ulCheck = new CheckBox { Content = "ReLimiter", IsChecked = !viewModel.IsUpdateAllExcludedUl(gameName, store), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
+            var dcCheck = new CheckBox { Content = "Display Commander", IsChecked = !viewModel.IsUpdateAllExcludedDc(gameName, store), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
+            var osCheck = new CheckBox { Content = "OptiScaler", IsChecked = !viewModel.IsUpdateAllExcludedOs(gameName, store), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) };
             CheckBox? dxvkCheck = isDxvkEnabled
-                ? new CheckBox { Content = "DXVK", IsChecked = !viewModel.IsUpdateAllExcludedDxvk(gameName), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) }
+                ? new CheckBox { Content = "DXVK", IsChecked = !viewModel.IsUpdateAllExcludedDxvk(gameName, store), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) }
                 : null;
             CheckBox? refCheck = isREEngineGame
-                ? new CheckBox { Content = "RE Framework", IsChecked = !viewModel.IsUpdateAllExcludedRef(gameName), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) }
+                ? new CheckBox { Content = "RE Framework", IsChecked = !viewModel.IsUpdateAllExcludedRef(gameName, store), FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), Margin = new Thickness(0, 4, 0, 4) }
                 : null;
 
             var checkPanel = new StackPanel { Spacing = 0 };
@@ -142,23 +144,23 @@ public static class UpdateInclusionHelper
             if (result == ContentDialogResult.Primary)
             {
                 // Apply changes
-                if ((rsCheck.IsChecked == true) == viewModel.IsUpdateAllExcludedReShade(gameName))
-                    viewModel.ToggleUpdateAllExclusionReShade(gameName);
-                if ((rdxCheck.IsChecked == true) == viewModel.IsUpdateAllExcludedRenoDx(gameName))
-                    viewModel.ToggleUpdateAllExclusionRenoDx(gameName);
-                if ((ulCheck.IsChecked == true) == viewModel.IsUpdateAllExcludedUl(gameName))
-                    viewModel.ToggleUpdateAllExclusionUl(gameName);
-                if ((dcCheck.IsChecked == true) == viewModel.IsUpdateAllExcludedDc(gameName))
-                    viewModel.ToggleUpdateAllExclusionDc(gameName);
-                if ((osCheck.IsChecked == true) == viewModel.IsUpdateAllExcludedOs(gameName))
-                    viewModel.ToggleUpdateAllExclusionOs(gameName);
-                if (dxvkCheck != null && (dxvkCheck.IsChecked == true) == viewModel.IsUpdateAllExcludedDxvk(gameName))
-                    viewModel.ToggleUpdateAllExclusionDxvk(gameName);
-                if (refCheck != null && (refCheck.IsChecked == true) == viewModel.IsUpdateAllExcludedRef(gameName))
-                    viewModel.ToggleUpdateAllExclusionRef(gameName);
+                if ((rsCheck.IsChecked == true) == viewModel.IsUpdateAllExcludedReShade(gameName, store))
+                    viewModel.ToggleUpdateAllExclusionReShade(gameName, store);
+                if ((rdxCheck.IsChecked == true) == viewModel.IsUpdateAllExcludedRenoDx(gameName, store))
+                    viewModel.ToggleUpdateAllExclusionRenoDx(gameName, store);
+                if ((ulCheck.IsChecked == true) == viewModel.IsUpdateAllExcludedUl(gameName, store))
+                    viewModel.ToggleUpdateAllExclusionUl(gameName, store);
+                if ((dcCheck.IsChecked == true) == viewModel.IsUpdateAllExcludedDc(gameName, store))
+                    viewModel.ToggleUpdateAllExclusionDc(gameName, store);
+                if ((osCheck.IsChecked == true) == viewModel.IsUpdateAllExcludedOs(gameName, store))
+                    viewModel.ToggleUpdateAllExclusionOs(gameName, store);
+                if (dxvkCheck != null && (dxvkCheck.IsChecked == true) == viewModel.IsUpdateAllExcludedDxvk(gameName, store))
+                    viewModel.ToggleUpdateAllExclusionDxvk(gameName, store);
+                if (refCheck != null && (refCheck.IsChecked == true) == viewModel.IsUpdateAllExcludedRef(gameName, store))
+                    viewModel.ToggleUpdateAllExclusionRef(gameName, store);
 
                 // Refresh summary
-                RefreshSummary(summaryText, viewModel, gameName, isREEngineGame, isDxvkEnabled);
+                RefreshSummary(summaryText, viewModel, gameName, isREEngineGame, isDxvkEnabled, store);
 
                 // Notify caller so it can rebuild UI (e.g. component panel)
                 onSaved?.Invoke();

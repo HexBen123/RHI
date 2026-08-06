@@ -382,6 +382,22 @@ public partial class MainViewModel
                 _crashReporter.Log("[MainViewModel.InitializeAsync] Wiki fetch failed, skipping new mods check");
             }
 
+            // Check for new Ultra+ mods
+            {
+                var currentUltraPlusMods = _ultraPlusService.GetAllGameNames().ToList();
+                _crashReporter.Log($"[MainViewModel.InitializeAsync] Ultra+ mods check: {currentUltraPlusMods.Count} mods");
+
+                _seenUltraPlusModsService.SeedIfEmpty(currentUltraPlusMods);
+
+                var newUltraPlusMods = _seenUltraPlusModsService.GetNewMods(currentUltraPlusMods);
+                _crashReporter.Log($"[MainViewModel.InitializeAsync] New Ultra+ mods: {newUltraPlusMods.Count} (seen: {_seenUltraPlusModsService.GetSeenMods().Count})");
+                if (newUltraPlusMods.Count > 0)
+                {
+                    _crashReporter.Log($"[MainViewModel.InitializeAsync] New Ultra+ mods: {string.Join(", ", newUltraPlusMods.Take(10))}{(newUltraPlusMods.Count > 10 ? "..." : "")}");
+                    DispatcherQueue?.TryEnqueue(() => NewUltraPlusMods = newUltraPlusMods);
+                }
+            }
+
             // 6. Merge or use directly based on cache
             ApplyGameRenames(freshGames);
             if (hasCachedLibrary)
@@ -540,9 +556,10 @@ public partial class MainViewModel
                 int migrated = 0;
                 foreach (var card in _allCards)
                 {
-                    if (!_reShadeChannelOverrides.ContainsKey(card.GameName))
+                    var key = GameKey.FromCard(card.GameName, card.Source).ToKey();
+                    if (!_reShadeChannelOverrides.ContainsKey(key))
                     {
-                        _reShadeChannelOverrides[card.GameName] = "Nightly";
+                        _reShadeChannelOverrides[key] = "Nightly";
                         migrated++;
                     }
                 }
@@ -625,11 +642,11 @@ public partial class MainViewModel
                                     useGlobalSet: true, perGameSelection: new List<string>()));
                             }
 
-                            string addonMode = GetPerGameAddonMode(card.GameName);
+                            string addonMode = GetPerGameAddonMode(card.GameName, card.Source ?? "");
                             bool useGlobalSet = addonMode != "Select";
                             List<string>? selection = useGlobalSet
                                 ? _settingsViewModel.EnabledGlobalAddons
-                                : (_gameNameService.PerGameAddonSelection.TryGetValue(card.GameName, out var sel) ? sel : null);
+                                : (_gameNameService.PerGameAddonSelection.TryGetValue(GameKey.FromCard(card.GameName, card.Source).ToKey(), out var sel) ? sel : null);
                             return Task.Run(() => _addonPackService.DeployAddonsForGame(
                                 card.GameName, card.InstallPath, card.Is32Bit, useGlobalSet, selection));
                         });

@@ -8,6 +8,9 @@ public class DxvkInstalledRecord
     /// <summary>Resolved install path for the game.</summary>
     public string InstallPath { get; set; } = "";
 
+    /// <summary>Store/platform where this game is installed (Steam, Xbox, Epic, etc.).</summary>
+    public string Store { get; set; } = "";
+
     /// <summary>DXVK version tag (e.g. "v2.7.1").</summary>
     public string DxvkVersion { get; set; } = "";
 

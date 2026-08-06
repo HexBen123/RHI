@@ -361,6 +361,7 @@ public partial class DragDropHandler
             {
                 GameName      = gameName,
                 InstallPath   = addonDeployPath,
+                Store         = targetCard.Source ?? "",
                 AddonFileName = addonFileName,
                 InstalledAt   = DateTime.UtcNow,
                 // For named mods from Discord, don't use the card's existing SnapshotUrl (could be UE-Extended)
@@ -373,7 +374,7 @@ public partial class DragDropHandler
             {
                 try
                 {
-                    AuxInstallService.ApplyEngineIniLutSetting(targetCard.InstallPath, targetCard.EngineIniProjectOverride, gameName);
+                    AuxInstallService.ApplyEngineIniLutSetting(targetCard.InstallPath, targetCard.EngineIniProjectOverride, gameName, targetCard.Source);
                 }
                 catch (Exception ex) { _crashReporter.Log($"[DragDropHandler.ProcessDroppedAddon] Engine.ini LUT deploy failed — {ex.Message}"); }
             }

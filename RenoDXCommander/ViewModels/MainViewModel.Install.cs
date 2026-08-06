@@ -281,7 +281,7 @@ public partial class MainViewModel
         if (!nowExtended && wasInstalled && !string.IsNullOrEmpty(card.InstallPath))
         {
             AuxInstallService.RemoveRenoDxNativeHdrSettings(card.InstallPath);
-            AuxInstallService.RemoveEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
+            AuxInstallService.RemoveEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName, card.Source);
         }
 
         // Clear the install record — the old addon was deleted
@@ -342,7 +342,7 @@ public partial class MainViewModel
     public void ToggleHideGame(GameCardViewModel? card)
     {
         if (card == null) return;
-        var key = card.GameName;
+        var key = GameKey.FromCard(card.GameName, card.Source).ToKey();
         _crashReporter.Log($"[MainViewModel.ToggleHide] {key} (currently hidden={card.IsHidden})");
         if (_hiddenGames.Contains(key))
             _hiddenGames.Remove(key);
@@ -359,7 +359,7 @@ public partial class MainViewModel
     public void ToggleFavourite(GameCardViewModel? card)
     {
         if (card == null) return;
-        var key = card.GameName;
+        var key = GameKey.FromCard(card.GameName, card.Source).ToKey();
         if (_favouriteGames.Contains(key))
             _favouriteGames.Remove(key);
         else
@@ -452,10 +452,15 @@ public partial class MainViewModel
         var effectiveMod = mod ?? fallback; // null for unknown-engine / legacy games not on wiki
 
         var records = _installer.LoadAll();
-        var record  = records.FirstOrDefault(r => r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase));
+        var scanPath = installPath.Length > 0 ? installPath : game.InstallPath;
+        var record  = records.FirstOrDefault(r =>
+            r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
+            r.Store.Equals(game.Source ?? "", StringComparison.OrdinalIgnoreCase))
+            ?? records.FirstOrDefault(r =>
+                r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
+                r.InstallPath.Equals(scanPath, StringComparison.OrdinalIgnoreCase));
 
         // Fallback: match by InstallPath for records saved with mod name instead of game name
-        var scanPath = installPath.Length > 0 ? installPath : game.InstallPath;
         if (record == null)
         {
             record = records.FirstOrDefault(r =>
@@ -477,6 +482,7 @@ public partial class MainViewModel
             {
                 GameName      = game.Name,
                 InstallPath   = scanPath,
+                Store         = game.Source ?? "",
                 AddonFileName = addonOnDisk,
                 InstalledAt   = File.GetLastWriteTimeUtc(Path.Combine(scanPath, addonOnDisk)),
                 SnapshotUrl   = ResolveAddonUrl(addonOnDisk),
@@ -599,7 +605,12 @@ public partial class MainViewModel
         var auxRecordsManual = _auxInstaller.LoadAll();
         var rsRecManual = auxRecordsManual.FirstOrDefault(r =>
             r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
-            r.AddonType == AuxInstallService.TypeReShade);
+            r.Store.Equals(game.Source ?? "", StringComparison.OrdinalIgnoreCase) &&
+            r.AddonType == AuxInstallService.TypeReShade)
+            ?? auxRecordsManual.FirstOrDefault(r =>
+                r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
+                r.InstallPath.Equals(scanPath, StringComparison.OrdinalIgnoreCase) &&
+                r.AddonType == AuxInstallService.TypeReShade);
 
         // Drop stale records whose files no longer exist on disk
         if (rsRecManual != null && !File.Exists(Path.Combine(rsRecManual.InstallPath, rsRecManual.InstalledAs)))
@@ -656,21 +667,21 @@ public partial class MainViewModel
                               : effectiveMod?.DiscordUrl,
             NameUrl         = effectiveMod?.NameUrl,
             IsManuallyAdded = true,
-            IsFavourite            = _favouriteGames.Contains(game.Name),
+            IsFavourite            = _favouriteGames.Contains(GameKey.FromCard(game.Name, "Manual").ToKey()),
             UseUeExtended          = useUeExt,
             IsNativeHdrGame        = isNativeHdr,
             IsManifestUeExtended   = useUeExt && !isNativeHdr,
             LumaRenodxCompatible   = _manifest?.LumaRenodxCompat?.Contains(game.Name) == true,
             EngineIniProjectOverride = _manifest?.EngineIniPathOverrides?.TryGetValue(game.Name, out var eiOverride2) == true ? eiOverride2 : null,
-            ExcludeFromUpdateAllReShade = _gameNameService.UpdateAllExcludedReShade.Contains(game.Name),
-            ExcludeFromUpdateAllRenoDx  = _gameNameService.UpdateAllExcludedRenoDx.Contains(game.Name),
-            ExcludeFromUpdateAllUl      = _gameNameService.UpdateAllExcludedUl.Contains(game.Name),
-            ExcludeFromUpdateAllRef     = _gameNameService.UpdateAllExcludedRef.Contains(game.Name),
-            ShaderModeOverride     = _perGameShaderMode.TryGetValue(game.Name, out var smO) ? smO : null,
+            ExcludeFromUpdateAllReShade = _gameNameService.UpdateAllExcludedReShade.Contains(GameKey.FromCard(game.Name, "Manual").ToKey()),
+            ExcludeFromUpdateAllRenoDx  = _gameNameService.UpdateAllExcludedRenoDx.Contains(GameKey.FromCard(game.Name, "Manual").ToKey()),
+            ExcludeFromUpdateAllUl      = _gameNameService.UpdateAllExcludedUl.Contains(GameKey.FromCard(game.Name, "Manual").ToKey()),
+            ExcludeFromUpdateAllRef     = _gameNameService.UpdateAllExcludedRef.Contains(GameKey.FromCard(game.Name, "Manual").ToKey()),
+            ShaderModeOverride     = _perGameShaderMode.TryGetValue(GameKey.FromCard(game.Name, "Manual").ToKey(), out var smO) ? smO : null,
             Is32Bit                = ResolveIs32Bit(game.Name, manualMachine),
             GraphicsApi            = DetectGraphicsApi(scanPath, engine, game.Name),
             DetectedApis           = _DetectAllApisForCard(scanPath, game.Name),
-            VulkanRenderingPath    = _vulkanRenderingPaths.TryGetValue(game.Name, out var vrpManual) ? vrpManual : "DirectX",
+            VulkanRenderingPath    = _vulkanRenderingPaths.TryGetValue(GameKey.FromCard(game.Name, "Manual").ToKey(), out var vrpManual) ? vrpManual : "DirectX",
             LumaFeatureEnabled     = LumaFeatureEnabled,
             RsRecord        = rsRecManual,
             RsStatus        = rsRecManual != null ? GameStatus.Installed : GameStatus.NotInstalled,
@@ -749,7 +760,11 @@ public partial class MainViewModel
         {
             var refRecords = _refService.GetRecords();
             var refRec = refRecords.FirstOrDefault(r =>
-                r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase));
+                r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
+                r.Store.Equals(game.Source ?? "", StringComparison.OrdinalIgnoreCase))
+                ?? refRecords.FirstOrDefault(r =>
+                    r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
+                    r.InstallPath.Equals(scanPath, StringComparison.OrdinalIgnoreCase));
             if (refRec != null)
             {
                 card.RefRecord = refRec;
@@ -819,7 +834,7 @@ public partial class MainViewModel
                 card.ActionMessage   = p.msg;
                 card.InstallProgress = p.pct;
             });
-            var record = await _installer.InstallAsync(card.Mod, card.InstallPath, progress, card.GameName);
+            var record = await _installer.InstallAsync(card.Mod, card.InstallPath, progress, card.GameName, card.Source);
 
             // Preserve per-game Engine.ini toggle state from the previous record
             if (card.InstalledRecord != null)
@@ -850,21 +865,24 @@ public partial class MainViewModel
                 AuxInstallService.ApplyRenodxIniOverrides(card.InstallPath, iniOverrides);
 
             // Deploy Engine.ini HDR settings for UE-Extended games
-            // UE4: skip HDR keys (no native HDR pipeline) — user can still enable manually via cog
-            // UE5: deploy HDR keys (enable native HDR output)
+            // Priority: ueExtendedCompatibility entry > UE4 detection > default (deploy for UE5)
             bool isUe4Game = card.EngineHint?.Contains("Unreal Engine 4") == true;
-            if (card.UseUeExtended && record.EngineIniHdr != false && !isUe4Game)
-                AuxInstallService.ApplyEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
-            else if (card.UseUeExtended && isUe4Game)
+            var compatEntry = _manifestUeExtendedCompat.TryGetValue(card.GameName, out var ce) ? ce : null;
+            bool deployHdr = compatEntry?.Hdr ?? !isUe4Game;  // compat overrides; else UE4=false, UE5=true
+            bool deployLut = compatEntry?.Lut ?? true;         // compat overrides; else always true
+
+            if (card.UseUeExtended && record.EngineIniHdr != false && deployHdr)
+                AuxInstallService.ApplyEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName, card.Source);
+            else if (card.UseUeExtended && !deployHdr)
             {
-                // UE4: record that HDR was intentionally not deployed (so cog dialog shows "Off")
+                // HDR intentionally not deployed — record Off so cog dialog shows correctly
                 record.EngineIniHdr = false;
                 _installer.SaveRecordPublic(record);
             }
 
-            // Always deploy r.LUT.UpdateEveryFrame=1 for any Unreal Engine game with a RenoDX mod (skip if user disabled it)
-            if (card.EngineHint?.Contains("Unreal") == true && card.InstalledRecord?.EngineIniLut != false)
-                AuxInstallService.ApplyEngineIniLutSetting(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
+            // Deploy r.LUT.UpdateEveryFrame=1 (skip if user disabled or compat entry says no)
+            if (card.EngineHint?.Contains("Unreal") == true && card.InstalledRecord?.EngineIniLut != false && deployLut)
+                AuxInstallService.ApplyEngineIniLutSetting(card.InstallPath, card.EngineIniProjectOverride, card.GameName, card.Source);
 
             // Update only this card's observable properties in-place.
             // The card is already in DisplayedGames — WinUI bindings update the
@@ -942,7 +960,7 @@ public partial class MainViewModel
         if (card.UseUeExtended && !string.IsNullOrEmpty(card.InstallPath))
         {
             AuxInstallService.RemoveRenoDxNativeHdrSettings(card.InstallPath);
-            AuxInstallService.RemoveEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
+            AuxInstallService.RemoveEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName, card.Source);
         }
         // Clean up [renodx] section for generic UE/Unity games to avoid stale values conflicting with a different addon
         else if (!string.IsNullOrEmpty(card.InstallPath)

@@ -1604,7 +1604,7 @@ public class SettingsHandler
         // Auto-reinstall DXVK on all affected games (those without per-game override)
         var gamesWithDxvk = ViewModel.AllCards
             .Where(c => c.DxvkStatus == GameStatus.Installed || c.DxvkStatus == GameStatus.UpdateAvailable)
-            .Where(c => ViewModel.GetDxvkVariantOverride(c.GameName) == null) // Only games using global default
+            .Where(c => ViewModel.GetDxvkVariantOverride(c.GameName, c.Source) == null) // Only games using global default
             .ToList();
 
         if (gamesWithDxvk.Count > 0)
@@ -1672,7 +1672,7 @@ public class SettingsHandler
                 // Only update if no per-game Vulkan override is active
                 var hasVulkanOverride = ViewModel.AllCards
                     .Any(c => c.RequiresVulkanInstall
-                        && ViewModel.GetReShadeChannelOverride(c.GameName) != null);
+                        && ViewModel.GetReShadeChannelOverride(c.GameName, c.Source) != null);
 
                 if (!hasVulkanOverride)
                 {
@@ -1762,7 +1762,7 @@ public class SettingsHandler
         var gamesWithRs = ViewModel.AllCards
             .Where(c => c.RsStatus == GameStatus.Installed || c.RsStatus == GameStatus.UpdateAvailable)
             .Where(c => !c.RequiresVulkanInstall) // Vulkan handled above via layer copy
-            .Where(c => ViewModel.GetReShadeChannelOverride(c.GameName) == null) // Only games using global default
+            .Where(c => ViewModel.GetReShadeChannelOverride(c.GameName, c.Source) == null) // Only games using global default
             .Where(c => !c.UseNormalReShade) // Normal ReShade games are unaffected
             .ToList();
 

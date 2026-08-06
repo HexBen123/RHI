@@ -13,7 +13,8 @@ public interface IREFrameworkService
     /// </summary>
     Task<REFrameworkInstalledRecord> InstallAsync(
         string gameName, string installPath,
-        IProgress<(string message, double percent)>? progress = null);
+        IProgress<(string message, double percent)>? progress = null,
+        string? store = null);
 
     /// <summary>Deletes dinput8.dll from the game directory and removes the install record.</summary>
     void Uninstall(string gameName, string installPath);

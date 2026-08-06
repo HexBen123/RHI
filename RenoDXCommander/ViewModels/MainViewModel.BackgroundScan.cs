@@ -169,6 +169,22 @@ public partial class MainViewModel
                 _crashReporter.Log("[RunBackgroundScanAndMergeAsync] Wiki fetch failed, skipping new mods check");
             }
 
+            // ── Detect new Ultra+ mods ────────────────────────────────────────────
+            {
+                var currentUltraPlusMods = _ultraPlusService.GetAllGameNames().ToList();
+                _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Ultra+ mods check: {currentUltraPlusMods.Count} mods");
+
+                _seenUltraPlusModsService.SeedIfEmpty(currentUltraPlusMods);
+
+                var newUltraPlusMods = _seenUltraPlusModsService.GetNewMods(currentUltraPlusMods);
+                _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] New Ultra+ mods: {newUltraPlusMods.Count} (seen: {_seenUltraPlusModsService.GetSeenMods().Count})");
+                if (newUltraPlusMods.Count > 0)
+                {
+                    _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] New Ultra+ mods: {string.Join(", ", newUltraPlusMods.Take(10))}{(newUltraPlusMods.Count > 10 ? "..." : "")}");
+                    DispatcherQueue?.TryEnqueue(() => NewUltraPlusMods = newUltraPlusMods);
+                }
+            }
+
             // Store manifest
             // (_manifest already assigned above in the try block)
 
@@ -348,11 +364,11 @@ public partial class MainViewModel
                                     useGlobalSet: true, perGameSelection: new List<string>()));
                             }
 
-                            string addonMode = GetPerGameAddonMode(card.GameName);
+                            string addonMode = GetPerGameAddonMode(card.GameName, card.Source ?? "");
                             bool useGlobalSet = addonMode != "Select";
                             List<string>? selection = useGlobalSet
                                 ? _settingsViewModel.EnabledGlobalAddons
-                                : (_gameNameService.PerGameAddonSelection.TryGetValue(card.GameName, out var sel) ? sel : null);
+                                : (_gameNameService.PerGameAddonSelection.TryGetValue(GameKey.FromCard(card.GameName, card.Source).ToKey(), out var sel) ? sel : null);
                             return Task.Run(() => _addonPackService.DeployAddonsForGame(
                                 card.GameName, card.InstallPath, card.Is32Bit, useGlobalSet, selection));
                         });
@@ -396,25 +412,26 @@ public partial class MainViewModel
             return;
         }
 
-        // Build lookup of existing cards by GameName (case-insensitive)
-        var existingByName = new Dictionary<string, GameCardViewModel>(StringComparer.OrdinalIgnoreCase);
+        // Build lookup of existing cards by composite key (GameName|Source) for multi-store support
+        var existingByKey = new Dictionary<string, GameCardViewModel>(StringComparer.OrdinalIgnoreCase);
         foreach (var card in _allCards)
         {
-            // First card wins if duplicates exist
-            existingByName.TryAdd(card.GameName, card);
+            var key = GameKey.FromCard(card.GameName, card.Source).ToKey();
+            existingByKey.TryAdd(key, card);
         }
 
-        // Build set of fresh game names for stale detection
-        var freshNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        // Build set of fresh composite keys for stale detection
+        var freshKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var fc in freshCards)
-            freshNames.Add(fc.GameName);
+            freshKeys.Add(GameKey.FromCard(fc.GameName, fc.Source).ToKey());
 
         var cardsToAdd = new List<GameCardViewModel>();
 
         // For each fresh card: update existing or mark as new
         foreach (var fresh in freshCards)
         {
-            if (existingByName.TryGetValue(fresh.GameName, out var existing))
+            var freshKey = GameKey.FromCard(fresh.GameName, fresh.Source).ToKey();
+            if (existingByKey.TryGetValue(freshKey, out var existing))
             {
                 // Update mutable properties in-place so WinUI bindings fire
                 // Preserve UpdateAvailable status if the fresh scan shows Installed
@@ -506,7 +523,7 @@ public partial class MainViewModel
 
         // Remove stale games (not in fresh set AND not manually added)
         var cardsToRemove = _allCards
-            .Where(c => !freshNames.Contains(c.GameName) && !c.IsManuallyAdded)
+            .Where(c => !freshKeys.Contains(GameKey.FromCard(c.GameName, c.Source).ToKey()) && !c.IsManuallyAdded)
             .ToList();
 
         foreach (var stale in cardsToRemove)

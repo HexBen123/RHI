@@ -207,7 +207,11 @@ public partial class MainViewModel
             var effectiveMod = _wikiExclusions.Contains(game.Name) ? null : (mod ?? fallback);
 
             var record = records.FirstOrDefault(r =>
-                r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase));
+                r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
+                r.Store.Equals(game.Source ?? "", StringComparison.OrdinalIgnoreCase))
+                ?? records.FirstOrDefault(r =>
+                    r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
+                    r.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase));
 
             // ── Path reconciliation for RenoDX mod records ────────────────────────
             // Xbox/Microsoft Store games change install paths on every update
@@ -336,6 +340,7 @@ public partial class MainViewModel
                 {
                     GameName      = game.Name,
                     InstallPath   = installPath,
+                    Store         = game.Source ?? "",
                     AddonFileName = addonOnDisk,
                     InstalledAt   = File.GetLastWriteTimeUtc(Path.Combine(installPath, addonOnDisk)),
                     SnapshotUrl   = ResolveAddonUrl(addonOnDisk),
@@ -440,7 +445,7 @@ public partial class MainViewModel
                     DiscordUrl = "https://discord.gg/gF4GRJWZ2A",
                 };
             }
-            bool useUeExt = !noUeExtended && !hasNamedMod && !hasNamedAddonOnDisk
+            bool useUeExt = !noUeExtended && (!hasNamedMod || isNativeHdr) && !hasNamedAddonOnDisk
                          && ((addonOnDisk == UeExtendedFile)
                              || IsUeExtendedGameMatch(game.Name)
                              || isNativeHdr
@@ -488,7 +493,12 @@ public partial class MainViewModel
             // Look up aux records for this game
             var rsRec = auxRecords.FirstOrDefault(r =>
                 r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
-                (r.AddonType == AuxInstallService.TypeReShade || r.AddonType == AuxInstallService.TypeReShadeNormal));
+                r.Store.Equals(game.Source ?? "", StringComparison.OrdinalIgnoreCase) &&
+                (r.AddonType == AuxInstallService.TypeReShade || r.AddonType == AuxInstallService.TypeReShadeNormal))
+                ?? auxRecords.FirstOrDefault(r =>
+                    r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
+                    r.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase) &&
+                    (r.AddonType == AuxInstallService.TypeReShade || r.AddonType == AuxInstallService.TypeReShadeNormal));
 
             // ── Path reconciliation for ReShade aux records ───────────────────────
             // Same Xbox/Microsoft Store path-change issue as RenoDX mod records above.
@@ -543,7 +553,12 @@ public partial class MainViewModel
             // a renamed DC file as ReShade.
             var dcRecForExclusion = auxRecords.FirstOrDefault(r =>
                 r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
-                r.AddonType == "DisplayCommander");
+                r.Store.Equals(game.Source ?? "", StringComparison.OrdinalIgnoreCase) &&
+                r.AddonType == "DisplayCommander")
+                ?? auxRecords.FirstOrDefault(r =>
+                    r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
+                    r.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase) &&
+                    r.AddonType == "DisplayCommander");
             var dcClaimedFileName = dcRecForExclusion?.InstalledAs;
 
             if (rsRec == null)
@@ -559,6 +574,7 @@ public partial class MainViewModel
                     {
                         GameName    = game.Name,
                         InstallPath = installPath,
+                        Store       = game.Source ?? "",
                         AddonType   = AuxInstallService.TypeReShade,
                         InstalledAs = AuxInstallService.RsNormalName,
                         InstalledAt = File.GetLastWriteTimeUtc(dxgiPath),
@@ -596,6 +612,7 @@ public partial class MainViewModel
                                 {
                                     GameName    = game.Name,
                                     InstallPath = installPath,
+                                    Store       = game.Source ?? "",
                                     AddonType   = AuxInstallService.TypeReShade,
                                     InstalledAs = proxyName,
                                     InstalledAt = File.GetLastWriteTimeUtc(candidatePath),
@@ -607,6 +624,9 @@ public partial class MainViewModel
                     catch (Exception) { /* Permission or IO errors — skip gracefully */ }
                 }
             }
+
+            // Composite key for per-game settings lookups
+            var gameKey = GameKey.FromCard(game.Name, game.Source).ToKey();
 
             var newCard = new GameCardViewModel
             {
@@ -636,8 +656,8 @@ public partial class MainViewModel
                 Notes                  = effectiveMod != null ? BuildNotes(game.Name, effectiveMod, fallback, genericNotes, isNativeHdr) : "",
                 InstalledAddonFileName = record?.AddonFileName,
                 RdxInstalledVersion = record != null ? AuxInstallService.ReadInstalledVersion(record.InstallPath, record.AddonFileName) : null,
-                IsHidden               = _hiddenGames.Contains(game.Name),
-                IsFavourite            = _favouriteGames.Contains(game.Name),
+                IsHidden               = _hiddenGames.Contains(gameKey),
+                IsFavourite            = _favouriteGames.Contains(gameKey),
                 IsManuallyAdded        = game.IsManuallyAdded,
                 UseUeExtended          = useUeExt,
                 IsRtxHdrEnabled        = _gameNameService.RtxHdrGames.Contains(game.Name),
@@ -656,19 +676,19 @@ public partial class MainViewModel
                                          ? null
                                          : effectiveMod?.DiscordUrl,
                 NameUrl                = effectiveMod?.NameUrl,
-                ExcludeFromUpdateAllReShade = _gameNameService.UpdateAllExcludedReShade.Contains(game.Name),
-                ExcludeFromUpdateAllRenoDx  = _gameNameService.UpdateAllExcludedRenoDx.Contains(game.Name),
-                ExcludeFromUpdateAllUl      = _gameNameService.UpdateAllExcludedUl.Contains(game.Name),
-                ExcludeFromUpdateAllDc      = _gameNameService.UpdateAllExcludedDc.Contains(game.Name),
-                ExcludeFromUpdateAllOs      = _gameNameService.UpdateAllExcludedOs.Contains(game.Name),
-                ExcludeFromUpdateAllRef     = _gameNameService.UpdateAllExcludedRef.Contains(game.Name),
-                UseNormalReShade           = _gameNameService.NormalReShadeGames.Contains(game.Name),
-                ShaderModeOverride     = _perGameShaderMode.TryGetValue(game.Name, out var smBc) ? smBc : null,
+                ExcludeFromUpdateAllReShade = _gameNameService.UpdateAllExcludedReShade.Contains(gameKey),
+                ExcludeFromUpdateAllRenoDx  = _gameNameService.UpdateAllExcludedRenoDx.Contains(gameKey),
+                ExcludeFromUpdateAllUl      = _gameNameService.UpdateAllExcludedUl.Contains(gameKey),
+                ExcludeFromUpdateAllDc      = _gameNameService.UpdateAllExcludedDc.Contains(gameKey),
+                ExcludeFromUpdateAllOs      = _gameNameService.UpdateAllExcludedOs.Contains(gameKey),
+                ExcludeFromUpdateAllRef     = _gameNameService.UpdateAllExcludedRef.Contains(gameKey),
+                UseNormalReShade           = _gameNameService.NormalReShadeGames.Contains(gameKey),
+                ShaderModeOverride     = _perGameShaderMode.TryGetValue(gameKey, out var smBc) ? smBc : null,
                 Is32Bit                = ResolveIs32Bit(game.Name, detectedMachine),
                 GraphicsApi            = DetectGraphicsApi(installPath, engine, game.Name),
                 DetectedApis           = _DetectAllApisForCard(installPath, game.Name),
-                VulkanRenderingPath    = _vulkanRenderingPaths.TryGetValue(game.Name, out var vrpBc) ? vrpBc : "DirectX",
-                DllOverrideEnabled     = _dllOverrides.ContainsKey(game.Name),
+                VulkanRenderingPath    = _vulkanRenderingPaths.TryGetValue(gameKey, out var vrpBc) ? vrpBc : "DirectX",
+                DllOverrideEnabled     = _dllOverrides.ContainsKey(gameKey),
                 IsNativeHdrGame        = isNativeHdr,
                 IsManifestUeExtended   = useUeExt && !isNativeHdr,
                 LumaRenodxCompatible   = _manifest?.LumaRenodxCompat?.Contains(game.Name) == true,
@@ -797,7 +817,12 @@ public partial class MainViewModel
                         // Check for DC with custom DLL override name via AuxInstalledRecord
                         var dcRec = auxRecords.FirstOrDefault(r =>
                             r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
-                            r.AddonType == "DisplayCommander");
+                            r.Store.Equals(game.Source ?? "", StringComparison.OrdinalIgnoreCase) &&
+                            r.AddonType == "DisplayCommander")
+                            ?? auxRecords.FirstOrDefault(r =>
+                                r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
+                                r.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase) &&
+                                r.AddonType == "DisplayCommander");
 
                         // ── Path reconciliation for DC aux records ────────────────────
                         if (dcRec != null
@@ -858,7 +883,12 @@ public partial class MainViewModel
                 // First check for an existing tracking record
                 var osRec = auxRecords.FirstOrDefault(r =>
                     r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
-                    r.AddonType == OptiScalerService.AddonType);
+                    r.Store.Equals(game.Source ?? "", StringComparison.OrdinalIgnoreCase) &&
+                    r.AddonType == OptiScalerService.AddonType)
+                    ?? auxRecords.FirstOrDefault(r =>
+                        r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
+                        r.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase) &&
+                        r.AddonType == OptiScalerService.AddonType);
 
                 // ── Path reconciliation for OptiScaler aux records ────────────────
                 if (osRec != null
@@ -924,7 +954,12 @@ public partial class MainViewModel
                                 // Update ReShade tracking record
                                 var rsRecord = auxRecords.FirstOrDefault(r =>
                                     r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
-                                    (r.AddonType == AuxInstallService.TypeReShade || r.AddonType == AuxInstallService.TypeReShadeNormal));
+                                    r.Store.Equals(game.Source ?? "", StringComparison.OrdinalIgnoreCase) &&
+                                    (r.AddonType == AuxInstallService.TypeReShade || r.AddonType == AuxInstallService.TypeReShadeNormal))
+                                    ?? auxRecords.FirstOrDefault(r =>
+                                        r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
+                                        r.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase) &&
+                                        (r.AddonType == AuxInstallService.TypeReShade || r.AddonType == AuxInstallService.TypeReShadeNormal));
                                 if (rsRecord != null)
                                 {
                                     rsRecord.InstalledAs = resolvedName;
@@ -955,6 +990,7 @@ public partial class MainViewModel
                         {
                             GameName    = game.Name,
                             InstallPath = installPath,
+                            Store       = game.Source ?? "",
                             AddonType   = OptiScalerService.AddonType,
                             InstalledAs = detectedDll,
                             InstalledAt = File.GetLastWriteTimeUtc(Path.Combine(installPath, detectedDll)),
@@ -972,7 +1008,11 @@ public partial class MainViewModel
             if (newCard.IsREEngineGame)
             {
                 var refRec = refRecords.FirstOrDefault(r =>
-                    r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase));
+                    r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
+                    r.Store.Equals(game.Source ?? "", StringComparison.OrdinalIgnoreCase))
+                    ?? refRecords.FirstOrDefault(r =>
+                        r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&
+                        r.InstallPath.Equals(installPath, StringComparison.OrdinalIgnoreCase));
                 if (refRec != null)
                 {
                     newCard.RefRecord = refRec;
@@ -1016,10 +1056,11 @@ public partial class MainViewModel
                     }
                 }
 
-                // Restore saved DXVK overrides from GameNameService / saved library
-                if (_dxvkEnabledGames.Contains(game.Name))
+                // Restore saved DXVK overrides from GameNameService / saved library (using composite keys)
+                var dxvkCompositeKey = GameKey.FromCard(game.Name, game.Source).ToKey();
+                if (_dxvkEnabledGames.Contains(dxvkCompositeKey))
                     newCard.DxvkEnabled = true;
-                if (_excludeFromUpdateAllDxvk.Contains(game.Name))
+                if (_excludeFromUpdateAllDxvk.Contains(dxvkCompositeKey))
                     newCard.ExcludeFromUpdateAllDxvk = true;
             }
 
@@ -1100,15 +1141,16 @@ public partial class MainViewModel
                 newCard.LumaMod = lumaMatch;
 
                 // Auto-enable Luma for manifest-listed games (unless user explicitly disabled)
+                var lumaKey = GameKey.FromCard(game.Name, game.Source).ToKey();
                 if (_manifest?.LumaDefaultGames != null
-                    && !_lumaEnabledGames.Contains(game.Name)
-                    && !_lumaDisabledGames.Contains(game.Name)
+                    && !_lumaEnabledGames.Contains(lumaKey)
+                    && !_lumaDisabledGames.Contains(lumaKey)
                     && _manifest.LumaDefaultGames.Any(g => g.Equals(game.Name, StringComparison.OrdinalIgnoreCase)))
                 {
-                    _lumaEnabledGames.Add(game.Name);
+                    _lumaEnabledGames.Add(lumaKey);
                 }
 
-                newCard.IsLumaMode = _lumaEnabledGames.Contains(game.Name);
+                newCard.IsLumaMode = _lumaEnabledGames.Contains(lumaKey);
                 // Check if Luma is installed on disk
                 var lumaRec = LumaService.GetRecordByPath(installPath);
                 if (lumaRec != null)

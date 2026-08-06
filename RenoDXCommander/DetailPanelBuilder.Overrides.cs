@@ -39,7 +39,7 @@ public partial class DetailPanelBuilder
         _window.OverridesPanel.Children.Clear();
 
         var gameName = card.GameName;
-        bool isLumaMode = _window.ViewModel.IsLumaEnabled(gameName);
+        bool isLumaMode = _window.ViewModel.IsLumaEnabled(gameName, card.Source ?? "");
 
         // ── Title ────────────────────────────────────────────────────────────────
         _window.OverridesPanel.Children.Add(new TextBlock
@@ -813,7 +813,7 @@ public partial class DetailPanelBuilder
         };
 
         var bitnessItems = new[] { "Auto", "32-bit", "64-bit" };
-        var currentBitnessOverride = _window.ViewModel.GetBitnessOverride(gameName);
+        var currentBitnessOverride = _window.ViewModel.GetBitnessOverride(gameName, card.Source);
         var defaultBitnessSelection = currentBitnessOverride switch
         {
             "32" => "32-bit",
@@ -841,7 +841,7 @@ public partial class DetailPanelBuilder
                 _ => null,
             };
 
-            _window.ViewModel.SetBitnessOverride(capturedName, overrideValue);
+            _window.ViewModel.SetBitnessOverride(capturedName, overrideValue, card.Source);
 
             // Update card.Is32Bit based on selection
             var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
@@ -923,7 +923,7 @@ public partial class DetailPanelBuilder
             "Reset Overrides reverts to auto-detection.");
 
         var apiDropdownItems = new[] { "Auto", "DirectX8", "DirectX9", "DirectX10", "DX11/DX12", "Vulkan", "OpenGL" };
-        var existingApiOverride = _window.ViewModel.GetApiOverride(gameName);
+        var existingApiOverride = _window.ViewModel.GetApiOverride(gameName, card.Source);
 
         // Determine current selection
         string defaultApiSelection = "Auto";
@@ -971,7 +971,7 @@ public partial class DetailPanelBuilder
                 _ => null, // "Auto" clears the override
             };
 
-            _window.ViewModel.SetApiOverride(capturedName, apiEnumNames);
+            _window.ViewModel.SetApiOverride(capturedName, apiEnumNames, card.Source);
 
             // Update card properties
             var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>

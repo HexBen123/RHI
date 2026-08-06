@@ -74,7 +74,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                     card.ActionMessage   = p.msg;
                     card.InstallProgress = p.pct;
                 });
-                var record = await _installer.InstallAsync(card.Mod!, card.InstallPath, progress, card.GameName).ConfigureAwait(false);
+                var record = await _installer.InstallAsync(card.Mod!, card.InstallPath, progress, card.GameName, card.Source).ConfigureAwait(false);
 
                 // Preserve per-game Engine.ini toggle state from the previous record
                 if (card.InstalledRecord != null)
@@ -104,14 +104,19 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                     AuxInstallService.ApplyRenodxIniOverrides(card.InstallPath, iniOverrides);
 
                 // Deploy Engine.ini HDR settings for UE-Extended games
-                // UE4: skip HDR keys on fresh install (handled in InstallModAsync), but respect existing user choice on update
+                // Priority: ueExtendedCompatibility entry > UE4 detection > default (deploy for UE5)
                 bool isUe4Update = card.EngineHint?.Contains("Unreal Engine 4") == true;
-                if (card.UseUeExtended && card.InstalledRecord?.EngineIniHdr != false && !isUe4Update)
-                    AuxInstallService.ApplyEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
+                var compatUpdate = AuxInstallService.GlobalManifest?.UeExtendedCompatibility
+                    ?.TryGetValue(card.GameName, out var ceu) == true ? ceu : null;
+                bool deployHdrUpdate = compatUpdate?.Hdr ?? !isUe4Update;
+                bool deployLutUpdate = compatUpdate?.Lut ?? true;
 
-                // Always deploy r.LUT.UpdateEveryFrame=1 for any Unreal Engine game with a RenoDX mod (skip if user disabled it)
-                if (card.EngineHint?.Contains("Unreal") == true && card.InstalledRecord?.EngineIniLut != false)
-                    AuxInstallService.ApplyEngineIniLutSetting(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
+                if (card.UseUeExtended && card.InstalledRecord?.EngineIniHdr != false && deployHdrUpdate)
+                    AuxInstallService.ApplyEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName, card.Source);
+
+                // Deploy r.LUT.UpdateEveryFrame=1 (skip if user disabled or compat entry says no)
+                if (card.EngineHint?.Contains("Unreal") == true && card.InstalledRecord?.EngineIniLut != false && deployLutUpdate)
+                    AuxInstallService.ApplyEngineIniLutSetting(card.InstallPath, card.EngineIniProjectOverride, card.GameName, card.Source);
 
                 dispatcherQueue?.TryEnqueue(() =>
                 {
@@ -147,7 +152,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
         Action notifyUpdateState,
         Func<string, string?, IEnumerable<string>?>? shaderResolver = null,
         Func<string, ManifestDllNames?>? manifestDllResolver = null,
-        Func<string, string>? channelResolver = null)
+        Func<string, string?, string>? channelResolver = null)
     {
         // ── DX proxy games (per-game DLL) ─────────────────────────────────────
         var targets = UpdateAllEligible(allCards)
@@ -196,7 +201,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                     : (manifestDllResolver?.Invoke(card.GameName)?.ReShade is { Length: > 0 } mRs
                         ? mRs
                         : MainViewModel.ResolveAutoReShadeFilename(card.DetectedApis));
-                var effectiveChannel = card.UseNormalReShade ? null : channelResolver?.Invoke(card.GameName) ?? AuxInstallService.ChannelStable;
+                var effectiveChannel = card.UseNormalReShade ? null : channelResolver?.Invoke(card.GameName, card.Source) ?? AuxInstallService.ChannelStable;
                 var record = await _auxInstaller.InstallReShadeAsync(
                     card.GameName, card.InstallPath,
                     shaderModeOverride: card.ShaderModeOverride,
@@ -205,7 +210,8 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                     selectedPackIds: shaderResolver?.Invoke(card.GameName, card.ShaderModeOverride),
                     progress:       progress,
                     useNormalReShade: card.UseNormalReShade,
-                    channel: effectiveChannel).ConfigureAwait(false);
+                    channel: effectiveChannel,
+                    store: card.Source).ConfigureAwait(false);
                 dispatcherQueue?.TryEnqueue(() =>
                 {
                     card.RsRecord           = record;
@@ -244,7 +250,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
             // Update the global Vulkan layer DLLs (copy from staging)
             // Determine effective Vulkan channel: per-game override (if any Vulkan game has one) or global
             var vulkanChannelOverride = vulkanTargets
-                .Select(c => channelResolver?.Invoke(c.GameName))
+                .Select(c => channelResolver?.Invoke(c.GameName, c.Source))
                 .FirstOrDefault(ch => ch != null);
             var effectiveVulkanChannel = vulkanChannelOverride ?? AuxInstallService.ChannelStable;
 
@@ -426,7 +432,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                     card.RefActionMessage = p.msg;
                     card.RefProgress = p.pct;
                 });
-                var record = await _refService.InstallAsync(card.GameName, card.InstallPath, progress).ConfigureAwait(false);
+                var record = await _refService.InstallAsync(card.GameName, card.InstallPath, progress, card.Source).ConfigureAwait(false);
                 dispatcherQueue?.TryEnqueue(() =>
                 {
                     card.RefRecord = record;

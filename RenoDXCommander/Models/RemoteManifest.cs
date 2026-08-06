@@ -412,6 +412,16 @@ public class RemoteManifest
     /// </summary>
     [JsonPropertyName("rtxHdrInfoUrl")]
     public string? RtxHdrInfoUrl { get; set; }
+
+    /// <summary>
+    /// Per-game UE-Extended compatibility config. Takes highest priority over
+    /// nativeHdrGames and ueExtendedGames. Presence = forced UE-Extended.
+    /// Optional hdr/lut booleans control Engine.ini deployment on fresh install.
+    /// Defaults: hdr=true for UE5 (false for UE4 per existing logic), lut=true always.
+    /// Old clients ignore this field entirely.
+    /// </summary>
+    [JsonPropertyName("ueExtendedCompatibility")]
+    public Dictionary<string, UeExtendedCompatEntry>? UeExtendedCompatibility { get; set; }
 }
 
 /// <summary>
@@ -571,4 +581,27 @@ public class RenodxExtraOption
 
     [JsonPropertyName("name")]
     public string Name { get; set; } = "";
+}
+
+/// <summary>
+/// Per-game UE-Extended compatibility entry. Controls Engine.ini deployment on install/update.
+/// Presence in the ueExtendedCompatibility dict forces UE-Extended for the game.
+/// null values mean "use default behavior".
+/// </summary>
+public class UeExtendedCompatEntry
+{
+    /// <summary>
+    /// Whether to deploy HDR keys to Engine.ini on install.
+    /// null = default (true for UE5, false for UE4).
+    /// false = skip HDR keys (e.g. game has its own in-engine HDR toggle).
+    /// </summary>
+    [JsonPropertyName("hdr")]
+    public bool? Hdr { get; set; }
+
+    /// <summary>
+    /// Whether to deploy r.LUT.UpdateEveryFrame=1 to Engine.ini on install.
+    /// null/true = deploy (default). false = skip.
+    /// </summary>
+    [JsonPropertyName("lut")]
+    public bool? Lut { get; set; }
 }

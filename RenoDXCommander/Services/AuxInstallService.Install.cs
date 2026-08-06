@@ -20,7 +20,8 @@ public partial class AuxInstallService
         bool useNormalReShade = false,
         string? overlayHotkey = null,
         string? screenshotHotkey = null,
-        string? channel = null)
+        string? channel = null,
+        string? store = null)
     {
         Directory.CreateDirectory(DownloadPaths.Misc);
 
@@ -129,6 +130,7 @@ public partial class AuxInstallService
         {
             GameName       = gameName,
             InstallPath    = installPath,
+            Store          = store ?? "",
             AddonType      = addonType,
             InstalledAs    = destName,
             SourceUrl      = null,       // bundled — no remote URL

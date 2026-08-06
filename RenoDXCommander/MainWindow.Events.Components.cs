@@ -749,13 +749,13 @@ public sealed partial class MainWindow
                 {
                     if (hdrCombo.SelectedIndex == 1)
                     {
-                        AuxInstallService.ApplyEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
+                        AuxInstallService.ApplyEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName, card.Source);
                         if (card.InstalledRecord != null) card.InstalledRecord.EngineIniHdr = true;
                         card.ActionMessage = "✅ Engine.ini HDR settings deployed.";
                     }
                     else
                     {
-                        AuxInstallService.RemoveEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
+                        AuxInstallService.RemoveEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName, card.Source);
                         if (card.InstalledRecord != null) card.InstalledRecord.EngineIniHdr = false;
                         card.ActionMessage = "✅ Engine.ini HDR settings removed.";
                     }
@@ -791,13 +791,13 @@ public sealed partial class MainWindow
             {
                 if (lutCombo.SelectedIndex == 1)
                 {
-                    AuxInstallService.ApplyEngineIniLutSetting(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
+                    AuxInstallService.ApplyEngineIniLutSetting(card.InstallPath, card.EngineIniProjectOverride, card.GameName, card.Source);
                     if (card.InstalledRecord != null) card.InstalledRecord.EngineIniLut = true;
                     card.ActionMessage = "✅ LUT Update Every Frame enabled in Engine.ini.";
                 }
                 else
                 {
-                    AuxInstallService.RemoveEngineIniLutSetting(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
+                    AuxInstallService.RemoveEngineIniLutSetting(card.InstallPath, card.EngineIniProjectOverride, card.GameName, card.Source);
                     if (card.InstalledRecord != null) card.InstalledRecord.EngineIniLut = false;
                     card.ActionMessage = "✅ LUT Update Every Frame removed from Engine.ini.";
                 }
@@ -1939,6 +1939,37 @@ public sealed partial class MainWindow
         };
         deployBtn.Click += (s, ev) => ViewModel.CopyDxvkConf(card);
         content.Children.Add(deployBtn);
+
+        // ── Vulkan/OpenGL Present Method ──────────────────────────────────
+        content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 4, 0, 0) });
+        var presentGrid = new Grid { ColumnSpacing = 12 };
+        presentGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        presentGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(110, GridUnitType.Pixel) });
+
+        var presentLabel = new TextBlock
+        {
+            Text = "Prefer DXGI Swapchain",
+            FontSize = 11,
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        ToolTipService.SetToolTip(presentLabel, "Sets Vulkan/OpenGL Present Method to 'Preferred layered on DXGI Swapchain' in the NVIDIA driver profile. Recommended for DXVK — improves compatibility and HDR support.");
+        Grid.SetColumn(presentLabel, 0);
+        presentGrid.Children.Add(presentLabel);
+
+        var presentCombo = new ComboBox { FontSize = 11, MinWidth = 100, HorizontalAlignment = HorizontalAlignment.Stretch };
+        presentCombo.Items.Add("No");   // 0x00000002 — Auto
+        presentCombo.Items.Add("Yes");  // 0x00000001 — Preferred layered on DXGI Swapchain
+        var currentPresentMethod = _dlssPresetService.GetVulkanPresentMethod(card.GameName, card.InstallPath ?? "");
+        presentCombo.SelectedIndex = currentPresentMethod == 0x00000001 ? 1 : 0;
+        presentCombo.SelectionChanged += (s, ev) =>
+        {
+            uint value = presentCombo.SelectedIndex == 1 ? 0x00000001u : 0x00000002u;
+            _dlssPresetService.SetVulkanPresentMethod(card.GameName, card.InstallPath ?? "", value);
+        };
+        Grid.SetColumn(presentCombo, 1);
+        presentGrid.Children.Add(presentCombo);
+        content.Children.Add(presentGrid);
 
         var dialog = new ContentDialog
         {

@@ -4,6 +4,8 @@ public class AuxInstalledRecord
 {
     public string  GameName       { get; set; } = "";
     public string  InstallPath    { get; set; } = "";
+    /// <summary>Store/platform where this game is installed (Steam, Xbox, Epic, etc.).</summary>
+    public string  Store          { get; set; } = "";
     /// <summary>"DisplayCommander" or "ReShade"</summary>
     public string  AddonType      { get; set; } = "";
     /// <summary>Filename used on disk (e.g. dxgi.dll or zzz_display_commander.addon64)</summary>

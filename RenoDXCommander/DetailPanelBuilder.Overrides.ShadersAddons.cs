@@ -52,7 +52,7 @@ public partial class DetailPanelBuilder
         shaderAddonGrid.Children.Add(ctx.ShaderModeCombo);
 
         // ── Per-game Addon mode ComboBox ─────────────────────────────────────
-        string currentAddonMode = _window.ViewModel.GetPerGameAddonMode(gameName);
+        string currentAddonMode = _window.ViewModel.GetPerGameAddonMode(gameName, card.Source);
         var addonModeItems = new[] { "Global", "Select", "Off" };
         bool addonComboInitializing = true;
 
@@ -72,7 +72,7 @@ public partial class DetailPanelBuilder
         {
             if (addonComboInitializing) return;
             var current = addonModeCombo.SelectedItem as string;
-            if (current == "Select" && _window.ViewModel.GetPerGameAddonMode(ctx.CapturedName) == "Select")
+            if (current == "Select" && _window.ViewModel.GetPerGameAddonMode(ctx.CapturedName, ctx.Card.Source) == "Select")
             {
                 addonComboInitializing = true;
                 addonModeCombo.SelectedItem = "Global";
@@ -116,7 +116,7 @@ public partial class DetailPanelBuilder
                         RequestedTheme = ElementTheme.Dark,
                     };
                     await DialogService.ShowSafeAsync(infoDlg);
-                    var warnRevertMode = _window.ViewModel.GetPerGameAddonMode(ctx.CapturedName);
+                    var warnRevertMode = _window.ViewModel.GetPerGameAddonMode(ctx.CapturedName, ctx.Card.Source);
                     addonComboInitializing = true;
                     addonModeCombo.SelectedItem = warnRevertMode == "Select" ? "Select" : (warnRevertMode == "Off" ? "Off" : "Global");
                     addonComboInitializing = false;
@@ -131,13 +131,13 @@ public partial class DetailPanelBuilder
                 if (result != null)
                 {
                     _gameNameService.PerGameAddonSelection[gameName] = result;
-                    _window.ViewModel.SetPerGameAddonMode(ctx.CapturedName, "Select");
+                    _window.ViewModel.SetPerGameAddonMode(ctx.CapturedName, "Select", ctx.Card.Source);
                     _window.ViewModel.DeployAddonsForCard(ctx.CapturedName);
                 }
                 else
                 {
                     // Cancelled — revert to actual current persisted mode
-                    var actualMode = _window.ViewModel.GetPerGameAddonMode(ctx.CapturedName);
+                    var actualMode = _window.ViewModel.GetPerGameAddonMode(ctx.CapturedName, ctx.Card.Source);
                     var revertTo = actualMode == "Select" ? "Select" : (actualMode == "Off" ? "Off" : "Global");
                     addonComboInitializing = true;
                     addonModeCombo.SelectedItem = revertTo;
@@ -148,12 +148,12 @@ public partial class DetailPanelBuilder
 
             if (selected == "Off")
             {
-                _window.ViewModel.SetPerGameAddonMode(ctx.CapturedName, "Off");
+                _window.ViewModel.SetPerGameAddonMode(ctx.CapturedName, "Off", ctx.Card.Source);
                 _window.ViewModel.DeployAddonsForCard(ctx.CapturedName);
             }
             else // "Global"
             {
-                _window.ViewModel.SetPerGameAddonMode(ctx.CapturedName, "Global");
+                _window.ViewModel.SetPerGameAddonMode(ctx.CapturedName, "Global", ctx.Card.Source);
                 _window.ViewModel.DeployAddonsForCard(ctx.CapturedName);
             }
         };
@@ -423,17 +423,17 @@ public partial class DetailPanelBuilder
             if (ctx.RenderPathCombo != null) ctx.RenderPathCombo.SelectedItem = "DirectX";
             ctx.DllOverrideToggle.IsOn = false;
             // Reset update inclusion to all-included
-            if (_window.ViewModel.IsUpdateAllExcludedReShade(ctx.CapturedName))
-                _window.ViewModel.ToggleUpdateAllExclusionReShade(ctx.CapturedName);
-            if (_window.ViewModel.IsUpdateAllExcludedRenoDx(ctx.CapturedName))
-                _window.ViewModel.ToggleUpdateAllExclusionRenoDx(ctx.CapturedName);
-            if (_window.ViewModel.IsUpdateAllExcludedUl(ctx.CapturedName))
-                _window.ViewModel.ToggleUpdateAllExclusionUl(ctx.CapturedName);
-            if (_window.ViewModel.IsUpdateAllExcludedDc(ctx.CapturedName))
-                _window.ViewModel.ToggleUpdateAllExclusionDc(ctx.CapturedName);
-            if (_window.ViewModel.IsUpdateAllExcludedOs(ctx.CapturedName))
-                _window.ViewModel.ToggleUpdateAllExclusionOs(ctx.CapturedName);
-            UpdateInclusionHelper.RefreshSummary(ctx.UpdateSummaryText, _window.ViewModel, ctx.CapturedName, card.IsREEngineGame, card.DxvkEnabled);
+            if (_window.ViewModel.IsUpdateAllExcludedReShade(ctx.CapturedName, card.Source))
+                _window.ViewModel.ToggleUpdateAllExclusionReShade(ctx.CapturedName, card.Source);
+            if (_window.ViewModel.IsUpdateAllExcludedRenoDx(ctx.CapturedName, card.Source))
+                _window.ViewModel.ToggleUpdateAllExclusionRenoDx(ctx.CapturedName, card.Source);
+            if (_window.ViewModel.IsUpdateAllExcludedUl(ctx.CapturedName, card.Source))
+                _window.ViewModel.ToggleUpdateAllExclusionUl(ctx.CapturedName, card.Source);
+            if (_window.ViewModel.IsUpdateAllExcludedDc(ctx.CapturedName, card.Source))
+                _window.ViewModel.ToggleUpdateAllExclusionDc(ctx.CapturedName, card.Source);
+            if (_window.ViewModel.IsUpdateAllExcludedOs(ctx.CapturedName, card.Source))
+                _window.ViewModel.ToggleUpdateAllExclusionOs(ctx.CapturedName, card.Source);
+            UpdateInclusionHelper.RefreshSummary(ctx.UpdateSummaryText, _window.ViewModel, ctx.CapturedName, card.IsREEngineGame, card.DxvkEnabled, card.Source ?? "");
             ctx.WikiExcludeCombo.SelectedItem = "Included";
 
             // Persist all reset values immediately
@@ -458,9 +458,9 @@ public partial class DetailPanelBuilder
             }
 
             // Addon mode → Global
-            if (_window.ViewModel.GetPerGameAddonMode(ctx.CapturedName) != "Global")
+            if (_window.ViewModel.GetPerGameAddonMode(ctx.CapturedName, ctx.Card.Source) != "Global")
             {
-                _window.ViewModel.SetPerGameAddonMode(ctx.CapturedName, "Global");
+                _window.ViewModel.SetPerGameAddonMode(ctx.CapturedName, "Global", ctx.Card.Source);
                 _window.ViewModel.DeployAddonsForCard(ctx.CapturedName);
             }
 
@@ -474,16 +474,16 @@ public partial class DetailPanelBuilder
             }
 
             // Include all in Update All
-            if (_window.ViewModel.IsUpdateAllExcludedReShade(ctx.CapturedName))
-                _window.ViewModel.ToggleUpdateAllExclusionReShade(ctx.CapturedName);
-            if (_window.ViewModel.IsUpdateAllExcludedRenoDx(ctx.CapturedName))
-                _window.ViewModel.ToggleUpdateAllExclusionRenoDx(ctx.CapturedName);
-            if (_window.ViewModel.IsUpdateAllExcludedUl(ctx.CapturedName))
-                _window.ViewModel.ToggleUpdateAllExclusionUl(ctx.CapturedName);
-            if (_window.ViewModel.IsUpdateAllExcludedDc(ctx.CapturedName))
-                _window.ViewModel.ToggleUpdateAllExclusionDc(ctx.CapturedName);
-            if (_window.ViewModel.IsUpdateAllExcludedOs(ctx.CapturedName))
-                _window.ViewModel.ToggleUpdateAllExclusionOs(ctx.CapturedName);
+            if (_window.ViewModel.IsUpdateAllExcludedReShade(ctx.CapturedName, card.Source))
+                _window.ViewModel.ToggleUpdateAllExclusionReShade(ctx.CapturedName, card.Source);
+            if (_window.ViewModel.IsUpdateAllExcludedRenoDx(ctx.CapturedName, card.Source))
+                _window.ViewModel.ToggleUpdateAllExclusionRenoDx(ctx.CapturedName, card.Source);
+            if (_window.ViewModel.IsUpdateAllExcludedUl(ctx.CapturedName, card.Source))
+                _window.ViewModel.ToggleUpdateAllExclusionUl(ctx.CapturedName, card.Source);
+            if (_window.ViewModel.IsUpdateAllExcludedDc(ctx.CapturedName, card.Source))
+                _window.ViewModel.ToggleUpdateAllExclusionDc(ctx.CapturedName, card.Source);
+            if (_window.ViewModel.IsUpdateAllExcludedOs(ctx.CapturedName, card.Source))
+                _window.ViewModel.ToggleUpdateAllExclusionOs(ctx.CapturedName, card.Source);
 
             // Disable wiki exclusion
             if (_window.ViewModel.IsWikiExcluded(ctx.CapturedName))
@@ -508,23 +508,24 @@ public partial class DetailPanelBuilder
             }
 
             // Reset DXVK update exclusion via the shared Update Inclusion system
-            if (_window.ViewModel.IsUpdateAllExcludedDxvk(ctx.CapturedName))
-                _window.ViewModel.ToggleUpdateAllExclusionDxvk(ctx.CapturedName);
+            if (_window.ViewModel.IsUpdateAllExcludedDxvk(ctx.CapturedName, card.Source))
+                _window.ViewModel.ToggleUpdateAllExclusionDxvk(ctx.CapturedName, card.Source);
 
             // Reset bitness override to Auto
             ctx.BitnessCombo.SelectedItem = "Auto";
-            _window.ViewModel.SetBitnessOverride(ctx.CapturedName, null);
+            _window.ViewModel.SetBitnessOverride(ctx.CapturedName, null, ctx.Card.Source);
 
             // Reset API overrides
             ctx.ApiCombo.SelectedItem = "Auto";
-            _window.ViewModel.SetApiOverride(ctx.CapturedName, null);
+            _window.ViewModel.SetApiOverride(ctx.CapturedName, null, ctx.Card.Source);
 
             // Reset ReShade channel override
             ctx.ChannelCombo.SelectedItem = "Stable";
-            _window.ViewModel.SetReShadeChannelOverride(ctx.CapturedName, null);
+            _window.ViewModel.SetReShadeChannelOverride(ctx.CapturedName, null, ctx.Card.Source);
 
             // Reset custom ReShade DLL selection
-            _gameNameService.CustomReShadeSelection.Remove(ctx.CapturedName);
+            var customKey = GameKey.FromCard(ctx.CapturedName, ctx.Card.Source).ToKey();
+            _gameNameService.CustomReShadeSelection.Remove(customKey);
 
             // Reset launch exe override
             _gameNameService.LaunchExeOverrides.Remove(ctx.CapturedName);

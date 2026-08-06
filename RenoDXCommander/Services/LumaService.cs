@@ -286,7 +286,8 @@ public class LumaService : ILumaService
         string? overlayHotkey = null,
         string? screenshotHotkey = null,
         string? gameName = null,
-        IProgress<(string message, double percent)>? progress = null)
+        IProgress<(string message, double percent)>? progress = null,
+        string? store = null)
     {
         if (mod.DownloadUrl == null)
             throw new InvalidOperationException($"{mod.Name} has no download URL.");
@@ -424,6 +425,7 @@ public class LumaService : ILumaService
         {
             GameName = mod.Name,
             InstallPath = gameInstallPath,
+            Store = store ?? "",
             DownloadUrl = mod.DownloadUrl,
             InstalledFiles = installedFiles,
             InstalledAt = DateTime.UtcNow,
@@ -672,7 +674,8 @@ public class LumaService : ILumaService
         string? overlayHotkey = null,
         string? screenshotHotkey = null,
         string? gameName = null,
-        Func<List<string>, Task<string?>>? folderPicker = null)
+        Func<List<string>, Task<string?>>? folderPicker = null,
+        string? store = null)
     {
         var installedFiles = new List<string>();
 
@@ -727,6 +730,7 @@ public class LumaService : ILumaService
                         {
                             GameName = gameName ?? Path.GetFileNameWithoutExtension(archivePath),
                             InstallPath = gameInstallPath,
+                            Store = store ?? "",
                             DownloadUrl = $"local:{Path.GetFileName(archivePath)}",
                             InstalledFiles = new List<string>(),
                             InstalledAt = DateTime.UtcNow,
@@ -815,6 +819,7 @@ public class LumaService : ILumaService
                             {
                                 GameName = gameName ?? Path.GetFileNameWithoutExtension(archivePath),
                                 InstallPath = gameInstallPath,
+                                Store = store ?? "",
                                 DownloadUrl = $"local:{Path.GetFileName(archivePath)}",
                                 InstalledFiles = new List<string>(),
                                 InstalledAt = DateTime.UtcNow,
@@ -912,6 +917,7 @@ public class LumaService : ILumaService
         {
             GameName = gameName ?? Path.GetFileNameWithoutExtension(archivePath),
             InstallPath = gameInstallPath,
+            Store = store ?? "",
             DownloadUrl = $"local:{Path.GetFileName(archivePath)}",
             InstalledFiles = installedFiles,
             InstalledAt = DateTime.UtcNow,

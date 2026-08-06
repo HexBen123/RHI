@@ -110,6 +110,7 @@ public partial class UltraPlusService : IUltraPlusService
         try
         {
             var dict = new Dictionary<string, string>(StringComparer.Ordinal);
+            var names = new Dictionary<string, string>(StringComparer.Ordinal);
             var regex = GameCardRegex();
             const string baseUrl = "https://theultraplace.com";
 
@@ -123,10 +124,14 @@ public partial class UltraPlusService : IUltraPlusService
                 var url = baseUrl + path;
                 var key = _gameDetection.NormalizeName(gameName);
                 if (!string.IsNullOrEmpty(key))
+                {
                     dict.TryAdd(key, url);
+                    names.TryAdd(key, gameName); // Store original name for display
+                }
             }
 
             _lookup = dict;
+            _gameNames = names;
             CrashReporter.Log($"[UltraPlusService.InitAsync] Built dictionary with {dict.Count} entries");
         }
         catch (Exception ex)
@@ -159,4 +164,10 @@ public partial class UltraPlusService : IUltraPlusService
 
         return null;
     }
+
+    /// <summary>Dictionary of original game names (not normalized) for display.</summary>
+    private Dictionary<string, string> _gameNames = new(StringComparer.Ordinal);
+
+    /// <inheritdoc />
+    public IReadOnlyCollection<string> GetAllGameNames() => _gameNames.Values;
 }

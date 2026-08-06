@@ -33,7 +33,8 @@ public interface IGameInitializationService
         Dictionary<string, ManifestDllNames> manifestDllNameOverrides,
         HashSet<string> manifestWikiUnlinks,
         Dictionary<string, string> installPathOverrides,
-        Func<string, string> normalizeForLookup);
+        Func<string, string> normalizeForLookup,
+        Dictionary<string, UeExtendedCompatEntry>? manifestUeExtendedCompat = null);
 
     /// <summary>
     /// Applies wiki status overrides from the remote manifest to the fetched mod list.

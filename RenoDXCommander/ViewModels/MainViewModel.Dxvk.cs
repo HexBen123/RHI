@@ -74,10 +74,10 @@ public partial class MainViewModel
 
         // ── Install ──────────────────────────────────────────────────────
         // Resolve the per-game DXVK variant and set it on the service before install
-        var resolvedVariant = ResolveDxvkVariant(card.GameName);
+        var resolvedVariant = ResolveDxvkVariant(card.GameName, card.Source ?? "");
         var savedVariant = _dxvkService.SelectedVariant;
         _dxvkService.SelectedVariant = resolvedVariant;
-        _dxvkService.LiliumPresetIndex = GetLiliumPreset(card.GameName);
+        _dxvkService.LiliumPresetIndex = GetLiliumPreset(card.GameName, card.Source ?? "");
 
         card.DxvkIsInstalling = true;
         card.DxvkActionMessage = "Installing DXVK...";
@@ -102,7 +102,7 @@ public partial class MainViewModel
 
             // Persist Vulkan rendering path if direct DX9 mode switched the game to Vulkan
             if (card.DxvkRecord?.InstalledDlls.Contains("d3d9.dll") == true && card.VulkanRenderingPath == "Vulkan")
-                SetVulkanRenderingPath(card.GameName, "Vulkan");
+                SetVulkanRenderingPath(card.GameName, "Vulkan", card.Source ?? "");
         }
         catch (Exception ex)
         {
@@ -133,7 +133,7 @@ public partial class MainViewModel
             _dxvkService.Uninstall(card);
             
             // Clear persisted Vulkan rendering path — Lilium HDR uninstall resets to DirectX
-            SetVulkanRenderingPath(card.GameName, "DirectX");
+            SetVulkanRenderingPath(card.GameName, "DirectX", card.Source ?? "");
             
             card.DxvkActionMessage = "✖ DXVK removed.";
             card.NotifyAll();
@@ -167,7 +167,7 @@ public partial class MainViewModel
         try
         {
             // Resolve per-game variant and switch before update
-            var resolvedVariant = ResolveDxvkVariant(card.GameName);
+            var resolvedVariant = ResolveDxvkVariant(card.GameName, card.Source ?? "");
             var savedVariant = _dxvkService.SelectedVariant;
             _dxvkService.SelectedVariant = resolvedVariant;
 

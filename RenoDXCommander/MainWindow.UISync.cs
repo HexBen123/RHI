@@ -140,13 +140,22 @@ public sealed partial class MainWindow
             }
         }
 
-        // Restore last selected game from previous session
+        // Restore last selected game from previous session (composite key format: "GameName|Store")
         if (GameList.SelectedItem == null && ViewModel.LastSelectedGameName != null)
         {
-            var lastMatch = ViewModel.DisplayedGames.FirstOrDefault(c =>
-                c.GameName.Equals(ViewModel.LastSelectedGameName, StringComparison.OrdinalIgnoreCase));
+            var key = GameKey.Parse(ViewModel.LastSelectedGameName);
+            _crashReporter.Log($"[UISync.SyncSelection] Restoring selection from LastSelectedGameName='{ViewModel.LastSelectedGameName}' → parsed key Name='{key.Name}', Store='{key.Store}'");
+            
+            // Prefer exact match (name + store), fallback to name-only match
+            var exactMatch = ViewModel.DisplayedGames.FirstOrDefault(c => key.Matches(c.GameName, c.Source));
+            var nameOnlyMatch = ViewModel.DisplayedGames.FirstOrDefault(c => key.MatchesName(c.GameName));
+            
+            _crashReporter.Log($"[UISync.SyncSelection] exactMatch={(exactMatch != null ? $"'{exactMatch.GameName}|{exactMatch.Source}'" : "null")}, nameOnlyMatch={(nameOnlyMatch != null ? $"'{nameOnlyMatch.GameName}|{nameOnlyMatch.Source}'" : "null")}");
+            
+            var lastMatch = exactMatch ?? nameOnlyMatch;
             if (lastMatch != null)
             {
+                _crashReporter.Log($"[UISync.SyncSelection] Selected '{lastMatch.GameName}|{lastMatch.Source}'");
                 GameList.SelectedItem = lastMatch;
                 GameList.ScrollIntoView(lastMatch);
                 return;

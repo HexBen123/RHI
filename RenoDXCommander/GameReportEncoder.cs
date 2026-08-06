@@ -369,8 +369,8 @@ public static class GameReportEncoder
         }
 
         // Overrides
-        var shaderMode = vm.GetPerGameShaderMode(gameName);
-        var addonMode = vm.GetPerGameAddonMode(gameName);
+        var shaderMode = vm.GetPerGameShaderMode(gameName, card.Source ?? "");
+        var addonMode = vm.GetPerGameAddonMode(gameName, card.Source ?? "");
         var overrides = new Dictionary<string, object?>
         {
             ["shaderMode"] = shaderMode,
@@ -383,11 +383,11 @@ public static class GameReportEncoder
             ["dcDllOverride"] = dcDllOv,
             ["wikiNameOverride"] = wikiOv,
             ["wikiExcluded"] = vm.IsWikiExcluded(gameName),
-            ["updateExcludedRS"] = vm.IsUpdateAllExcludedReShade(gameName),
-            ["updateExcludedRDX"] = vm.IsUpdateAllExcludedRenoDx(gameName),
-            ["updateExcludedUL"] = vm.IsUpdateAllExcludedUl(gameName),
-            ["updateExcludedDC"] = vm.IsUpdateAllExcludedDc(gameName),
-            ["updateExcludedOS"] = vm.IsUpdateAllExcludedOs(gameName),
+            ["updateExcludedRS"] = vm.IsUpdateAllExcludedReShade(gameName, card.Source ?? ""),
+            ["updateExcludedRDX"] = vm.IsUpdateAllExcludedRenoDx(gameName, card.Source ?? ""),
+            ["updateExcludedUL"] = vm.IsUpdateAllExcludedUl(gameName, card.Source ?? ""),
+            ["updateExcludedDC"] = vm.IsUpdateAllExcludedDc(gameName, card.Source ?? ""),
+            ["updateExcludedOS"] = vm.IsUpdateAllExcludedOs(gameName, card.Source ?? ""),
             ["launchExe"] = gns.LaunchExeOverrides.TryGetValue(gameName, out var launchOv) ? launchOv : "",
         };
 

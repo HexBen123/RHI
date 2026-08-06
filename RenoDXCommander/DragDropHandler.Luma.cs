@@ -166,7 +166,8 @@ public partial class DragDropHandler
                 overlayHotkey,
                 screenshotHotkey,
                 gameName,
-                FolderPicker);
+                FolderPicker,
+                card.Source);
 
             // If the record has no installed files, the user cancelled the folder picker
             if (record.InstalledFiles.Count == 0)

@@ -13,7 +13,8 @@ public interface IModInstallService
         GameMod mod,
         string gameInstallPath,
         IProgress<(string message, double percent)>? progress = null,
-        string? gameName = null);
+        string? gameName = null,
+        string? store = null);
 
     Task<bool> CheckForUpdateAsync(InstalledModRecord record);
 

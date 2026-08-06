@@ -57,7 +57,8 @@ public class REFrameworkService : IREFrameworkService
 
     public async Task<REFrameworkInstalledRecord> InstallAsync(
         string gameName, string installPath,
-        IProgress<(string message, double percent)>? progress = null)
+        IProgress<(string message, double percent)>? progress = null,
+        string? store = null)
     {
         var zipName = ResolveZipName(gameName);
         var downloadUrl = DownloadBaseUrl + zipName;
@@ -108,6 +109,7 @@ public class REFrameworkService : IREFrameworkService
             {
                 GameName = gameName,
                 InstallPath = installPath,
+                Store = store ?? "",
                 InstalledVersion = version,
                 InstalledAt = DateTime.UtcNow,
             };

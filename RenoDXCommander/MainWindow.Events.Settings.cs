@@ -1457,50 +1457,110 @@ public sealed partial class MainWindow
 
     private async void NewModsButton_Click(object sender, RoutedEventArgs e)
     {
-        var newMods = ViewModel.NewWikiMods;
-        if (newMods.Count == 0) return;
+        var newWikiMods = ViewModel.NewWikiMods;
+        var newUltraPlusMods = ViewModel.NewUltraPlusMods;
+        if (newWikiMods.Count == 0 && newUltraPlusMods.Count == 0) return;
 
-        // Build scrollable list of new mod names
-        var listPanel = new StackPanel { Spacing = 4 };
-        foreach (var modName in newMods.Take(50)) // Cap at 50 for performance
+        var contentPanel = new StackPanel { Spacing = 16 };
+
+        // RenoDX section
+        if (newWikiMods.Count > 0)
         {
-            listPanel.Children.Add(new TextBlock
+            var wikiListPanel = new StackPanel { Spacing = 4 };
+            foreach (var modName in newWikiMods.Take(30))
             {
-                Text = $"• {modName}",
-                FontSize = 12,
-                Foreground = (SolidColorBrush)Application.Current.Resources["TextSecondaryBrush"],
-            });
-        }
-        if (newMods.Count > 50)
-        {
-            listPanel.Children.Add(new TextBlock
+                wikiListPanel.Children.Add(new TextBlock
+                {
+                    Text = $"• {modName}",
+                    FontSize = 12,
+                    Foreground = (SolidColorBrush)Application.Current.Resources["TextSecondaryBrush"],
+                });
+            }
+            if (newWikiMods.Count > 30)
             {
-                Text = $"... and {newMods.Count - 50} more",
-                FontSize = 12,
-                FontStyle = Windows.UI.Text.FontStyle.Italic,
-                Foreground = (SolidColorBrush)Application.Current.Resources["TextTertiaryBrush"],
+                wikiListPanel.Children.Add(new TextBlock
+                {
+                    Text = $"... and {newWikiMods.Count - 30} more",
+                    FontSize = 12,
+                    FontStyle = Windows.UI.Text.FontStyle.Italic,
+                    Foreground = (SolidColorBrush)Application.Current.Resources["TextTertiaryBrush"],
+                });
+            }
+
+            var wikiSection = new StackPanel { Spacing = 8 };
+            wikiSection.Children.Add(new TextBlock
+            {
+                Text = $"🖥️ {newWikiMods.Count} new RenoDX mod{(newWikiMods.Count == 1 ? "" : "s")}:",
+                FontSize = 13,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground = (SolidColorBrush)Application.Current.Resources["TextPrimaryBrush"],
             });
+            wikiSection.Children.Add(new ScrollViewer
+            {
+                Content = wikiListPanel,
+                MaxHeight = newUltraPlusMods.Count > 0 ? 150 : 300,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            });
+            contentPanel.Children.Add(wikiSection);
         }
 
-        var scrollViewer = new ScrollViewer
+        // Ultra+ section
+        if (newUltraPlusMods.Count > 0)
         {
-            Content = listPanel,
-            MaxHeight = 300,
-            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-        };
+            var ultraPlusListPanel = new StackPanel { Spacing = 4 };
+            foreach (var modName in newUltraPlusMods.Take(30))
+            {
+                ultraPlusListPanel.Children.Add(new TextBlock
+                {
+                    Text = $"• {modName}",
+                    FontSize = 12,
+                    Foreground = (SolidColorBrush)Application.Current.Resources["TextSecondaryBrush"],
+                });
+            }
+            if (newUltraPlusMods.Count > 30)
+            {
+                ultraPlusListPanel.Children.Add(new TextBlock
+                {
+                    Text = $"... and {newUltraPlusMods.Count - 30} more",
+                    FontSize = 12,
+                    FontStyle = Windows.UI.Text.FontStyle.Italic,
+                    Foreground = (SolidColorBrush)Application.Current.Resources["TextTertiaryBrush"],
+                });
+            }
 
-        var contentPanel = new StackPanel { Spacing = 12 };
-        contentPanel.Children.Add(new TextBlock
-        {
-            Text = $"{newMods.Count} new RenoDX mod{(newMods.Count == 1 ? "" : "s")} added to the wiki:",
-            FontSize = 13,
-            Foreground = (SolidColorBrush)Application.Current.Resources["TextPrimaryBrush"],
-        });
-        contentPanel.Children.Add(scrollViewer);
+            var ultraPlusSection = new StackPanel { Spacing = 8 };
+            
+            // Header with U+ icon
+            var ultraPlusHeader = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+            ultraPlusHeader.Children.Add(new Image
+            {
+                Source = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage(new Uri("ms-appx:///Assets/icons/Ultra+.png")),
+                Width = 16,
+                Height = 16,
+                VerticalAlignment = VerticalAlignment.Center,
+            });
+            ultraPlusHeader.Children.Add(new TextBlock
+            {
+                Text = $"{newUltraPlusMods.Count} new Ultra+ mod{(newUltraPlusMods.Count == 1 ? "" : "s")}:",
+                FontSize = 13,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground = (SolidColorBrush)Application.Current.Resources["TextPrimaryBrush"],
+                VerticalAlignment = VerticalAlignment.Center,
+            });
+            ultraPlusSection.Children.Add(ultraPlusHeader);
+            ultraPlusSection.Children.Add(new ScrollViewer
+            {
+                Content = ultraPlusListPanel,
+                MaxHeight = newWikiMods.Count > 0 ? 150 : 300,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            });
+            contentPanel.Children.Add(ultraPlusSection);
+        }
 
+        var totalCount = newWikiMods.Count + newUltraPlusMods.Count;
         var dialog = new ContentDialog
         {
-            Title = "New RenoDX Mods Available",
+            Title = "New Mods Available",
             Content = contentPanel,
             PrimaryButtonText = "Dismiss",
             CloseButtonText = "Close",
@@ -1513,7 +1573,7 @@ public sealed partial class MainWindow
         // "Dismiss" marks as seen and hides button; "Close" just closes (button stays visible)
         if (result == ContentDialogResult.Primary)
         {
-            ViewModel.DismissNewWikiMods();
+            ViewModel.DismissAllNewMods();
         }
     }
 
