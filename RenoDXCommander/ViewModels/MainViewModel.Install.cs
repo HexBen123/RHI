@@ -281,7 +281,7 @@ public partial class MainViewModel
         if (!nowExtended && wasInstalled && !string.IsNullOrEmpty(card.InstallPath))
         {
             AuxInstallService.RemoveRenoDxNativeHdrSettings(card.InstallPath);
-            AuxInstallService.RemoveEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
+            AuxInstallService.RemoveEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName, card.Source);
         }
 
         // Clear the install record — the old addon was deleted
@@ -869,7 +869,7 @@ public partial class MainViewModel
             // UE5: deploy HDR keys (enable native HDR output)
             bool isUe4Game = card.EngineHint?.Contains("Unreal Engine 4") == true;
             if (card.UseUeExtended && record.EngineIniHdr != false && !isUe4Game)
-                AuxInstallService.ApplyEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
+                AuxInstallService.ApplyEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName, card.Source);
             else if (card.UseUeExtended && isUe4Game)
             {
                 // UE4: record that HDR was intentionally not deployed (so cog dialog shows "Off")
@@ -879,7 +879,7 @@ public partial class MainViewModel
 
             // Always deploy r.LUT.UpdateEveryFrame=1 for any Unreal Engine game with a RenoDX mod (skip if user disabled it)
             if (card.EngineHint?.Contains("Unreal") == true && card.InstalledRecord?.EngineIniLut != false)
-                AuxInstallService.ApplyEngineIniLutSetting(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
+                AuxInstallService.ApplyEngineIniLutSetting(card.InstallPath, card.EngineIniProjectOverride, card.GameName, card.Source);
 
             // Update only this card's observable properties in-place.
             // The card is already in DisplayedGames — WinUI bindings update the
@@ -957,7 +957,7 @@ public partial class MainViewModel
         if (card.UseUeExtended && !string.IsNullOrEmpty(card.InstallPath))
         {
             AuxInstallService.RemoveRenoDxNativeHdrSettings(card.InstallPath);
-            AuxInstallService.RemoveEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
+            AuxInstallService.RemoveEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName, card.Source);
         }
         // Clean up [renodx] section for generic UE/Unity games to avoid stale values conflicting with a different addon
         else if (!string.IsNullOrEmpty(card.InstallPath)

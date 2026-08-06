@@ -1213,6 +1213,18 @@ $session.Save()
     private const uint RTX_HDR_SATURATION_ID = 0x00DD48FF;       // stored = 100 + display (-100 to +100)
     private const uint RTX_HDR_PEAK_BRIGHTNESS_ID = 0x00DD48FC;  // 400-2000 nits
     private const uint RTX_HDR_MIDDLE_GREY_ID = 0x00DD48FD;      // 10-100, default 50
+
+    // ── Vulkan/OpenGL Present Method ─────────────────────────────────────────
+    // Per-game setting for how DXVK/Vulkan games present frames.
+    // 0x00000000 = Native, 0x00000001 = Preferred layered on DXGI Swapchain, 0x00000002 = Auto (default)
+
+    private const uint VULKAN_PRESENT_METHOD_ID = 0x20D690F8;
+
+    public uint GetVulkanPresentMethod(string gameName, string installPath)
+        => GetPreset(gameName, installPath, VULKAN_PRESENT_METHOD_ID);
+
+    public bool SetVulkanPresentMethod(string gameName, string installPath, uint value)
+        => SetRtxHdrRaw(gameName, installPath, VULKAN_PRESENT_METHOD_ID, value);
     private const uint RTX_HDR_DEBANDING_ID = 0x00432F84;        // No=0x06, Low=0x0A, High=0x02
 
     // ── RTX HDR get/set ───────────────────────────────────────────────────────

@@ -524,11 +524,11 @@ public partial class AuxInstallService
     /// Removes read-only, filters out the specific keys, removes empty section headers,
     /// and deletes the file if nothing meaningful remains.
     /// </summary>
-    public static void RemoveEngineIniHdrSettings(string installPath, string? projectNameOverride = null, string? gameName = null)
+    public static void RemoveEngineIniHdrSettings(string installPath, string? projectNameOverride = null, string? gameName = null, string? store = null)
     {
         try
         {
-            var configDir = ResolveEngineIniDir(installPath, projectNameOverride, gameName);
+            var configDir = ResolveEngineIniDir(installPath, projectNameOverride, gameName, store);
             if (configDir == null) return;
 
             var engineIniPath = Path.Combine(configDir, "Engine.ini");
@@ -657,7 +657,7 @@ public partial class AuxInstallService
     /// Priority: WinGDK > Windows > WindowsNoEditor. Creates Windows if none exist.
     /// Returns null if project name cannot be resolved.
     /// </summary>
-    internal static string? ResolveEngineIniDir(string installPath, string? projectNameOverride = null, string? gameName = null)
+    internal static string? ResolveEngineIniDir(string installPath, string? projectNameOverride = null, string? gameName = null, string? store = null)
     {
         // If the override contains a path separator, treat it as a direct config directory path (or pipe-separated list)
         if (!string.IsNullOrEmpty(projectNameOverride) && (projectNameOverride.Contains('\\') || projectNameOverride.Contains('/')))
@@ -746,9 +746,13 @@ public partial class AuxInstallService
         }
 
         // Nothing found — create in LocalAppData as default
-        var windows = Path.Combine(configBase, "Windows");
-        Directory.CreateDirectory(windows);
-        return windows;
+        // Use WinGDK for Game Pass/Xbox games, Windows for all others
+        bool isGamePass = string.Equals(store, "Xbox", StringComparison.OrdinalIgnoreCase)
+                       || string.Equals(store, "Game Pass", StringComparison.OrdinalIgnoreCase);
+        var platformFolder = isGamePass ? "WinGDK" : "Windows";
+        var fallbackDir = Path.Combine(configBase, platformFolder);
+        Directory.CreateDirectory(fallbackDir);
+        return fallbackDir;
     }
 
     /// <summary>Checks a config base path for existing platform subfolders (WinGDK > Windows > WindowsNoEditor).</summary>
@@ -772,11 +776,11 @@ public partial class AuxInstallService
     /// Only appends missing sections/keys — never modifies existing content.
     /// Sets the file to read-only after writing to prevent the engine from overwriting.
     /// </summary>
-    public static void ApplyEngineIniHdrSettings(string installPath, string? projectNameOverride = null, string? gameName = null)
+    public static void ApplyEngineIniHdrSettings(string installPath, string? projectNameOverride = null, string? gameName = null, string? store = null)
     {
         try
         {
-            var configDir = ResolveEngineIniDir(installPath, projectNameOverride, gameName);
+            var configDir = ResolveEngineIniDir(installPath, projectNameOverride, gameName, store);
             if (configDir == null)
             {
                 CrashReporter.Log($"[AuxInstallService.ApplyEngineIniHdrSettings] Could not resolve config dir for '{installPath}'");
@@ -882,11 +886,11 @@ public partial class AuxInstallService
     /// Unconditionally ensures r.LUT.UpdateEveryFrame=1 exists in Engine.ini for UE-Extended games.
     /// This is always deployed regardless of the EngineIniHdr toggle state.
     /// </summary>
-    public static void ApplyEngineIniLutSetting(string installPath, string? projectNameOverride = null, string? gameName = null)
+    public static void ApplyEngineIniLutSetting(string installPath, string? projectNameOverride = null, string? gameName = null, string? store = null)
     {
         try
         {
-            var configDir = ResolveEngineIniDir(installPath, projectNameOverride, gameName);
+            var configDir = ResolveEngineIniDir(installPath, projectNameOverride, gameName, store);
             if (configDir == null)
             {
                 CrashReporter.Log($"[AuxInstallService.ApplyEngineIniLutSetting] Could not resolve config dir for '{installPath}'");
@@ -948,11 +952,11 @@ public partial class AuxInstallService
     /// Removes r.LUT.UpdateEveryFrame from Engine.ini. Uses line filtering (preserves duplicate keys).
     /// Removes read-only first, removes empty section headers left behind, re-sets read-only if file still has content.
     /// </summary>
-    public static void RemoveEngineIniLutSetting(string installPath, string? projectNameOverride = null, string? gameName = null)
+    public static void RemoveEngineIniLutSetting(string installPath, string? projectNameOverride = null, string? gameName = null, string? store = null)
     {
         try
         {
-            var configDir = ResolveEngineIniDir(installPath, projectNameOverride, gameName);
+            var configDir = ResolveEngineIniDir(installPath, projectNameOverride, gameName, store);
             if (configDir == null) return;
 
             var engineIniPath = Path.Combine(configDir, "Engine.ini");

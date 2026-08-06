@@ -107,11 +107,11 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                 // UE4: skip HDR keys on fresh install (handled in InstallModAsync), but respect existing user choice on update
                 bool isUe4Update = card.EngineHint?.Contains("Unreal Engine 4") == true;
                 if (card.UseUeExtended && card.InstalledRecord?.EngineIniHdr != false && !isUe4Update)
-                    AuxInstallService.ApplyEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
+                    AuxInstallService.ApplyEngineIniHdrSettings(card.InstallPath, card.EngineIniProjectOverride, card.GameName, card.Source);
 
                 // Always deploy r.LUT.UpdateEveryFrame=1 for any Unreal Engine game with a RenoDX mod (skip if user disabled it)
                 if (card.EngineHint?.Contains("Unreal") == true && card.InstalledRecord?.EngineIniLut != false)
-                    AuxInstallService.ApplyEngineIniLutSetting(card.InstallPath, card.EngineIniProjectOverride, card.GameName);
+                    AuxInstallService.ApplyEngineIniLutSetting(card.InstallPath, card.EngineIniProjectOverride, card.GameName, card.Source);
 
                 dispatcherQueue?.TryEnqueue(() =>
                 {

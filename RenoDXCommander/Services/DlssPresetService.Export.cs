@@ -28,6 +28,8 @@ public partial class DlssPresetService
         RTX_HDR_PEAK_BRIGHTNESS_ID, RTX_HDR_MIDDLE_GREY_ID,
         RTX_HDR_CONTRAST_ID, RTX_HDR_SATURATION_ID,
         RTX_HDR_DEBANDING_ID,
+        // Vulkan/OpenGL present method — per-game DXVK setting
+        VULKAN_PRESENT_METHOD_ID,
     ];
 
     /// <summary>Exports all RHI-managed NVIDIA profile settings to a dictionary for serialization.</summary>

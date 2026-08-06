@@ -4,6 +4,12 @@
 
 - **New Mods Alert** — a green "New Mods Available" button now appears in the toolbar when new RenoDX mods or Ultra+ mods are added since your last check. Click to see the list of new mods by category, then either dismiss (hides until more mods are added) or close (keeps the button visible). Checks run on app launch, Refresh, Check for Updates, and the 4-hour auto-scan.
 - **Multi-Store Support** — the same game installed from different storefronts (Steam, Xbox, Epic, etc.) now appears as separate entries with independent install records and per-game settings. Each store installation gets its own ReShade channel, shader mode, DXVK variant, and other overrides. Store badges distinguish between copies. Legacy single-game settings are automatically migrated.
+- **DXVK — Prefer DXGI Swapchain** — new setting in the DXVK cog. Sets the Vulkan/OpenGL Present Method driver profile setting to "Preferred layered on DXGI Swapchain" for the game. Recommended for DXVK games — improves compatibility and HDR support. Included in profile export/import.
+
+### Changes
+
+- Engine.ini is now deployed to the correct platform folder for Game Pass games (`WinGDK`) instead of always using `Windows`. Affects UE-Extended HDR and LUT settings on install, update, and uninstall.
+- Engine.ini Settings section in the RenoDX cog now shows for UE-Extended games even when a mod update is pending (previously only showed when status was Installed).
 
 ### Bug Fixes
 
@@ -18,6 +24,8 @@
 - Added `wikiNameOverride` for Grand Theft Auto V Enhanced to match the wiki entry name.
 - Added ultrawide fix URL for Beast of Reincarnation.
 - Fixed Denshattack! incorrectly installing the standard generic UE addon — now correctly installs `renodx-ue-extended.addon64`.
+- Added Monster Hunter Wilds RE Engine tag — now correctly shows RE Engine badge and RE Framework row.
+- Added Beast of Reincarnation engine hint (Unreal Engine 5.4.4).
 
 ---
 
