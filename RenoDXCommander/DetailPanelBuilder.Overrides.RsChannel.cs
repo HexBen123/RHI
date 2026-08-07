@@ -526,6 +526,7 @@ public partial class DetailPanelBuilder
         Grid.SetRow(channelCombo, 1); Grid.SetColumn(channelCombo, 2);
         bitnessPanel.Children.Add(channelLabel);
         bitnessPanel.Children.Add(channelCombo);
+        ctx.ChannelCombo = channelCombo;
         channelComboInitializing = false;
         ctx.ChannelComboInitializing = false;
 
