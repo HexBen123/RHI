@@ -525,7 +525,9 @@ public partial class DetailPanelBuilder
             _window.ViewModel.SetApiOverride(ctx.CapturedName, null, ctx.Card.Source);
 
             // Reset ReShade channel override
+            ctx.ChannelComboInitializing = true;
             ctx.ChannelCombo.SelectedItem = "Stable";
+            ctx.ChannelComboInitializing = false;
             _window.ViewModel.SetReShadeChannelOverride(ctx.CapturedName, null, ctx.Card.Source);
 
             // Reset custom ReShade DLL selection (composite key + legacy fallback)

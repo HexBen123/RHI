@@ -77,6 +77,7 @@ public partial class DetailPanelBuilder
             "Override the ReShade build channel for this game.\nVulkan games: changing this affects ALL Vulkan games.");
 
         bool channelComboInitializing = true;
+        ctx.ChannelComboInitializing = true;
 
         // Allow re-opening the Custom picker by clicking Custom when already on Custom
         channelCombo.DropDownClosed += async (s, ev) =>
@@ -95,7 +96,7 @@ public partial class DetailPanelBuilder
         channelCombo.SelectionChanged += async (s, ev) =>
         {
             var selected = channelCombo.SelectedItem as string;
-            if (channelComboInitializing) return;
+            if (channelComboInitializing || ctx.ChannelComboInitializing) return;
             if (string.IsNullOrEmpty(selected)) return;
             CrashReporter.Log($"[DetailPanelBuilder.RSChannel] '{ctx.CapturedName}' selection changed to: '{selected}'");
 
@@ -526,6 +527,7 @@ public partial class DetailPanelBuilder
         bitnessPanel.Children.Add(channelLabel);
         bitnessPanel.Children.Add(channelCombo);
         channelComboInitializing = false;
+        ctx.ChannelComboInitializing = false;
 
         // Disable RS Channel when Luma mode is active (Luma bundles its own ReShade)
         if (card.IsLumaMode)
