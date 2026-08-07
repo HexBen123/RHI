@@ -35,6 +35,11 @@ public class WikiService : IWikiService
         var tables = doc.DocumentNode.SelectNodes("//table");
         if (tables == null) return (new(), new());
 
+        // Find the "Deprecated mods" section heading to know where to stop parsing
+        // GitHub wiki renders headings as <h2> or <h3> tags
+        var deprecatedHeading = doc.DocumentNode.SelectSingleNode(
+            "//*[self::h1 or self::h2 or self::h3][contains(translate(., 'DEPRECATED', 'deprecated'), 'deprecated')]");
+
         // Identify the specific mods table by its header column count (4 columns:
         // Name, Maintainer, Links, Status) rather than hardcoding tables[0].
         // This is robust against the wiki adding a notice/TOC table before the main one.
@@ -42,6 +47,13 @@ public class WikiService : IWikiService
         var genericNotes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var table in tables)
         {
+            // Skip tables that appear AFTER the "Deprecated mods" heading
+            if (deprecatedHeading != null && table.StreamPosition > deprecatedHeading.StreamPosition)
+            {
+                CrashReporter.Log("[WikiService.FetchAllAsync] Skipping table after 'Deprecated' heading");
+                continue;
+            }
+
             var headerRow = table.SelectSingleNode(".//tr");
             var headerCells = headerRow?.SelectNodes("th|td");
             if (headerCells == null || headerCells.Count < 2) continue;

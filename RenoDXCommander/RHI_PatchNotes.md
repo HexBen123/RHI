@@ -1,3 +1,15 @@
+## v2.3.2
+
+### Bug Fixes
+
+- Fixed deprecated mods from the RenoDX wiki showing up in RHI — mods listed under "Deprecated mods" are now skipped during wiki parsing.
+
+### Manifest Updates
+
+- Added Doom Eternal to wiki unlinks (no RenoDX mod available).
+
+---
+
 ## v2.3.1
 
 ### Bug Fixes
@@ -6,6 +18,10 @@
 - Fixed Reset Overrides not fully resetting Bitness, Graphics API, and ReShade Channel.
 - Fixed Reset Overrides not reinstalling ReShade with Stable channel when a channel override existed.
 - Fixed per-game Bitness and Graphics API overrides not being applied after Refresh.
+
+### Manifest Updates
+
+- Added Doom Eternal to wiki unlinks (no RenoDX mod available).
 
 ---
 
