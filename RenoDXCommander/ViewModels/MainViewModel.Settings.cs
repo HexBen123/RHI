@@ -330,7 +330,9 @@ public partial class MainViewModel
     public string GetPerGameShaderMode(string gameName, string store = "")
     {
         var key = GameKey.From(gameName, store).ToKey();
-        return _perGameShaderMode.TryGetValue(key, out var mode) ? mode : "Global";
+        if (_perGameShaderMode.TryGetValue(key, out var mode)) return mode;
+        // Fallback to name-only for legacy entries
+        return _perGameShaderMode.TryGetValue(gameName, out mode) ? mode : "Global";
     }
 
     /// <summary>Sets the per-game shader mode override. "Global" removes the override.</summary>
@@ -340,8 +342,10 @@ public partial class MainViewModel
         if (mode == "Global")
         {
             _perGameShaderMode.Remove(key);
+            _perGameShaderMode.Remove(gameName); // clear legacy name-only entry too
             // Discard per-game shader selection when reverting to global
             _gameNameService.PerGameShaderSelection.Remove(key);
+            _gameNameService.PerGameShaderSelection.Remove(gameName); // clear legacy name-only entry too
         }
         else
             _perGameShaderMode[key] = mode;
@@ -358,7 +362,9 @@ public partial class MainViewModel
     public string GetPerGameAddonMode(string gameName, string store = "")
     {
         var key = GameKey.From(gameName, store).ToKey();
-        return _gameNameService.PerGameAddonMode.TryGetValue(key, out var mode) ? mode : "Global";
+        if (_gameNameService.PerGameAddonMode.TryGetValue(key, out var mode)) return mode;
+        // Fallback to name-only for legacy entries
+        return _gameNameService.PerGameAddonMode.TryGetValue(gameName, out mode) ? mode : "Global";
     }
 
     /// <summary>Sets the per-game addon mode override. "Global" removes the override and clears per-game selection.</summary>
@@ -368,8 +374,10 @@ public partial class MainViewModel
         if (mode == "Global")
         {
             _gameNameService.PerGameAddonMode.Remove(key);
+            _gameNameService.PerGameAddonMode.Remove(gameName); // clear legacy name-only entry too
             // Discard per-game addon selection when reverting to global (Req 6.6)
             _gameNameService.PerGameAddonSelection.Remove(key);
+            _gameNameService.PerGameAddonSelection.Remove(gameName); // clear legacy name-only entry too
         }
         else
             _gameNameService.PerGameAddonMode[key] = mode;
