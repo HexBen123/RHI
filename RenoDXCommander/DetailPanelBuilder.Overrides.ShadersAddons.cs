@@ -455,6 +455,7 @@ public partial class DetailPanelBuilder
             if (_window.ViewModel.GetPerGameShaderMode(ctx.CapturedName, ctx.Card.Source) != "Global")
             {
                 _window.ViewModel.SetPerGameShaderMode(ctx.CapturedName, "Global", ctx.Card.Source);
+                ctx.Card.ShaderModeOverride = null; // update card in-memory so DeployShadersForCard uses global
                 var shaderSelKey = GameKey.FromCard(ctx.CapturedName, ctx.Card.Source).ToKey();
                 _gameNameService.PerGameShaderSelection.Remove(shaderSelKey);
                 _gameNameService.PerGameShaderSelection.Remove(ctx.CapturedName); // legacy fallback
@@ -527,9 +528,10 @@ public partial class DetailPanelBuilder
             ctx.ChannelCombo.SelectedItem = "Stable";
             _window.ViewModel.SetReShadeChannelOverride(ctx.CapturedName, null, ctx.Card.Source);
 
-            // Reset custom ReShade DLL selection
+            // Reset custom ReShade DLL selection (composite key + legacy fallback)
             var customKey = GameKey.FromCard(ctx.CapturedName, ctx.Card.Source).ToKey();
             _gameNameService.CustomReShadeSelection.Remove(customKey);
+            _gameNameService.CustomReShadeSelection.Remove(ctx.CapturedName); // legacy fallback
 
             // Reset launch exe override
             _gameNameService.LaunchExeOverrides.Remove(ctx.CapturedName);

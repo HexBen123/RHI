@@ -77,17 +77,24 @@ public partial class MainViewModel
     public string? GetReShadeChannelOverride(string gameName, string store = "")
     {
         var key = GameKey.From(gameName, store).ToKey();
-        return _reShadeChannelOverrides.TryGetValue(key, out var value) ? value : null;
+        if (_reShadeChannelOverrides.TryGetValue(key, out var value)) return value;
+        // Fallback to name-only for legacy entries
+        return _reShadeChannelOverrides.TryGetValue(gameName, out value) ? value : null;
     }
 
     /// <summary>Sets the per-game ReShade channel override. Null removes the override (use global); "Stable" or "Nightly" sets it. "Custom" uses user-supplied DLLs. Any other value is a legacy version string.</summary>
     public void SetReShadeChannelOverride(string gameName, string? value, string store = "")
     {
         var key = GameKey.From(gameName, store).ToKey();
-        var previousValue = _reShadeChannelOverrides.TryGetValue(key, out var prev) ? prev : null;
+        // Also check name-only key for legacy entries set before composite key migration
+        var previousValue = _reShadeChannelOverrides.TryGetValue(key, out var prev) ? prev
+            : (_reShadeChannelOverrides.TryGetValue(gameName, out prev) ? prev : null);
 
         if (value == null)
+        {
             _reShadeChannelOverrides.Remove(key);
+            _reShadeChannelOverrides.Remove(gameName); // clear legacy name-only entry too
+        }
         else
             _reShadeChannelOverrides[key] = value;
         SaveNameMappings();
