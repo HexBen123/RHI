@@ -745,17 +745,17 @@ public partial class DetailPanelBuilder
 
             if (selected == "Off")
             {
-                _window.ViewModel.SetPerGameShaderMode(capturedName, "Off");
+                _window.ViewModel.SetPerGameShaderMode(capturedName, "Off", card.Source ?? "");
                 _window.ViewModel.DeployShadersForCard(capturedName);
             }
             else if (selected == "Custom")
             {
-                _window.ViewModel.SetPerGameShaderMode(capturedName, "Custom");
+                _window.ViewModel.SetPerGameShaderMode(capturedName, "Custom", card.Source ?? "");
                 _window.ViewModel.DeployShadersForCard(capturedName);
             }
             else // "Global"
             {
-                _window.ViewModel.SetPerGameShaderMode(capturedName, "Global");
+                _window.ViewModel.SetPerGameShaderMode(capturedName, "Global", card.Source ?? "");
                 _window.ViewModel.DeployShadersForCard(capturedName);
             }
             effectiveShaderDisplay = selected;
