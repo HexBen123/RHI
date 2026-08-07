@@ -3,6 +3,7 @@
 ### Bug Fixes
 
 - Fixed per-game shader mode (Global/Custom/Off) reverting to its previous value when reopening the overrides panel — the setting was being saved under the wrong key.
+- Fixed Reset Overrides not resetting Bitness, Graphics API, or ReShade Channel — the reset action was silently failing due to a null reference and stopping partway through.
 
 ---
 

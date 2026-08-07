@@ -553,6 +553,7 @@ public partial class DetailPanelBuilder
             },
             isDxvkEnabled: card.DxvkEnabled,
             store: card.Source ?? "");
+        ctx.UpdateSummaryText = updateSummaryText; // assign for reset action to use
 
         var toggleRow = new StackPanel { Spacing = 0 };
         ToolTipService.SetToolTip(updateInclusionBtn, "Choose which components are included in Update All for this game.");
