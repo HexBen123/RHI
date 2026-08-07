@@ -90,9 +90,11 @@ public partial class DetailPanelBuilder
 
             if (selected == "Select")
             {
-                List<string>? current = _gameNameService.PerGameAddonSelection.TryGetValue(gameName, out var existingAddons)
+                // Use composite key for addon selection lookup
+                var addonSelKey = GameKey.FromCard(gameName, ctx.Card.Source).ToKey();
+                List<string>? current = _gameNameService.PerGameAddonSelection.TryGetValue(addonSelKey, out var existingAddons)
                     ? existingAddons
-                    : null;
+                    : (_gameNameService.PerGameAddonSelection.TryGetValue(gameName, out existingAddons) ? existingAddons : null);
 
                 IAddonPackService? addonPackService = null;
                 var addonSvcProp = _window.ViewModel.GetType().GetProperty("AddonPackServiceInstance");
@@ -130,7 +132,7 @@ public partial class DetailPanelBuilder
                     AddonPopupHelper.PopupContext.PerGame);
                 if (result != null)
                 {
-                    _gameNameService.PerGameAddonSelection[gameName] = result;
+                    _gameNameService.PerGameAddonSelection[addonSelKey] = result;
                     _window.ViewModel.SetPerGameAddonMode(ctx.CapturedName, "Select", ctx.Card.Source);
                     _window.ViewModel.DeployAddonsForCard(ctx.CapturedName);
                 }
@@ -216,7 +218,7 @@ public partial class DetailPanelBuilder
                         if (shaderResult == ContentDialogResult.Primary)
                         {
                             var presetPaths = selected.Select(f => Path.Combine(PresetPopupHelper.PresetsDir, f)).ToList();
-                            await _window.ViewModel.ApplyPresetShadersAsync(ctx.CapturedName, presetPaths);
+                            await _window.ViewModel.ApplyPresetShadersAsync(ctx.CapturedName, presetPaths, ctx.Card.Source ?? "");
 
                             // Rebuild overrides panel so the shader combo reflects the new "Select" mode
                             var refreshCard = _window.ViewModel.AllCards.FirstOrDefault(c =>

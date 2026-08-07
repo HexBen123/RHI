@@ -666,11 +666,13 @@ public partial class DetailPanelBuilder
         };
 
         // ── Per-game Shader mode ComboBox ─────────────────────────────────────
-        string currentShaderMode = _window.ViewModel.GetPerGameShaderMode(gameName);
+        string currentShaderMode = _window.ViewModel.GetPerGameShaderMode(gameName, card.Source ?? "");
         // Resolve effective display: if global UseCustomShaders is ON and mode is "Global", show "Custom"
         string effectiveShaderDisplay = currentShaderMode;
+        var shaderModeKey = GameKey.FromCard(gameName, card.Source).ToKey();
         if (currentShaderMode == "Global"
             && _window.ViewModel.Settings.UseCustomShaders
+            && !_gameNameService.PerGameShaderMode.ContainsKey(shaderModeKey)
             && !_gameNameService.PerGameShaderMode.ContainsKey(gameName))
             effectiveShaderDisplay = "Custom";
 
@@ -711,10 +713,13 @@ public partial class DetailPanelBuilder
 
             if (selected == "Select")
             {
-                // Open per-game shader picker
-                List<string>? current = _gameNameService.PerGameShaderSelection.TryGetValue(gameName, out var existing)
+                // Open per-game shader picker — use composite key for selection lookup
+                var capturedShaderKey = GameKey.FromCard(capturedName, card.Source).ToKey();
+                List<string>? current = _gameNameService.PerGameShaderSelection.TryGetValue(capturedShaderKey, out var existing)
                     ? existing
-                    : _window.ViewModel.Settings.SelectedShaderPacks;
+                    : (_gameNameService.PerGameShaderSelection.TryGetValue(capturedName, out existing)
+                        ? existing
+                        : _window.ViewModel.Settings.SelectedShaderPacks);
                 var result = await ShaderPopupHelper.ShowAsync(
                     _window.Content.XamlRoot,
                     _shaderPackService,
@@ -722,8 +727,8 @@ public partial class DetailPanelBuilder
                     ShaderPopupHelper.PopupContext.PerGame);
                 if (result != null)
                 {
-                    _gameNameService.PerGameShaderSelection[gameName] = result;
-                    _window.ViewModel.SetPerGameShaderMode(capturedName, "Select");
+                    _gameNameService.PerGameShaderSelection[capturedShaderKey] = result;
+                    _window.ViewModel.SetPerGameShaderMode(capturedName, "Select", card.Source ?? "");
                     _window.ViewModel.DeployShadersForCard(capturedName);
                 }
                 else

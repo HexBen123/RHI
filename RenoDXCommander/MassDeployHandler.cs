@@ -313,7 +313,7 @@ public class MassDeployHandler
             {
                 try
                 {
-                    await _window.ViewModel.ApplyPresetShadersAsync(card.GameName, presetPaths);
+                    await _window.ViewModel.ApplyPresetShadersAsync(card.GameName, presetPaths, card.Source ?? "");
                 }
                 catch (Exception ex)
                 {

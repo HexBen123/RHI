@@ -102,7 +102,7 @@ public partial class DragDropHandler
         try
         {
             var is32Bit = IsLumaArchive32Bit(archivePath);
-            var selectedPacks = _window.ViewModel.ResolveShaderSelection(gameName, card.ShaderModeOverride);
+            var selectedPacks = _window.ViewModel.ResolveShaderSelection(gameName, card.ShaderModeOverride, card.Source ?? "");
             var screenshotPath = _window.ViewModel.BuildScreenshotSavePath(card.GameName);
             var overlayHotkey = _window.ViewModel.Settings.OverlayHotkey;
             var screenshotHotkey = _window.ViewModel.Settings.ScreenshotHotkey;

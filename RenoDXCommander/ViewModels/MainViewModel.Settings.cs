@@ -877,7 +877,7 @@ public partial class MainViewModel
     /// switches the game to Per_Game_Shader_Mode "Select", merges resolved packs with
     /// existing selection (union), persists, and calls SyncGameFolder.
     /// </summary>
-    public async Task ApplyPresetShadersAsync(string gameName, IEnumerable<string> presetFilePaths)
+    public async Task ApplyPresetShadersAsync(string gameName, IEnumerable<string> presetFilePaths, string store = "")
     {
         try
         {
@@ -948,18 +948,20 @@ public partial class MainViewModel
             }
 
             // 5. Set per-game mode to "Select"
-            SetPerGameShaderMode(gameName, "Select");
+            SetPerGameShaderMode(gameName, "Select", store);
 
-            // 6. Merge resolved pack IDs with existing selection (union)
-            if (_gameNameService.PerGameShaderSelection.TryGetValue(gameName, out var existing))
+            // 6. Merge resolved pack IDs with existing selection (union) — use composite key
+            var shaderKey = GameKey.From(gameName, store).ToKey();
+            if (_gameNameService.PerGameShaderSelection.TryGetValue(shaderKey, out var existing)
+                || _gameNameService.PerGameShaderSelection.TryGetValue(gameName, out existing))
             {
                 var merged = new HashSet<string>(existing, StringComparer.OrdinalIgnoreCase);
                 merged.UnionWith(expandedPackIds);
-                _gameNameService.PerGameShaderSelection[gameName] = merged.ToList();
+                _gameNameService.PerGameShaderSelection[shaderKey] = merged.ToList();
             }
             else
             {
-                _gameNameService.PerGameShaderSelection[gameName] = expandedPackIds;
+                _gameNameService.PerGameShaderSelection[shaderKey] = expandedPackIds;
             }
 
             // 7. Persist

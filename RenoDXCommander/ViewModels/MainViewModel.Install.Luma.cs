@@ -108,7 +108,7 @@ public partial class MainViewModel
                 card.RsActionMessage = p.msg;
                 card.RsProgress      = p.pct;
             });
-            var selectedPacks = ResolveShaderSelection(card.GameName, card.ShaderModeOverride);
+            var selectedPacks = ResolveShaderSelection(card.GameName, card.ShaderModeOverride, card.Source ?? "");
             // Ensure needed shader packs are downloaded before install deploys them
             if (selectedPacks != null)
                 await _shaderPackService.EnsurePacksAsync(selectedPacks);
@@ -178,7 +178,7 @@ public partial class MainViewModel
                 AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName, BuildScreenshotSavePath(card.GameName), _settingsViewModel.OverlayHotkey, _settingsViewModel.ScreenshotHotkey);
                 VulkanFootprintService.Create(card.InstallPath);
                 _shaderPackService.SyncGameFolder(card.InstallPath,
-                    ResolveShaderSelection(card.GameName, card.ShaderModeOverride));
+                    ResolveShaderSelection(card.GameName, card.ShaderModeOverride, card.Source ?? ""));
 
                 var vulkanVersion = AuxInstallService.ReadInstalledVersion(
                     VulkanLayerService.LayerDirectory, VulkanLayerService.LayerDllName);
@@ -246,7 +246,7 @@ public partial class MainViewModel
 
             // 5c. Deploy shaders locally to the game folder
             _shaderPackService.SyncGameFolder(card.InstallPath,
-                ResolveShaderSelection(card.GameName, card.ShaderModeOverride));
+                ResolveShaderSelection(card.GameName, card.ShaderModeOverride, card.Source ?? ""));
 
             // 6. Mark warning as shown for this session
             _vulkanLayerWarningShownThisSession = true;
@@ -320,7 +320,7 @@ public partial class MainViewModel
 
             // Deploy shaders to the game folder
             _shaderPackService.SyncGameFolder(card.InstallPath,
-                ResolveShaderSelection(card.GameName, card.ShaderModeOverride));
+                ResolveShaderSelection(card.GameName, card.ShaderModeOverride, card.Source ?? ""));
 
             // Read version from the staged DLL in the game folder
             var version = AuxInstallService.ReadInstalledVersion(card.InstallPath, dllFileName);
@@ -728,7 +728,7 @@ public partial class MainViewModel
         card.LumaActionMessage = "Installing Luma...";
         try
         {
-            var selectedPacks = ResolveShaderSelection(card.GameName, card.ShaderModeOverride);
+            var selectedPacks = ResolveShaderSelection(card.GameName, card.ShaderModeOverride, card.Source ?? "");
             var record = await _lumaService.InstallAsync(
                 card.LumaMod,
                 card.InstallPath,

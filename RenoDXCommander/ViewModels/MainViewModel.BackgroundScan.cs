@@ -1,4 +1,4 @@
-﻿// MainViewModel.BackgroundScan.cs -- Background scanning, card merging, and staging migrations.
+// MainViewModel.BackgroundScan.cs -- Background scanning, card merging, and staging migrations.
 
 using System.Collections.Concurrent;
 using System.Globalization;
@@ -331,7 +331,7 @@ public partial class MainViewModel
                     var allNeededPacks = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                     foreach (var card in rsCards)
                     {
-                        var sel = ResolveShaderSelection(card.GameName, card.ShaderModeOverride);
+                        var sel = ResolveShaderSelection(card.GameName, card.ShaderModeOverride, card.Source ?? "");
                         if (sel != null) allNeededPacks.UnionWith(sel);
                     }
                     if (allNeededPacks.Count > 0)
@@ -340,7 +340,7 @@ public partial class MainViewModel
                     var syncTasks = rsCards
                         .Select(card =>
                         {
-                            var effectiveSelection = ResolveShaderSelection(card.GameName, card.ShaderModeOverride);
+                            var effectiveSelection = ResolveShaderSelection(card.GameName, card.ShaderModeOverride, card.Source ?? "");
                             return Task.Run(() => _shaderPackService.SyncGameFolder(card.InstallPath, effectiveSelection));
                         });
                     await Task.WhenAll(syncTasks);

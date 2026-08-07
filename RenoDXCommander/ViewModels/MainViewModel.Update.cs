@@ -757,7 +757,7 @@ public partial class MainViewModel
                 OnPropertyChanged(nameof(UpdateAllBtnForeground));
                 OnPropertyChanged(nameof(UpdateAllBtnBorder));
             },
-            shaderResolver: ResolveShaderSelection,
+            shaderResolver: (gameName, shaderModeOverride) => ResolveShaderSelection(gameName, shaderModeOverride),
             manifestDllResolver: GetManifestDllNames,
             channelResolver: (gameName, store) => ResolveReShadeChannel(gameName, store ?? ""));
     }

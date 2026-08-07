@@ -1,4 +1,4 @@
-﻿// MainViewModel.Init.cs -- Initialization, detection, card building, refresh, and library persistence.
+// MainViewModel.Init.cs -- Initialization, detection, card building, refresh, and library persistence.
 
 using System.Collections.Concurrent;
 using CommunityToolkit.Mvvm.Input;
@@ -613,7 +613,7 @@ public partial class MainViewModel
                     var allNeededPacks = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                     foreach (var card in rsCards)
                     {
-                        var sel = ResolveShaderSelection(card.GameName, card.ShaderModeOverride);
+                        var sel = ResolveShaderSelection(card.GameName, card.ShaderModeOverride, card.Source ?? "");
                         if (sel != null) allNeededPacks.UnionWith(sel);
                     }
                     if (allNeededPacks.Count > 0)
@@ -622,7 +622,7 @@ public partial class MainViewModel
                     var syncTasks = rsCards
                         .Select(card =>
                         {
-                            var effectiveSelection = ResolveShaderSelection(card.GameName, card.ShaderModeOverride);
+                            var effectiveSelection = ResolveShaderSelection(card.GameName, card.ShaderModeOverride, card.Source ?? "");
                             return Task.Run(() => _shaderPackService.SyncGameFolder(card.InstallPath, effectiveSelection));
                         });
                     await Task.WhenAll(syncTasks);

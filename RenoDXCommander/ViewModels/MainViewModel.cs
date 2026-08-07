@@ -283,7 +283,7 @@ public partial class MainViewModel : ObservableObject
                         ? VulkanFootprintService.Exists(card.InstallPath)
                         : card.RsStatus == GameStatus.Installed || card.RsStatus == GameStatus.UpdateAvailable;
                     if (!rsInstalled) continue;
-                    var sel = ResolveShaderSelection(card.GameName, card.ShaderModeOverride);
+                    var sel = ResolveShaderSelection(card.GameName, card.ShaderModeOverride, card.Source ?? "");
                     if (sel != null) allNeededPacks.UnionWith(sel);
                 }
 
@@ -299,7 +299,7 @@ public partial class MainViewModel : ObservableObject
                         ? VulkanFootprintService.Exists(card.InstallPath)
                         : card.RsStatus == GameStatus.Installed || card.RsStatus == GameStatus.UpdateAvailable;
 
-                    var effectiveSelection = ResolveShaderSelection(card.GameName, card.ShaderModeOverride);
+                    var effectiveSelection = ResolveShaderSelection(card.GameName, card.ShaderModeOverride, card.Source ?? "");
 
                     if (rsInstalled)
                     {
@@ -330,7 +330,7 @@ public partial class MainViewModel : ObservableObject
                     ? VulkanFootprintService.Exists(card.InstallPath)
                     : card.RsStatus == GameStatus.Installed || card.RsStatus == GameStatus.UpdateAvailable;
 
-                var effectiveSelection = ResolveShaderSelection(gameName, card.ShaderModeOverride);
+                var effectiveSelection = ResolveShaderSelection(gameName, card.ShaderModeOverride, card.Source ?? "");
 
                 // Ensure needed packs are downloaded before deploying
                 if (effectiveSelection != null)
@@ -350,7 +350,7 @@ public partial class MainViewModel : ObservableObject
     /// Resolves the effective shader pack selection for a game.
     /// Priority chain: per-game Custom → per-game Select → global custom → global packs.
     /// </summary>
-    internal IEnumerable<string>? ResolveShaderSelection(string gameName, string? shaderModeOverride)
+    internal IEnumerable<string>? ResolveShaderSelection(string gameName, string? shaderModeOverride, string store = "")
     {
         // 0. Per-game "Off" mode → null (removes managed shaders)
         if (string.Equals(shaderModeOverride, "Off", StringComparison.OrdinalIgnoreCase))
@@ -360,10 +360,14 @@ public partial class MainViewModel : ObservableObject
         if (string.Equals(shaderModeOverride, "Custom", StringComparison.OrdinalIgnoreCase))
             return new[] { ShaderPackService.CustomShaderSentinel };
 
-        // 2. Per-game "Select" mode → per-game pack selection
-        if (string.Equals(shaderModeOverride, "Select", StringComparison.OrdinalIgnoreCase)
-            && _gameNameService.PerGameShaderSelection.TryGetValue(gameName, out var perGameSel))
-            return perGameSel;
+        // 2. Per-game "Select" mode → per-game pack selection (try composite key first, fallback to name-only)
+        if (string.Equals(shaderModeOverride, "Select", StringComparison.OrdinalIgnoreCase))
+        {
+            var compositeKey = GameKey.From(gameName, store).ToKey();
+            if (_gameNameService.PerGameShaderSelection.TryGetValue(compositeKey, out var perGameSel)
+                || _gameNameService.PerGameShaderSelection.TryGetValue(gameName, out perGameSel))
+                return perGameSel;
+        }
 
         // 3. Global UseCustomShaders enabled → custom shader sentinel
         if (_settingsViewModel.UseCustomShaders)
