@@ -1,5 +1,9 @@
 ## v2.3.1
 
+### Bug Fixes
+
+- Fixed per-game shader mode (Global/Custom/Off) reverting to its previous value when reopening the overrides panel — the setting was being saved under the wrong key.
+
 ---
 
 ## v2.3.0

@@ -452,10 +452,12 @@ public partial class DetailPanelBuilder
                 _window.ViewModel.RemoveNameMapping(ctx.CapturedName);
 
             // Shader mode → Global
-            if (_window.ViewModel.GetPerGameShaderMode(ctx.CapturedName) != "Global")
+            if (_window.ViewModel.GetPerGameShaderMode(ctx.CapturedName, ctx.Card.Source) != "Global")
             {
-                _window.ViewModel.SetPerGameShaderMode(ctx.CapturedName, "Global");
-                _gameNameService.PerGameShaderSelection.Remove(ctx.CapturedName);
+                _window.ViewModel.SetPerGameShaderMode(ctx.CapturedName, "Global", ctx.Card.Source);
+                var shaderSelKey = GameKey.FromCard(ctx.CapturedName, ctx.Card.Source).ToKey();
+                _gameNameService.PerGameShaderSelection.Remove(shaderSelKey);
+                _gameNameService.PerGameShaderSelection.Remove(ctx.CapturedName); // legacy fallback
                 _window.ViewModel.DeployShadersForCard(ctx.CapturedName);
             }
 
