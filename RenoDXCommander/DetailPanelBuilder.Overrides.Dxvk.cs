@@ -17,7 +17,7 @@ public partial class DetailPanelBuilder
         "vulkan-1.dll", "winmm.dll",
     ];
 
-    private ToggleSwitch? BuildDxvkAndManagementSection(GameCardViewModel card, string capturedName, string gameName, Button resetOverridesBtn)
+    private ToggleSwitch? BuildDxvkAndManagementSection(GameCardViewModel card, string capturedName, string gameName, OverridesPanelCtx ctx)
     {
         ToggleSwitch? dxvkToggleResult = null;
         // ══════════════════════════════════════════════════════════════════════
@@ -292,9 +292,8 @@ public partial class DetailPanelBuilder
         };
         mgmtResetOverridesBtn.Click += (s, ev) =>
         {
-            var peer = Microsoft.UI.Xaml.Automation.Peers.FrameworkElementAutomationPeer.CreatePeerForElement(resetOverridesBtn)
-                as Microsoft.UI.Xaml.Automation.Peers.ButtonAutomationPeer;
-            peer?.Invoke();
+            // Call reset action directly — automation peer invoke fails on Visibility.Collapsed buttons
+            ctx.ResetAction?.Invoke();
         };
         Grid.SetColumn(mgmtResetOverridesBtn, 4);
         ToolTipService.SetToolTip(mgmtResetOverridesBtn, "Reset all per-game overrides back to defaults (DLL names, channels, shaders, addons, DXVK, launch settings, update inclusion).");

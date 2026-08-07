@@ -32,6 +32,7 @@ public partial class DetailPanelBuilder
         public bool ChannelComboInitializing;
         public ToggleSwitch DxvkToggle = null!;
         public Button ResetOverridesBtn = null!;
+        public Action? ResetAction; // stored separately so mgmt panel can call it directly (automation peer fails on collapsed buttons)
     }
 
     public void BuildOverridesPanel(GameCardViewModel card)
@@ -1042,6 +1043,6 @@ public partial class DetailPanelBuilder
 
         BuildNvidiaProfileSection(card, capturedName);
 
-        ctx.DxvkToggle = BuildDxvkAndManagementSection(card, capturedName, gameName, ctx.ResetOverridesBtn) ?? ctx.DxvkToggle;
+        ctx.DxvkToggle = BuildDxvkAndManagementSection(card, capturedName, gameName, ctx) ?? ctx.DxvkToggle;
     }
 }

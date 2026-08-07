@@ -411,7 +411,7 @@ public partial class DetailPanelBuilder
             CornerRadius = new CornerRadius(8),
         };
         ctx.ResetOverridesBtn = resetOverridesBtn;
-        resetOverridesBtn.Click += (s, ev) =>
+        Action resetAction = () =>
         {
             // Reset all controls to defaults
             ctx.DetectedBox.Text = ctx.OriginalStoreName ?? gameName;
@@ -579,7 +579,9 @@ public partial class DetailPanelBuilder
             if (nameChanged)
                 _window.RequestReselect(ctx.CapturedName);
         };
-        // resetOverridesBtn is hidden — triggered via Management panel automation peer
+        ctx.ResetAction = resetAction;
+        resetOverridesBtn.Click += (s, ev) => resetAction();
+        // resetOverridesBtn is hidden — Management panel calls ctx.ResetAction directly
         resetOverridesBtn.Visibility = Visibility.Collapsed;
         _window.OverridesPanel.Children.Add(resetOverridesBtn);
     }
