@@ -575,7 +575,7 @@ public partial class MainViewModel
                 UseNormalReShade           = _gameNameService.NormalReShadeGames.Contains(savedLibKey),
                 ShaderModeOverride     = _perGameShaderMode.TryGetValue(savedLibKey, out var smCache) ? smCache : null,
                 VulkanRenderingPath    = _vulkanRenderingPaths.TryGetValue(savedLibKey, out var vrpCache) ? vrpCache : "DirectX",
-                DllOverrideEnabled     = _dllOverrides.ContainsKey(savedLibKey),
+                DllOverrideEnabled     = _dllOverrides.ContainsKey(game.Name),
                 LumaFeatureEnabled     = LumaFeatureEnabled,
                 IsLumaMode             = _lumaEnabledGames.Contains(savedLibKey),
                 LumaRenodxCompatible   = cachedManifest?.LumaRenodxCompat?.Contains(game.Name) == true,

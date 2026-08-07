@@ -1,5 +1,9 @@
 ## v2.3.0
 
+### Bug Fixes
+
+- Fixed several per-game settings not applying correctly after the v2.2.9 multi-store update — folder overrides, custom ReShade auto-redeploy, per-game shader selection, addon selection, and preset installs were all silently using the wrong lookup key. All affected settings now work correctly for both single-store and multi-store setups.
+
 ### Manifest Updates
 
 - Fixed Enshrouded showing DX11/12 — now correctly shows Vulkan. Added Holistic engine tag.

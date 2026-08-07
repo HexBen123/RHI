@@ -688,7 +688,7 @@ public partial class MainViewModel
                 GraphicsApi            = DetectGraphicsApi(installPath, engine, game.Name),
                 DetectedApis           = _DetectAllApisForCard(installPath, game.Name),
                 VulkanRenderingPath    = _vulkanRenderingPaths.TryGetValue(gameKey, out var vrpBc) ? vrpBc : "DirectX",
-                DllOverrideEnabled     = _dllOverrides.ContainsKey(gameKey),
+                DllOverrideEnabled     = _dllOverrides.ContainsKey(game.Name),
                 IsNativeHdrGame        = isNativeHdr,
                 IsManifestUeExtended   = useUeExt && !isNativeHdr,
                 LumaRenodxCompatible   = _manifest?.LumaRenodxCompat?.Contains(game.Name) == true,
