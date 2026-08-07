@@ -2,7 +2,8 @@
 
 ### Bug Fixes
 
-- Fixed several per-game settings not applying correctly after the v2.2.9 multi-store update — folder overrides, custom ReShade auto-redeploy, per-game shader selection, addon selection, and preset installs were all silently using the wrong lookup key. All affected settings now work correctly for both single-store and multi-store setups.
+- Fixed several per-game settings not applying correctly after the v2.2.9 multi-store update — folder overrides, custom ReShade auto-redeploy, per-game shader selection, addon selection, preset installs, and DLL naming overrides were all silently using the wrong lookup key. All affected settings now work correctly for both single-store and multi-store setups.
+- Fixed DLL naming overrides (e.g. ReShade64.dll) being reset back to dxgi.dll on every Refresh or Update All.
 
 ### Manifest Updates
 
