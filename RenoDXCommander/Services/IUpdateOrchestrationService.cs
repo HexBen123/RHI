@@ -34,7 +34,7 @@ public interface IUpdateOrchestrationService
         IDllOverrideService dllOverrideService,
         Microsoft.UI.Dispatching.DispatcherQueue? dispatcherQueue,
         Action notifyUpdateState,
-        Func<string, string?, IEnumerable<string>?>? shaderResolver = null,
+        Func<string, string, string?, IEnumerable<string>?>? shaderResolver = null,
         Func<string, ManifestDllNames?>? manifestDllResolver = null,
         Func<string, string?, string>? channelResolver = null);
 

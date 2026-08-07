@@ -150,7 +150,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
         IDllOverrideService dllOverrideService,
         Microsoft.UI.Dispatching.DispatcherQueue? dispatcherQueue,
         Action notifyUpdateState,
-        Func<string, string?, IEnumerable<string>?>? shaderResolver = null,
+        Func<string, string, string?, IEnumerable<string>?>? shaderResolver = null,
         Func<string, ManifestDllNames?>? manifestDllResolver = null,
         Func<string, string?, string>? channelResolver = null)
     {
@@ -207,7 +207,7 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                     shaderModeOverride: card.ShaderModeOverride,
                     use32Bit:       card.Is32Bit,
                     filenameOverride: rsOverride,
-                    selectedPackIds: shaderResolver?.Invoke(card.GameName, card.ShaderModeOverride),
+                    selectedPackIds: shaderResolver?.Invoke(card.GameName, card.Source ?? "", card.ShaderModeOverride),
                     progress:       progress,
                     useNormalReShade: card.UseNormalReShade,
                     channel: effectiveChannel,
