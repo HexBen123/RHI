@@ -463,7 +463,10 @@ public partial class MainViewModel
             {
                 foreach (var (gameName, version) in _manifest.LegacyReShadeVersions)
                 {
-                    if (!_reShadeChannelOverrides.ContainsKey(gameName))
+                    // Check for any existing override — either legacy name-only or composite key
+                    bool hasOverride = _reShadeChannelOverrides.ContainsKey(gameName)
+                        || _reShadeChannelOverrides.Keys.Any(k => k.StartsWith($"{gameName}|", StringComparison.OrdinalIgnoreCase));
+                    if (!hasOverride)
                         SetReShadeChannelOverride(gameName, version);
                 }
             }

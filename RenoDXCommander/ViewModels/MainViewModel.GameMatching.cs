@@ -272,10 +272,12 @@ public partial class MainViewModel
     /// Returns the effective Is32Bit flag for a game.
     /// Priority: user bitness override → manifest overrides → PE header auto-detection.
     /// </summary>
-    internal bool ResolveIs32Bit(string gameName, MachineType detectedMachine)
+    internal bool ResolveIs32Bit(string gameName, MachineType detectedMachine, string store = "")
     {
-        // User bitness override takes highest priority
-        if (_bitnessOverrides.TryGetValue(gameName, out var bitnessOverride))
+        // User bitness override takes highest priority (composite key, fallback to name-only for legacy)
+        var key = GameKey.From(gameName, store).ToKey();
+        if (_bitnessOverrides.TryGetValue(key, out var bitnessOverride)
+            || _bitnessOverrides.TryGetValue(gameName, out bitnessOverride))
         {
             if (bitnessOverride == "32") return true;
             if (bitnessOverride == "64") return false;
@@ -294,10 +296,18 @@ public partial class MainViewModel
     /// engine DLLs, subdirectory exes, D3D12 Agility SDK folders, and finally
     /// the engine type as a last-resort heuristic.
     /// </summary>
-    internal GraphicsApiType DetectGraphicsApi(string installPath, EngineType engine = EngineType.Unknown, string? gameName = null)
+    internal GraphicsApiType DetectGraphicsApi(string installPath, EngineType engine = EngineType.Unknown, string? gameName = null, string? store = null)
     {
         // User API override takes top priority — derive primary API from the override set
-        if (gameName != null && _apiOverrides.TryGetValue(gameName, out var apiOverrideList))
+        // (composite key, fallback to name-only for legacy)
+        List<string>? apiOverrideList = null;
+        if (gameName != null)
+        {
+            var key = GameKey.From(gameName, store ?? "").ToKey();
+            if (!_apiOverrides.TryGetValue(key, out apiOverrideList))
+                _apiOverrides.TryGetValue(gameName, out apiOverrideList);
+        }
+        if (apiOverrideList != null)
         {
             var overrideSet = new HashSet<GraphicsApiType>();
             foreach (var name in apiOverrideList)
@@ -449,10 +459,18 @@ public partial class MainViewModel
     /// and returns the union of all detected graphics APIs. This handles games
     /// like Baldur's Gate 3 that ship separate DX and Vulkan executables.
     /// </summary>
-    internal HashSet<GraphicsApiType> _DetectAllApisForCard(string installPath, string? gameName = null)
+    internal HashSet<GraphicsApiType> _DetectAllApisForCard(string installPath, string? gameName = null, string? store = null)
     {
         // User API override takes priority — return the override set instead of scanning
-        if (gameName != null && _apiOverrides.TryGetValue(gameName, out var apiOverrideList))
+        // (composite key, fallback to name-only for legacy)
+        List<string>? apiOverrideList = null;
+        if (gameName != null)
+        {
+            var key = GameKey.From(gameName, store ?? "").ToKey();
+            if (!_apiOverrides.TryGetValue(key, out apiOverrideList))
+                _apiOverrides.TryGetValue(gameName, out apiOverrideList);
+        }
+        if (apiOverrideList != null)
         {
             var overrideSet = new HashSet<GraphicsApiType>();
             foreach (var name in apiOverrideList)

@@ -524,11 +524,18 @@ public partial class DetailPanelBuilder
             ctx.ApiCombo.SelectedItem = "Auto";
             _window.ViewModel.SetApiOverride(ctx.CapturedName, null, ctx.Card.Source);
 
-            // Reset ReShade channel override
+            // Reset ReShade channel override — if ReShade is installed and channel was overridden, reinstall with Stable
+            var previousChannel = _window.ViewModel.GetReShadeChannelOverride(ctx.CapturedName, ctx.Card.Source);
             ctx.ChannelComboInitializing = true;
             ctx.ChannelCombo.SelectedItem = "Stable";
             ctx.ChannelComboInitializing = false;
             _window.ViewModel.SetReShadeChannelOverride(ctx.CapturedName, null, ctx.Card.Source);
+
+            // If ReShade was installed with a non-Stable channel, reinstall with Stable
+            if (ctx.Card.RsRecord != null && !string.IsNullOrEmpty(previousChannel))
+            {
+                _ = _window.ViewModel.InstallReShadeAsync(ctx.Card);
+            }
 
             // Reset custom ReShade DLL selection (composite key + legacy fallback)
             var customKey = GameKey.FromCard(ctx.CapturedName, ctx.Card.Source).ToKey();
@@ -550,13 +557,13 @@ public partial class DetailPanelBuilder
                 {
                     // Re-resolve bitness from PE header auto-detection
                     var detectedMachine = _peHeaderService.DetectGameArchitecture(targetCard.InstallPath);
-                    targetCard.Is32Bit = _window.ViewModel.ResolveIs32Bit(ctx.CapturedName, detectedMachine);
+                    targetCard.Is32Bit = _window.ViewModel.ResolveIs32Bit(ctx.CapturedName, detectedMachine, targetCard.Source ?? "");
 
                     // Re-detect APIs from scanning (overrides are now cleared)
-                    targetCard.DetectedApis = _window.ViewModel._DetectAllApisForCard(targetCard.InstallPath, ctx.CapturedName);
+                    targetCard.DetectedApis = _window.ViewModel._DetectAllApisForCard(targetCard.InstallPath, ctx.CapturedName, targetCard.Source);
                     targetCard.IsDualApiGame = GraphicsApiDetector.IsDualApi(targetCard.DetectedApis);
                     targetCard.GraphicsApi = _window.ViewModel.DetectGraphicsApi(
-                        targetCard.InstallPath, EngineType.Unknown, ctx.CapturedName);
+                        targetCard.InstallPath, EngineType.Unknown, ctx.CapturedName, targetCard.Source);
 
                     // Bitness changed — no need to update placeholder
 

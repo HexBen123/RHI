@@ -535,7 +535,7 @@ public partial class MainViewModel
                 : engine == EngineType.Unity        ? "Unity"
                 : engine == EngineType.REEngine     ? "RE Engine" : "";
 
-            var is32Bit = ResolveIs32Bit(game.Name, machineType);
+            var is32Bit = ResolveIs32Bit(game.Name, machineType, game.Source ?? "");
 
             // Build composite key for savedLib lookups (collections now use "GameName|Store" format)
             var savedLibKey = GameKey.FromCard(game.Name, game.Source).ToKey();

@@ -866,7 +866,7 @@ public partial class DetailPanelBuilder
                 {
                     // "Auto" — re-resolve from auto-detection
                     var detectedMachine = _peHeaderService.DetectGameArchitecture(targetCard.InstallPath);
-                    newIs32Bit = _window.ViewModel.ResolveIs32Bit(capturedName, detectedMachine);
+                    newIs32Bit = _window.ViewModel.ResolveIs32Bit(capturedName, detectedMachine, targetCard.Source ?? "");
                 }
 
                 // If bitness actually changed, uninstall all components BEFORE updating card.Is32Bit
@@ -997,11 +997,11 @@ public partial class DetailPanelBuilder
                 else
                 {
                     // "Auto" — re-detect from scanning
-                    targetCard.DetectedApis = _window.ViewModel._DetectAllApisForCard(targetCard.InstallPath, capturedName);
+                    targetCard.DetectedApis = _window.ViewModel._DetectAllApisForCard(targetCard.InstallPath, capturedName, targetCard.Source);
                 }
                 targetCard.IsDualApiGame = GraphicsApiDetector.IsDualApi(targetCard.DetectedApis);
                 targetCard.GraphicsApi = _window.ViewModel.DetectGraphicsApi(
-                    targetCard.InstallPath, EngineType.Unknown, capturedName);
+                    targetCard.InstallPath, EngineType.Unknown, capturedName, targetCard.Source);
                 targetCard.NotifyAll();
 
                 // Rebuild the detail panel so install buttons reflect the new API

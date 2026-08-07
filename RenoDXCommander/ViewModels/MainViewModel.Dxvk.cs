@@ -253,9 +253,9 @@ public partial class MainViewModel
             // but the proper value may differ based on manifest overrides.
             if (!string.IsNullOrEmpty(card.InstallPath))
             {
-                card.DetectedApis = _DetectAllApisForCard(card.InstallPath, card.GameName);
+                card.DetectedApis = _DetectAllApisForCard(card.InstallPath, card.GameName, card.Source);
                 card.IsDualApiGame = GraphicsApiDetector.IsDualApi(card.DetectedApis);
-                card.GraphicsApi = DetectGraphicsApi(card.InstallPath, EngineType.Unknown, card.GameName);
+                card.GraphicsApi = DetectGraphicsApi(card.InstallPath, EngineType.Unknown, card.GameName, card.Source);
             }
 
             // Deploy shaders after ReShade is restored as DX proxy.
