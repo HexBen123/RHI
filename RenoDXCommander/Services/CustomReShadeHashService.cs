@@ -163,9 +163,14 @@ public class CustomReShadeHashService
             if (!string.Equals(channel, AuxInstallService.ChannelCustom, StringComparison.OrdinalIgnoreCase))
                 continue;
 
-            // Determine which DLL this game uses
+            // Determine which DLL this game uses — try composite key first, fall back to name-only
             string dllFilename;
-            if (selections.TryGetValue(card.GameName, out var selected) && !string.IsNullOrEmpty(selected))
+            var compositeKey = GameKey.FromCard(card.GameName, card.Source).ToKey();
+            if (selections.TryGetValue(compositeKey, out var selected) && !string.IsNullOrEmpty(selected))
+            {
+                dllFilename = selected;
+            }
+            else if (selections.TryGetValue(card.GameName, out selected) && !string.IsNullOrEmpty(selected))
             {
                 dllFilename = selected;
             }
