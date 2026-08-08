@@ -1,0 +1,14 @@
+App.xbf
+MainWindow.xbf
+Views\AuthorsPage.xbf
+Views\DetectionPage.xbf
+Views\DofFixPage.xbf
+Views\DxvkPage.xbf
+Views\EnginePage.xbf
+Views\GameSearchPage.xbf
+Views\InstallPage.xbf
+Views\NotesPage.xbf
+Views\NvidiaPage.xbf
+Views\PacksPage.xbf
+Views\UeHdrPage.xbf
+Views\WikiStatusPage.xbf
