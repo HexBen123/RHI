@@ -1063,6 +1063,11 @@
       "notes": "⚠️ Ryubing requires Nightly ReShade loaded as Vulkan.\n\nSet RS Channel to Nightly in Overrides. ReShade will be installed via the Vulkan layer automatically.",
       "notesUrl": null,
       "notesUrlLabel": null
+    },
+    "The Sinking City Remastered": {
+      "notes": "⚠️ For frame generation to work, delete amd_FusionFX.dll from the game folder before installing ReShade.",
+      "notesUrl": null,
+      "notesUrlLabel": null
     }
   },
 

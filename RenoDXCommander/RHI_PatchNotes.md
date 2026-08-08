@@ -7,6 +7,7 @@
 ### Manifest Updates
 
 - Added Doom Eternal to wiki unlinks (no RenoDX mod available).
+- Added note for The Sinking City Remastered: delete `amd_FusionFX.dll` from the game folder before installing ReShade for frame generation to work.
 
 ---
 
