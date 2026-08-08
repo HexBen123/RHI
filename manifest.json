@@ -1039,6 +1039,11 @@
       "notes": "\u26A0\uFE0F amd_FusionFX.dll must be deleted from the game folder for frame generation to work."
     }
   },
+  "relimiterGameInfo": {
+    "The Relic: The First Guardian": {
+      "notes": "Test note, hi me"
+    }
+  },
   "lumaGameNotes": {
     "BioShock Remastered": {
       "notes": "Additional information available on Nexus below:",
