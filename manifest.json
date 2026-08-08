@@ -590,6 +590,7 @@
     "Metro: Last Light Redux": "DX11",
     "Red Dead Redemption 2": "VLK",
     "Stardew Valley": "OGL",
+    "The Dishwasher: Vampire Smile": "OGL",
     "The Witcher 3: Wild Hunt": "DX12",
     "The Witcher 3: Wild Hunt - Game of the Year Edition": "DX12",
     "Wartales": "DX11",
@@ -1155,6 +1156,10 @@
     "Quake": [
       { "name": "Quake", "subPath": "" },
       { "name": "Quake (New)", "subPath": "rerelease" }
+    ],
+    "LISA": [
+      { "name": "LISA The Painful - Definitive Edition", "subPath": "LISA The Painful - Definitive Edition" },
+      { "name": "LISA The Joyful - Definitive Edition", "subPath": "LISA The Joyful - Definitive Edition" }
     ]
   },
 
