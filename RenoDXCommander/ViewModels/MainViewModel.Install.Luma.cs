@@ -51,6 +51,9 @@ public partial class MainViewModel
             return;
         }
 
+        // Check for manifest-driven install warning
+        if (!await CheckInstallWarningAsync(card.GameName, "reshade")) return;
+
         // ── Vulkan ReShade install flow ───────────────────────────────────────────
         if (card.RequiresVulkanInstall)
         {
@@ -458,6 +461,9 @@ public partial class MainViewModel
             card.RefActionMessage = "No install path — use 📁 to pick the game folder.";
             return;
         }
+
+        // Check for manifest-driven install warning
+        if (!await CheckInstallWarningAsync(card.GameName, "reframework")) return;
 
         card.RefIsInstalling = true;
         card.RefActionMessage = "Starting RE Framework download...";

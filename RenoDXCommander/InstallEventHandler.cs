@@ -179,6 +179,8 @@ public class InstallEventHandler
         }
 
         // ── First-time OptiScaler warning ──────────────────────────────
+        if (!await ViewModel.CheckInstallWarningAsync(card.GameName, "optiscaler")) return;
+
         if (!ViewModel.Settings.OsFirstTimeWarningDismissed)
         {
             var xamlRoot = (sender as FrameworkElement)?.XamlRoot;

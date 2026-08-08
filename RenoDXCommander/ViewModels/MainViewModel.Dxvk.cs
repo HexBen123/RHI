@@ -22,6 +22,9 @@ public partial class MainViewModel
     {
         if (string.IsNullOrEmpty(card.InstallPath)) return;
 
+        // Check for manifest-driven install warning
+        if (!await CheckInstallWarningAsync(card.GameName, "dxvk")) return;
+
         // ── DXVK warning (shown unless user has opted out via checkbox) ─────────
         if (xamlRoot != null && !_dxvkService.FirstTimeWarningAcknowledged)
         {

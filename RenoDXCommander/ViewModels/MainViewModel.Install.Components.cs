@@ -317,6 +317,9 @@ public partial class MainViewModel
         // Mutual exclusion guard: ReLimiter cannot be installed when DC is installed
         if (card.IsDcInstalled) return;
 
+        // Check for manifest-driven install warning
+        if (!await CheckInstallWarningAsync(card.GameName, "relimiter")) return;
+
         card.UlIsInstalling = true;
         card.UlActionMessage = "Downloading ReLimiter...";
         card.UlProgress = 0;
@@ -753,6 +756,9 @@ public partial class MainViewModel
 
         // Mutual exclusion guard: DC cannot be installed when ReLimiter is installed
         if (card.IsUlInstalled) return;
+
+        // Check for manifest-driven install warning
+        if (!await CheckInstallWarningAsync(card.GameName, "dc")) return;
 
         card.DcIsInstalling = true;
         card.DcActionMessage = "Downloading Display Commander...";

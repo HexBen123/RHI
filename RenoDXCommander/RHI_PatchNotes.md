@@ -1,5 +1,9 @@
 ## v2.3.2
 
+### New
+
+- Install warnings from the manifest now work for all components — ReShade, ReLimiter, Display Commander, OptiScaler, RE Framework, and DXVK can all show a per-game confirm dialog before installing.
+
 ### Bug Fixes
 
 - Fixed deprecated mods from the RenoDX wiki showing up in RHI — mods listed under "Deprecated mods" are now skipped during wiki parsing.
@@ -7,7 +11,8 @@
 ### Manifest Updates
 
 - Added Doom Eternal to wiki unlinks (no RenoDX mod available).
-- Added note for The Sinking City Remastered: delete `amd_FusionFX.dll` from the game folder before installing ReShade for frame generation to work.
+- Added The Sinking City Remastered ReShade info note and install warning: amd_FusionFX.dll must be deleted from the game folder for frame generation to work.
+- Added LISA split entries — "LISA The Painful - Definitive Edition" and "LISA The Joyful - Definitive Edition" as separate installs.
 
 ---
 
