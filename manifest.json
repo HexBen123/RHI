@@ -1065,7 +1065,7 @@
       "notesUrlLabel": null
     },
     "The Sinking City Remastered": {
-      "notes": "⚠️ For frame generation to work, delete amd_FusionFX.dll from the game folder before installing ReShade.",
+      "notes": "⚠️ amd_FusionFX.dll must be deleted from the game folder for frame generation to work.",
       "notesUrl": null,
       "notesUrlLabel": null
     }
@@ -1193,6 +1193,9 @@
     },
     "Halo: Campaign Evolved": {
       "renodx": "⚠ For best results, use the named RenoDX mod from the RenoDX Discord.\n\nInstalling through RHI will deploy the generic Unreal Engine mod. You can also enable UE-Extended via the RenoDX ⚙ dialog if you don't have Discord access."
+    },
+    "The Sinking City Remastered": {
+      "reshade": "⚠️ amd_FusionFX.dll must be deleted from the game folder for frame generation to work."
     },
     "_REFERENCE_EXAMPLE_DO_NOT_USE": {
       "reshade": "Example ReShade warning",
