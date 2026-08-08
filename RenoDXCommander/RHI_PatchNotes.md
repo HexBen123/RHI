@@ -2,37 +2,18 @@
 
 ### New
 
-- Install warnings from the manifest now work for all components — ReShade, ReLimiter, Display Commander, OptiScaler, RE Framework, and DXVK can all show a per-game confirm dialog before installing.
-
-### Manifest Updates
-
-- Bumped manifest `version` from 1 to 2.
-- Populated `pdUpscalerGames` section in manifest.json with RE2, RE3, RE4, RE7, and RE8 entries for PD-Upscaler REFramework support.
-- Populated `installPathOverrides`, `splitGames`, and `emulatorGames` sections in manifest.json.
-- Populated `engineOverrides`, `engineHintOverrides`, `engineIniPathOverrides`, `graphicsApiOverrides`, `thirtyTwoBitGames`, `sixtyFourBitGames`, and `dlssSkipGames` sections in manifest.json.
+- Install warnings now work for all components — ReShade, ReLimiter, Display Commander, OptiScaler, RE Framework, and DXVK can each show a per-game note before installing proceeds.
+- Game-specific notes added to the ReLimiter and Display Commander info dialogs now appear above the release notes so you can see both.
 
 ### Bug Fixes
 
-- Fixed deprecated mods from the RenoDX wiki showing up in RHI — mods listed under "Deprecated mods" are now skipped during wiki parsing.
+- Fixed deprecated mods from the RenoDX wiki showing up in RHI — mods in the "Deprecated mods" section are now skipped during wiki parsing.
 
 ### Manifest Updates
 
-- Populated `authorDisplayNames`, `donationUrls`, `authorOverrides`, `nexusUrlOverrides`, `pcgwUrlOverrides`, `uwFixUrlOverrides`, `ultraPlusUrlOverrides`, `steamAppIdOverrides`, `optiScalerWikiNames`, and `rtxHdrInfoUrl` sections in manifest.json.
 - Added Doom Eternal to wiki unlinks (no RenoDX mod available).
 - Added The Sinking City Remastered ReShade info note and install warning: amd_FusionFX.dll must be deleted from the game folder for frame generation to work.
-- Added LISA split entries — "LISA The Painful - Definitive Edition" and "LISA The Joyful - Definitive Edition" as separate installs.
-- Populated `gameNotes` section with per-game RenoDX info button notes for ~40 games — setup warnings (Far Cry 2/3, Cyberpunk, L.A. Noire, RE Engine titles), UE-Extended guidance (NativeHDR games), Ultra+ HDR links, and misc notes.
-- Populated `nativeHdrGames`, `ueExtendedCompatibility`, `ueExtendedGames`, `noUeExtendedGames`, `lumaRenodxCompat`, and `lumaDefaultGames` sections in manifest.json.
-- Reorganized manifest.json: added `_doc` and `_comment_game_detection` header comments for clarity.
-- Populated wikiUnlinks, wikiNameOverrides, and lumaNameOverrides sections in manifest.json.
-- Populated `installWarnings`, `forceExternalOnly`, `snapshotOverrides`, `dllNameOverrides`, `gacSymlinkGames`, `launchExeOverrides`, `renodxIniOverrides`, `legacyReShadeVersions`, and `legacyReShadeAvailable` sections in manifest.json.
-- Populated `reshadeGameInfo` with per-game ReShade info notes for Max Payne 3 (legacy RS version warning), Monster Hunter Stories 2 (MHS2Loader fix), Ryubing (Nightly/Vulkan requirement), and The Sinking City Remastered (amd_FusionFX.dll note).
-- Populated `lumaGameNotes` with setup notes for BioShock Remastered, Final Fantasy VII Remake Intergrade, Metro 2033 Redux, and Metro: Last Light Redux.
-- Populated `dxvkBlacklist` with known anti-cheat games (Fortnite, Apex Legends, Dead by Daylight, PUBG, Rainbow Six Siege, Escape from Tarkov, Genshin Impact, Valorant).
-- Added FFXIV DXVK performance note to `dxvkGameNotes`.
-- Populated `wikiStatusOverrides` with ✅ status for Code Vein II, High On Life 2, Lies of P, and Nobody Wants to Die.
-- Added empty `relimiterGameInfo`, `displayCommanderGameInfo`, `reframeworkGameInfo`, `optiScalerGameInfo`, `lumaGameInfo`, `dxvkApiOverrides` sections for future population.
-- Populated `profileNameOverrides` (Dead Space → Remake, Lords of the Fallen → 2023), `dofFixForceGames` (Avowed, Clair Obscur: Expedition 33), `dlssPresets` (SR preset F - CNN), `addonPacks` descriptions/URLs for renodx-devkit, renodx-dlssfix, and renodx-upgrade, `renodxExtraSettings` (Upgrade Copy Destinations toggle), and added section comment headers for NVIDIA Profile, DOF Fix, and Packs & Component URLs.
+- Added LISA — "The Painful" and "The Joyful" Definitive Editions now show as separate installs.
 
 ---
 
@@ -44,10 +25,6 @@
 - Fixed Reset Overrides not fully resetting Bitness, Graphics API, and ReShade Channel.
 - Fixed Reset Overrides not reinstalling ReShade with Stable channel when a channel override existed.
 - Fixed per-game Bitness and Graphics API overrides not being applied after Refresh.
-
-### Manifest Updates
-
-- Added Doom Eternal to wiki unlinks (no RenoDX mod available).
 
 ---
 

@@ -683,6 +683,27 @@ public partial class DialogService
             });
         }
 
+        // Show manifest game-specific note first (above release notes) if present
+        if (result.Source == InfoSourceType.Manifest && !string.IsNullOrWhiteSpace(result.Content))
+        {
+            panel.Children.Add(new TextBlock
+            {
+                Text         = result.Content,
+                TextWrapping = TextWrapping.Wrap,
+                Foreground   = textColour,
+                FontSize     = 13,
+                LineHeight   = 22,
+                Margin       = new Thickness(0, 0, 0, 12),
+            });
+            // Add a separator before release notes
+            panel.Children.Add(new Border
+            {
+                Height      = 1,
+                Background  = new SolidColorBrush(Windows.UI.Color.FromArgb(40, 255, 255, 255)),
+                Margin      = new Thickness(0, 0, 0, 12),
+            });
+        }
+
         // Show release notes as markdown if available
         if (!string.IsNullOrWhiteSpace(releaseBody))
         {
@@ -701,9 +722,9 @@ public partial class DialogService
             markdownContainer.Children.Add(markdown);
             panel.Children.Add(markdownContainer);
         }
-        else
+        else if (result.Source != InfoSourceType.Manifest)
         {
-            // Fall back to generic addon description
+            // Fall back to generic addon description (only if no manifest note already shown)
             if (!string.IsNullOrWhiteSpace(result.Content))
             {
                 panel.Children.Add(new TextBlock
