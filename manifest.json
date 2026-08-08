@@ -1,15 +1,8 @@
 {
-  "version": 1,
+  "version": 2,
+  "_doc": "Full field reference: docs/manifest-field-reference.md",
 
-  "rtxHdrInfoUrl": "https://www.reddit.com/r/nvidia/comments/1b03yfg/rtx_hdr_paper_white_gamma_reference_settings/",
-
-  "ueExtendedCompatibility": {
-    "Beast of Reincarnation": { "hdr": false },
-    "Palworld": { "hdr": false },
-    "Stellar Blade™": { "hdr": false }
-  },
-
-  "_comment_lists": "=== GAME CLASSIFICATION LISTS ===",
+  "_comment_game_detection": "=== GAME DETECTION ===\nGames to hide from RHI entirely, split into sub-cards, or redirect to a different install subfolder.\nName mappings tell RHI which wiki/Luma mod name to look up for a given detected folder name.",
 
   "blacklist": [
     "1Password",
@@ -79,202 +72,6 @@
     "Assorted Outfit Pack"
   ],
 
-  "nativeHdrGames": [
-    "Alone in the Dark",
-    "Assetto Corsa Rally",
-    "Avowed",
-    "Beast of Reincarnation",
-    "Black Myth: Wukong",
-    "Borderlands 4",
-    "Causal Loop",
-    "CODE VEIN II",
-    "Crisol: Theater of Idols",
-    "Cthulhu: The Cosmic Abyss",
-    "Denshattack!",
-    "Directive 8020",
-    "DragonSword : Awakening",
-    "Echoes of Aincrad",
-    "Echoes of Aincrad DEMO Version",
-    "Echoes of the End",
-    "Gothic 1 Remake",
-    "Hell is Us",
-    "High on Life 2",
-    "Kaku: Ancient Seal",
-    "LEGO® Batman™: Legacy of the Dark Knight",
-    "Lies of P",
-    "Lost Soul Aside",
-    "Luna Abyss",
-    "Mafia: The Old Country",
-    "Marvel's Midnight Suns",
-    "Mortal Kombat 1",
-    "Neverness To Everness",
-    "Nobody Wants to Die",
-    "Of Ash and Steel",
-    "REANIMAL",
-    "Returnal",
-    "ROMEO IS A DEAD MAN",
-    "S.T.A.L.K.E.R. 2: Heart of Chornobyl",
-    "SILENT HILL f",
-    "Samson",
-    "Split Fiction",
-    "Star Trek: Resurgence",
-    "Star Trek: Voyager - Across the Unknown",
-    "Still Wakes the Deep",
-    "Subnautica 2",
-    "The Sinking City Remastered",
-    "Until Dawn™",
-    "Vampire: The Masquerade - Bloodlines 2",
-    "WUCHANG: Fallen Feathers"
-  ],
-
-  "ueExtendedGames": [
-    "Grand Theft Auto III – The Definitive Edition",
-    "Grand Theft Auto: San Andreas – The Definitive Edition",
-    "Grand Theft Auto: Vice City – The Definitive Edition",
-    "Titan Quest II"
-  ],
-
-  "lumaRenodxCompat": [
-    "FINAL FANTASY VII REMAKE INTERGRADE",
-    "Mass Effect Andromeda",
-    "Mass Effect: Andromeda",
-    "Persona 5 Royal"
-  ],
-
-  "engineIniPathOverrides": {
-    "Directive 8020": "Directive8020",
-    "Echoes of Aincrad": "%LOCALAPPDATA%\\EchoesofAincrad\\Saved\\Config\\WindowsClient",
-    "Echoes of Aincrad DEMO Version": "%LOCALAPPDATA%\\EchoesofAincrad\\Saved\\Config\\WindowsClient",
-    "Ghostwire: Tokyo": "%USERPROFILE%\\Saved Games\\TangoGameworks\\GhostWire Tokyo (STEAM)\\Saved\\Config\\WindowsNoEditor|%USERPROFILE%\\Saved Games\\TangoGameworks\\GhostWire Tokyo (EGS)\\Saved\\Config\\WindowsNoEditor|%USERPROFILE%\\Saved Games\\TangoGameworks\\GhostWire Tokyo (Xbox)\\Saved\\Config\\WinGDK",
-    "LEGO® Batman™: Legacy of the Dark Knight": "Dinner",
-    "Shin Megami Tensei V: Vengeance": "SMT5V",
-    "System Shock": "%USERPROFILE%\\Saved Games\\Nightdive Studios\\SystemShock\\Saved\\Config\\WindowsNoEditor"
-  },
-
-  "engineHintOverrides": {
-    "Avowed": "Unreal Engine 5.3.2",
-    "Beast of Reincarnation": "Unreal Engine 5.4.4",
-    "Call of the Elder Gods": "Unreal Engine 5.6.1",
-    "Denshattack!": "Unreal Engine 5.6.1",
-    "Dragon Quest VII Reimagined": "Unreal Engine 4.27.2",
-    "DRAGON QUEST VII Reimagined": "Unreal Engine 4.27.2",
-    "Ghostwire: Tokyo": "Unreal Engine 4.27.2",
-    "Hell is Us": "Unreal Engine 5.5.4",
-    "Halo: Campaign Evolved": "Unreal Engine 5.5.4",
-    "Palworld": "Unreal Engine 5.1.1",
-    "Shin Megami Tensei V: Vengeance": "Unreal Engine 4.27.2",
-    "Stellar Blade™": "Unreal Engine 4.26.2"
-  },
-
-  "emulatorGames": {
-    "Ryubing": {
-      "addons": [
-        "Luigi's Mansion 3",
-        "Mario Kart 8 Deluxe",
-        "Metroid Dread",
-        "Monster Hunter Generations Ultimate",
-        "Splatoon 2",
-        "Splatoon 3",
-        "The Legend of Zelda: Breath of the Wild",
-        "The Legend of Zelda: Tears of the Kingdom",
-        "Xenoblade Chronicles",
-        "Xenoblade Chronicles 2",
-        "Xenoblade Chronicles 3",
-        "Xenoblade Chronicles X: Definitive Edition"
-      ],
-      "addonUrls": {
-        "Xenoblade Chronicles": "https://souperman9.github.io/renodx/renodx-xenobladechronicles.addon64",
-        "Xenoblade Chronicles 2": "https://souperman9.github.io/renodx/renodx-xenobladechronicles.addon64",
-        "Xenoblade Chronicles 3": "https://souperman9.github.io/renodx/renodx-xenobladechronicles.addon64"
-      }
-    }
-  },
-
-  "thirtyTwoBitGames": [
-    "Assassin's Creed",
-    "Assassin's Creed IV Black Flag",
-    "Batman: Arkham Asylum GOTY Edition",
-    "Far Cry 3",
-    "Max Payne 3",
-    "Ori and the Blind Forest: Definitive Edition",
-    "Tomb Raider",
-    "Tomb Raider (2013)"
-  ],
-
-  "sixtyFourBitGames": [
-    "Anno 117 - Pax Romana",
-    "Zero Parades",
-    "BeamNG.drive",
-    "Control",
-    "Control Ultimate Edition",
-    "Darkest Dungeon®",
-    "Grim Dawn",
-    "Hades II",
-    "LEGO® Voyagers",
-    "Returnal™",
-    "Stardew Valley",
-    "Superhot",
-    "Tom Clancy's Rainbow Six Siege",
-    "Trackmania",
-    "Watch_Dogs 2",
-    "Watch_Dogs® 2"
-  ],
-
-  "lumaDefaultGames": [
-    "Alfred Hitchcock - Vertigo",
-    "Bioshock 2 Remastered",
-    "Bioshock Remastered",
-    "Burnout Paradise Remastered",
-    "BurnoutPR",
-    "Call of Duty®: Black Ops III",
-    "Call of Duty: Black Ops III",
-    "COCOON",
-    "Deus Ex: Human Revolution - Director's Cut",
-    "FAR: Changing Tides",
-    "FAR: Lone Sails",
-    "FINAL FANTASY VII REMAKE INTERGRADE",
-    "Granblue Fantasy: Relink",
-    "GreedFall",
-    "Hatsune Miku: Project DIVA Mega Mix+",
-    "Heavy Rain",
-    "Hollow Knight: Silksong",
-    "Inside",
-    "Just Cause™ 3",
-    "LARA CROFT AND THE TEMPLE OF OSIRIS™",
-    "LEGO® City Undercover",
-    "Mafia II: Definitive Edition",
-    "Mafia III: Definitive Edition",
-    "Metro 2033 Redux",
-    "Metro: Last Light Redux",
-    "Nioh: Complete Edition",
-    "Prince of Persia The Lost Crown",
-    "Shadows of Doubt",
-    "Thief",
-    "Thumper",
-    "Trine 5: A Clockwork Conspiracy",
-    "Vanquish",
-    "Watch_Dogs® 2",
-    "White Knuckle"
-  ],
-
-  "lumaNameOverrides": {
-    "Borderlands 2": "Borderlands 2 and The Pre-Sequel",
-    "Borderlands: The Pre-Sequel": "Borderlands 2 and The Pre-Sequel",
-    "Borderlands GOTY Enhanced": "Borderlands GOTY Enhanced",
-    "Batman™: Arkham Knight": "Batman Arkham Knight",
-    "Deus Ex: Human Revolution - Director's Cut": "Deus Ex: Human Revolution",
-    "Dishonored 2": "Dishonored 2 + Death of the Outsider",
-    "Dishonored: Death of the Outsider": "Dishonored 2 + Death of the Outsider",
-    "FINAL FANTASY VII REMAKE INTERGRADE": "Final Fantasy VII Remake",
-    "LEGO® City Undercover": "Lego City: Undercover",
-    "LEGO City Undercover": "Lego City: Undercover",
-    "Mafia III: Definitive Edition": "Mafia III",
-    "Metro 2033 Redux": "Metro Redux (2033 and Last Light)",
-    "Metro: Last Light Redux": "Metro Redux (2033 and Last Light)",
-    "Nioh: Complete Edition": "Nioh",
-    "Trine 5: A Clockwork Conspiracy": "Trine 5"
-  },
-
   "wikiUnlinks": [
     "ARC Raiders",
     "Call of Duty®: Modern Warfare®",
@@ -307,8 +104,6 @@
     "Grand Theft Auto V",
     "Grand Theft Auto V Legacy"
   ],
-
-  "_comment_overrides": "=== NAME, PATH & ENGINE OVERRIDES ===",
 
   "wikiNameOverrides": {
     "AFOP": "Avatar: Frontiers of Pandora™",
@@ -366,44 +161,22 @@
     "Tomb Raider": "Tomb Raider (2013)"
   },
 
-  "wikiStatusOverrides": {
-    "Code Vein II": "✅",
-    "High On Life 2": "✅",
-    "Lies of P": "✅",
-    "Nobody Wants to Die": "✅"
-  },
-
-  "optiScalerWikiNames": {
-    "Alone in the Dark": "Alone in the Dark (2024)",
-    "CODE VEIN II": "Code Vein 2",
-    "Dead Space": "Dead Space (2023)",
-    "DEATH STRANDING DIRECTOR'S CUT": "Death Stranding: Director's Cut",
-    "Diablo II: Resurrected – Infernal Edition": "Diablo II: Resurrected",
-    "Dragon's Dogma 2": "Dragon's Dogma II",
-    "Dying Light 2: Reloaded Edition": "Dying Light 2",
-    "Dying Light: The Beast Restored Land": "Dying Light The Beast",
-    "God of War": "God of War (2018)",
-    "Grand Theft Auto III – The Definitive Edition": "Grand Theft Auto III – Definitive Edition",
-    "Grand Theft Auto: San Andreas – The Definitive Edition": "Grand Theft Auto: San Andreas – Definitive Edition",
-    "Grand Theft Auto: Vice City – The Definitive Edition": "Grand Theft Auto: Vice City – Definitive Edition",
-    "GreedFall: The Dying World": "GreedFall - The Dying World",
-    "Layers of Fear": "Layers of Fear (2023)",
-    "Lords of the Fallen": "Lords of the Fallen (2023)",
-    "Metro Exodus Enhanced Edition": "Metro Exodus: Enhanced Edition",
-    "Microsoft Flight Simulator (2020) 40th Anniversary Edition": "Microsoft Flight Simulator 2020",
-    "Nioh 2 – The Complete Edition": "Nioh 2",
-    "Prey": "Prey (2017)",
-    "Resident Evil 2": "Resident Evil 2 (2019)",
-    "Resident Evil 3": "Resident Evil 3 (2020)",
-    "Resident Evil 4": "Resident Evil 4 (2023)",
-    "Resident Evil Requiem": "Resident Evil 9 Requiem",
-    "Resident Evil Village": "Resident Evil 8 Village",
-    "S.T.A.L.K.E.R. 2: Heart of Chornobyl": "STALKER 2: Heart of Chornobyl",
-    "S.T.A.L.K.E.R.: Call of Prypiat - Enhanced Edition": "STALKER: Call of Prypiat Enhanced Edition",
-    "S.T.A.L.K.E.R.: Clear Sky - Enhanced Edition": "STALKER: Clear Sky Enhanced Edition",
-    "S.T.A.L.K.E.R.: Shadow of Chornobyl - Enhanced Edition": "STALKER: Shadow of Chornobyl Enhanced Edition",
-    "SILENT HILL 2": "SILENT HILL 2 (2024)",
-    "System Shock": "System Shock (2023)"
+  "lumaNameOverrides": {
+    "Borderlands 2": "Borderlands 2 and The Pre-Sequel",
+    "Borderlands: The Pre-Sequel": "Borderlands 2 and The Pre-Sequel",
+    "Borderlands GOTY Enhanced": "Borderlands GOTY Enhanced",
+    "Batman™: Arkham Knight": "Batman Arkham Knight",
+    "Deus Ex: Human Revolution - Director's Cut": "Deus Ex: Human Revolution",
+    "Dishonored 2": "Dishonored 2 + Death of the Outsider",
+    "Dishonored: Death of the Outsider": "Dishonored 2 + Death of the Outsider",
+    "FINAL FANTASY VII REMAKE INTERGRADE": "Final Fantasy VII Remake",
+    "LEGO® City Undercover": "Lego City: Undercover",
+    "LEGO City Undercover": "Lego City: Undercover",
+    "Mafia III: Definitive Edition": "Mafia III",
+    "Metro 2033 Redux": "Metro Redux (2033 and Last Light)",
+    "Metro: Last Light Redux": "Metro Redux (2033 and Last Light)",
+    "Nioh: Complete Edition": "Nioh",
+    "Trine 5: A Clockwork Conspiracy": "Trine 5"
   },
 
   "installPathOverrides": {
@@ -451,6 +224,81 @@
     "Watch_Dogs® 2": "bin",
     "WATCH_DOGS2": "bin"
   },
+
+  "splitGames": {
+    "Diablo": [
+      { "name": "Diablo", "subPath": "" },
+      { "name": "Diablo (DX)", "subPath": "dx" }
+    ],
+    "Mass Effect™ Legendary Edition": [
+      { "name": "Mass Effect 1 (Legendary Edition)", "subPath": "Game\\ME1\\Binaries\\Win64" },
+      { "name": "Mass Effect 2 (Legendary Edition)", "subPath": "Game\\ME2\\Binaries\\Win64" },
+      { "name": "Mass Effect 3 (Legendary Edition)", "subPath": "Game\\ME3\\Binaries\\Win64" }
+    ],
+    "Mass Effect Legendary Edition": [
+      { "name": "Mass Effect 1 (Legendary Edition)", "subPath": "Game\\ME1\\Binaries\\Win64" },
+      { "name": "Mass Effect 2 (Legendary Edition)", "subPath": "Game\\ME2\\Binaries\\Win64" },
+      { "name": "Mass Effect 3 (Legendary Edition)", "subPath": "Game\\ME3\\Binaries\\Win64" }
+    ],
+    "Outward": [
+      { "name": "Outward", "subPath": "" },
+      { "name": "Outward Definitive Edition", "subPath": "Outward_Defed" }
+    ],
+    "LEGO® Harry Potter™ Collection": [
+      { "name": "LEGO Harry Potter Years 1-4", "subPath": "Years 1-4" },
+      { "name": "LEGO Harry Potter Years 5-7", "subPath": "Years 5-7" }
+    ],
+    "Skyrim Special Edition: Creation Kit": [
+      { "name": "The Elder Scrolls V: Skyrim Special Edition", "subPath": "" },
+      { "name": "Skyrim Creation Kit", "subPath": "" }
+    ],
+    "Call of Duty Modern Warfare II (Reboot)": [
+      { "name": "Call of Duty®: Modern Warfare® II", "subPath": "" },
+      { "name": "Call of Duty®: Modern Warfare® II (Campaign)", "subPath": "sp22" }
+    ],
+    "Call of Duty®: Modern Warfare® II": [
+      { "name": "Call of Duty®: Modern Warfare® II", "subPath": "" },
+      { "name": "Call of Duty®: Modern Warfare® II (Campaign)", "subPath": "sp22" }
+    ],
+    "DOOM Eternal": [
+      { "name": "DOOM Eternal", "subPath": "" },
+      { "name": "DOOM Eternal Sandbox", "subPath": "doomSandBox" }
+    ],
+    "Quake": [
+      { "name": "Quake", "subPath": "" },
+      { "name": "Quake (New)", "subPath": "rerelease" }
+    ],
+    "LISA": [
+      { "name": "LISA The Painful - Definitive Edition", "subPath": "LISA The Painful - Definitive Edition" },
+      { "name": "LISA The Joyful - Definitive Edition", "subPath": "LISA The Joyful - Definitive Edition" }
+    ]
+  },
+
+  "emulatorGames": {
+    "Ryubing": {
+      "addons": [
+        "Luigi's Mansion 3",
+        "Mario Kart 8 Deluxe",
+        "Metroid Dread",
+        "Monster Hunter Generations Ultimate",
+        "Splatoon 2",
+        "Splatoon 3",
+        "The Legend of Zelda: Breath of the Wild",
+        "The Legend of Zelda: Tears of the Kingdom",
+        "Xenoblade Chronicles",
+        "Xenoblade Chronicles 2",
+        "Xenoblade Chronicles 3",
+        "Xenoblade Chronicles X: Definitive Edition"
+      ],
+      "addonUrls": {
+        "Xenoblade Chronicles": "https://souperman9.github.io/renodx/renodx-xenobladechronicles.addon64",
+        "Xenoblade Chronicles 2": "https://souperman9.github.io/renodx/renodx-xenobladechronicles.addon64",
+        "Xenoblade Chronicles 3": "https://souperman9.github.io/renodx/renodx-xenobladechronicles.addon64"
+      }
+    }
+  },
+
+  "_comment_engine": "=== ENGINE & GRAPHICS API ===\nOverride the auto-detected engine type, display label, and graphics API for games where detection fails or gives the wrong result.\nengineOverrides controls mod fallback logic (Unreal/Unity/RE Engine). engineHintOverrides is display/hint only.\ngraphicsApiOverrides forces the API badge and controls which ReShade DLL is deployed.",
 
   "engineOverrides": {
     "KINGDOM HEARTS III + Re Mind (DLC)": "Unreal Engine",
@@ -561,6 +409,31 @@
     "Wolfenstein: Youngblood": "id Tech"
   },
 
+  "engineHintOverrides": {
+    "Avowed": "Unreal Engine 5.3.2",
+    "Beast of Reincarnation": "Unreal Engine 5.4.4",
+    "Call of the Elder Gods": "Unreal Engine 5.6.1",
+    "Denshattack!": "Unreal Engine 5.6.1",
+    "Dragon Quest VII Reimagined": "Unreal Engine 4.27.2",
+    "DRAGON QUEST VII Reimagined": "Unreal Engine 4.27.2",
+    "Ghostwire: Tokyo": "Unreal Engine 4.27.2",
+    "Hell is Us": "Unreal Engine 5.5.4",
+    "Halo: Campaign Evolved": "Unreal Engine 5.5.4",
+    "Palworld": "Unreal Engine 5.1.1",
+    "Shin Megami Tensei V: Vengeance": "Unreal Engine 4.27.2",
+    "Stellar Blade™": "Unreal Engine 4.26.2"
+  },
+
+  "engineIniPathOverrides": {
+    "Directive 8020": "Directive8020",
+    "Echoes of Aincrad": "%LOCALAPPDATA%\\EchoesofAincrad\\Saved\\Config\\WindowsClient",
+    "Echoes of Aincrad DEMO Version": "%LOCALAPPDATA%\\EchoesofAincrad\\Saved\\Config\\WindowsClient",
+    "Ghostwire: Tokyo": "%USERPROFILE%\\Saved Games\\TangoGameworks\\GhostWire Tokyo (STEAM)\\Saved\\Config\\WindowsNoEditor|%USERPROFILE%\\Saved Games\\TangoGameworks\\GhostWire Tokyo (EGS)\\Saved\\Config\\WindowsNoEditor|%USERPROFILE%\\Saved Games\\TangoGameworks\\GhostWire Tokyo (Xbox)\\Saved\\Config\\WinGDK",
+    "LEGO® Batman™: Legacy of the Dark Knight": "Dinner",
+    "Shin Megami Tensei V: Vengeance": "SMT5V",
+    "System Shock": "%USERPROFILE%\\Saved Games\\Nightdive Studios\\SystemShock\\Saved\\Config\\WindowsNoEditor"
+  },
+
   "graphicsApiOverrides": {
     "Anno 117 - Pax Romana": "DX12",
     "Zero Parades": "DX12",
@@ -596,6 +469,246 @@
     "Trackmania": "DX11, DX12"
   },
 
+  "thirtyTwoBitGames": [
+    "Assassin's Creed",
+    "Assassin's Creed IV Black Flag",
+    "Batman: Arkham Asylum GOTY Edition",
+    "Far Cry 3",
+    "Max Payne 3",
+    "Ori and the Blind Forest: Definitive Edition",
+    "Tomb Raider",
+    "Tomb Raider (2013)"
+  ],
+
+  "sixtyFourBitGames": [
+    "Anno 117 - Pax Romana",
+    "Zero Parades",
+    "BeamNG.drive",
+    "Control",
+    "Control Ultimate Edition",
+    "Darkest Dungeon®",
+    "Grim Dawn",
+    "Hades II",
+    "LEGO® Voyagers",
+    "Returnal™",
+    "Stardew Valley",
+    "Superhot",
+    "Tom Clancy's Rainbow Six Siege",
+    "Trackmania",
+    "Watch_Dogs 2",
+    "Watch_Dogs® 2"
+  ],
+
+  "dlssSkipGames": [
+    "Deadly Premonition 2",
+    "Dragon Age Inquisition",
+    "Gothic II: Gold Classic",
+    "Outward",
+    "Outward Definitive Edition",
+    "Pathologic 2",
+    "Ryubing",
+    "Solasta: Crown of the Magister",
+    "Stardew Valley",
+    "Terraria",
+    "Tunguska: The Visitation - Final Cut"
+  ],
+
+  "pdUpscalerGames": {
+    "Resident Evil 2": "RE2",
+    "Resident Evil 3": "RE3",
+    "Resident Evil 4": "RE4",
+    "Resident Evil 7": "RE7",
+    "Resident Evil 7 Biohazard": "RE7",
+    "RESIDENT EVIL 7 biohazard": "RE7",
+    "Resident Evil Village": "RE8"
+  },
+
+  "_comment_ue_hdr": "=== UNREAL ENGINE HDR / UE-EXTENDED ===\nnativeHdrGames and ueExtendedCompatibility force UE-Extended on regardless of whether a named mod exists.\nnoUeExtendedGames is the highest-priority block — overrides everything.\nuevExtendedGames is the lowest-priority opt-in (user toggles win).\nlumaRenodxCompat allows RenoDX and Luma to coexist. lumaDefaultGames auto-enables Luma on first detection.",
+
+  "nativeHdrGames": [
+    "Alone in the Dark",
+    "Assetto Corsa Rally",
+    "Avowed",
+    "Beast of Reincarnation",
+    "Black Myth: Wukong",
+    "Borderlands 4",
+    "Causal Loop",
+    "CODE VEIN II",
+    "Crisol: Theater of Idols",
+    "Cthulhu: The Cosmic Abyss",
+    "Denshattack!",
+    "Directive 8020",
+    "DragonSword : Awakening",
+    "Echoes of Aincrad",
+    "Echoes of Aincrad DEMO Version",
+    "Echoes of the End",
+    "Gothic 1 Remake",
+    "Hell is Us",
+    "High on Life 2",
+    "Kaku: Ancient Seal",
+    "LEGO® Batman™: Legacy of the Dark Knight",
+    "Lies of P",
+    "Lost Soul Aside",
+    "Luna Abyss",
+    "Mafia: The Old Country",
+    "Marvel's Midnight Suns",
+    "Mortal Kombat 1",
+    "Neverness To Everness",
+    "Nobody Wants to Die",
+    "Of Ash and Steel",
+    "REANIMAL",
+    "Returnal",
+    "ROMEO IS A DEAD MAN",
+    "S.T.A.L.K.E.R. 2: Heart of Chornobyl",
+    "SILENT HILL f",
+    "Samson",
+    "Split Fiction",
+    "Star Trek: Resurgence",
+    "Star Trek: Voyager - Across the Unknown",
+    "Still Wakes the Deep",
+    "Subnautica 2",
+    "The Sinking City Remastered",
+    "Until Dawn™",
+    "Vampire: The Masquerade - Bloodlines 2",
+    "WUCHANG: Fallen Feathers"
+  ],
+
+  "ueExtendedCompatibility": {
+    "Beast of Reincarnation": { "hdr": false },
+    "Palworld": { "hdr": false },
+    "Stellar Blade™": { "hdr": false }
+  },
+
+  "ueExtendedGames": [
+    "Grand Theft Auto III – The Definitive Edition",
+    "Grand Theft Auto: San Andreas – The Definitive Edition",
+    "Grand Theft Auto: Vice City – The Definitive Edition",
+    "Titan Quest II"
+  ],
+
+  "noUeExtendedGames": [
+  ],
+
+  "lumaRenodxCompat": [
+    "FINAL FANTASY VII REMAKE INTERGRADE",
+    "Mass Effect Andromeda",
+    "Mass Effect: Andromeda",
+    "Persona 5 Royal"
+  ],
+
+  "lumaDefaultGames": [
+    "Alfred Hitchcock - Vertigo",
+    "Bioshock 2 Remastered",
+    "Bioshock Remastered",
+    "Burnout Paradise Remastered",
+    "BurnoutPR",
+    "Call of Duty®: Black Ops III",
+    "Call of Duty: Black Ops III",
+    "COCOON",
+    "Deus Ex: Human Revolution - Director's Cut",
+    "FAR: Changing Tides",
+    "FAR: Lone Sails",
+    "FINAL FANTASY VII REMAKE INTERGRADE",
+    "Granblue Fantasy: Relink",
+    "GreedFall",
+    "Hatsune Miku: Project DIVA Mega Mix+",
+    "Heavy Rain",
+    "Hollow Knight: Silksong",
+    "Inside",
+    "Just Cause™ 3",
+    "LARA CROFT AND THE TEMPLE OF OSIRIS™",
+    "LEGO® City Undercover",
+    "Mafia II: Definitive Edition",
+    "Mafia III: Definitive Edition",
+    "Metro 2033 Redux",
+    "Metro: Last Light Redux",
+    "Nioh: Complete Edition",
+    "Prince of Persia The Lost Crown",
+    "Shadows of Doubt",
+    "Thief",
+    "Thumper",
+    "Trine 5: A Clockwork Conspiracy",
+    "Vanquish",
+    "Watch_Dogs® 2",
+    "White Knuckle"
+  ],
+
+  "_comment_install_behaviour": "=== INSTALL BEHAVIOUR ===\nControls what happens when the user clicks Install for a component.\ninstallWarnings shows a blocking confirm dialog before proceeding (keys: reshade, renodx, relimiter, dc, optiscaler, luma, reframework, dxvk).\nforceExternalOnly redirects the install button to an external URL instead of downloading.\nsnapshotOverrides injects or overrides the addon download URL when wiki scraping fails.\ndllNameOverrides forces specific proxy DLL filenames (e.g. winmm.dll instead of dxgi.dll).\ngacSymlinkGames routes XNA Framework games through a GAC symlink install (requires admin).\nlaunchExeOverrides sets the relative exe path used when clicking Launch and for NVIDIA profile matching.\nrenodxIniOverrides injects keys into [renodx] reshade.ini section on install/update.\nlegacyReShadeVersions auto-assigns a locked ReShade version channel to specific games.",
+
+  "installWarnings": {
+    "Borderlands 2": {
+      "luma": "Requires dgVoodoo2 v2.81.3 or v2.87.3\n\nSet these in dgVoodoo.conf:\n\n[General]\nOutputAPI : d3d11_fl11_0\n\n[DirectX]\nVideoCard : geforce_9800_gt\ndgVoodooWatermark : false\nVRAM : 1024"
+    },
+    "Borderlands: The Pre-Sequel": {
+      "luma": "Requires dgVoodoo2 v2.81.3 or v2.87.3\n\nSet these in dgVoodoo.conf:\n\n[General]\nOutputAPI : d3d11_fl11_0\n\n[DirectX]\nVideoCard : geforce_9800_gt\ndgVoodooWatermark : false\nVRAM : 1024"
+    },
+    "FINAL FANTASY VII REMAKE INTERGRADE": {
+      "luma": "⚠ This game MUST be set to DX11 mode for Luma to work.\n\nAdd -dx11 to your Steam launch arguments:\nRight-click game → Properties → Launch Options → type: -dx11"
+    },
+    "Halo: Campaign Evolved": {
+      "renodx": "⚠ For best results, use the named RenoDX mod from the RenoDX Discord.\n\nInstalling through RHI will deploy the generic Unreal Engine mod. You can also enable UE-Extended via the RenoDX ⚙ dialog if you don't have Discord access."
+    },
+    "The Sinking City Remastered": {
+      "reshade": "⚠️ amd_FusionFX.dll must be deleted from the game folder for frame generation to work."
+    },
+    "_REFERENCE_EXAMPLE_DO_NOT_USE": {
+      "reshade": "Example ReShade warning",
+      "renodx": "Example RenoDX warning",
+      "relimiter": "Example ReLimiter warning",
+      "dc": "Example Display Commander warning",
+      "optiscaler": "Example OptiScaler warning",
+      "luma": "Example Luma warning",
+      "reframework": "Example RE Framework warning",
+      "dxvk": "Example DXVK warning"
+    }
+  },
+
+  "forceExternalOnly": {
+    "Assassin's Creed Black Flag Resynced": {
+      "url": "https://www.nexusmods.com/assassinscreedblackflagresynced/mods/42",
+      "label": "Get on Nexus"
+    },
+    "Cyberpunk 2077": {
+      "url": "https://discord.gg/gF4GRJWZ2A",
+      "label": "Get on Discord"
+    },
+    "Elden Ring": {
+      "url": "https://www.nexusmods.com/eldenring/mods/8163",
+      "label": "Get on Nexus"
+    },
+    "Elden Ring: Nightreign": {
+      "url": "https://www.nexusmods.com/eldenringnightreign/mods/48",
+      "label": "Get on Nexus"
+    },
+    "ELDEN RING NIGHTREIGN": {
+      "url": "https://www.nexusmods.com/eldenringnightreign/mods/48",
+      "label": "Get on Nexus"
+    },
+    "Max Payne 3": {
+      "url": "https://www.nexusmods.com/maxpayne3/mods/218",
+      "label": "Get on Nexus"
+    }
+  },
+
+  "snapshotOverrides": {
+    "Assassin's Creed": "https://clshortfuse.github.io/renodx/renodx-asscreed1.addon32",
+    "Cities: Skylines": "https://notvoosh.github.io/renodx-unity/renodx-unityengine.addon64",
+    "CODE VEIN II": "https://marat569.github.io/renodx/renodx-codevein2.addon64",
+    "Days Gone": "https://github.com/OopyDoopy/renodx/releases/download/snapshot/renodx-daysgone.addon64",
+    "Death's Door": "https://notvoosh.github.io/renodx-unity/renodx-unityengine.addon64",
+    "Descenders": "https://notvoosh.github.io/renodx-unity/renodx-unityengine.addon64",
+    "Far Cry 2": "https://clshortfuse.github.io/renodx/renodx-duniaengine.addon32",
+    "Far Cry 3": "https://clshortfuse.github.io/renodx/renodx-duniaengine.addon32",
+    "FINAL FANTASY VII REMAKE INTERGRADE": "https://clshortfuse.github.io/renodx/renodx-ff7remake.addon64",
+    "Haste": "https://notvoosh.github.io/renodx-unity/renodx-unityengine.addon64",
+    "Jedi Fallen Order": "https://clshortfuse.github.io/renodx/renodx-unrealengine.addon64",
+    "Outer Wilds": "https://notvoosh.github.io/renodx-unity/renodx-unityengine.addon64",
+    "Spark the Electric Jester 3": "https://notvoosh.github.io/renodx-unity/renodx-unityengine.addon64",
+    "XF Extreme Formula": "https://notvoosh.github.io/renodx-unity/renodx-unityengine.addon64",
+    "RoboCop: Rogue City": "https://mqhaji.github.io/renodx/renodx-robocop.addon64",
+    "Routine": "https://github.com/mqhaji/renodx/releases/download/snapshot/renodx-routine.addon64"
+  },
+
   "dllNameOverrides": {
     "Aliens: Dark Descent": { "reshade": "dxgi.dll", "dc": "" },
     "Borderlands: The Pre-Sequel": { "reshade": "d3d9.dll", "dc": "" },
@@ -612,17 +725,48 @@
     "Terraria": "C:\\Windows\\Microsoft.NET\\assembly\\GAC_32\\Microsoft.Xna.Framework.Graphics\\v4.0_4.0.0.0__842cf8be1de50553"
   },
 
-  "pdUpscalerGames": {
-    "Resident Evil 2": "RE2",
-    "Resident Evil 3": "RE3",
-    "Resident Evil 4": "RE4",
-    "Resident Evil 7": "RE7",
-    "Resident Evil 7 Biohazard": "RE7",
-    "RESIDENT EVIL 7 biohazard": "RE7",
-    "Resident Evil Village": "RE8"
+  "launchExeOverrides": {
+    "Arma Reforger": "ArmaReforgerSteam.exe",
+    "Crysis Remastered": "CrysisRemastered.exe",
+    "Returnal™": "Returnal-Win64-Shipping.exe",
+    "The Elder Scrolls V: Skyrim Special Edition": "SkyrimSE.exe",
+    "Skyrim Creation Kit": "CreationKit.exe",
+    "Call of Duty®: Modern Warfare® II": "cod22-cod.exe",
+    "Call of Duty®: Modern Warfare® II (Campaign)": "sp22-cod.exe",
+    "DOOM Eternal": "DOOMEternalx64vk.exe",
+    "DOOM Eternal Sandbox": "DOOMSandBox64vk.exe",
+    "LISA The Painful - Definitive Edition": "LISA The Painful Definitive Edition.exe",
+    "LISA The Joyful - Definitive Edition": "LISA The Joyful Definitive Edition.exe"
   },
 
-  "_comment_content": "=== PER-GAME CONTENT & NOTES ===",
+  "renodxIniOverrides": {
+    "Jump Space": {
+      "Upgrade_R8G8B8A8_TYPELESS": "3"
+    },
+    "ZERO PARADES: For Dead Spies": {
+      "Upgrade_R8G8B8A8_TYPELESS": "1"
+    },
+    "Stellar Blade™": {
+      "Set_Path": "1"
+    }
+  },
+
+  "legacyReShadeVersions": {
+    "Max Payne 3": "6.4.1"
+  },
+
+  "legacyReShadeAvailable": [
+    "6.7.3", "6.7.2", "6.7.1", "6.7.0",
+    "6.6.2", "6.6.1", "6.6.0",
+    "6.5.1", "6.5.0",
+    "6.4.1", "6.4.0",
+    "6.3.3", "6.3.2", "6.3.0",
+    "6.2.0",
+    "6.1.1", "6.1.0",
+    "6.0.1", "6.0.0"
+  ],
+
+  "_comment_content_notes": "=== PER-GAME CONTENT & NOTES ===\nNotes shown in each component's info button dialog. Use the field that matches the component:\n  gameNotes → RenoDX info button\n  reshadeGameInfo → ReShade info button\n  relimiterGameInfo → ReLimiter info button\n  displayCommanderGameInfo → Display Commander info button\n  reframeworkGameInfo → RE Framework info button\n  optiScalerGameInfo → OptiScaler info button\n  lumaGameInfo → Luma info button (primary)\n  lumaGameNotes → Luma info button (supplementary, appended after wiki notes)\nAll use: { \"notes\": \"...\", \"notesUrl\": null, \"notesUrlLabel\": null }",
 
   "gameNotes": {
     "Assassin's Creed Black Flag Resynced": {
@@ -862,6 +1006,44 @@
     }
   },
 
+  "reshadeGameInfo": {
+    "Max Payne 3": {
+      "notes": "⚠️ ReShade 6.4.1 is required for RenoDX compatibility with this game. This has been automatically set in Overrides (RS Channel).\n\nIf you want to use a newer ReShade version, change the RS Channel in the Overrides panel — but RenoDX may not work correctly.",
+      "notesUrl": null,
+      "notesUrlLabel": null
+    },
+    "Monster Hunter Stories 2: Wings of Ruin": {
+      "notes": "⚠️ This game shows a black screen with ReShade unless you install the MHS2Loader fix.\n\nDownload dinput8.dll and loader.dll from the link below and place them next to the game's exe.",
+      "notesUrl": "https://github.com/MHST2Modding/MHS2Loader/releases",
+      "notesUrlLabel": "MHS2Loader (GitHub)"
+    },
+    "Ryubing": {
+      "notes": "⚠️ Ryubing requires Nightly ReShade loaded as Vulkan.\n\nSet RS Channel to Nightly in Overrides. ReShade will be installed via the Vulkan layer automatically.",
+      "notesUrl": null,
+      "notesUrlLabel": null
+    },
+    "The Sinking City Remastered": {
+      "notes": "⚠️ amd_FusionFX.dll must be deleted from the game folder for frame generation to work.",
+      "notesUrl": null,
+      "notesUrlLabel": null
+    }
+  },
+
+  "relimiterGameInfo": {
+  },
+
+  "displayCommanderGameInfo": {
+  },
+
+  "reframeworkGameInfo": {
+  },
+
+  "optiScalerGameInfo": {
+  },
+
+  "lumaGameInfo": {
+  },
+
   "lumaGameNotes": {
     "BioShock Remastered": {
       "notes": "Additional information available on Nexus below:",
@@ -885,56 +1067,40 @@
     }
   },
 
-  "snapshotOverrides": {
-    "Assassin's Creed": "https://clshortfuse.github.io/renodx/renodx-asscreed1.addon32",
-    "Cities: Skylines": "https://notvoosh.github.io/renodx-unity/renodx-unityengine.addon64",
-    "CODE VEIN II": "https://marat569.github.io/renodx/renodx-codevein2.addon64",
-    "Days Gone": "https://github.com/OopyDoopy/renodx/releases/download/snapshot/renodx-daysgone.addon64",
-    "Death's Door": "https://notvoosh.github.io/renodx-unity/renodx-unityengine.addon64",
-    "Descenders": "https://notvoosh.github.io/renodx-unity/renodx-unityengine.addon64",
-    "Far Cry 2": "https://clshortfuse.github.io/renodx/renodx-duniaengine.addon32",
-    "Far Cry 3": "https://clshortfuse.github.io/renodx/renodx-duniaengine.addon32",
-    "FINAL FANTASY VII REMAKE INTERGRADE": "https://clshortfuse.github.io/renodx/renodx-ff7remake.addon64",
-    "Haste": "https://notvoosh.github.io/renodx-unity/renodx-unityengine.addon64",
-    "Jedi Fallen Order": "https://clshortfuse.github.io/renodx/renodx-unrealengine.addon64",
-    "Outer Wilds": "https://notvoosh.github.io/renodx-unity/renodx-unityengine.addon64",
-    "Spark the Electric Jester 3": "https://notvoosh.github.io/renodx-unity/renodx-unityengine.addon64",
-    "XF Extreme Formula": "https://notvoosh.github.io/renodx-unity/renodx-unityengine.addon64",
-    "RoboCop: Rogue City": "https://mqhaji.github.io/renodx/renodx-robocop.addon64",
-    "Routine": "https://github.com/mqhaji/renodx/releases/download/snapshot/renodx-routine.addon64"
-  },
+  "_comment_dxvk": "=== DXVK ===\ndxvkBlacklist prevents the DXVK toggle from being enabled (greyed out with anti-cheat warning).\ndxvkGameNotes adds game-specific notes to the DXVK info dialog.\ndxvkApiOverrides flags a game as having a known API for DXVK toggle unlock purposes (value string not currently used).",
 
-  "forceExternalOnly": {
-    "Assassin's Creed Black Flag Resynced": {
-      "url": "https://www.nexusmods.com/assassinscreedblackflagresynced/mods/42",
-      "label": "Get on Nexus"
-    },
-    "Cyberpunk 2077": {
-      "url": "https://discord.gg/gF4GRJWZ2A",
-      "label": "Get on Discord"
-    },
-    "Elden Ring": {
-      "url": "https://www.nexusmods.com/eldenring/mods/8163",
-      "label": "Get on Nexus"
-    },
-    "Elden Ring: Nightreign": {
-      "url": "https://www.nexusmods.com/eldenringnightreign/mods/48",
-      "label": "Get on Nexus"
-    },
-    "ELDEN RING NIGHTREIGN": {
-      "url": "https://www.nexusmods.com/eldenringnightreign/mods/48",
-      "label": "Get on Nexus"
-    },
-    "Max Payne 3": {
-      "url": "https://www.nexusmods.com/maxpayne3/mods/218",
-      "label": "Get on Nexus"
+  "dxvkBlacklist": [
+    "Fortnite",
+    "Apex Legends",
+    "Dead by Daylight",
+    "PUBG: BATTLEGROUNDS",
+    "Rainbow Six Siege",
+    "Escape from Tarkov",
+    "Genshin Impact",
+    "Valorant"
+  ],
+
+  "dxvkGameNotes": {
+    "FINAL FANTASY XIV Online": {
+      "notes": "ℹ️ DXVK provides significant CPU-bound performance improvements for FFXIV.",
+      "notesUrl": null,
+      "notesUrlLabel": null
     }
   },
 
-  "dcModeOverrides": {
+  "dxvkApiOverrides": {
   },
 
-  "_comment_external": "=== EXTERNAL SERVICE CONFIG ===",
+  "_comment_wiki_status": "=== WIKI STATUS & MOD OVERRIDES ===\nwikiStatusOverrides patches the status emoji on wiki mod entries (✅ 🚧 etc) without requiring a wiki edit.\nwikiStatusOverrides keys are the exact mod name as it appears on the wiki (not the detected game name).",
+
+  "wikiStatusOverrides": {
+    "Code Vein II": "✅",
+    "High On Life 2": "✅",
+    "Lies of P": "✅",
+    "Nobody Wants to Die": "✅"
+  },
+
+  "_comment_authors_urls": "=== AUTHORS & EXTERNAL URLS ===\nDonation links and display name corrections for mod authors.\nURL overrides provide correct links when automatic lookup fails or picks the wrong page.\nAll *UrlOverrides fields use the detected game name as the key.",
 
   "authorDisplayNames": {
     "oopydoopy": "Jon"
@@ -1024,217 +1190,50 @@
   "steamAppIdOverrides": {
   },
 
-  "_comment_dxvk": "=== DXVK INTEGRATION ===",
+  "optiScalerWikiNames": {
+    "Alone in the Dark": "Alone in the Dark (2024)",
+    "CODE VEIN II": "Code Vein 2",
+    "Dead Space": "Dead Space (2023)",
+    "DEATH STRANDING DIRECTOR'S CUT": "Death Stranding: Director's Cut",
+    "Diablo II: Resurrected – Infernal Edition": "Diablo II: Resurrected",
+    "Dragon's Dogma 2": "Dragon's Dogma II",
+    "Dying Light 2: Reloaded Edition": "Dying Light 2",
+    "Dying Light: The Beast Restored Land": "Dying Light The Beast",
+    "God of War": "God of War (2018)",
+    "Grand Theft Auto III – The Definitive Edition": "Grand Theft Auto III – Definitive Edition",
+    "Grand Theft Auto: San Andreas – The Definitive Edition": "Grand Theft Auto: San Andreas – Definitive Edition",
+    "Grand Theft Auto: Vice City – The Definitive Edition": "Grand Theft Auto: Vice City – Definitive Edition",
+    "GreedFall: The Dying World": "GreedFall - The Dying World",
+    "Layers of Fear": "Layers of Fear (2023)",
+    "Lords of the Fallen": "Lords of the Fallen (2023)",
+    "Metro Exodus Enhanced Edition": "Metro Exodus: Enhanced Edition",
+    "Microsoft Flight Simulator (2020) 40th Anniversary Edition": "Microsoft Flight Simulator 2020",
+    "Nioh 2 – The Complete Edition": "Nioh 2",
+    "Prey": "Prey (2017)",
+    "Resident Evil 2": "Resident Evil 2 (2019)",
+    "Resident Evil 3": "Resident Evil 3 (2020)",
+    "Resident Evil 4": "Resident Evil 4 (2023)",
+    "Resident Evil Requiem": "Resident Evil 9 Requiem",
+    "Resident Evil Village": "Resident Evil 8 Village",
+    "S.T.A.L.K.E.R. 2: Heart of Chornobyl": "STALKER 2: Heart of Chornobyl",
+    "S.T.A.L.K.E.R.: Call of Prypiat - Enhanced Edition": "STALKER: Call of Prypiat Enhanced Edition",
+    "S.T.A.L.K.E.R.: Clear Sky - Enhanced Edition": "STALKER: Clear Sky Enhanced Edition",
+    "S.T.A.L.K.E.R.: Shadow of Chornobyl - Enhanced Edition": "STALKER: Shadow of Chornobyl Enhanced Edition",
+    "SILENT HILL 2": "SILENT HILL 2 (2024)",
+    "System Shock": "System Shock (2023)"
+  },
 
-  "dxvkBlacklist": [
-    "Fortnite",
-    "Apex Legends",
-    "Dead by Daylight",
-    "PUBG: BATTLEGROUNDS",
-    "Rainbow Six Siege",
-    "Escape from Tarkov",
-    "Genshin Impact",
-    "Valorant"
+  "rtxHdrInfoUrl": "https://www.reddit.com/r/nvidia/comments/1b03yfg/rtx_hdr_paper_white_gamma_reference_settings/",
+
+  "_comment_nvidia": "=== NVIDIA PROFILE & DLSS ===\nprofileNameOverrides redirects a game to the correct NVIDIA driver profile when auto-matching picks the wrong one.\nprofileExeExclusions adds exe names to the exclusion list for profile matching (prevents false matches).\ndlssPresets injects new DLSS preset options (SR/RR/FG) into the dropdowns without a client update.",
+
+  "profileNameOverrides": {
+    "Dead Space": "Dead Space (Remake)",
+    "Lords of the Fallen": "Lords of the Fallen (2023)"
+  },
+
+  "profileExeExclusions": [
   ],
-
-  "dxvkGameNotes": {
-    "FINAL FANTASY XIV Online": {
-      "notes": "ℹ️ DXVK provides significant CPU-bound performance improvements for FFXIV.",
-      "notesUrl": null,
-      "notesUrlLabel": null
-    }
-  },
-
-  "dxvkApiOverrides": {
-  },
-
-  "reshadeGameInfo": {
-    "Max Payne 3": {
-      "notes": "⚠️ ReShade 6.4.1 is required for RenoDX compatibility with this game. This has been automatically set in Overrides (RS Channel).\n\nIf you want to use a newer ReShade version, change the RS Channel in the Overrides panel — but RenoDX may not work correctly.",
-      "notesUrl": null,
-      "notesUrlLabel": null
-    },
-    "Monster Hunter Stories 2: Wings of Ruin": {
-      "notes": "⚠️ This game shows a black screen with ReShade unless you install the MHS2Loader fix.\n\nDownload dinput8.dll and loader.dll from the link below and place them next to the game's exe.",
-      "notesUrl": "https://github.com/MHST2Modding/MHS2Loader/releases",
-      "notesUrlLabel": "MHS2Loader (GitHub)"
-    },
-    "Ryubing": {
-      "notes": "⚠️ Ryubing requires Nightly ReShade loaded as Vulkan.\n\nSet RS Channel to Nightly in Overrides. ReShade will be installed via the Vulkan layer automatically.",
-      "notesUrl": null,
-      "notesUrlLabel": null
-    },
-    "The Sinking City Remastered": {
-      "notes": "⚠️ amd_FusionFX.dll must be deleted from the game folder for frame generation to work.",
-      "notesUrl": null,
-      "notesUrlLabel": null
-    }
-  },
-
-  "reframeworkGameInfo": {
-  },
-
-  "relimiterGameInfo": {
-  },
-
-  "displayCommanderGameInfo": {
-  },
-
-  "optiScalerGameInfo": {
-  },
-
-  "lumaGameInfo": {
-  },
-
-  "legacyReShadeAvailable": [
-    "6.7.3", "6.7.2", "6.7.1", "6.7.0",
-    "6.6.2", "6.6.1", "6.6.0",
-    "6.5.1", "6.5.0",
-    "6.4.1", "6.4.0",
-    "6.3.3", "6.3.2", "6.3.0",
-    "6.2.0",
-    "6.1.1", "6.1.0",
-    "6.0.1", "6.0.0"
-  ],
-
-  "legacyReShadeVersions": {
-    "Max Payne 3": "6.4.1"
-  },
-
-  "launchExeOverrides": {
-    "Arma Reforger": "ArmaReforgerSteam.exe",
-    "Crysis Remastered": "CrysisRemastered.exe",
-    "Returnal™": "Returnal-Win64-Shipping.exe",
-    "The Elder Scrolls V: Skyrim Special Edition": "SkyrimSE.exe",
-    "Skyrim Creation Kit": "CreationKit.exe",
-    "Call of Duty®: Modern Warfare® II": "cod22-cod.exe",
-    "Call of Duty®: Modern Warfare® II (Campaign)": "sp22-cod.exe",
-    "DOOM Eternal": "DOOMEternalx64vk.exe",
-    "DOOM Eternal Sandbox": "DOOMSandBox64vk.exe",
-    "LISA The Painful - Definitive Edition": "LISA The Painful Definitive Edition.exe",
-    "LISA The Joyful - Definitive Edition": "LISA The Joyful Definitive Edition.exe"
-  },
-
-  "splitGames": {
-    "Diablo": [
-      { "name": "Diablo", "subPath": "" },
-      { "name": "Diablo (DX)", "subPath": "dx" }
-    ],
-    "Mass Effect™ Legendary Edition": [
-      { "name": "Mass Effect 1 (Legendary Edition)", "subPath": "Game\\ME1\\Binaries\\Win64" },
-      { "name": "Mass Effect 2 (Legendary Edition)", "subPath": "Game\\ME2\\Binaries\\Win64" },
-      { "name": "Mass Effect 3 (Legendary Edition)", "subPath": "Game\\ME3\\Binaries\\Win64" }
-    ],
-    "Mass Effect Legendary Edition": [
-      { "name": "Mass Effect 1 (Legendary Edition)", "subPath": "Game\\ME1\\Binaries\\Win64" },
-      { "name": "Mass Effect 2 (Legendary Edition)", "subPath": "Game\\ME2\\Binaries\\Win64" },
-      { "name": "Mass Effect 3 (Legendary Edition)", "subPath": "Game\\ME3\\Binaries\\Win64" }
-    ],
-    "Outward": [
-      { "name": "Outward", "subPath": "" },
-      { "name": "Outward Definitive Edition", "subPath": "Outward_Defed" }
-    ],
-    "LEGO® Harry Potter™ Collection": [
-      { "name": "LEGO Harry Potter Years 1-4", "subPath": "Years 1-4" },
-      { "name": "LEGO Harry Potter Years 5-7", "subPath": "Years 5-7" }
-    ],
-    "Skyrim Special Edition: Creation Kit": [
-      { "name": "The Elder Scrolls V: Skyrim Special Edition", "subPath": "" },
-      { "name": "Skyrim Creation Kit", "subPath": "" }
-    ],
-    "Call of Duty Modern Warfare II (Reboot)": [
-      { "name": "Call of Duty®: Modern Warfare® II", "subPath": "" },
-      { "name": "Call of Duty®: Modern Warfare® II (Campaign)", "subPath": "sp22" }
-    ],
-    "Call of Duty®: Modern Warfare® II": [
-      { "name": "Call of Duty®: Modern Warfare® II", "subPath": "" },
-      { "name": "Call of Duty®: Modern Warfare® II (Campaign)", "subPath": "sp22" }
-    ],
-    "DOOM Eternal": [
-      { "name": "DOOM Eternal", "subPath": "" },
-      { "name": "DOOM Eternal Sandbox", "subPath": "doomSandBox" }
-    ],
-    "Quake": [
-      { "name": "Quake", "subPath": "" },
-      { "name": "Quake (New)", "subPath": "rerelease" }
-    ],
-    "LISA": [
-      { "name": "LISA The Painful - Definitive Edition", "subPath": "LISA The Painful - Definitive Edition" },
-      { "name": "LISA The Joyful - Definitive Edition", "subPath": "LISA The Joyful - Definitive Edition" }
-    ]
-  },
-
-  "renodxIniOverrides": {
-    "Jump Space": {
-      "Upgrade_R8G8B8A8_TYPELESS": "3"
-    },
-    "ZERO PARADES: For Dead Spies": {
-      "Upgrade_R8G8B8A8_TYPELESS": "1"
-    },
-    "Stellar Blade™": {
-      "Set_Path": "1"
-    }
-  },
-
-  "renodxExtraSettings": [
-    {
-      "key": "Upgrade_CopyDestinations",
-      "label": "Upgrade Copy Destinations",
-      "options": [
-        { "value": "0", "name": "Off" },
-        { "value": "1", "name": "On" }
-      ]
-    }
-  ],
-
-  "installWarnings": {
-    "Borderlands 2": {
-      "luma": "Requires dgVoodoo2 v2.81.3 or v2.87.3\n\nSet these in dgVoodoo.conf:\n\n[General]\nOutputAPI : d3d11_fl11_0\n\n[DirectX]\nVideoCard : geforce_9800_gt\ndgVoodooWatermark : false\nVRAM : 1024"
-    },
-    "Borderlands: The Pre-Sequel": {
-      "luma": "Requires dgVoodoo2 v2.81.3 or v2.87.3\n\nSet these in dgVoodoo.conf:\n\n[General]\nOutputAPI : d3d11_fl11_0\n\n[DirectX]\nVideoCard : geforce_9800_gt\ndgVoodooWatermark : false\nVRAM : 1024"
-    },
-    "FINAL FANTASY VII REMAKE INTERGRADE": {
-      "luma": "⚠ This game MUST be set to DX11 mode for Luma to work.\n\nAdd -dx11 to your Steam launch arguments:\nRight-click game → Properties → Launch Options → type: -dx11"
-    },
-    "Halo: Campaign Evolved": {
-      "renodx": "⚠ For best results, use the named RenoDX mod from the RenoDX Discord.\n\nInstalling through RHI will deploy the generic Unreal Engine mod. You can also enable UE-Extended via the RenoDX ⚙ dialog if you don't have Discord access."
-    },
-    "The Sinking City Remastered": {
-      "reshade": "⚠️ amd_FusionFX.dll must be deleted from the game folder for frame generation to work."
-    },
-    "_REFERENCE_EXAMPLE_DO_NOT_USE": {
-      "reshade": "Example ReShade warning",
-      "renodx": "Example RenoDX warning",
-      "relimiter": "Example ReLimiter warning",
-      "dc": "Example Display Commander warning",
-      "optiscaler": "Example OptiScaler warning",
-      "luma": "Example Luma warning",
-      "reframework": "Example RE Framework warning",
-      "dxvk": "Example DXVK warning"
-    }
-  },
-
-  "dlssSkipGames": [
-    "Deadly Premonition 2",
-    "Dragon Age Inquisition",
-    "Gothic II: Gold Classic",
-    "Outward",
-    "Outward Definitive Edition",
-    "Pathologic 2",
-    "Ryubing",
-    "Solasta: Crown of the Magister",
-    "Stardew Valley",
-    "Terraria",
-    "Tunguska: The Visitation - Final Cut"
-  ],
-
-  "_comment_shaderPacks": "=== SHADER PACK OVERRIDES (add/disable/update packs without app update) ===",
-  "shaderPacks": {
-    "CrosireLegacy": {
-      "requires": ["CrosireMaster"]
-    }
-  },
 
   "dlssPresets": {
     "sr": [
@@ -1242,8 +1241,7 @@
     ]
   },
 
-  "componentUrls": {
-  },
+  "_comment_dof_fix": "=== DOF FIX ===\ndofFixForceGames enables DOF Fix for games where UE engine detection fails (64-bit requirement still applies).\ndofFixSkipGames suppresses DOF Fix eligibility for games where it's known to cause problems.",
 
   "dofFixForceGames": [
     "Avowed",
@@ -1253,12 +1251,12 @@
   "dofFixSkipGames": [
   ],
 
-  "profileExeExclusions": [
-  ],
+  "_comment_packs_components": "=== PACKS & COMPONENT URLS ===\nshaderPacks adds, modifies, or disables shader packs without a client update.\naddonPacks adds, modifies, or disables addon pack entries without a client update.\ncomponentUrls overrides download URLs for specific components (keys: ueExtended, ueDofFix).\nrenodxExtraSettings adds extra toggle rows to the RenoDX cog Compatibility Settings dialog.",
 
-  "profileNameOverrides": {
-    "Dead Space": "Dead Space (Remake)",
-    "Lords of the Fallen": "Lords of the Fallen (2023)"
+  "shaderPacks": {
+    "CrosireLegacy": {
+      "requires": ["CrosireMaster"]
+    }
   },
 
   "addonPacks": {
@@ -1275,5 +1273,19 @@
       "downloadUrl32": "https://github.com/OopyDoopy/renodx/releases/download/snapshot/renodx-upgrade.addon32",
       "repositoryUrl": "https://github.com/OopyDoopy/renodx"
     }
-  }
+  },
+
+  "componentUrls": {
+  },
+
+  "renodxExtraSettings": [
+    {
+      "key": "Upgrade_CopyDestinations",
+      "label": "Upgrade Copy Destinations",
+      "options": [
+        { "value": "0", "name": "Off" },
+        { "value": "1", "name": "On" }
+      ]
+    }
+  ]
 }
