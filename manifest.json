@@ -1110,7 +1110,9 @@
     "Call of Duty®: Modern Warfare® II": "cod22-cod.exe",
     "Call of Duty®: Modern Warfare® II (Campaign)": "sp22-cod.exe",
     "DOOM Eternal": "DOOMEternalx64vk.exe",
-    "DOOM Eternal Sandbox": "DOOMSandBox64vk.exe"
+    "DOOM Eternal Sandbox": "DOOMSandBox64vk.exe",
+    "LISA The Painful - Definitive Edition": "LISA The Painful Definitive Edition.exe",
+    "LISA The Joyful - Definitive Edition": "LISA The Joyful Definitive Edition.exe"
   },
 
   "splitGames": {
