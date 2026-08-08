@@ -13,6 +13,7 @@ public partial class EngineSectionViewModel : SectionViewModelBase
     public ObservableCollection<StringItem> ThirtyTwoBitGames { get; }
     public ObservableCollection<StringItem> SixtyFourBitGames { get; }
     public ObservableCollection<StringItem> DlssSkipGames { get; }
+    public ObservableCollection<KeyValueItem> PdUpscalerGames { get; }
 
     public EngineSectionViewModel(RemoteManifest manifest, MainViewModel main) : base(manifest, main)
     {
@@ -23,6 +24,7 @@ public partial class EngineSectionViewModel : SectionViewModelBase
         ThirtyTwoBitGames = ToObservable(manifest.ThirtyTwoBitGames);
         SixtyFourBitGames = ToObservable(manifest.SixtyFourBitGames);
         DlssSkipGames = ToObservable(manifest.DlssSkipGames);
+        PdUpscalerGames = ToKvObservable(manifest.PdUpscalerGames);
     }
 
     [RelayCommand] public void AddEngineOverride() { EngineOverrides.Add(new KeyValueItem()); Dirty(); }
@@ -39,6 +41,8 @@ public partial class EngineSectionViewModel : SectionViewModelBase
     [RelayCommand] public void Remove64Bit(StringItem item) { SixtyFourBitGames.Remove(item); Dirty(); }
     [RelayCommand] public void AddDlssSkip() { DlssSkipGames.Add(new StringItem("")); Dirty(); }
     [RelayCommand] public void RemoveDlssSkip(StringItem item) { DlssSkipGames.Remove(item); Dirty(); }
+    [RelayCommand] public void AddPdUpscaler() { PdUpscalerGames.Add(new KeyValueItem()); Dirty(); }
+    [RelayCommand] public void RemovePdUpscaler(KeyValueItem item) { PdUpscalerGames.Remove(item); Dirty(); }
 
     public override void Commit()
     {
@@ -49,5 +53,5 @@ public partial class EngineSectionViewModel : SectionViewModelBase
         _manifest.ThirtyTwoBitGames = FromObservable(ThirtyTwoBitGames).Count > 0 ? FromObservable(ThirtyTwoBitGames) : null;
         _manifest.SixtyFourBitGames = FromObservable(SixtyFourBitGames).Count > 0 ? FromObservable(SixtyFourBitGames) : null;
         _manifest.DlssSkipGames = FromObservable(DlssSkipGames).Count > 0 ? FromObservable(DlssSkipGames) : null;
-    }
+        _manifest.PdUpscalerGames = FromKvObservable(PdUpscalerGames);    }
 }

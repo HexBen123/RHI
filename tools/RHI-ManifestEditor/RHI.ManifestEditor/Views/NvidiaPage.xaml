@@ -36,5 +36,54 @@
                 <Button Content="+ Add" Click="AddExeExclusion_Click"/>
             </StackPanel>
         </Expander>
+        <Expander HorizontalAlignment="Stretch">
+            <Expander.Header><TextBlock Text="dlssPresets — add new DLSS preset options (SR/RR/FG)" FontWeight="SemiBold"/></Expander.Header>
+            <StackPanel Spacing="12" Padding="0,8,0,0">
+                <TextBlock FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="Adds new presets to the SR/RR/FG dropdowns. name = display label (e.g. F - CNN). value = integer ID. disabled=true removes an existing preset."/>
+
+                <TextBlock Text="SR (Super Resolution)" FontSize="12" FontWeight="SemiBold"/>
+                <ListView x:Name="SrPresetsView" MaxHeight="160" SelectionMode="None">
+                    <ListView.ItemTemplate><DataTemplate>
+                        <Grid ColumnSpacing="8" Margin="0,2,0,2">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="80"/><ColumnDefinition Width="80"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Text="{Binding Name, Mode=TwoWay}" PlaceholderText="name" FontSize="12"/>
+                            <TextBox Grid.Column="1" Text="{Binding Value, Mode=TwoWay}" PlaceholderText="value" FontSize="12"/>
+                            <CheckBox Grid.Column="2" Content="disabled" IsChecked="{Binding Disabled, Mode=TwoWay}" FontSize="11"/>
+                            <Button Grid.Column="3" Content="✕" Tag="{Binding}" Click="RemoveSrPreset_Click" Padding="8,4"/>
+                        </Grid>
+                    </DataTemplate></ListView.ItemTemplate>
+                </ListView>
+                <Button Content="+ Add SR preset" Click="AddSrPreset_Click"/>
+
+                <TextBlock Text="RR (Ray Reconstruction)" FontSize="12" FontWeight="SemiBold" Margin="0,8,0,0"/>
+                <ListView x:Name="RrPresetsView" MaxHeight="160" SelectionMode="None">
+                    <ListView.ItemTemplate><DataTemplate>
+                        <Grid ColumnSpacing="8" Margin="0,2,0,2">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="80"/><ColumnDefinition Width="80"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Text="{Binding Name, Mode=TwoWay}" PlaceholderText="name" FontSize="12"/>
+                            <TextBox Grid.Column="1" Text="{Binding Value, Mode=TwoWay}" PlaceholderText="value" FontSize="12"/>
+                            <CheckBox Grid.Column="2" Content="disabled" IsChecked="{Binding Disabled, Mode=TwoWay}" FontSize="11"/>
+                            <Button Grid.Column="3" Content="✕" Tag="{Binding}" Click="RemoveRrPreset_Click" Padding="8,4"/>
+                        </Grid>
+                    </DataTemplate></ListView.ItemTemplate>
+                </ListView>
+                <Button Content="+ Add RR preset" Click="AddRrPreset_Click"/>
+
+                <TextBlock Text="FG (Frame Generation)" FontSize="12" FontWeight="SemiBold" Margin="0,8,0,0"/>
+                <ListView x:Name="FgPresetsView" MaxHeight="160" SelectionMode="None">
+                    <ListView.ItemTemplate><DataTemplate>
+                        <Grid ColumnSpacing="8" Margin="0,2,0,2">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="80"/><ColumnDefinition Width="80"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Text="{Binding Name, Mode=TwoWay}" PlaceholderText="name" FontSize="12"/>
+                            <TextBox Grid.Column="1" Text="{Binding Value, Mode=TwoWay}" PlaceholderText="value" FontSize="12"/>
+                            <CheckBox Grid.Column="2" Content="disabled" IsChecked="{Binding Disabled, Mode=TwoWay}" FontSize="11"/>
+                            <Button Grid.Column="3" Content="✕" Tag="{Binding}" Click="RemoveFgPreset_Click" Padding="8,4"/>
+                        </Grid>
+                    </DataTemplate></ListView.ItemTemplate>
+                </ListView>
+                <Button Content="+ Add FG preset" Click="AddFgPreset_Click"/>
+            </StackPanel>
+        </Expander>
     </StackPanel></ScrollViewer>
 </Page>

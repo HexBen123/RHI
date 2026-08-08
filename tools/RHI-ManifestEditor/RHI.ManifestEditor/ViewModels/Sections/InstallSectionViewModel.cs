@@ -62,9 +62,11 @@ public partial class InstallSectionViewModel : SectionViewModelBase
     public ObservableCollection<KeyValueItem> ForceExternalOnly { get; }
     public ObservableCollection<KeyValueItem> SnapshotOverrides { get; }
     public ObservableCollection<DllOverrideItem> DllNameOverrides { get; }
+    public ObservableCollection<KeyValueItem> OptiScalerDllOverrides { get; }
     public ObservableCollection<KeyValueItem> GacSymlinkGames { get; }
     public ObservableCollection<KeyValueItem> LaunchExeOverrides { get; }
     public ObservableCollection<KeyValueItem> LegacyReShadeVersions { get; }
+    public ObservableCollection<StringItem> LegacyReShadeAvailable { get; }
 
     public InstallSectionViewModel(RemoteManifest manifest, MainViewModel main) : base(manifest, main)
     {
@@ -76,9 +78,11 @@ public partial class InstallSectionViewModel : SectionViewModelBase
         SnapshotOverrides = ToKvObservable(manifest.SnapshotOverrides);
         DllNameOverrides = new(manifest.DllNameOverrides?
             .Select(kv => new DllOverrideItem(kv.Key, kv.Value)) ?? Enumerable.Empty<DllOverrideItem>());
+        OptiScalerDllOverrides = ToKvObservable(manifest.OptiScalerDllOverrides);
         GacSymlinkGames = ToKvObservable(manifest.GacSymlinkGames);
         LaunchExeOverrides = ToKvObservable(manifest.LaunchExeOverrides);
         LegacyReShadeVersions = ToKvObservable(manifest.LegacyReShadeVersions);
+        LegacyReShadeAvailable = ToObservable(manifest.LegacyReShadeAvailable);
     }
 
     [RelayCommand] public void AddInstallWarning() { InstallWarnings.Add(new InstallWarningItem()); Dirty(); }
@@ -106,5 +110,15 @@ public partial class InstallSectionViewModel : SectionViewModelBase
         _manifest.GacSymlinkGames = FromKvObservable(GacSymlinkGames);
         _manifest.LaunchExeOverrides = FromKvObservable(LaunchExeOverrides);
         _manifest.LegacyReShadeVersions = FromKvObservable(LegacyReShadeVersions);
+        _manifest.OptiScalerDllOverrides = FromKvObservable(OptiScalerDllOverrides);
+        _manifest.LegacyReShadeAvailable = FromObservable(LegacyReShadeAvailable).Count > 0 ? FromObservable(LegacyReShadeAvailable) : null;
+        _manifest.ForceExternalOnly = ForceExternalOnly.Count > 0
+            ? ForceExternalOnly
+                .Where(i => !string.IsNullOrWhiteSpace(i.Key))
+                .ToDictionary(i => i.Key, i => {
+                    var parts = i.Value.Split('|', 2);
+                    return new ForceExternalEntry { Url = parts[0], Label = parts.Length > 1 ? parts[1] : null };
+                })
+            : null;
     }
 }

@@ -32,8 +32,28 @@
                                             <TextBox Grid.Column="1" Text="{Binding Renodx, Mode=TwoWay}" AcceptsReturn="True" MaxHeight="80" FontSize="12" TextWrapping="Wrap"/>
                                         </Grid>
                                         <Grid ColumnSpacing="8"><Grid.ColumnDefinitions><ColumnDefinition Width="100"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="relimiter:" VerticalAlignment="Top" FontSize="12"/>
+                                            <TextBox Grid.Column="1" Text="{Binding Relimiter, Mode=TwoWay}" AcceptsReturn="True" MaxHeight="80" FontSize="12" TextWrapping="Wrap"/>
+                                        </Grid>
+                                        <Grid ColumnSpacing="8"><Grid.ColumnDefinitions><ColumnDefinition Width="100"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="dc:" VerticalAlignment="Top" FontSize="12"/>
+                                            <TextBox Grid.Column="1" Text="{Binding Dc, Mode=TwoWay}" AcceptsReturn="True" MaxHeight="80" FontSize="12" TextWrapping="Wrap"/>
+                                        </Grid>
+                                        <Grid ColumnSpacing="8"><Grid.ColumnDefinitions><ColumnDefinition Width="100"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="optiscaler:" VerticalAlignment="Top" FontSize="12"/>
+                                            <TextBox Grid.Column="1" Text="{Binding Optiscaler, Mode=TwoWay}" AcceptsReturn="True" MaxHeight="80" FontSize="12" TextWrapping="Wrap"/>
+                                        </Grid>
+                                        <Grid ColumnSpacing="8"><Grid.ColumnDefinitions><ColumnDefinition Width="100"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                                             <TextBlock Grid.Column="0" Text="luma:" VerticalAlignment="Top" FontSize="12"/>
                                             <TextBox Grid.Column="1" Text="{Binding Luma, Mode=TwoWay}" AcceptsReturn="True" MaxHeight="80" FontSize="12" TextWrapping="Wrap"/>
+                                        </Grid>
+                                        <Grid ColumnSpacing="8"><Grid.ColumnDefinitions><ColumnDefinition Width="100"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="reframework:" VerticalAlignment="Top" FontSize="12"/>
+                                            <TextBox Grid.Column="1" Text="{Binding Reframework, Mode=TwoWay}" AcceptsReturn="True" MaxHeight="80" FontSize="12" TextWrapping="Wrap"/>
+                                        </Grid>
+                                        <Grid ColumnSpacing="8"><Grid.ColumnDefinitions><ColumnDefinition Width="100"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="dxvk:" VerticalAlignment="Top" FontSize="12"/>
+                                            <TextBox Grid.Column="1" Text="{Binding Dxvk, Mode=TwoWay}" AcceptsReturn="True" MaxHeight="80" FontSize="12" TextWrapping="Wrap"/>
                                         </Grid>
                                         <Button Content="Remove entry" Tag="{Binding}" Click="RemoveInstallWarning_Click" Foreground="OrangeRed"/>
                                     </StackPanel>

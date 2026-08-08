@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using RHI.ManifestEditor.Models;
 
@@ -9,18 +10,22 @@ public partial class DxvkSectionViewModel : SectionViewModelBase
 {
     public ObservableCollection<StringItem> DxvkBlacklist { get; }
     public ObservableCollection<GameNoteItem> DxvkGameNotes { get; }
+    public ObservableCollection<KeyValueItem> DxvkApiOverrides { get; }
 
     public DxvkSectionViewModel(RemoteManifest manifest, MainViewModel main) : base(manifest, main)
     {
         DxvkBlacklist = ToObservable(manifest.DxvkBlacklist);
         DxvkGameNotes = new(manifest.DxvkGameNotes?.Select(kv => new GameNoteItem(kv.Key, kv.Value))
             ?? Enumerable.Empty<GameNoteItem>());
+        DxvkApiOverrides = ToKvObservable(manifest.DxvkApiOverrides);
     }
 
     [RelayCommand] public void AddDxvkBlacklist() { DxvkBlacklist.Add(new StringItem("")); Dirty(); }
     [RelayCommand] public void RemoveDxvkBlacklist(StringItem item) { DxvkBlacklist.Remove(item); Dirty(); }
     [RelayCommand] public void AddDxvkNote() { DxvkGameNotes.Add(new GameNoteItem()); Dirty(); }
     [RelayCommand] public void RemoveDxvkNote(GameNoteItem item) { DxvkGameNotes.Remove(item); Dirty(); }
+    [RelayCommand] public void AddDxvkApiOverride() { DxvkApiOverrides.Add(new KeyValueItem()); Dirty(); }
+    [RelayCommand] public void RemoveDxvkApiOverride(KeyValueItem item) { DxvkApiOverrides.Remove(item); Dirty(); }
 
     public override void Commit()
     {
@@ -29,6 +34,7 @@ public partial class DxvkSectionViewModel : SectionViewModelBase
             ? DxvkGameNotes.Where(i => !string.IsNullOrWhiteSpace(i.GameName))
                 .ToDictionary(i => i.GameName, i => i.ToEntry())
             : null;
+        _manifest.DxvkApiOverrides = FromKvObservable(DxvkApiOverrides);
     }
 }
 
@@ -98,26 +104,64 @@ public partial class AuthorsSectionViewModel : SectionViewModelBase
 }
 
 // ── NVIDIA / DLSS ─────────────────────────────────────────────────────────────
+public partial class DlssPresetItem : ObservableObject
+{
+    [ObservableProperty] private string _name;
+    [ObservableProperty] private int _value;
+    [ObservableProperty] private bool? _disabled;
+    public DlssPresetItem(ManifestPresetEntry e) { _name = e.Name; _value = e.Value; _disabled = e.Disabled; }
+    public DlssPresetItem() { _name = ""; }
+    public ManifestPresetEntry ToEntry() => new() { Name = Name, Value = Value, Disabled = Disabled == true ? true : null };
+}
+
 public partial class NvidiaSectionViewModel : SectionViewModelBase
 {
     public ObservableCollection<KeyValueItem> ProfileNameOverrides { get; }
     public ObservableCollection<StringItem> ProfileExeExclusions { get; }
+    public ObservableCollection<DlssPresetItem> DlssSrPresets { get; }
+    public ObservableCollection<DlssPresetItem> DlssRrPresets { get; }
+    public ObservableCollection<DlssPresetItem> DlssFgPresets { get; }
+    public string RtxHdrInfoUrl { get; set; }
 
     public NvidiaSectionViewModel(RemoteManifest manifest, MainViewModel main) : base(manifest, main)
     {
         ProfileNameOverrides = ToKvObservable(manifest.ProfileNameOverrides);
         ProfileExeExclusions = ToObservable(manifest.ProfileExeExclusions);
+        DlssSrPresets = new(manifest.DlssPresets?.Sr?.Select(e => new DlssPresetItem(e)) ?? Enumerable.Empty<DlssPresetItem>());
+        DlssRrPresets = new(manifest.DlssPresets?.Rr?.Select(e => new DlssPresetItem(e)) ?? Enumerable.Empty<DlssPresetItem>());
+        DlssFgPresets = new(manifest.DlssPresets?.Fg?.Select(e => new DlssPresetItem(e)) ?? Enumerable.Empty<DlssPresetItem>());
+        RtxHdrInfoUrl = manifest.RtxHdrInfoUrl ?? "";
     }
 
     [RelayCommand] public void AddProfileOverride() { ProfileNameOverrides.Add(new KeyValueItem()); Dirty(); }
     [RelayCommand] public void RemoveProfileOverride(KeyValueItem item) { ProfileNameOverrides.Remove(item); Dirty(); }
     [RelayCommand] public void AddExeExclusion() { ProfileExeExclusions.Add(new StringItem("")); Dirty(); }
     [RelayCommand] public void RemoveExeExclusion(StringItem item) { ProfileExeExclusions.Remove(item); Dirty(); }
+    [RelayCommand] public void AddSrPreset() { DlssSrPresets.Add(new DlssPresetItem()); Dirty(); }
+    [RelayCommand] public void RemoveSrPreset(DlssPresetItem item) { DlssSrPresets.Remove(item); Dirty(); }
+    [RelayCommand] public void AddRrPreset() { DlssRrPresets.Add(new DlssPresetItem()); Dirty(); }
+    [RelayCommand] public void RemoveRrPreset(DlssPresetItem item) { DlssRrPresets.Remove(item); Dirty(); }
+    [RelayCommand] public void AddFgPreset() { DlssFgPresets.Add(new DlssPresetItem()); Dirty(); }
+    [RelayCommand] public void RemoveFgPreset(DlssPresetItem item) { DlssFgPresets.Remove(item); Dirty(); }
 
     public override void Commit()
     {
         _manifest.ProfileNameOverrides = FromKvObservable(ProfileNameOverrides);
         _manifest.ProfileExeExclusions = FromObservable(ProfileExeExclusions).Count > 0 ? FromObservable(ProfileExeExclusions) : null;
+        _manifest.RtxHdrInfoUrl = string.IsNullOrWhiteSpace(RtxHdrInfoUrl) ? null : RtxHdrInfoUrl;
+
+        var sr = DlssSrPresets.Where(i => !string.IsNullOrWhiteSpace(i.Name)).Select(i => i.ToEntry()).ToList();
+        var rr = DlssRrPresets.Where(i => !string.IsNullOrWhiteSpace(i.Name)).Select(i => i.ToEntry()).ToList();
+        var fg = DlssFgPresets.Where(i => !string.IsNullOrWhiteSpace(i.Name)).Select(i => i.ToEntry()).ToList();
+        if (sr.Count > 0 || rr.Count > 0 || fg.Count > 0)
+            _manifest.DlssPresets = new ManifestDlssPresets
+            {
+                Sr = sr.Count > 0 ? sr : null,
+                Rr = rr.Count > 0 ? rr : null,
+                Fg = fg.Count > 0 ? fg : null,
+            };
+        else
+            _manifest.DlssPresets = null;
     }
 }
 
