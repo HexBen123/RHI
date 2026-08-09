@@ -16,6 +16,9 @@ public sealed partial class AuthorsPage : Page
         DonationView.ItemsSource = _vm.DonationUrls;
         AuthorOverridesView.ItemsSource = _vm.AuthorOverrides;
         NexusView.ItemsSource = _vm.NexusUrlOverrides;
+        PcgwView.ItemsSource = _vm.PcgwUrlOverrides;
+        UwFixView.ItemsSource = _vm.UwFixUrlOverrides;
+        UltraPlusView.ItemsSource = _vm.UltraPlusUrlOverrides;
         OptiScalerWikiView.ItemsSource = _vm.OptiScalerWikiNames;
     }
 
@@ -28,6 +31,15 @@ public sealed partial class AuthorsPage : Page
     private void AddNexus_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e) => _vm?.AddNexusCommand.Execute(null);
     private void RemoveNexus_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e)
     { if (((Button)s).Tag is KeyValueItem i) _vm?.RemoveNexusCommand.Execute(i); }
+    private void AddPcgw_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e) { _vm?.PcgwUrlOverrides.Add(new KeyValueItem()); _vm?._main.MarkDirty(); }
+    private void RemovePcgw_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e)
+    { if (((Button)s).Tag is KeyValueItem i) { _vm?.PcgwUrlOverrides.Remove(i); _vm?._main.MarkDirty(); } }
+    private void AddUwFix_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e) { _vm?.UwFixUrlOverrides.Add(new KeyValueItem()); _vm?._main.MarkDirty(); }
+    private void RemoveUwFix_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e)
+    { if (((Button)s).Tag is KeyValueItem i) { _vm?.UwFixUrlOverrides.Remove(i); _vm?._main.MarkDirty(); } }
+    private void AddUltraPlus_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e) { _vm?.UltraPlusUrlOverrides.Add(new KeyValueItem()); _vm?._main.MarkDirty(); }
+    private void RemoveUltraPlus_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e)
+    { if (((Button)s).Tag is KeyValueItem i) { _vm?.UltraPlusUrlOverrides.Remove(i); _vm?._main.MarkDirty(); } }
     private void AddOptiScalerWiki_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e) => _vm?.AddOptiScalerWikiCommand.Execute(null);
     private void RemoveOptiScalerWiki_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e)
     { if (((Button)s).Tag is KeyValueItem i) _vm?.RemoveOptiScalerWikiCommand.Execute(i); }

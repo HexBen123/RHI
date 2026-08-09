@@ -52,6 +52,43 @@
                     </DataTemplate></ListView.ItemTemplate>
                 </ListView>
                 <Button Content="+ Add Nexus override" Click="AddNexus_Click"/>
+
+                <TextBlock Text="pcgwUrlOverrides" FontSize="12" FontWeight="SemiBold" Margin="0,8,0,0"/>
+                <ListView x:Name="PcgwView" MaxHeight="160" SelectionMode="None">
+                    <ListView.ItemTemplate><DataTemplate>
+                        <Grid ColumnSpacing="8" Margin="0,2,0,2"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Text="{Binding Key, Mode=TwoWay}" PlaceholderText="game name" FontSize="12"/>
+                            <TextBox Grid.Column="1" Text="{Binding Value, Mode=TwoWay}" PlaceholderText="https://pcgamingwiki.com/..." FontSize="12"/>
+                            <Button Grid.Column="2" Content="✕" Tag="{Binding}" Click="RemovePcgw_Click" Padding="8,4"/>
+                        </Grid>
+                    </DataTemplate></ListView.ItemTemplate>
+                </ListView>
+                <Button Content="+ Add PCGW override" Click="AddPcgw_Click"/>
+
+                <TextBlock Text="uwFixUrlOverrides" FontSize="12" FontWeight="SemiBold" Margin="0,8,0,0"/>
+                <ListView x:Name="UwFixView" MaxHeight="160" SelectionMode="None">
+                    <ListView.ItemTemplate><DataTemplate>
+                        <Grid ColumnSpacing="8" Margin="0,2,0,2"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Text="{Binding Key, Mode=TwoWay}" PlaceholderText="game name" FontSize="12"/>
+                            <TextBox Grid.Column="1" Text="{Binding Value, Mode=TwoWay}" PlaceholderText="https://..." FontSize="12"/>
+                            <Button Grid.Column="2" Content="✕" Tag="{Binding}" Click="RemoveUwFix_Click" Padding="8,4"/>
+                        </Grid>
+                    </DataTemplate></ListView.ItemTemplate>
+                </ListView>
+                <Button Content="+ Add UW Fix override" Click="AddUwFix_Click"/>
+
+                <TextBlock Text="ultraPlusUrlOverrides" FontSize="12" FontWeight="SemiBold" Margin="0,8,0,0"/>
+                <ListView x:Name="UltraPlusView" MaxHeight="160" SelectionMode="None">
+                    <ListView.ItemTemplate><DataTemplate>
+                        <Grid ColumnSpacing="8" Margin="0,2,0,2"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Text="{Binding Key, Mode=TwoWay}" PlaceholderText="game name" FontSize="12"/>
+                            <TextBox Grid.Column="1" Text="{Binding Value, Mode=TwoWay}" PlaceholderText="https://theultraplace.com/..." FontSize="12"/>
+                            <Button Grid.Column="2" Content="✕" Tag="{Binding}" Click="RemoveUltraPlus_Click" Padding="8,4"/>
+                        </Grid>
+                    </DataTemplate></ListView.ItemTemplate>
+                </ListView>
+                <Button Content="+ Add Ultra+ override" Click="AddUltraPlus_Click"/>
+
                 <TextBlock Text="optiScalerWikiNames" FontSize="12" FontWeight="SemiBold" Margin="0,8,0,0"/>
                 <ListView x:Name="OptiScalerWikiView" MaxHeight="160" SelectionMode="None">
                     <ListView.ItemTemplate><DataTemplate>

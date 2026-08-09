@@ -11,6 +11,7 @@ public partial class DetectionSectionViewModel : SectionViewModelBase
     public ObservableCollection<KeyValueItem> WikiNameOverrides { get; }
     public ObservableCollection<KeyValueItem> LumaNameOverrides { get; }
     public ObservableCollection<KeyValueItem> InstallPathOverrides { get; }
+    public ObservableCollection<SplitGameItem> SplitGames { get; }
 
     public DetectionSectionViewModel(RemoteManifest manifest, MainViewModel main) : base(manifest, main)
     {
@@ -19,8 +20,11 @@ public partial class DetectionSectionViewModel : SectionViewModelBase
         WikiNameOverrides = ToKvObservable(manifest.WikiNameOverrides);
         LumaNameOverrides = ToKvObservable(manifest.LumaNameOverrides);
         InstallPathOverrides = ToKvObservable(manifest.InstallPathOverrides);
+        SplitGames = new(manifest.SplitGames?
+            .Select(kv => new SplitGameItem(kv.Key, kv.Value, main)) ?? Enumerable.Empty<SplitGameItem>());
         Subscribe(Blacklist); Subscribe(WikiUnlinks);
         Subscribe(WikiNameOverrides); Subscribe(LumaNameOverrides); Subscribe(InstallPathOverrides);
+        SplitGames.CollectionChanged += (_, _) => Dirty();
     }
 
     private void Subscribe<T>(ObservableCollection<T> col) where T : class
@@ -36,6 +40,8 @@ public partial class DetectionSectionViewModel : SectionViewModelBase
     [RelayCommand] public void RemoveLumaNameOverride(KeyValueItem item) { LumaNameOverrides.Remove(item); Dirty(); }
     [RelayCommand] public void AddInstallPathOverride() { InstallPathOverrides.Add(new KeyValueItem()); Dirty(); }
     [RelayCommand] public void RemoveInstallPathOverride(KeyValueItem item) { InstallPathOverrides.Remove(item); Dirty(); }
+    [RelayCommand] public void AddSplitGame() { SplitGames.Add(new SplitGameItem(_main)); Dirty(); }
+    [RelayCommand] public void RemoveSplitGame(SplitGameItem item) { SplitGames.Remove(item); Dirty(); }
 
     [RelayCommand] public void SortBlacklist() { var sorted = Blacklist.OrderBy(i => i.Value).ToList(); Blacklist.Clear(); foreach (var i in sorted) Blacklist.Add(i); Dirty(); }
     [RelayCommand] public void SortWikiUnlinks() { var sorted = WikiUnlinks.OrderBy(i => i.Value).ToList(); WikiUnlinks.Clear(); foreach (var i in sorted) WikiUnlinks.Add(i); Dirty(); }
@@ -47,5 +53,13 @@ public partial class DetectionSectionViewModel : SectionViewModelBase
         _manifest.WikiNameOverrides = FromKvObservable(WikiNameOverrides);
         _manifest.LumaNameOverrides = FromKvObservable(LumaNameOverrides);
         _manifest.InstallPathOverrides = FromKvObservable(InstallPathOverrides);
+        _manifest.SplitGames = SplitGames.Count > 0
+            ? SplitGames
+                .Where(g => !string.IsNullOrWhiteSpace(g.DetectedName))
+                .ToDictionary(g => g.DetectedName, g => g.SubGames
+                    .Where(s => !string.IsNullOrWhiteSpace(s.Name))
+                    .Select(s => s.ToEntry())
+                    .ToList())
+            : null;
     }
 }

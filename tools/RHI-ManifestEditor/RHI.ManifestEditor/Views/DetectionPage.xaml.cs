@@ -18,6 +18,7 @@ public sealed partial class DetectionPage : Page
         WikiUnlinksView.ItemsSource = _vm.WikiUnlinks;
         WikiNameOverridesView.ItemsSource = _vm.WikiNameOverrides;
         InstallPathOverridesView.ItemsSource = _vm.InstallPathOverrides;
+        SplitGamesView.ItemsSource = _vm.SplitGames;
     }
 
     private void AddBlacklist_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e) => _vm?.AddBlacklistCommand.Execute(null);
@@ -35,4 +36,18 @@ public sealed partial class DetectionPage : Page
     private void AddInstallPathOverride_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e) => _vm?.AddInstallPathOverrideCommand.Execute(null);
     private void RemoveInstallPathOverride_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e)
     { if (((Microsoft.UI.Xaml.Controls.Button)s).Tag is ViewModels.KeyValueItem item) _vm?.RemoveInstallPathOverrideCommand.Execute(item); }
+
+    private void AddSplitGame_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e) => _vm?.AddSplitGameCommand.Execute(null);
+    private void RemoveSplitGame_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e)
+    { if (((Microsoft.UI.Xaml.Controls.Button)s).Tag is SplitGameItem item) _vm?.RemoveSplitGameCommand.Execute(item); }
+    private void AddSubGame_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e)
+    { if (((Microsoft.UI.Xaml.Controls.Button)s).Tag is SplitGameItem item) item.AddSubGameCommand.Execute(null); }
+    private void RemoveSubGame_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e)
+    {
+        if (((Microsoft.UI.Xaml.Controls.Button)s).Tag is not SplitGameEntryItem entry) return;
+        // Find parent SplitGameItem
+        if (_vm == null) return;
+        foreach (var sg in _vm.SplitGames)
+            if (sg.SubGames.Contains(entry)) { sg.RemoveSubGameCommand.Execute(entry); break; }
+    }
 }

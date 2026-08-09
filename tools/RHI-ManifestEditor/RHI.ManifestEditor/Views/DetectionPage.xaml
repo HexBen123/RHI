@@ -105,6 +105,58 @@
                     <Button Content="+ Add" Click="AddInstallPathOverride_Click"/>
                 </StackPanel>
             </Expander>
+
+            <!-- splitGames -->
+            <Expander HorizontalAlignment="Stretch">
+                <Expander.Header>
+                    <TextBlock Text="splitGames — split one store entry into multiple cards" FontWeight="SemiBold"/>
+                </Expander.Header>
+                <StackPanel Spacing="4" Padding="0,8,0,0">
+                    <TextBlock FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="Use when one game folder contains multiple games in subfolders (e.g. LISA, Mass Effect Legendary Edition). Each sub-game gets its own card."/>
+                    <ListView x:Name="SplitGamesView" MaxHeight="500" SelectionMode="None">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Expander Margin="0,4,0,0" HorizontalAlignment="Stretch">
+                                    <Expander.Header>
+                                        <TextBox Text="{Binding DetectedName, Mode=TwoWay}"
+                                                 PlaceholderText="detected folder name (e.g. LISA)"
+                                                 FontSize="12" MinWidth="260"/>
+                                    </Expander.Header>
+                                    <StackPanel Spacing="8" Padding="8">
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            Text="Name = display name for the card. Subpath = relative path from the detected folder."/>
+                                        <ListView ItemsSource="{Binding SubGames}" MaxHeight="200" SelectionMode="None">
+                                            <ListView.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid ColumnSpacing="8" Margin="0,2,0,2">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBox Grid.Column="0" Text="{Binding Name, Mode=TwoWay}"
+                                                                 PlaceholderText="card name" FontSize="12"/>
+                                                        <TextBox Grid.Column="1" Text="{Binding SubPath, Mode=TwoWay}"
+                                                                 PlaceholderText="subpath (or empty)" FontSize="12"/>
+                                                        <Button Grid.Column="2" Content="✕" Tag="{Binding}"
+                                                                Click="RemoveSubGame_Click" Padding="8,4"/>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ListView.ItemTemplate>
+                                        </ListView>
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <Button Content="+ Add sub-game" Tag="{Binding}" Click="AddSubGame_Click"/>
+                                            <Button Content="Remove split" Tag="{Binding}" Click="RemoveSplitGame_Click" Foreground="OrangeRed"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Expander>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                    <Button Content="+ Add split game" Click="AddSplitGame_Click"/>
+                </StackPanel>
+            </Expander>
         </StackPanel>
     </ScrollViewer>
 </Page>
