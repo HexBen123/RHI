@@ -444,6 +444,19 @@ public partial class MainViewModel
 
         // Last resort: infer from engine type (covers access-denied scenarios
         // like WindowsApps/Xbox Game Pass installs)
+        // UE5+ games default to DX12 — UE5 uses DX12 by default on Windows.
+        // Check engineHintOverrides for a version number to distinguish UE4 vs UE5.
+        if (engine == EngineType.Unreal && gameName != null)
+        {
+            string? hint = null;
+            _manifest?.EngineHintOverrides?.TryGetValue(gameName, out hint);
+
+            // UE5+ → DX12 by default. UE4 and unknown version → DX11 (conservative).
+            bool isUe5 = hint != null
+                && System.Text.RegularExpressions.Regex.IsMatch(hint, @"Unreal Engine 5\.");
+            return isUe5 ? GraphicsApiType.DirectX12 : GraphicsApiType.DirectX11;
+        }
+
         return engine switch
         {
             EngineType.Unreal       => GraphicsApiType.DirectX11,

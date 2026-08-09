@@ -487,6 +487,19 @@ public partial class MainViewModel
                 detectedApis = cachedApi.All;
             }
 
+            // For WindowsApps (Xbox/Game Pass) Unreal Engine 5+ games, infer DX12.
+            // Overrides both cache misses AND stale DX11 cache entries since WindowsApps
+            // paths are access-denied and the DX11 value was a fallback, never scanned.
+            if (installPath.Contains(@"\WindowsApps\", StringComparison.OrdinalIgnoreCase)
+                && (graphicsApi == GraphicsApiType.Unknown || graphicsApi == GraphicsApiType.DirectX11))
+            {
+                string? hint = null;
+                cachedManifest?.EngineHintOverrides?.TryGetValue(game.Name, out hint);
+                if (hint != null
+                    && System.Text.RegularExpressions.Regex.IsMatch(hint, @"Unreal Engine 5\."))
+                    graphicsApi = GraphicsApiType.DirectX12;
+            }
+
             // Look up installed RenoDX record: prefer Name+Store match, fallback to Name+InstallPath
             var record = records.FirstOrDefault(r =>
                 r.GameName.Equals(game.Name, StringComparison.OrdinalIgnoreCase) &&

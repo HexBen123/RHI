@@ -5,6 +5,11 @@
 - Install warnings now work for all components — ReShade, ReLimiter, Display Commander, OptiScaler, RE Framework, and DXVK can each show a per-game note before installing proceeds.
 - Game-specific notes added to the ReLimiter and Display Commander info dialogs now appear above the release notes so you can see both.
 
+### Changes
+
+- Graphics API badges now show individually — games that support both DX11 and DX12 (or DX12 and Vulkan) now show separate badges for each. Groundwork for upcoming Luma generic UE mod support.
+- Xbox/Game Pass Unreal Engine 5 games now correctly show DX12 when a UE version is set in the manifest — previously showed DX11 due to access-denied file scanning.
+
 ### Bug Fixes
 
 - Fixed deprecated mods from the RenoDX wiki showing up in RHI — mods in the "Deprecated mods" section are now skipped during wiki parsing.
@@ -14,11 +19,8 @@
 - Added Doom Eternal to wiki unlinks (no RenoDX mod available).
 - Added The Sinking City Remastered ReShade info note and install warning: amd_FusionFX.dll must be deleted from the game folder for frame generation to work.
 - Added LISA — "The Painful" and "The Joyful" Definitive Editions now show as separate installs.
-- Added DOOM + DOOM II split — the bundle now shows as 4 separate installs: DOOM (New), DOOM, DOOM II, and DOOM (DOS).
-- Set DOOM + DOOM II graphics API to Vulkan.
-- Added engine overrides for 007 First Light (Glacier 2), Assassin's Creed Black Flag Resynced (Anvil), CrossCode (NW.js), Cry of Fear (GoldSrc), DOOM + DOOM II (Kex Engine), FATAL FRAME / PROJECT ZERO: Maiden of Black Water (Katana), Nioh 3 (Katana), Persona 5 Royal (GFD), and Project Motor Racing (GIANTS Engine).
-- Added PCGW links for Stellar Blade, DOOM + DOOM II, and DOOM (DOS).
-- Fixed Trackmania graphics API — now correctly shows DX11 and DX12.
+- Added DOOM + DOOM II split — the New rerelease and DOS versions now show as separate installs, with correct Vulkan API and Kex Engine tag.
+- Added engine tags for 9 games: 007 First Light (Glacier 2), CrossCode (NW.js), Cry of Fear (GoldSrc), FATAL FRAME: Maiden of Black Water (Katana), Nioh 3 (Katana), Persona 5 Royal (GFD), Project Motor Racing (GIANTS Engine), Assassin's Creed Black Flag Resynced (Anvil).
 
 ---
 

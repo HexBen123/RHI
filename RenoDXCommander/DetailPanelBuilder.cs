@@ -133,13 +133,8 @@ public partial class DetailPanelBuilder
         }
         else _window.DetailEngineBadge.Visibility = Visibility.Collapsed;
 
-        // Graphics API badge
-        if (card.HasGraphicsApiBadge)
-        {
-            _window.DetailGraphicsApiText.Text = card.GraphicsApiLabel;
-            _window.DetailGraphicsApiBadge.Visibility = Visibility.Visible;
-        }
-        else _window.DetailGraphicsApiBadge.Visibility = Visibility.Collapsed;
+        // Graphics API badge(s) — one per detected API
+        UpdateGraphicsApiBadges(_window, card);
 
         // Generic badge — hidden (redundant with engine badge + UE-Extended toggle)
         _window.DetailGenericBadge.Visibility = Visibility.Collapsed;
@@ -384,5 +379,78 @@ public partial class DetailPanelBuilder
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Clears the graphics API badge panel and adds one badge per detected API.
+    /// APIs are shown in a consistent order: DX8 → DX9 → DX10 → DX11 → DX12 → Vulkan → OpenGL.
+    /// </summary>
+    internal static void UpdateGraphicsApiBadges(MainWindow window, GameCardViewModel card)
+    {
+        window.DetailGraphicsApiBadgePanel.Children.Clear();
+
+        if (!card.HasGraphicsApiBadge)
+        {
+            window.DetailGraphicsApiBadgePanel.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        var rawApis = card.DetectedApis.Count > 0
+            ? card.DetectedApis
+            : new HashSet<GraphicsApiType> { card.GraphicsApi };
+
+        // Filter: if any modern API (DX11, DX12, VLK) is present, drop legacy (DX8, DX9, DX10).
+        // If DX10 is the highest present, drop DX8/DX9. Priority: DX12 > DX11 > VLK > OGL > DX10 > DX9 > DX8.
+        var hasModern = rawApis.Contains(GraphicsApiType.DirectX11)
+                     || rawApis.Contains(GraphicsApiType.DirectX12)
+                     || rawApis.Contains(GraphicsApiType.Vulkan);
+        var hasDx10Plus = hasModern || rawApis.Contains(GraphicsApiType.DirectX10);
+
+        var filtered = rawApis.Where(a => a switch
+        {
+            GraphicsApiType.DirectX8  => !hasDx10Plus,
+            GraphicsApiType.DirectX9  => !hasDx10Plus,
+            GraphicsApiType.DirectX10 => !hasModern,
+            // OGL only shows alone — if any DX or Vulkan is present it's likely a launcher/helper exe
+            GraphicsApiType.OpenGL    => rawApis.Count == 1,
+            _                         => true,
+        });
+
+        // Display in consistent order: DX8→DX9→DX10→DX11→DX12→VLK→OGL
+        var displayOrder = new[]
+        {
+            GraphicsApiType.DirectX8, GraphicsApiType.DirectX9, GraphicsApiType.DirectX10,
+            GraphicsApiType.DirectX11, GraphicsApiType.DirectX12,
+            GraphicsApiType.Vulkan, GraphicsApiType.OpenGL,
+        };
+        var apisToShow = displayOrder.Where(a => filtered.Contains(a)).ToList();
+
+        foreach (var api in apisToShow)
+        {
+            var label = Services.GraphicsApiDetector.GetLabel(api);
+            if (string.IsNullOrEmpty(label)) continue;
+
+            var textBlock = new TextBlock
+            {
+                Text = label,
+                FontSize = 11,
+                Foreground = UIFactory.Brush(ResourceKeys.ChipTextBrush),
+            };
+            var badge = new Border
+            {
+                CornerRadius = new CornerRadius(5),
+                Padding = new Thickness(6, 2, 6, 2),
+                Background = UIFactory.Brush(ResourceKeys.ChipDefaultBrush),
+                BorderBrush = UIFactory.Brush(ResourceKeys.BorderDefaultBrush),
+                BorderThickness = new Thickness(1),
+                VerticalAlignment = VerticalAlignment.Center,
+                Child = textBlock,
+            };
+            window.DetailGraphicsApiBadgePanel.Children.Add(badge);
+        }
+
+        window.DetailGraphicsApiBadgePanel.Visibility =
+            window.DetailGraphicsApiBadgePanel.Children.Count > 0
+            ? Visibility.Visible : Visibility.Collapsed;
     }
 }

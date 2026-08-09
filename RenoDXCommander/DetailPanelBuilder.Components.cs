@@ -610,18 +610,10 @@ public partial class DetailPanelBuilder
                     ? Visibility.Visible : Visibility.Collapsed;
             }
 
-            // Refresh Graphics API badge when API changes
+            // Refresh Graphics API badges when API changes
             if (e.PropertyName is "HasGraphicsApiBadge" or "GraphicsApiLabel")
             {
-                if (_currentDetailCard.HasGraphicsApiBadge)
-                {
-                    _window.DetailGraphicsApiText.Text = _currentDetailCard.GraphicsApiLabel;
-                    _window.DetailGraphicsApiBadge.Visibility = Visibility.Visible;
-                }
-                else
-                {
-                    _window.DetailGraphicsApiBadge.Visibility = Visibility.Collapsed;
-                }
+                UpdateGraphicsApiBadges(_window, _currentDetailCard);
             }
 
             // Refresh addon file badge when install state changes
