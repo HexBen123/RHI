@@ -23,6 +23,7 @@
 - Added DOOM + DOOM II split — the New rerelease and DOS versions now show as separate installs, with correct Vulkan API and Kex Engine tag.
 - Added engine tags for 9 games: 007 First Light (Glacier 2), CrossCode (NW.js), Cry of Fear (GoldSrc), FATAL FRAME: Maiden of Black Water (Katana), Nioh 3 (Katana), Persona 5 Royal (GFD), Project Motor Racing (GIANTS Engine), Assassin's Creed Black Flag Resynced (Anvil).
 - Added DOOM 64 Vulkan API override.
+- Added Mistfall Hunter engine version (Unreal Engine 5.7.4).
 
 ---
 
