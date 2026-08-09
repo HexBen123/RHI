@@ -343,14 +343,6 @@
         "subPath": "rerelease"
       },
       {
-        "name": "DOOM (Original)",
-        "subPath": "base"
-      },
-      {
-        "name": "DOOM II (Original)",
-        "subPath": "base\\doom2"
-      },
-      {
         "name": "DOOM (DOS)",
         "subPath": "dosbox"
       }
@@ -817,9 +809,7 @@
     "DOOM Eternal Sandbox": "DOOMSandBox64vk.exe",
     "LISA The Painful - Definitive Edition": "LISA The Painful Definitive Edition.exe",
     "LISA The Joyful - Definitive Edition": "LISA The Joyful Definitive Edition.exe",
-    "DOOM (DOS)": "Launcher.exe",
-    "DOOM (Original)": "DOOM.EXE",
-    "DOOM II (Original)": "DOOM2.EXE"
+    "DOOM (DOS)": "Launcher.exe"
   },
   "renodxIniOverrides": {
     "Jump Space": {
