@@ -374,10 +374,10 @@
   "_comment_engine": "=== ENGINE \u0026 GRAPHICS API ===\nOverride the auto-detected engine type, display label, and graphics API for games where detection fails or gives the wrong result.\nengineOverrides controls mod fallback logic (Unreal/Unity/RE Engine). engineHintOverrides is display/hint only.\ngraphicsApiOverrides forces the API badge and controls which ReShade DLL is deployed.",
   "engineOverrides": {
     "007 First Light": "Glacier 2",
-    "Assassin's Creed Black Flag Resynced": "Anvil",
+    "Assassin\u0027s Creed Black Flag Resynced": "Anvil",
     "CrossCode": "NW.js",
     "Cry of Fear": "GoldSrc",
-    "DOOM + DOOM II": "Kex Engine",
+    "DOOM \u002B DOOM II": "Kex Engine",
     "FATAL FRAME / PROJECT ZERO: Maiden of Black Water": "Katana",
     "Nioh 3": "Katana",
     "Persona 5 Royal": "GFD",
@@ -545,7 +545,8 @@
     "The Witcher 3: Wild Hunt - Game of the Year Edition": "DX12",
     "Wartales": "DX11",
     "Trackmania": "DX11, DX12",
-    "DOOM \u002B DOOM II": "VLK"
+    "DOOM \u002B DOOM II": "VLK",
+    "DOOM 64": "VLK"
   },
   "thirtyTwoBitGames": [
     "Assassin\u0027s Creed",

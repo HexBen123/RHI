@@ -12,6 +12,7 @@
 
 ### Bug Fixes
 
+- Fixed games installed while downloading showing the wrong folder path after a Refresh — a full Refresh now correctly re-detects the game folder once the download is complete.
 - Fixed deprecated mods from the RenoDX wiki showing up in RHI — mods in the "Deprecated mods" section are now skipped during wiki parsing.
 
 ### Manifest Updates
@@ -21,6 +22,7 @@
 - Added LISA — "The Painful" and "The Joyful" Definitive Editions now show as separate installs.
 - Added DOOM + DOOM II split — the New rerelease and DOS versions now show as separate installs, with correct Vulkan API and Kex Engine tag.
 - Added engine tags for 9 games: 007 First Light (Glacier 2), CrossCode (NW.js), Cry of Fear (GoldSrc), FATAL FRAME: Maiden of Black Water (Katana), Nioh 3 (Katana), Persona 5 Royal (GFD), Project Motor Racing (GIANTS Engine), Assassin's Creed Black Flag Resynced (Anvil).
+- Added DOOM 64 Vulkan API override.
 
 ---
 
