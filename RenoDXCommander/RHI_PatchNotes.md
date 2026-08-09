@@ -14,6 +14,7 @@
 - Added Doom Eternal to wiki unlinks (no RenoDX mod available).
 - Added The Sinking City Remastered ReShade info note and install warning: amd_FusionFX.dll must be deleted from the game folder for frame generation to work.
 - Added LISA — "The Painful" and "The Joyful" Definitive Editions now show as separate installs.
+- Added DOOM + DOOM II split — the bundle now shows as 4 separate installs: DOOM (New), DOOM, DOOM II, and DOOM (DOS).
 
 ---
 

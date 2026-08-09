@@ -336,6 +336,24 @@
         "name": "LISA The Joyful - Definitive Edition",
         "subPath": "LISA The Joyful - Definitive Edition"
       }
+    ],
+    "DOOM \u002B DOOM II": [
+      {
+        "name": "DOOM \u002B DOOM II (New)",
+        "subPath": "rerelease"
+      },
+      {
+        "name": "DOOM",
+        "subPath": "base"
+      },
+      {
+        "name": "DOOM II",
+        "subPath": "base\\doom2"
+      },
+      {
+        "name": "DOOM (DOS)",
+        "subPath": "dosbox"
+      }
     ]
   },
   "emulatorGames": {
