@@ -339,7 +339,7 @@
     ],
     "DOOM \u002B DOOM II": [
       {
-        "name": "DOOM \u002B DOOM II (New)",
+        "name": "DOOM \u002B DOOM II",
         "subPath": "rerelease"
       },
       {
@@ -1161,7 +1161,9 @@
     "Denshattack!": "https://www.pcgamingwiki.com/wiki/Denshattack!",
     "Halo: Campaign Evolved": "https://www.pcgamingwiki.com/wiki/Halo:_Campaign_Evolved",
     "Halo: The Master Chief Collection": "https://www.pcgamingwiki.com/wiki/Halo:_The_Master_Chief_Collection",
-    "Stellar Blade\u2122": "https://www.pcgamingwiki.com/wiki/Stellar_Blade"
+    "Stellar Blade\u2122": "https://www.pcgamingwiki.com/wiki/Stellar_Blade",
+    "DOOM \u002B DOOM II": "https://www.pcgamingwiki.com/wiki/Doom_%2B_Doom_II",
+    "DOOM (DOS)": "https://www.pcgamingwiki.com/wiki/Doom_(1993)#The_Ultimate_Doom"
   },
   "uwFixUrlOverrides": {
     "Beast of Reincarnation": "https://www.nexusmods.com/beastofreincarnation/mods/15",
