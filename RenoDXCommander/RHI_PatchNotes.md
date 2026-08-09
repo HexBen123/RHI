@@ -16,6 +16,9 @@
 - Added LISA — "The Painful" and "The Joyful" Definitive Editions now show as separate installs.
 - Added DOOM + DOOM II split — the bundle now shows as 4 separate installs: DOOM (New), DOOM, DOOM II, and DOOM (DOS).
 - Set DOOM + DOOM II graphics API to Vulkan.
+- Added engine overrides for 007 First Light (Glacier 2), Assassin's Creed Black Flag Resynced (Anvil), CrossCode (NW.js), Cry of Fear (GoldSrc), DOOM + DOOM II (Kex Engine), FATAL FRAME / PROJECT ZERO: Maiden of Black Water (Katana), Nioh 3 (Katana), Persona 5 Royal (GFD), and Project Motor Racing (GIANTS Engine).
+- Added PCGW links for Stellar Blade, DOOM + DOOM II, and DOOM (DOS).
+- Fixed Trackmania graphics API — now correctly shows DX11 and DX12.
 
 ---
 
