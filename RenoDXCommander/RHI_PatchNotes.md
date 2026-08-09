@@ -1,20 +1,18 @@
 ## v2.3.2
 
-### New
-
-- Install warnings now work for all components — ReShade, ReLimiter, Display Commander, OptiScaler, RE Framework, and DXVK can each show a per-game note before installing proceeds.
-- Game-specific notes added to the ReLimiter and Display Commander info dialogs now appear above the release notes so you can see both.
-
-### Changes
-
-- Graphics API badges now show individually — games that support both DX11 and DX12 (or DX12 and Vulkan) now show separate badges for each. Groundwork for upcoming Luma generic UE mod support.
-- Xbox/Game Pass Unreal Engine 5 games now correctly show DX12 when a UE version is set in the manifest — previously showed DX11 due to access-denied file scanning.
-- Graphics API override in the per-game overrides panel now has separate DirectX11 and DirectX12 options instead of the combined DX11/DX12 entry.
-
 ### Bug Fixes
 
 - Fixed games installed while downloading showing the wrong folder path after a Refresh — a full Refresh now correctly re-detects the game folder once the download is complete.
 - Fixed deprecated mods from the RenoDX wiki showing up in RHI — mods in the "Deprecated mods" section are now skipped during wiki parsing.
+- Fixed Xbox/Game Pass Unreal Engine 5 games showing DX11 — games with a UE5 version set in the manifest now correctly show DX12.
+
+### Maintenance
+
+- Graphics API badges now show DX11 and DX12 separately instead of combined.
+- Graphics API override in the per-game overrides panel now has separate DirectX11 and DirectX12 options.
+- Install warnings are now wired up for all components — ReShade, ReLimiter, Display Commander, OptiScaler, RE Framework, and DXVK. Game-specific notes can be shown before installing proceeds.
+- Game-specific notes in the ReLimiter and Display Commander info dialogs now appear above the release notes.
+- Background work for upcoming generic Luma UE mod support.
 
 ### Manifest Updates
 
