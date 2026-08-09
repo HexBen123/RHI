@@ -203,6 +203,13 @@ public partial class GameDetectionService : IGameDetectionService
         return result;
     }
 
+    /// <summary>
+    /// Clears the in-memory engine detection cache.
+    /// Called on full rescan so games that were scanned during a partial download
+    /// get re-detected with the now-complete file structure.
+    /// </summary>
+    public void ClearEngineCache() => _engineCache.Clear();
+
     private (string installPath, EngineType engine) DetectEngineAndPathCore(string rootPath)
     {
         // --- Unreal Engine (UE4/5) ---

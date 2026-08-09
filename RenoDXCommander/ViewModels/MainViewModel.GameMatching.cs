@@ -346,7 +346,18 @@ public partial class MainViewModel
         if (installPath.Contains(@"\WindowsApps\", StringComparison.OrdinalIgnoreCase)
             || installPath.Contains(@"/WindowsApps/", StringComparison.OrdinalIgnoreCase))
         {
-            // Last resort: infer from engine type for WindowsApps games
+            // For Unreal Engine games, check if the manifest specifies a UE5+ version.
+            // UE5+ defaults to DX12 on Windows — UE4 and unknown versions stay DX11.
+            if (engine == EngineType.Unreal && gameName != null)
+            {
+                string? hint = null;
+                _manifest?.EngineHintOverrides?.TryGetValue(gameName, out hint);
+                bool isUe5 = hint != null && System.Text.RegularExpressions.Regex.IsMatch(hint, @"Unreal Engine 5\.");
+                if (isUe5)
+                    return GraphicsApiType.DirectX12;
+            }
+
+            // Infer from engine type for all other WindowsApps games
             return engine switch
             {
                 EngineType.Unreal       => GraphicsApiType.DirectX11,

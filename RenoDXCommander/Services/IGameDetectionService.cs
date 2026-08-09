@@ -25,6 +25,8 @@ public interface IGameDetectionService
 
     (string installPath, EngineType engine) DetectEngineAndPath(string rootPath);
 
+    void ClearEngineCache();
+
     GameMod? MatchGame(
         DetectedGame game,
         IEnumerable<GameMod> mods,

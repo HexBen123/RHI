@@ -177,6 +177,7 @@ public partial class MainViewModel
         {
             _gameApiCache.Clear();
             GraphicsApiDetector.ClearCache();
+            _gameDetectionService.ClearEngineCache();
         }
 
         try
