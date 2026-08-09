@@ -928,7 +928,7 @@ public partial class DetailPanelBuilder
             "User overrides set here take precedence over manifest and auto-detected values.\n" +
             "Reset Overrides reverts to auto-detection.");
 
-        var apiDropdownItems = new[] { "Auto", "DirectX8", "DirectX9", "DirectX10", "DX11/DX12", "Vulkan", "OpenGL" };
+        var apiDropdownItems = new[] { "Auto", "DirectX8", "DirectX9", "DirectX10", "DirectX11", "DirectX12", "Vulkan", "OpenGL" };
         var existingApiOverride = _window.ViewModel.GetApiOverride(gameName, card.Source);
 
         // Determine current selection
@@ -936,9 +936,10 @@ public partial class DetailPanelBuilder
         if (existingApiOverride != null && existingApiOverride.Count > 0)
         {
             // Map stored override back to dropdown label
-            if (existingApiOverride.Contains("DirectX11", StringComparer.OrdinalIgnoreCase)
-                || existingApiOverride.Contains("DirectX12", StringComparer.OrdinalIgnoreCase))
-                defaultApiSelection = "DX11/DX12";
+            if (existingApiOverride.Contains("DirectX12", StringComparer.OrdinalIgnoreCase))
+                defaultApiSelection = "DirectX12";
+            else if (existingApiOverride.Contains("DirectX11", StringComparer.OrdinalIgnoreCase))
+                defaultApiSelection = "DirectX11";
             else if (existingApiOverride.Contains("Vulkan", StringComparer.OrdinalIgnoreCase))
                 defaultApiSelection = "Vulkan";
             else if (existingApiOverride.Contains("OpenGL", StringComparer.OrdinalIgnoreCase))
@@ -968,12 +969,13 @@ public partial class DetailPanelBuilder
             // Map dropdown label to enum names for persistence
             List<string>? apiEnumNames = selected switch
             {
-                "DirectX8" => new() { "DirectX8" },
-                "DirectX9" => new() { "DirectX9" },
+                "DirectX8"  => new() { "DirectX8" },
+                "DirectX9"  => new() { "DirectX9" },
                 "DirectX10" => new() { "DirectX10" },
-                "DX11/DX12" => new() { "DirectX11", "DirectX12" },
-                "Vulkan" => new() { "Vulkan" },
-                "OpenGL" => new() { "OpenGL" },
+                "DirectX11" => new() { "DirectX11" },
+                "DirectX12" => new() { "DirectX12" },
+                "Vulkan"    => new() { "Vulkan" },
+                "OpenGL"    => new() { "OpenGL" },
                 _ => null, // "Auto" clears the override
             };
 

@@ -9,6 +9,7 @@
 
 - Graphics API badges now show individually — games that support both DX11 and DX12 (or DX12 and Vulkan) now show separate badges for each. Groundwork for upcoming Luma generic UE mod support.
 - Xbox/Game Pass Unreal Engine 5 games now correctly show DX12 when a UE version is set in the manifest — previously showed DX11 due to access-denied file scanning.
+- Graphics API override in the per-game overrides panel now has separate DirectX11 and DirectX12 options instead of the combined DX11/DX12 entry.
 
 ### Bug Fixes
 
