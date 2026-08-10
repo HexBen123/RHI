@@ -190,6 +190,8 @@ public sealed partial class MainWindow : Window
         ViewModel.SetDispatcher(DispatcherQueue);
         ViewModel.ConfirmForeignDxgiOverwrite = _dialogService.ShowForeignDxgiConfirmDialogAsync;
         ViewModel.ShowVulkanAdminRequiredDialog = _dialogService.ShowVulkanAdminRequiredDialogAsync;
+        ViewModel.RequestOverridesPanelRebuild = card =>
+            DispatcherQueue.TryEnqueue(() => BuildOverridesPanel(card));
         ViewModel.ShowShaderSelectionPicker = async (current) =>
             await ShaderPopupHelper.ShowAsync(Content.XamlRoot, _shaderPackService, current, ShaderPopupHelper.PopupContext.Global);
         ViewModel.ShowPerGameShaderSelectionPicker = async (gameName, current) =>

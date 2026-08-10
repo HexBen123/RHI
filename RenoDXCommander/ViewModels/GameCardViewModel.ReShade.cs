@@ -165,6 +165,9 @@ public partial class GameCardViewModel
         OnPropertyChanged(nameof(InstallActionLabel));
         OnPropertyChanged(nameof(UlActionLabel));
         OnPropertyChanged(nameof(DcActionLabel));
+        // Luma also depends on IsRsInstalled (grey when no ReShade)
+        OnPropertyChanged(nameof(LumaActionLabel));
+        OnPropertyChanged(nameof(CardLumaInstallEnabled));
     }
 
     // ── Targeted notification: RsIsInstalling changed ─────────────────────────────

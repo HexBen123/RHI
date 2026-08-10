@@ -524,6 +524,12 @@ public partial class DetailPanelBuilder
             _window.DetailLumaInstallBtn.Foreground = UIFactory.GetBrush(card.LumaBtnForeground);
             _window.DetailLumaInstallBtn.BorderBrush = UIFactory.GetBrush(card.LumaBtnBorderBrush);
             _window.DetailLumaInstallBtn.BorderThickness = new Thickness(1);
+
+            // Grey out Luma when ReShade is not installed (and not bypassed)
+            bool lumaRsRequired = !card.IsRsInstalled && !card.ExcludeFromUpdateAllReShade
+                                  && card.LumaStatus == GameStatus.NotInstalled;
+            _window.DetailLumaRow.Opacity = lumaRsRequired ? 0.35 : 1.0;
+            _window.DetailLumaInstallBtn.IsHitTestVisible = !lumaRsRequired;
             _window.DetailLumaIniBtn.Tag = card;
             _window.DetailLumaIniBtn.IsEnabled = true;
             _window.DetailLumaIniBtn.Opacity = 1.0;
@@ -536,6 +542,7 @@ public partial class DetailPanelBuilder
         else
         {
             _window.DetailLumaRow.Visibility = Visibility.Collapsed;
+            _window.DetailLumaRow.Opacity = 1.0;
         }
         _window.DetailUeExtendedBtn.Tag = card;
         _window.DetailUeExtendedBtn.Opacity = 1;

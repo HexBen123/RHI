@@ -796,6 +796,8 @@ public partial class MainViewModel
                         _gameNameService.LaunchArgsOverrides[card.GameName] = "-dx11";
                         SaveNameMappings();
                         _crashReporter.Log($"[InstallLumaAsync] Auto-set -dx11 launch arg for '{card.GameName}'");
+                        // Rebuild overrides panel so the launch arg field shows immediately
+                        RequestOverridesPanelRebuild?.Invoke(card);
                     }
                 }
             }
@@ -828,6 +830,20 @@ public partial class MainViewModel
                         ?? _auxInstaller.FindRecord(card.GameName, card.InstallPath, AuxInstallService.TypeReShadeNormal);
             if (rsRecord == null)
                 card.RsStatus = GameStatus.Available;
+
+            // Remove -dx11 launch arg if it was auto-set by Luma install
+            if (card.LumaMod?.IsGenericLuma == true
+                && _lumaGenericEntries.TryGetValue(card.GameName, out var entry)
+                && entry.RequiresDx11LaunchArg
+                && _gameNameService.LaunchArgsOverrides.TryGetValue(card.GameName, out var args)
+                && string.Equals(args, "-dx11", StringComparison.OrdinalIgnoreCase))
+            {
+                _gameNameService.LaunchArgsOverrides.Remove(card.GameName);
+                SaveNameMappings();
+                _crashReporter.Log($"[UninstallLuma] Removed auto-set -dx11 launch arg for '{card.GameName}'");
+                RequestOverridesPanelRebuild?.Invoke(card);
+            }
+
             card.NotifyAll();
             card.FadeMessage(m => card.LumaActionMessage = m, card.LumaActionMessage);
         }

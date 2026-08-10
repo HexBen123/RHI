@@ -13,6 +13,10 @@ ReShade is now fully managed by RHI on all Luma games — your selected channel 
 - RenoDX, ReLimiter, and Display Commander can now be installed without ReShade being managed by RHI. Uncheck ReShade in the Global Update Inclusion settings for a game to unlock installation of the dependent components — useful if you manage ReShade yourself or use a custom build.
 - Luma games no longer have an ON/OFF toggle — both RenoDX and Luma rows are always visible simultaneously.
 
+### Manifest Updates
+
+- Added Skyrim Creation Kit to the blacklist — it will no longer show up in your game library.
+
 ---
 
 ## v2.3.2

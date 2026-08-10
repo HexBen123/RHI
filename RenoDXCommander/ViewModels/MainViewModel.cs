@@ -208,6 +208,12 @@ public partial class MainViewModel : ObservableObject
     internal Action<Action>? DispatchUiAction { get; set; }
 
     /// <summary>
+    /// Callback set by the UI layer to rebuild the overrides panel for a given card.
+    /// Called after post-install changes (e.g. launch arg auto-set) so the panel reflects the new state.
+    /// </summary>
+    public Action<GameCardViewModel>? RequestOverridesPanelRebuild { get; set; }
+
+    /// <summary>
     /// Async callback set by the UI layer. Shows the global shader selection picker.
     /// Takes the current selection, returns the confirmed selection or null on cancel.
     /// </summary>
