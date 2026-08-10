@@ -668,6 +668,21 @@
                                     </Button>
                                 </Grid>
 
+                                <!-- Labeled separator: HDR mods — choose one or both -->
+                                <Grid x:Name="DetailHdrModSeparator" x:FieldModifier="internal" Margin="0,4,0,4" ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="36"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="36"/>
+                                        <ColumnDefinition Width="36"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="3" Text="--------choose one or both, i dont know yet WIP LOL-----------" FontSize="11"
+                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Grid>
+
                                 <!-- RenoDX row -->
                                 <Grid x:Name="DetailRdxRow" x:FieldModifier="internal" ColumnSpacing="8">
                                     <Grid.ColumnDefinitions>

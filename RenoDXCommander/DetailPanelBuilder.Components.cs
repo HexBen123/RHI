@@ -507,7 +507,9 @@ public partial class DetailPanelBuilder
         }
 
         // Luma row — visible whenever this game has a Luma mod (always show alongside RenoDX)
-        if (card.LumaFeatureEnabled && card.LumaMod != null)
+        bool hasLumaRow = card.LumaFeatureEnabled && card.LumaMod != null;
+        _window.DetailHdrModSeparator.Visibility = hasLumaRow ? Visibility.Visible : Visibility.Collapsed;
+        if (hasLumaRow)
         {
             _window.DetailLumaRow.Visibility = Visibility.Visible;
             _window.DetailLumaStatus.Text = card.LumaStatusText;
@@ -531,7 +533,10 @@ public partial class DetailPanelBuilder
             _window.DetailLumaDeleteBtn.IsHitTestVisible = lumaShow;
             ApplyInfoButtonStyle(_window.DetailLumaInfoBtn, card, AddonType.Luma);
         }
-        else _window.DetailLumaRow.Visibility = Visibility.Collapsed;
+        else
+        {
+            _window.DetailLumaRow.Visibility = Visibility.Collapsed;
+        }
         _window.DetailUeExtendedBtn.Tag = card;
         _window.DetailUeExtendedBtn.Opacity = 1;
         _window.DetailUeExtendedBtn.IsHitTestVisible = true;

@@ -328,14 +328,26 @@ public class LumaService : ILumaService
             else if (node.Name == "details")
             {
                 // Collapsible section — could be "▶ Modify Engine.ini" or a generic notes block
-                var innerText = HtmlEntity.DeEntitize(node.InnerText ?? "").Trim();
-                // Remove the summary line
+                // Walk child nodes properly to preserve <br> line breaks between <code> elements
+                var detailsSb = new System.Text.StringBuilder();
                 var summaryNode = node.SelectSingleNode("summary");
-                if (summaryNode != null)
+                foreach (var child in node.ChildNodes)
                 {
-                    var summaryText = HtmlEntity.DeEntitize(summaryNode.InnerText ?? "").Trim();
-                    innerText = innerText.Replace(summaryText, "").Trim();
+                    if (summaryNode != null && child == summaryNode) continue; // skip summary
+                    if (child.Name == "br")
+                        detailsSb.Append('\n');
+                    else if (child.NodeType == HtmlNodeType.Text)
+                    {
+                        var t = HtmlEntity.DeEntitize(child.InnerText).Trim();
+                        if (!string.IsNullOrEmpty(t)) detailsSb.Append(t);
+                    }
+                    else
+                    {
+                        var t = HtmlEntity.DeEntitize(child.InnerText ?? "").Trim();
+                        if (!string.IsNullOrEmpty(t)) detailsSb.Append(t);
+                    }
                 }
+                var innerText = detailsSb.ToString().Trim();
 
                 // Check if this is an Engine.ini block (contains [Section] headers or key=value)
                 bool isIniBlock = innerText.Contains('[') && innerText.Contains(']');
