@@ -252,11 +252,13 @@ public class LumaService : ILumaService
 
                 // DLSS/FSR support
                 bool dlssFsrSupported = false;
+                bool dlssFsrBlocked = false;
                 if (dlssCol >= 0 && dlssCol < cells.Count)
                 {
                     var dlssText = cells[dlssCol].InnerText;
                     dlssFsrSupported = dlssText.Contains("✅") || dlssText.Contains("☑")
                         || dlssText.Contains("✓") || dlssText.Contains("🟢");
+                    dlssFsrBlocked = dlssText.Contains("⛔") || dlssText.Contains("🚫");
                 }
 
                 // Notes: parse text + detect Engine.ini block
@@ -276,18 +278,52 @@ public class LumaService : ILumaService
                     if (string.IsNullOrWhiteSpace(ueVersion)) ueVersion = null;
                 }
 
-                bool requiresDx11 = notesText != null &&
-                    (notesText.Contains("-DX11", StringComparison.OrdinalIgnoreCase)
-                    || notesText.Contains("-dx11", StringComparison.OrdinalIgnoreCase));
+                // Extract launch args from code elements in the notes cell
+                // e.g. <code>-dx11</code>, <code>-nod3d9ex</code>, <code>-oss=Steam -dx11</code>
+                // Only extract args that appear alongside "launch" or "argument" keywords
+                string? launchArgs = null;
+                if (notesCol >= 0 && notesCol < cells.Count && notesText != null)
+                {
+                    var notesLower = notesText.ToLowerInvariant();
+                    bool hasLaunchKeyword = notesLower.Contains("launch") || notesLower.Contains("argument");
+                    if (hasLaunchKeyword)
+                    {
+                        // Collect all <code> elements that look like launch args (start with -)
+                        var codeNodes = cells[notesCol].SelectNodes(".//code");
+                        if (codeNodes != null)
+                        {
+                            var argParts = new List<string>();
+                            foreach (var codeNode in codeNodes)
+                            {
+                                var codeText = HtmlEntity.DeEntitize(codeNode.InnerText).Trim();
+                                // Skip if it looks like an Engine.ini key (contains = and no spaces before =)
+                                if (codeText.StartsWith('-') || (codeText.Contains(' ') && codeText.TrimStart().StartsWith('-')))
+                                    argParts.Add(codeText);
+                            }
+                            if (argParts.Count > 0)
+                                launchArgs = string.Join(" ", argParts);
+                        }
+                        // Fallback: regex match -word patterns in the notes text
+                        if (launchArgs == null)
+                        {
+                            var argMatch = System.Text.RegularExpressions.Regex.Match(notesText,
+                                @"(?:launch(?:ing)?\s+using|use|argument)[^\-]*(-[\w=\s-]+?)(?:\.|,|\s+In-game|\s+Recommended|$)",
+                                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                            if (argMatch.Success)
+                                launchArgs = argMatch.Groups[1].Value.Trim();
+                        }
+                    }
+                }
 
                 result[name] = new LumaGenericGameEntry
                 {
                     Name = name,
                     Notes = notesText,
                     EngineIniKeys = iniKeys,
-                    RequiresDx11LaunchArg = requiresDx11,
+                    LaunchArgs = launchArgs,
                     HdrSupported = hdrSupported,
                     DlssFsrSupported = dlssFsrSupported,
+                    DlssFsrBlocked = dlssFsrBlocked,
                     UeVersion = ueVersion,
                 };
             }
@@ -744,6 +780,20 @@ public class LumaService : ILumaService
 
         foreach (var relPath in record.InstalledFiles)
         {
+            // Skip ReShade DLLs — RHI now manages ReShade independently for Luma games.
+            // Old records may have dxgi.dll etc. tracked from before this change.
+            var fileName = Path.GetFileName(relPath);
+            if (fileName.Equals("dxgi.dll", StringComparison.OrdinalIgnoreCase)
+                || fileName.Equals("d3d11.dll", StringComparison.OrdinalIgnoreCase)
+                || fileName.Equals("d3d12.dll", StringComparison.OrdinalIgnoreCase)
+                || fileName.Equals("d3d9.dll", StringComparison.OrdinalIgnoreCase)
+                || fileName.Equals("d3d8.dll", StringComparison.OrdinalIgnoreCase)
+                || fileName.Equals("opengl32.dll", StringComparison.OrdinalIgnoreCase))
+            {
+                CrashReporter.Log($"[LumaService.Uninstall] Skipping RHI-managed ReShade DLL '{relPath}'");
+                continue;
+            }
+
             var fullPath = Path.Combine(record.InstallPath, relPath);
             try
             {

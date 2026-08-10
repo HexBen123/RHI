@@ -38,6 +38,8 @@ public class GameNameService : IGameNameService
     private Dictionary<string, List<string>> _perGameAddonSelection = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _lumaEnabledGames = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _lumaDisabledGames = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>Games where Luma TAA Engine.ini settings are enabled (r.DefaultFeature.AntiAliasing=2, r.PostProcessAAQuality=4).</summary>
+    private HashSet<string> _lumaTaaEnabled = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _normalReShadeGames = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, string> _folderOverrides = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, string> _vulkanRenderingPaths = new(StringComparer.OrdinalIgnoreCase);
@@ -89,6 +91,8 @@ public class GameNameService : IGameNameService
     public Dictionary<string, List<string>> PerGameAddonSelection => _perGameAddonSelection;
     public HashSet<string> LumaEnabledGames => _lumaEnabledGames;
     public HashSet<string> LumaDisabledGames => _lumaDisabledGames;
+    /// <summary>Games where Luma TAA Engine.ini settings are deployed.</summary>
+    public HashSet<string> LumaTaaEnabled => _lumaTaaEnabled;
     public HashSet<string> NormalReShadeGames => _normalReShadeGames;
     public Dictionary<string, string> FolderOverrides => _folderOverrides;
     /// <summary>Per-game Vulkan rendering path preferences. Key = game name, Value = "DirectX" or "Vulkan".</summary>
@@ -360,6 +364,10 @@ public class GameNameService : IGameNameService
         foreach (var kv in hdrToggleOvDict)
             _hdrToggleOverrides[kv.Key] = kv.Value;
 
+        _lumaTaaEnabled = new(StringComparer.OrdinalIgnoreCase);
+        foreach (var g in Load<List<string>>("LumaTaaEnabled", new()))
+            _lumaTaaEnabled.Add(g);
+
         var launchExeOvDict = Load<Dictionary<string, string>>("LaunchExeOverrides",
             new(StringComparer.OrdinalIgnoreCase));
         _launchExeOverrides = new(StringComparer.OrdinalIgnoreCase);
@@ -470,6 +478,7 @@ public class GameNameService : IGameNameService
                 s["LaunchExeOverrides"] = JsonSerializer.Serialize(_launchExeOverrides);
                 s["LaunchArgsOverrides"] = JsonSerializer.Serialize(_launchArgsOverrides);
                 s["EngineVersionOverrides"] = JsonSerializer.Serialize(_engineVersionOverrides);
+                s["LumaTaaEnabled"] = JsonSerializer.Serialize(_lumaTaaEnabled.ToList());
                 s["CustomReShadeSelection"] = JsonSerializer.Serialize(_customReShadeSelection);
                 s["HiddenGames"]         = JsonSerializer.Serialize(_hiddenGames?.ToList() ?? new List<string>());
                 s["FavouriteGames"]      = JsonSerializer.Serialize(_favouriteGames?.ToList() ?? new List<string>());

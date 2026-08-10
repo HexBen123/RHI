@@ -530,6 +530,7 @@ public partial class DetailPanelBuilder
                                   && card.LumaStatus == GameStatus.NotInstalled;
             _window.DetailLumaRow.Opacity = lumaRsRequired ? 0.35 : 1.0;
             _window.DetailLumaInstallBtn.IsHitTestVisible = !lumaRsRequired;
+            _window.DetailLumaInstallBtn.IsEnabled = card.IsLumaNotInstalling && !lumaRsRequired;
             _window.DetailLumaIniBtn.Tag = card;
             _window.DetailLumaIniBtn.IsEnabled = true;
             _window.DetailLumaIniBtn.Opacity = 1.0;

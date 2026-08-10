@@ -594,6 +594,20 @@ public partial class MainViewModel
     public bool IsLumaEnabled(string gameName, string store = "") =>
         _lumaEnabledGames.Contains(GameKey.From(gameName, store).ToKey());
 
+    /// <summary>Returns true when Luma TAA Engine.ini settings are deployed for this game.</summary>
+    public bool IsLumaTaaEnabled(string gameName) =>
+        _gameNameService.LumaTaaEnabled.Contains(gameName);
+
+    /// <summary>Sets the Luma TAA enabled state and persists it.</summary>
+    public void SetLumaTaaEnabled(string gameName, bool enabled)
+    {
+        if (enabled)
+            _gameNameService.LumaTaaEnabled.Add(gameName);
+        else
+            _gameNameService.LumaTaaEnabled.Remove(gameName);
+        SaveNameMappings();
+    }
+
     /// <summary>
     /// Toggles Luma mode for a game. When enabling: uninstalls RenoDX, ReShade, and
     /// DC (if installed as dxgi.dll). When disabling: uninstalls Luma files.
@@ -779,6 +793,16 @@ public partial class MainViewModel
                             card.GameName,
                             card.Source);
                         _crashReporter.Log($"[InstallLumaAsync] Wrote {genericEntry.EngineIniKeys.Count} Engine.ini key(s) for '{card.GameName}'");
+
+                        // If the wiki specified TAA keys, mark TAA as enabled so the cog shows "On"
+                        bool hasTaaKeys = genericEntry.EngineIniKeys.Any(k =>
+                            k.Key.Equals("r.DefaultFeature.AntiAliasing", StringComparison.OrdinalIgnoreCase)
+                            || k.Key.Equals("r.PostProcessAAQuality", StringComparison.OrdinalIgnoreCase));
+                        if (hasTaaKeys)
+                        {
+                            _gameNameService.LumaTaaEnabled.Add(card.GameName);
+                            SaveNameMappings();
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -786,16 +810,16 @@ public partial class MainViewModel
                     }
                 }
 
-                // Auto-populate -dx11 launch arg if required and not already set
+                // Auto-populate launch args if required and not already set
                 if (_lumaGenericEntries.TryGetValue(card.GameName, out var launchEntry)
-                    && launchEntry.RequiresDx11LaunchArg)
+                    && !string.IsNullOrWhiteSpace(launchEntry.LaunchArgs))
                 {
                     var existing = _gameNameService.LaunchArgsOverrides.TryGetValue(card.GameName, out var v) ? v : "";
                     if (string.IsNullOrWhiteSpace(existing))
                     {
-                        _gameNameService.LaunchArgsOverrides[card.GameName] = "-dx11";
+                        _gameNameService.LaunchArgsOverrides[card.GameName] = launchEntry.LaunchArgs;
                         SaveNameMappings();
-                        _crashReporter.Log($"[InstallLumaAsync] Auto-set -dx11 launch arg for '{card.GameName}'");
+                        _crashReporter.Log($"[InstallLumaAsync] Auto-set launch args '{launchEntry.LaunchArgs}' for '{card.GameName}'");
                         // Rebuild overrides panel so the launch arg field shows immediately
                         RequestOverridesPanelRebuild?.Invoke(card);
                     }
@@ -824,19 +848,14 @@ public partial class MainViewModel
             card.LumaRecord = null;
             card.LumaStatus = GameStatus.NotInstalled;
             card.LumaActionMessage = "✖ Luma removed.";
-            // Luma's uninstall removes its bundled ReShade (dxgi.dll).
-            // If there's no standalone ReShade install record, RS is no longer installed.
-            var rsRecord = _auxInstaller.FindRecord(card.GameName, card.InstallPath, AuxInstallService.TypeReShade)
-                        ?? _auxInstaller.FindRecord(card.GameName, card.InstallPath, AuxInstallService.TypeReShadeNormal);
-            if (rsRecord == null)
-                card.RsStatus = GameStatus.Available;
+            // ReShade is managed independently by RHI — do not touch RS status on Luma uninstall.
 
-            // Remove -dx11 launch arg if it was auto-set by Luma install
+            // Remove launch args if they were auto-set by Luma install
             if (card.LumaMod?.IsGenericLuma == true
                 && _lumaGenericEntries.TryGetValue(card.GameName, out var entry)
-                && entry.RequiresDx11LaunchArg
+                && !string.IsNullOrWhiteSpace(entry.LaunchArgs)
                 && _gameNameService.LaunchArgsOverrides.TryGetValue(card.GameName, out var args)
-                && string.Equals(args, "-dx11", StringComparison.OrdinalIgnoreCase))
+                && string.Equals(args, entry.LaunchArgs, StringComparison.OrdinalIgnoreCase))
             {
                 _gameNameService.LaunchArgsOverrides.Remove(card.GameName);
                 SaveNameMappings();

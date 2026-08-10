@@ -22,12 +22,14 @@ public class LumaGenericGameEntry
     public string? Notes { get; set; }
     /// <summary>Engine.ini keys to write on install. Each entry is (Section, Key, Value).</summary>
     public List<(string Section, string Key, string Value)> EngineIniKeys { get; set; } = new();
-    /// <summary>True when the Notes column contains "-DX11 launch argument".</summary>
-    public bool RequiresDx11LaunchArg { get; set; }
+    /// <summary>Full launch argument string scraped from notes (e.g. "-dx11", "-nod3d9ex", "-oss=Steam -dx11"). Null if none required.</summary>
+    public string? LaunchArgs { get; set; }
     /// <summary>True when the HDR column is checked.</summary>
     public bool HdrSupported { get; set; }
-    /// <summary>True when the DLSS/FSR column is checked.</summary>
+    /// <summary>True when the DLSS/FSR column is checked (✅).</summary>
     public bool DlssFsrSupported { get; set; }
+    /// <summary>True when the DLSS/FSR column shows ⛔ (explicitly blocked/incompatible).</summary>
+    public bool DlssFsrBlocked { get; set; }
     /// <summary>UE version string (e.g. "4.27.2", "5.4.0").</summary>
     public string? UeVersion { get; set; }
 }

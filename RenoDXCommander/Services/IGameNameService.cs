@@ -68,6 +68,9 @@ public interface IGameNameService
     /// <summary>Games with Luma explicitly disabled.</summary>
     HashSet<string> LumaDisabledGames { get; }
 
+    /// <summary>Games where Luma TAA Engine.ini settings are deployed.</summary>
+    HashSet<string> LumaTaaEnabled { get; }
+
     /// <summary>Games configured to use normal (non-addon) ReShade.</summary>
     HashSet<string> NormalReShadeGames { get; }
 

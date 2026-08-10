@@ -1154,31 +1154,37 @@ public partial class MainViewModel
                 && (engine == EngineType.Unreal || engine == EngineType.UnrealLegacy || newCard.EngineHint.Contains("Unreal"))
                 && newCard.GraphicsApi == GraphicsApiType.DirectX11)
             {
-                // Generic Luma UE mod — available for all DX11 Unreal Engine games
-                var genericLuma = new LumaMod
+                // Check if the wiki entry explicitly blocks this game (⛔ DLSS/FSR AND no HDR either)
+                bool lumaBlocked = _lumaGenericEntries.TryGetValue(game.Name, out var blockCheck)
+                    && blockCheck.DlssFsrBlocked && !blockCheck.HdrSupported;
+                if (!lumaBlocked)
                 {
-                    Name = game.Name,
-                    IsGenericLuma = true,
-                    DownloadUrl = "https://github.com/Filoppi/Luma-Framework/releases/latest/download/Luma-Unreal_Engine.zip",
-                    Status = "✅",
-                };
-                // Populate notes from the scraped UE wiki table if available
-                if (_lumaGenericEntries.TryGetValue(game.Name, out var genericEntry))
-                    genericLuma.SpecialNotes = genericEntry.Notes;
-                newCard.LumaMod = genericLuma;
-                newCard.LumaRenodxCompatible = true;
-                newCard.IsLumaMode = false;
-                // Populate feature flags from the scraped wiki entry
-                if (_lumaGenericEntries.TryGetValue(game.Name, out var bcEntry))
-                {
-                    newCard.LumaHdrSupported = bcEntry.HdrSupported;
-                    newCard.LumaDlssFsrSupported = bcEntry.DlssFsrSupported;
-                }
-                var lumaRec = LumaService.GetRecordByPath(installPath);
-                if (lumaRec != null)
-                {
-                    newCard.LumaRecord = lumaRec;
-                    newCard.LumaStatus = GameStatus.Installed;
+                    // Generic Luma UE mod — available for all DX11 Unreal Engine games
+                    var genericLuma = new LumaMod
+                    {
+                        Name = game.Name,
+                        IsGenericLuma = true,
+                        DownloadUrl = "https://github.com/Filoppi/Luma-Framework/releases/latest/download/Luma-Unreal_Engine.zip",
+                        Status = "✅",
+                    };
+                    // Populate notes from the scraped UE wiki table if available
+                    if (_lumaGenericEntries.TryGetValue(game.Name, out var genericEntry))
+                        genericLuma.SpecialNotes = genericEntry.Notes;
+                    newCard.LumaMod = genericLuma;
+                    newCard.LumaRenodxCompatible = true;
+                    newCard.IsLumaMode = false;
+                    // Populate feature flags from the scraped wiki entry
+                    if (_lumaGenericEntries.TryGetValue(game.Name, out var bcEntry))
+                    {
+                        newCard.LumaHdrSupported = bcEntry.HdrSupported;
+                        newCard.LumaDlssFsrSupported = bcEntry.DlssFsrSupported;
+                    }
+                    var lumaRec = LumaService.GetRecordByPath(installPath);
+                    if (lumaRec != null)
+                    {
+                        newCard.LumaRecord = lumaRec;
+                        newCard.LumaStatus = GameStatus.Installed;
+                    }
                 }
             }
 

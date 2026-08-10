@@ -781,6 +781,10 @@ public partial class MainViewModel
                 && (engine == EngineType.Unreal || engine == EngineType.UnrealLegacy)
                 && graphicsApi == GraphicsApiType.DirectX11)
             {
+                bool lumaBlocked = _lumaGenericEntries.TryGetValue(game.Name, out var blockCheck)
+                    && blockCheck.DlssFsrBlocked && !blockCheck.HdrSupported;
+                if (!lumaBlocked)
+                {
                 // Generic Luma UE mod — available for all DX11 Unreal Engine games
                 var genericLuma = new LumaMod
                 {
@@ -806,6 +810,7 @@ public partial class MainViewModel
                 {
                     newCard.LumaRecord = lumaRec;
                     newCard.LumaStatus = GameStatus.Installed;
+                }
                 }
             }
 

@@ -883,6 +883,56 @@ public partial class AuxInstallService
     }
 
     /// <summary>
+    /// Removes specific (Section, Key) pairs from Engine.ini previously written by ApplyEngineIniCustomKeys.
+    /// Makes the file writable before editing, then sets it read-only again after.
+    /// </summary>
+    public static void RemoveEngineIniCustomKeys(
+        string installPath,
+        IEnumerable<string> keysToRemove,
+        string? projectNameOverride = null,
+        string? gameName = null,
+        string? store = null)
+    {
+        try
+        {
+            var keySet = new HashSet<string>(keysToRemove, StringComparer.OrdinalIgnoreCase);
+            if (keySet.Count == 0) return;
+
+            var configDir = ResolveEngineIniDir(installPath, projectNameOverride, gameName, store);
+            if (configDir == null) return;
+
+            var engineIniPath = Path.Combine(configDir, "Engine.ini");
+            if (!File.Exists(engineIniPath)) return;
+
+            var attrs = File.GetAttributes(engineIniPath);
+            if (attrs.HasFlag(FileAttributes.ReadOnly))
+                File.SetAttributes(engineIniPath, attrs & ~FileAttributes.ReadOnly);
+
+            var lines = File.ReadAllLines(engineIniPath).ToList();
+            // Remove lines where the key (before =) matches any key in the set
+            lines.RemoveAll(l =>
+            {
+                var trimmed = l.TrimStart();
+                var eqIdx = trimmed.IndexOf('=');
+                if (eqIdx <= 0) return false;
+                var key = trimmed[..eqIdx].Trim();
+                return keySet.Contains(key);
+            });
+            // Remove trailing empty lines
+            while (lines.Count > 0 && string.IsNullOrWhiteSpace(lines[^1]))
+                lines.RemoveAt(lines.Count - 1);
+
+            File.WriteAllLines(engineIniPath, lines);
+            File.SetAttributes(engineIniPath, File.GetAttributes(engineIniPath) | FileAttributes.ReadOnly);
+            CrashReporter.Log($"[AuxInstallService.RemoveEngineIniCustomKeys] Removed {keySet.Count} key(s) from '{engineIniPath}'");
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[AuxInstallService.RemoveEngineIniCustomKeys] Failed for '{installPath}' — {ex.Message}");
+        }
+    }
+
+    /// <summary>
     /// Writes arbitrary (Section, Key, Value) entries to Engine.ini.
     /// Only appends keys that are not already present. Sets the file read-only after writing.
     /// Used by generic Luma UE install to apply game-specific Engine.ini tweaks scraped from the wiki.

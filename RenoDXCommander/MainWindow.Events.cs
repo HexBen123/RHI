@@ -163,6 +163,76 @@ public sealed partial class MainWindow
 
         var content = new StackPanel { Spacing = 8 };
 
+        // ── Engine.ini Settings ───────────────────────────────────────────────
+        // Only show for Unreal Engine games with Luma installed
+        if (card.LumaMod != null && card.EngineHint?.Contains("Unreal") == true)
+        {
+            content.Children.Add(new TextBlock
+            {
+                Text = "Engine.ini Settings",
+                FontSize = 13,
+                Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+                Margin = new Thickness(0, 0, 0, 4),
+            });
+
+            var taaGrid = new Grid { ColumnSpacing = 12 };
+            taaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            taaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(110, GridUnitType.Pixel) });
+
+            var taaLabel = new TextBlock
+            {
+                Text = "TAA Settings",
+                FontSize = 11,
+                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            Grid.SetColumn(taaLabel, 0);
+            taaGrid.Children.Add(taaLabel);
+
+            var taaCombo = new ComboBox { FontSize = 11, MinWidth = 100, HorizontalAlignment = HorizontalAlignment.Stretch };
+            taaCombo.Items.Add("Off");
+            taaCombo.Items.Add("On");
+            ToolTipService.SetToolTip(taaCombo,
+                "Writes r.DefaultFeature.AntiAliasing=2 and r.PostProcessAAQuality=4 to Engine.ini.\n" +
+                "Forces TAA with high quality for Luma HDR compatibility.");
+
+            bool taaActive = ViewModel.IsLumaTaaEnabled(card.GameName);
+            taaCombo.SelectedIndex = taaActive ? 1 : 0;
+            bool taaInitializing = true;
+            taaCombo.Loaded += (s2, e2) => taaInitializing = false;
+
+            taaCombo.SelectionChanged += (s2, ev) =>
+            {
+                if (taaInitializing) return;
+                var taaKeys = new (string Section, string Key, string Value)[]
+                {
+                    ("SystemSettings", "r.DefaultFeature.AntiAliasing", "2"),
+                    ("SystemSettings", "r.PostProcessAAQuality", "4"),
+                };
+                if (taaCombo.SelectedIndex == 1)
+                {
+                    AuxInstallService.ApplyEngineIniCustomKeys(
+                        card.InstallPath, taaKeys, card.EngineIniProjectOverride, card.GameName, card.Source);
+                    ViewModel.SetLumaTaaEnabled(card.GameName, true);
+                    card.LumaActionMessage = "✅ TAA settings written to Engine.ini.";
+                }
+                else
+                {
+                    AuxInstallService.RemoveEngineIniCustomKeys(
+                        card.InstallPath,
+                        taaKeys.Select(k => k.Key),
+                        card.EngineIniProjectOverride, card.GameName, card.Source);
+                    ViewModel.SetLumaTaaEnabled(card.GameName, false);
+                    card.LumaActionMessage = "✅ TAA settings removed from Engine.ini.";
+                }
+                card.FadeMessage(m => card.LumaActionMessage = m, card.LumaActionMessage);
+            };
+
+            Grid.SetColumn(taaCombo, 1);
+            taaGrid.Children.Add(taaCombo);
+            content.Children.Add(taaGrid);
+        }
+
         var dialog = new ContentDialog
         {
             Title = "Luma Settings",
