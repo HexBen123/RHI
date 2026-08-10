@@ -6,12 +6,24 @@ RHI now supports Luma HDR for **all DX11 Unreal Engine games** — not just the 
 
 Game-specific setup is handled automatically: if the Luma wiki lists Engine.ini tweaks for a game, they are written on install. If a game requires the `-dx11` launch argument to work correctly, RHI sets it for you.
 
-ReShade is now fully managed by RHI on all Luma games — your selected channel (Stable or Nightly) is deployed alongside Luma and kept up to date by Update All.
+ReShade is now fully managed by RHI on all Luma games — your selected channel (Stable or Nightly) is deployed alongside Luma and kept up to date by Update All. Both RenoDX and Luma rows are always visible side by side — no ON/OFF toggle needed.
+
+**More details:**
+- The Info button on the Luma row shows DLSS/FSR and HDR support flags scraped from the Luma wiki, plus any game-specific notes.
+- A TAA settings toggle is available in the Luma ⚙ cog. For games where the wiki recommends TAA Engine.ini keys, these are applied automatically on install and the toggle is set to On.
+- Games that need a specific launch argument (like `-dx11`) have it set automatically on Luma install and cleared on uninstall.
+- Installing both RenoDX and Luma on the same game shows a one-time compatibility warning — there's no guarantee they'll work together on every title.
+- Luma is now greyed out until ReShade is installed, consistent with RenoDX and the other ReShade-dependent components.
+- Uninstalling Luma no longer removes ReShade — both are managed independently.
 
 ### New
 
 - RenoDX, ReLimiter, and Display Commander can now be installed without ReShade being managed by RHI. Uncheck ReShade in the Global Update Inclusion settings for a game to unlock installation of the dependent components — useful if you manage ReShade yourself or use a custom build.
-- Luma games no longer have an ON/OFF toggle — both RenoDX and Luma rows are always visible simultaneously.
+
+### Changes
+
+- DOF Fix moved to a new Recommended section, above the frame limiters.
+- Simple View window is slightly taller.
 
 ### Manifest Updates
 

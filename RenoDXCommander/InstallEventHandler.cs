@@ -67,6 +67,13 @@ public class InstallEventHandler
         }
 
         if (sender is not Button btn || btn.Tag is not GameCardViewModel card) return;
+
+        // Warn when installing RenoDX alongside an already-installed Luma mod
+        if (card.IsLumaInstalled && !ViewModel.Settings.LumaRenodxCombinedWarningDismissed)
+        {
+            if (!await ShowLumaRenodxCombinedWarning(sender)) return;
+        }
+
         await EnsurePathAndInstall(card, () => ViewModel.InstallModCommand.ExecuteAsync(card));
     }
 
@@ -334,7 +341,15 @@ public class InstallEventHandler
     public async void InstallLumaButton_Click(object sender, RoutedEventArgs e)
     {
         var card = (sender as FrameworkElement)?.Tag as GameCardViewModel;
-        if (card != null) await ViewModel.InstallLumaAsync(card);
+        if (card == null) return;
+
+        // Warn when installing Luma alongside an already-installed RenoDX mod
+        if (card.IsRdxInstalled && !ViewModel.Settings.LumaRenodxCombinedWarningDismissed)
+        {
+            if (!await ShowLumaRenodxCombinedWarning(sender)) return;
+        }
+
+        await ViewModel.InstallLumaAsync(card);
     }
 
     public void UninstallLumaButton_Click(object sender, RoutedEventArgs e)
@@ -458,4 +473,58 @@ public class InstallEventHandler
     /// <summary>Looks up a SolidColorBrush from the merged theme resource dictionaries.</summary>
     private static SolidColorBrush Brush(string key) =>
         (SolidColorBrush)Application.Current.Resources[key];
+
+    /// <summary>
+    /// Shows the "Installing both RenoDX and Luma" compatibility warning dialog.
+    /// Returns true if the user chose to continue, false if cancelled.
+    /// Persists dismissal if the user checks "Don't show again".
+    /// </summary>
+    private async Task<bool> ShowLumaRenodxCombinedWarning(object sender)
+    {
+        var xamlRoot = (sender as FrameworkElement)?.XamlRoot ?? _window.Content.XamlRoot;
+        if (xamlRoot == null) return true;
+
+        var dontShowCheck = new CheckBox
+        {
+            Content = "Don't show this again",
+            FontSize = 12,
+            Margin = new Thickness(0, 12, 0, 0),
+        };
+
+        var messageText = new TextBlock
+        {
+            Text = "Heads up — you're installing both RenoDX and Luma on this game.\n\n" +
+                   "There's no guarantee they'll work well together. If you're using RenoDX for HDR and just want Luma for DLAA, make sure to disable HDR in the Luma mod settings to avoid conflicts.\n\n" +
+                   "If something doesn't look right, uninstalling one of them is the first thing to try. We can't offer support for issues that come from running both together.",
+            TextWrapping = TextWrapping.Wrap,
+            FontSize = 13,
+            LineHeight = 22,
+            Foreground = Brush(ResourceKeys.TextPrimaryBrush),
+        };
+
+        var content = new StackPanel { Spacing = 4 };
+        content.Children.Add(messageText);
+        content.Children.Add(dontShowCheck);
+
+        var dialog = new ContentDialog
+        {
+            Title = "Installing both RenoDX and Luma",
+            Content = content,
+            PrimaryButtonText = "Continue",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Primary,
+            XamlRoot = xamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+
+        var result = await DialogService.ShowSafeAsync(dialog);
+
+        if (dontShowCheck.IsChecked == true)
+        {
+            ViewModel.Settings.LumaRenodxCombinedWarningDismissed = true;
+            ViewModel.SaveSettingsPublic();
+        }
+
+        return result == ContentDialogResult.Primary;
+    }
 }
