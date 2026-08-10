@@ -220,7 +220,7 @@ public partial class DetailPanelBuilder
 
         // ReLimiter row — hidden when in Luma mode
         _window.DetailUlRow.Visibility = card.UlRowVisibility;
-        bool ulGreyed = card.UseNormalReShade || card.IsDcInstalled || !card.IsRsInstalled;
+        bool ulGreyed = card.UseNormalReShade || card.IsDcInstalled || (!card.IsRsInstalled && !card.ExcludeFromUpdateAllReShade);
         _window.DetailUlRow.Opacity = 1.0;
         _window.DetailUlRow.IsHitTestVisible = true;
         if (card.UlRowVisibility == Visibility.Visible)
@@ -270,7 +270,7 @@ public partial class DetailPanelBuilder
 
         // Display Commander row — always visible (available in Luma mode)
         _window.DetailDcRow.Visibility = card.DcRowVisibility;
-        bool dcGreyed = card.UseNormalReShade || card.IsUlInstalled || !card.IsRsInstalled;
+        bool dcGreyed = card.UseNormalReShade || card.IsUlInstalled || (!card.IsRsInstalled && !card.ExcludeFromUpdateAllReShade);
         _window.DetailDcRow.Opacity = 1.0;
         _window.DetailDcRow.IsHitTestVisible = true;
         if (card.DcRowVisibility == Visibility.Visible)
@@ -431,7 +431,7 @@ public partial class DetailPanelBuilder
             _window.DetailDxvkDeleteBtn.Opacity = dxvkShow ? 1 : 0;
             _window.DetailDxvkDeleteBtn.IsHitTestVisible = dxvkShow;
         }
-        bool rdxGreyed = !card.IsRtxHdrEnabled && (card.UseNormalReShade || !card.IsRsInstalled);
+        bool rdxGreyed = !card.IsRtxHdrEnabled && (card.UseNormalReShade || (!card.IsRsInstalled && !card.ExcludeFromUpdateAllReShade));
         _window.DetailRdxRow.Opacity = 1.0;
         _window.DetailRdxRow.IsHitTestVisible = true;
         if (showRdx)
@@ -498,7 +498,7 @@ public partial class DetailPanelBuilder
                 _window.DetailRdxInstallBtn.BorderBrush = UIFactory.GetBrush(card.InstallBtnBorderBrush);
                 _window.DetailRdxInstallBtn.BorderThickness = new Thickness(1);
                 _window.DetailRdxInstallBtn.Opacity = rdxGreyed ? 0.35 : 1.0;
-                _window.DetailRdxInstallBtn.IsHitTestVisible = card.IsRtxHdrEnabled || (!card.UseNormalReShade && card.IsRsInstalled);
+                _window.DetailRdxInstallBtn.IsHitTestVisible = card.IsRtxHdrEnabled || (!card.UseNormalReShade && (card.IsRsInstalled || card.ExcludeFromUpdateAllReShade));
                 _window.DetailRdxDeleteBtn.Tag = card;
                 var rdxShow = card.ReinstallRowVisibility == Visibility.Visible;
                 _window.DetailRdxDeleteBtn.Opacity = rdxShow ? 1 : 0;

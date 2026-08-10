@@ -1,3 +1,11 @@
+## v2.3.3-beta
+
+### New
+
+- RenoDX, ReLimiter, and Display Commander can now be installed without ReShade being managed by RHI. Uncheck ReShade in the Global Update Inclusion settings for a game to unlock installation of the dependent components — useful if you manage ReShade yourself or use a custom build.
+
+---
+
 ## v2.3.2
 
 ### Bug Fixes

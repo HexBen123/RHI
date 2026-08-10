@@ -13,7 +13,7 @@ public partial class GameCardViewModel
         : DcStatus == GameStatus.Installed ? "🟢" : "⚪";
 
     public string DcActionLabel => DcIsInstalling ? "Installing..."
-        : !IsRsInstalled ? "⚠  ReShade required"
+        : (!IsRsInstalled && !ExcludeFromUpdateAllReShade) ? "⚠  ReShade required"
         : DcStatus == GameStatus.UpdateAvailable ? "⬆  Update DC"
         : DcStatus == GameStatus.Installed ? "↺  Reinstall DC"
         : "⬇  Install DC";
@@ -47,13 +47,13 @@ public partial class GameCardViewModel
     public bool DcIniExists => File.Exists(Services.AuxInstallService.DcIniPath);
 
     /// <summary>DC install button disabled when installing, when ReLimiter is installed (mutual exclusion), when normal ReShade is active, or when ReShade is not installed.</summary>
-    public bool DcInstallEnabled => !DcIsInstalling && !IsUlInstalled && !UseNormalReShade && IsRsInstalled;
+    public bool DcInstallEnabled => !DcIsInstalling && !IsUlInstalled && !UseNormalReShade && (IsRsInstalled || ExcludeFromUpdateAllReShade);
 
     // ── Card grid properties ──────────────────────────────────────────────────────
     public string CardDcStatusDot => DcIsInstalling ? "#2196F3"
         : DcStatus == GameStatus.UpdateAvailable ? "#4CAF50"
         : DcStatus == GameStatus.Installed ? "#4CAF50" : "#5A6880";
-    public bool CardDcInstallEnabled => !DcIsInstalling && IsRsInstalled;
+    public bool CardDcInstallEnabled => !DcIsInstalling && (IsRsInstalled || ExcludeFromUpdateAllReShade);
 
     /// <summary>
     /// DC row is always visible (available in both standard and Luma modes).

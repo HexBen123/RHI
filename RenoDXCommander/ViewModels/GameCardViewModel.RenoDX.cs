@@ -15,7 +15,7 @@ public partial class GameCardViewModel
         {
             if (IsInstalling) return "Installing...";
             if (IsRtxHdrEnabled) return "Configure RTX HDR";
-            if (!IsRsInstalled && Mod?.SnapshotUrl != null && !IsExternalOnly)
+            if (!IsRsInstalled && !ExcludeFromUpdateAllReShade && Mod?.SnapshotUrl != null && !IsExternalOnly)
                 return "⚠  ReShade required";
             // No mod available and nothing manually installed
             if (Mod?.SnapshotUrl == null && !IsExternalOnly && string.IsNullOrEmpty(InstalledAddonFileName))
@@ -27,7 +27,7 @@ public partial class GameCardViewModel
         }
     }
 
-    public bool CanInstall => IsRtxHdrEnabled || (Mod?.SnapshotUrl != null && !IsInstalling && !IsExternalOnly && IsRsInstalled);
+    public bool CanInstall => IsRtxHdrEnabled || (Mod?.SnapshotUrl != null && !IsInstalling && !IsExternalOnly && (IsRsInstalled || ExcludeFromUpdateAllReShade));
 
     public string GenericModLabel => IsGenericMod
         ? (EngineHint.Contains("Unity")
