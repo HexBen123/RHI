@@ -756,11 +756,12 @@ public partial class MainViewModel
             card.LumaRecord = record;
             card.LumaStatus = GameStatus.Installed;
             card.LumaActionMessage = "Luma installed!";
-            // Luma bundles its own ReShade — update RS status so ReLimiter/DC
-            // buttons become available immediately without needing a refresh.
-            if (card.RsStatus == GameStatus.NotInstalled || card.RsStatus == GameStatus.Available)
-                card.RsStatus = GameStatus.Installed;
             card.FadeMessage(m => card.LumaActionMessage = m, card.LumaActionMessage);
+
+            // Now install RHI's own ReShade (respects user's channel — Stable/Nightly)
+            // Luma's bundled ReShade DLL was excluded from the zip — RHI manages ReShade.
+            card.LumaActionMessage = "Installing ReShade...";
+            await InstallReShadeAsync(card);
         }
         catch (Exception ex)
         {

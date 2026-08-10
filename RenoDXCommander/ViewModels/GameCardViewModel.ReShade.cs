@@ -112,8 +112,8 @@ public partial class GameCardViewModel
     public string RsIniBorderThickness => RsDeleteVisible ? "0,1,0,1"  : "0,1,1,1";
     public string RsIniMargin          => RsDeleteVisible ? "0,0,1,0"  : "0";
 
-    // In Luma mode: hide ReShade row
-    public Visibility ReShadeRowVisibility => EffectiveLumaMode ? Visibility.Collapsed : Visibility.Visible;
+    // In Luma mode: ReShade row is still visible — RHI manages ReShade for Luma games
+    public Visibility ReShadeRowVisibility => Visibility.Visible;
 
     // ── Targeted notification: RsStatus changed ───────────────────────────────────
     private void NotifyRsStatusDependents()

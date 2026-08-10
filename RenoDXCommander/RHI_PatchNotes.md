@@ -3,6 +3,7 @@
 ### New
 
 - RenoDX, ReLimiter, and Display Commander can now be installed without ReShade being managed by RHI. Uncheck ReShade in the Global Update Inclusion settings for a game to unlock installation of the dependent components — useful if you manage ReShade yourself or use a custom build.
+- Luma games now use RHI's own ReShade instead of the version bundled in the Luma zip. Your selected channel (Stable or Nightly) is installed alongside Luma, and ReShade updates work normally on Luma games going forward.
 
 ---
 

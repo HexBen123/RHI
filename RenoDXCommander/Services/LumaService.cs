@@ -377,6 +377,15 @@ public class LumaService : ILumaService
                     || entry.Name.Equals("ReShade.ini", StringComparison.OrdinalIgnoreCase))
                     continue;
 
+                // Skip ReShade DLLs — RHI installs its own staged ReShade (respecting channel)
+                if (entry.Name.Equals("dxgi.dll", StringComparison.OrdinalIgnoreCase)
+                    || entry.Name.Equals("d3d11.dll", StringComparison.OrdinalIgnoreCase)
+                    || entry.Name.Equals("d3d12.dll", StringComparison.OrdinalIgnoreCase)
+                    || entry.Name.Equals("d3d9.dll", StringComparison.OrdinalIgnoreCase)
+                    || entry.Name.Equals("d3d8.dll", StringComparison.OrdinalIgnoreCase)
+                    || entry.Name.Equals("opengl32.dll", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
                 // Route .addon files to the addon deploy path
                 var isAddonFile = entry.Name.EndsWith(".addon", StringComparison.OrdinalIgnoreCase)
                                || entry.Name.EndsWith(".addon64", StringComparison.OrdinalIgnoreCase)
@@ -750,6 +759,15 @@ public class LumaService : ILumaService
                     || entry.Name.Equals("ReShade.ini", StringComparison.OrdinalIgnoreCase))
                     continue;
 
+                // Skip ReShade DLLs — RHI installs its own staged ReShade
+                if (entry.Name.Equals("dxgi.dll", StringComparison.OrdinalIgnoreCase)
+                    || entry.Name.Equals("d3d11.dll", StringComparison.OrdinalIgnoreCase)
+                    || entry.Name.Equals("d3d12.dll", StringComparison.OrdinalIgnoreCase)
+                    || entry.Name.Equals("d3d9.dll", StringComparison.OrdinalIgnoreCase)
+                    || entry.Name.Equals("d3d8.dll", StringComparison.OrdinalIgnoreCase)
+                    || entry.Name.Equals("opengl32.dll", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
                 // Skip non-game files
                 if (entry.Name.Equals("README.txt", StringComparison.OrdinalIgnoreCase)
                     || entry.Name.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)
@@ -851,7 +869,7 @@ public class LumaService : ILumaService
                     var relativePath = Path.GetRelativePath(contentRoot, file);
                     var fileName = Path.GetFileName(file);
 
-                    // Skip reshade.ini, README, images, debug/optional folders
+                    // Skip reshade.ini, README, images, debug/optional folders, and ReShade DLLs
                     if (fileName.Equals("reshade.ini", StringComparison.OrdinalIgnoreCase)
                         || fileName.Equals("ReShade.ini", StringComparison.OrdinalIgnoreCase)
                         || fileName.Equals("README.txt", StringComparison.OrdinalIgnoreCase)
@@ -859,7 +877,13 @@ public class LumaService : ILumaService
                         || fileName.EndsWith(".png", StringComparison.OrdinalIgnoreCase)
                         || relativePath.Contains("(Debug)", StringComparison.OrdinalIgnoreCase)
                         || relativePath.Contains("(Optional)", StringComparison.OrdinalIgnoreCase)
-                        || relativePath.Contains("(Alternatives)", StringComparison.OrdinalIgnoreCase))
+                        || relativePath.Contains("(Alternatives)", StringComparison.OrdinalIgnoreCase)
+                        || fileName.Equals("dxgi.dll", StringComparison.OrdinalIgnoreCase)
+                        || fileName.Equals("d3d11.dll", StringComparison.OrdinalIgnoreCase)
+                        || fileName.Equals("d3d12.dll", StringComparison.OrdinalIgnoreCase)
+                        || fileName.Equals("d3d9.dll", StringComparison.OrdinalIgnoreCase)
+                        || fileName.Equals("d3d8.dll", StringComparison.OrdinalIgnoreCase)
+                        || fileName.Equals("opengl32.dll", StringComparison.OrdinalIgnoreCase))
                         continue;
 
                     if (fileName.Equals("dxgi.dll", StringComparison.OrdinalIgnoreCase))

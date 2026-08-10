@@ -530,10 +530,6 @@ public partial class DetailPanelBuilder
         channelComboInitializing = false;
         ctx.ChannelComboInitializing = false;
 
-        // Disable RS Channel when Luma mode is active (Luma bundles its own ReShade)
-        if (card.IsLumaMode)
-            channelCombo.IsEnabled = false;
-
         // ── Global update inclusion (compact: button + summary) ──────────────────
         var capturedCard = card;
 

@@ -396,7 +396,7 @@ public class CoreLogicTests
         if (string.IsNullOrEmpty(c.InstallPath)) return false;
 
         return (c.Status == GameStatus.UpdateAvailable && !c.ExcludeFromUpdateAllRenoDx && !c.IsExternalOnly)
-            || (c.RsStatus == GameStatus.UpdateAvailable && !c.ExcludeFromUpdateAllReShade && !c.RequiresVulkanInstall && !c.IsLumaMode)
+            || (c.RsStatus == GameStatus.UpdateAvailable && !c.ExcludeFromUpdateAllReShade && !c.RequiresVulkanInstall)
             || (c.UlStatus == GameStatus.UpdateAvailable && !c.ExcludeFromUpdateAllUl)
             || (c.DcStatus == GameStatus.UpdateAvailable && !c.ExcludeFromUpdateAllDc)
             || (c.OsStatus == GameStatus.UpdateAvailable && !c.ExcludeFromUpdateAllOs)

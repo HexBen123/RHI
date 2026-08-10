@@ -140,9 +140,8 @@ public partial class DetailPanelBuilder
             ApplyInfoButtonStyle(_window.DetailRefInfoBtn, card, AddonType.REFramework);
         }
 
-        // ReShade row
-        _window.DetailRsRow.Visibility = isLumaMode ? Visibility.Collapsed : Visibility.Visible;
-        if (!isLumaMode)
+        // ReShade row — always visible (RHI now manages ReShade even in Luma mode)
+        _window.DetailRsRow.Visibility = Visibility.Visible;
         {
             if (card.RequiresVulkanInstall)
             {
