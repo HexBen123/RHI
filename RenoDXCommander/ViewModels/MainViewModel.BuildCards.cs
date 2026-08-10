@@ -628,6 +628,9 @@ public partial class MainViewModel
             // Composite key for per-game settings lookups
             var gameKey = GameKey.FromCard(game.Name, game.Source).ToKey();
 
+            // Pre-compute Luma match before card initializer (needed for LumaRenodxCompatible)
+            var lumaMatch = MatchLumaGame(game.Name);
+
             var newCard = new GameCardViewModel
             {
                 GameName               = game.Name,
@@ -691,7 +694,7 @@ public partial class MainViewModel
                 DllOverrideEnabled     = _dllOverrides.ContainsKey(game.Name),
                 IsNativeHdrGame        = isNativeHdr,
                 IsManifestUeExtended   = useUeExt && !isNativeHdr,
-                LumaRenodxCompatible   = _manifest?.LumaRenodxCompat?.Contains(game.Name) == true,
+                LumaRenodxCompatible   = lumaMatch != null,
                 EngineIniProjectOverride = _manifest?.EngineIniPathOverrides?.TryGetValue(game.Name, out var eiOverride) == true ? eiOverride : null,
                 RsRecord               = rsRec,
                 RsStatus               = rsRec != null ? GameStatus.Installed : GameStatus.NotInstalled,
@@ -1135,23 +1138,42 @@ public partial class MainViewModel
                 }
             }
 
-            var lumaMatch = MatchLumaGame(game.Name);
             if (lumaMatch != null)
             {
                 newCard.LumaMod = lumaMatch;
-
-                // Auto-enable Luma for manifest-listed games (unless user explicitly disabled)
-                var lumaKey = GameKey.FromCard(game.Name, game.Source).ToKey();
-                if (_manifest?.LumaDefaultGames != null
-                    && !_lumaEnabledGames.Contains(lumaKey)
-                    && !_lumaDisabledGames.Contains(lumaKey)
-                    && _manifest.LumaDefaultGames.Any(g => g.Equals(game.Name, StringComparison.OrdinalIgnoreCase)))
-                {
-                    _lumaEnabledGames.Add(lumaKey);
-                }
-
-                newCard.IsLumaMode = _lumaEnabledGames.Contains(lumaKey);
+                newCard.IsLumaMode = false;
                 // Check if Luma is installed on disk
+                var lumaRec = LumaService.GetRecordByPath(installPath);
+                if (lumaRec != null)
+                {
+                    newCard.LumaRecord = lumaRec;
+                    newCard.LumaStatus = GameStatus.Installed;
+                }
+            }
+            else if (LumaFeatureEnabled
+                && (engine == EngineType.Unreal || engine == EngineType.UnrealLegacy || newCard.EngineHint.Contains("Unreal"))
+                && newCard.GraphicsApi == GraphicsApiType.DirectX11)
+            {
+                // Generic Luma UE mod — available for all DX11 Unreal Engine games
+                var genericLuma = new LumaMod
+                {
+                    Name = game.Name,
+                    IsGenericLuma = true,
+                    DownloadUrl = "https://github.com/Filoppi/Luma-Framework/releases/latest/download/Luma-Unreal_Engine.zip",
+                    Status = "✅",
+                };
+                // Populate notes from the scraped UE wiki table if available
+                if (_lumaGenericEntries.TryGetValue(game.Name, out var genericEntry))
+                    genericLuma.SpecialNotes = genericEntry.Notes;
+                newCard.LumaMod = genericLuma;
+                newCard.LumaRenodxCompatible = true;
+                newCard.IsLumaMode = false;
+                // Populate feature flags from the scraped wiki entry
+                if (_lumaGenericEntries.TryGetValue(game.Name, out var bcEntry))
+                {
+                    newCard.LumaHdrSupported = bcEntry.HdrSupported;
+                    newCard.LumaDlssFsrSupported = bcEntry.DlssFsrSupported;
+                }
                 var lumaRec = LumaService.GetRecordByPath(installPath);
                 if (lumaRec != null)
                 {

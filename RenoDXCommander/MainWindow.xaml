@@ -742,12 +742,12 @@
                                             CornerRadius="8" FontSize="12" Height="32"
                                             BorderThickness="1"/>
                                     <Button x:Name="DetailLumaIniBtn" x:FieldModifier="internal" Grid.Column="4"
-                                            Click="LumaIniButton_Click"
+                                            Click="LumaCogButton_Click"
                                             Background="{StaticResource SurfaceOverlayBrush}" Foreground="{StaticResource TextSecondaryBrush}"
                                             BorderBrush="{StaticResource BorderStrongBrush}" BorderThickness="1"
                                             CornerRadius="8" Width="36" Height="32" Padding="0"
-                                            ToolTipService.ToolTip="Copy ReShade.ini to game folder">
-                                        <TextBlock Text="📋" FontSize="12" HorizontalAlignment="Center"/>
+                                            ToolTipService.ToolTip="Luma Settings">
+                                        <TextBlock Text="⚙" FontSize="12" HorizontalAlignment="Center"/>
                                     </Button>
                                     <Button x:Name="DetailLumaDeleteBtn" x:FieldModifier="internal" Grid.Column="5"
                                             Click="UninstallLumaButton_Click"

@@ -762,6 +762,43 @@ public partial class MainViewModel
             // Luma's bundled ReShade DLL was excluded from the zip — RHI manages ReShade.
             card.LumaActionMessage = "Installing ReShade...";
             await InstallReShadeAsync(card);
+
+            // ── Generic Luma post-install actions ─────────────────────────────────
+            if (card.LumaMod?.IsGenericLuma == true)
+            {
+                // Write game-specific Engine.ini keys scraped from the Luma wiki
+                if (_lumaGenericEntries.TryGetValue(card.GameName, out var genericEntry)
+                    && genericEntry.EngineIniKeys.Count > 0)
+                {
+                    try
+                    {
+                        AuxInstallService.ApplyEngineIniCustomKeys(
+                            card.InstallPath,
+                            genericEntry.EngineIniKeys,
+                            card.EngineIniProjectOverride,
+                            card.GameName,
+                            card.Source);
+                        _crashReporter.Log($"[InstallLumaAsync] Wrote {genericEntry.EngineIniKeys.Count} Engine.ini key(s) for '{card.GameName}'");
+                    }
+                    catch (Exception ex)
+                    {
+                        _crashReporter.Log($"[InstallLumaAsync] Engine.ini write failed for '{card.GameName}' — {ex.Message}");
+                    }
+                }
+
+                // Auto-populate -dx11 launch arg if required and not already set
+                if (_lumaGenericEntries.TryGetValue(card.GameName, out var launchEntry)
+                    && launchEntry.RequiresDx11LaunchArg)
+                {
+                    var existing = _gameNameService.LaunchArgsOverrides.TryGetValue(card.GameName, out var v) ? v : "";
+                    if (string.IsNullOrWhiteSpace(existing))
+                    {
+                        _gameNameService.LaunchArgsOverrides[card.GameName] = "-dx11";
+                        SaveNameMappings();
+                        _crashReporter.Log($"[InstallLumaAsync] Auto-set -dx11 launch arg for '{card.GameName}'");
+                    }
+                }
+            }
         }
         catch (Exception ex)
         {

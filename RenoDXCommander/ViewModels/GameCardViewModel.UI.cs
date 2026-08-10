@@ -33,7 +33,7 @@ public partial class GameCardViewModel
     public string CardLumaStatusDot => StatusDotColor(LumaStatus, IsLumaInstalling);
 
     /// <summary>True when the Luma status dot should be visible on the card grid.</summary>
-    public bool CardLumaVisible => LumaFeatureEnabled && IsLumaMode && LumaMod != null;
+    public bool CardLumaVisible => LumaFeatureEnabled && LumaMod != null && IsLumaInstalled;
 
     // ── Card grid: action and info properties ─────────────────────────────────────
     /// <summary>Label for the card's primary action button.</summary>
@@ -41,10 +41,9 @@ public partial class GameCardViewModel
     {
         get
         {
-            var effectiveStatus = (LumaFeatureEnabled && IsLumaMode && LumaMod != null)
-                ? LumaStatus : Status;
-            var effectiveInstalling = (LumaFeatureEnabled && IsLumaMode && LumaMod != null)
-                ? IsLumaInstalling : IsInstalling;
+            // Both RenoDX and Luma rows are always visible — use RenoDX status for the primary action
+            var effectiveStatus = Status;
+            var effectiveInstalling = IsInstalling;
 
             if (effectiveInstalling) return "Installing...";
             if (IsManaged)

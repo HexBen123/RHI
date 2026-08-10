@@ -261,9 +261,10 @@ public partial class MainViewModel
             }
 
             // 2. Launch all background tasks (identical for both paths)
-            var wikiTask     = _wikiService.FetchAllAsync();
-            var lumaTask     = _lumaService.FetchCompletedModsAsync();
-            var manifestTask = _manifestService.FetchAsync();
+            var wikiTask        = _wikiService.FetchAllAsync();
+            var lumaTask        = _lumaService.FetchCompletedModsAsync();
+            var lumaUeTask      = _lumaService.FetchGenericUeTableAsync();
+            var manifestTask    = _manifestService.FetchAsync();
             var detectTask   = DetectAllGamesDedupedAsync();
             var osWikiTask   = Task.Run(async () => {
                 try { await _optiScalerWikiService.FetchAsync(); }
@@ -339,6 +340,7 @@ public partial class MainViewModel
             // 4. Await network tasks individually so failures don't block game display
             try { await wikiTask; } catch (Exception ex) { wikiFetchFailed = true; _crashReporter.Log($"[MainViewModel.InitializeAsync] Wiki fetch failed (offline?) — {ex.Message}"); }
             try { await lumaTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Luma fetch failed (offline?) — {ex.Message}"); }
+            try { await lumaUeTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Luma UE table fetch failed (offline?) — {ex.Message}"); }
             try { _manifest = await manifestTask; AuxInstallService.GlobalManifest = _manifest; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Manifest fetch failed — {ex.Message}"); }
             try { await osWikiTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] OptiScaler wiki task failed — {ex.Message}"); }
             try { await hdrDbTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] HDR database task failed — {ex.Message}"); }
@@ -361,6 +363,7 @@ public partial class MainViewModel
             _allMods      = wikiResult.Mods ?? new();
             _genericNotes = wikiResult.GenericNotes ?? new();
             try { _lumaMods = lumaTask.IsCompletedSuccessfully ? await lumaTask : new(); } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Luma mods deserialization failed — {ex.Message}"); _lumaMods = new(); }
+            try { _lumaGenericEntries = lumaUeTask.IsCompletedSuccessfully ? await lumaUeTask : new(StringComparer.OrdinalIgnoreCase); } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Luma UE entries failed — {ex.Message}"); _lumaGenericEntries = new(StringComparer.OrdinalIgnoreCase); }
 
             // ── Detect new wiki mods ────────────────────────────────────────────
             if (!wikiFetchFailed)

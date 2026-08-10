@@ -157,27 +157,22 @@ public sealed partial class MainWindow
         }
     }
 
-    private void LumaIniButton_Click(object sender, RoutedEventArgs e)
+    private async void LumaCogButton_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
-        if (string.IsNullOrEmpty(card.InstallPath)) return;
-        try
-        {
-            var screenshotPath = BuildScreenshotSavePath(card.GameName);
-            var overlayHotkey = ViewModel.Settings.OverlayHotkey;
-            var screenshotHotkey = ViewModel.Settings.ScreenshotHotkey;
-            AuxInstallService.MergeRsIni(card.InstallPath, screenshotPath, overlayHotkey, screenshotHotkey);
 
-            // Apply [renodx] section if UE-Extended is installed
-            if (card.UseUeExtended && card.Status == GameStatus.Installed)
-                AuxInstallService.ApplyRenoDxNativeHdrSettings(card.InstallPath);
+        var content = new StackPanel { Spacing = 8 };
 
-            card.LumaActionMessage = "✅ reshade.ini merged into game folder.";
-        }
-        catch (Exception ex)
+        var dialog = new ContentDialog
         {
-            card.LumaActionMessage = $"❌ {ex.Message}";
-        }
+            Title = "Luma Settings",
+            Content = content,
+            CloseButtonText = "Close",
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = this.Content.XamlRoot,
+        };
+
+        await dialog.ShowAsync();
     }
 
     private void SupportDiscord_Click(object sender, RoutedEventArgs e)
@@ -438,29 +433,21 @@ public sealed partial class MainWindow
     {
         if ((sender as FrameworkElement)?.Tag is not GameCardViewModel card) return;
 
-        // Route to Luma install if in Luma mode, otherwise RenoDX combined install
-        if (card.LumaFeatureEnabled && card.IsLumaMode && card.LumaMod != null)
+        // Ensure install path exists
+        if (string.IsNullOrEmpty(card.InstallPath) || !System.IO.Directory.Exists(card.InstallPath))
         {
-            await ViewModel.InstallLumaAsync(card);
+            var folder = await PickFolderAsync();
+            if (folder == null) return;
+            card.InstallPath = folder;
+            ViewModel.SaveLibraryPublic();
         }
-        else
-        {
-            // Ensure install path exists
-            if (string.IsNullOrEmpty(card.InstallPath) || !System.IO.Directory.Exists(card.InstallPath))
-            {
-                var folder = await PickFolderAsync();
-                if (folder == null) return;
-                card.InstallPath = folder;
-                ViewModel.SaveLibraryPublic();
-            }
-            // Chain: RenoDX → RE Framework → ReShade (skip components that are N/A)
-            if (card.Mod?.SnapshotUrl != null)
-                await ViewModel.InstallModCommand.ExecuteAsync(card);
-            if (card.RefRowVisibility == Visibility.Visible)
-                await ViewModel.InstallREFrameworkCommand.ExecuteAsync(card);
-            if (card.ReShadeRowVisibility == Visibility.Visible)
-                await ViewModel.InstallReShadeCommand.ExecuteAsync(card);
-        }
+        // Chain: RenoDX → RE Framework → ReShade (skip components that are N/A)
+        if (card.Mod?.SnapshotUrl != null)
+            await ViewModel.InstallModCommand.ExecuteAsync(card);
+        if (card.RefRowVisibility == Visibility.Visible)
+            await ViewModel.InstallREFrameworkCommand.ExecuteAsync(card);
+        if (card.ReShadeRowVisibility == Visibility.Visible)
+            await ViewModel.InstallReShadeCommand.ExecuteAsync(card);
     }
 
     internal void CardFavouriteButton_Click(object sender, RoutedEventArgs e)
@@ -520,28 +507,6 @@ public sealed partial class MainWindow
         };
         hideItem.Click += (s, ev) => ViewModel.ToggleHideGameCommand.Execute(card);
         menu.Items.Add(hideItem);
-
-        // ── Luma toggle (conditional — only when Luma is available for this game) ──
-        if (card.LumaFeatureEnabled && card.IsLumaAvailable)
-        {
-            var lumaLabel = card.IsLumaMode ? "🟢 Luma Enabled" : "⚫ Enable Luma";
-            var lumaItem = new MenuFlyoutItem
-            {
-                Text = lumaLabel,
-                Tag = card,
-            };
-            lumaItem.Click += (s, ev) =>
-            {
-                ViewModel.ToggleLumaMode(card);
-                // Rebuild detail panel if this card is currently displayed
-                if (ViewModel.SelectedGame == card && ViewModel.CurrentViewLayout == Models.ViewLayout.Detail)
-                {
-                    PopulateDetailPanel(card);
-                    BuildOverridesPanel(card);
-                }
-            };
-            menu.Items.Add(lumaItem);
-        }
 
         menu.Items.Add(new MenuFlyoutSeparator());
 

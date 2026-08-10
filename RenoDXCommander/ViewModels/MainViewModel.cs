@@ -609,6 +609,7 @@ public partial class MainViewModel : ObservableObject
     private readonly INormalReShadeUpdateService _normalRsUpdateService;
     private readonly ReShadeNightlyService _rsNightlyService;
     private List<LumaMod> _lumaMods = new();
+    private Dictionary<string, LumaGenericGameEntry> _lumaGenericEntries = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _lumaEnabledGames => _gameNameService.LumaEnabledGames;
     /// <summary>
     /// Games the user has explicitly disabled Luma for — prevents manifest lumaDefaultGames

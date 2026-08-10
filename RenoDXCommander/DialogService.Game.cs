@@ -373,7 +373,7 @@ public partial class DialogService
     {
         // ── Luma badge ───────────────────────────────────────────────────────
         var lumaLabel = card.LumaMod != null
-            ? $"Luma — {card.LumaMod.Status} {card.LumaMod.Author}"
+            ? $"Luma — {card.LumaMod.Status} {card.LumaMod.Author}".TrimEnd()
             : "Luma";
         var lumaBadge = new Border
         {
@@ -391,6 +391,30 @@ public partial class DialogService
             }
         };
         panel.Children.Add(lumaBadge);
+
+        // ── Feature flags (HDR / DLSS+FSR) for generic Luma games ─────────────
+        if (card.LumaMod?.IsGenericLuma == true && (card.LumaHdrSupported || card.LumaDlssFsrSupported))
+        {
+            var flagPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, Margin = new Thickness(0, 4, 0, 0) };
+
+            if (card.LumaDlssFsrSupported)
+                flagPanel.Children.Add(new TextBlock
+                {
+                    Text = "✅ DLSS / FSR",
+                    FontSize = 12,
+                    Foreground = Brush(ResourceKeys.AccentGreenBrush),
+                });
+
+            if (card.LumaHdrSupported)
+                flagPanel.Children.Add(new TextBlock
+                {
+                    Text = "✅ HDR",
+                    FontSize = 12,
+                    Foreground = Brush(ResourceKeys.AccentGreenBrush),
+                });
+
+            panel.Children.Add(flagPanel);
+        }
 
         // ── LumaMod wiki notes (SpecialNotes + FeatureNotes) ─────────────────
         var lumaNotesText = "";

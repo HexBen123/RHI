@@ -883,6 +883,78 @@ public partial class AuxInstallService
     }
 
     /// <summary>
+    /// Writes arbitrary (Section, Key, Value) entries to Engine.ini.
+    /// Only appends keys that are not already present. Sets the file read-only after writing.
+    /// Used by generic Luma UE install to apply game-specific Engine.ini tweaks scraped from the wiki.
+    /// </summary>
+    public static void ApplyEngineIniCustomKeys(
+        string installPath,
+        IEnumerable<(string Section, string Key, string Value)> entries,
+        string? projectNameOverride = null,
+        string? gameName = null,
+        string? store = null)
+    {
+        try
+        {
+            var entryList = entries.ToList();
+            if (entryList.Count == 0) return;
+
+            var configDir = ResolveEngineIniDir(installPath, projectNameOverride, gameName, store);
+            if (configDir == null)
+            {
+                CrashReporter.Log($"[AuxInstallService.ApplyEngineIniCustomKeys] Could not resolve config dir for '{installPath}'");
+                return;
+            }
+
+            var engineIniPath = Path.Combine(configDir, "Engine.ini");
+
+            if (File.Exists(engineIniPath))
+            {
+                var attrs = File.GetAttributes(engineIniPath);
+                if (attrs.HasFlag(FileAttributes.ReadOnly))
+                    File.SetAttributes(engineIniPath, attrs & ~FileAttributes.ReadOnly);
+            }
+
+            var existingLines = File.Exists(engineIniPath) ? File.ReadAllLines(engineIniPath) : Array.Empty<string>();
+            var existingText = string.Join("\n", existingLines);
+
+            var toWrite = entryList.Where(e =>
+                !existingLines.Any(l => l.TrimStart().StartsWith(e.Key + "=", StringComparison.OrdinalIgnoreCase)))
+                .ToList();
+
+            if (toWrite.Count == 0)
+            {
+                if (File.Exists(engineIniPath))
+                    File.SetAttributes(engineIniPath, File.GetAttributes(engineIniPath) | FileAttributes.ReadOnly);
+                return;
+            }
+
+            var appendBuilder = new System.Text.StringBuilder();
+            var grouped = toWrite.GroupBy(e => e.Section, StringComparer.OrdinalIgnoreCase);
+            foreach (var group in grouped)
+            {
+                appendBuilder.AppendLine();
+                appendBuilder.AppendLine($"[{group.Key}]");
+                foreach (var entry in group)
+                    appendBuilder.AppendLine($"{entry.Key}={entry.Value}");
+            }
+
+            var appendText = appendBuilder.ToString();
+            if (!existingText.EndsWith("\n") && !existingText.EndsWith("\r\n") && existingText.Length > 0)
+                appendText = "\n" + appendText;
+
+            File.AppendAllText(engineIniPath, appendText);
+            File.SetAttributes(engineIniPath, File.GetAttributes(engineIniPath) | FileAttributes.ReadOnly);
+
+            CrashReporter.Log($"[AuxInstallService.ApplyEngineIniCustomKeys] Wrote {toWrite.Count} key(s) to '{engineIniPath}'");
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[AuxInstallService.ApplyEngineIniCustomKeys] Failed for '{installPath}' — {ex.Message}");
+        }
+    }
+
+    /// <summary>
     /// Unconditionally ensures r.LUT.UpdateEveryFrame=1 exists in Engine.ini for UE-Extended games.
     /// This is always deployed regardless of the EngineIniHdr toggle state.
     /// </summary>

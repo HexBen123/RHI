@@ -52,9 +52,10 @@ public partial class MainViewModel
             });
 
             // Launch all background tasks (identical to InitializeAsync)
-            var wikiTask     = _wikiService.FetchAllAsync();
-            var lumaTask     = _lumaService.FetchCompletedModsAsync();
-            var manifestTask = _manifestService.FetchAsync();
+            var wikiTask        = _wikiService.FetchAllAsync();
+            var lumaTask        = _lumaService.FetchCompletedModsAsync();
+            var lumaUeTask      = _lumaService.FetchGenericUeTableAsync();
+            var manifestTask    = _manifestService.FetchAsync();
             var detectTask   = DetectAllGamesDedupedAsync();
             var osWikiTask   = Task.Run(async () => {
                 try { await _optiScalerWikiService.FetchAsync(); }
@@ -121,6 +122,7 @@ public partial class MainViewModel
             // Await network tasks individually so failures don't block
             try { await wikiTask; } catch (Exception ex) { wikiFetchFailed = true; _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Wiki fetch failed (offline?) — {ex.Message}"); }
             try { await lumaTask; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Luma fetch failed (offline?) — {ex.Message}"); }
+            try { await lumaUeTask; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Luma UE table fetch failed (offline?) — {ex.Message}"); }
             try { _manifest = await manifestTask; AuxInstallService.GlobalManifest = _manifest; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Manifest fetch failed — {ex.Message}"); }
             try { await osWikiTask; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] OptiScaler wiki task failed — {ex.Message}"); }
             try { await hdrDbTask; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] HDR database task failed — {ex.Message}"); }
@@ -142,6 +144,8 @@ public partial class MainViewModel
             _genericNotes = wikiResult.GenericNotes ?? new();
             try { _lumaMods = lumaTask.IsCompletedSuccessfully ? await lumaTask : new(); }
             catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Luma mods deserialization failed — {ex.Message}"); _lumaMods = new(); }
+            try { _lumaGenericEntries = lumaUeTask.IsCompletedSuccessfully ? await lumaUeTask : new(StringComparer.OrdinalIgnoreCase); }
+            catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Luma UE entries failed — {ex.Message}"); _lumaGenericEntries = new(StringComparer.OrdinalIgnoreCase); }
 
             // ── Detect new wiki mods ────────────────────────────────────────────
             if (!wikiFetchFailed)
@@ -481,14 +485,16 @@ public partial class MainViewModel
                 existing.DetectedApis           = fresh.DetectedApis;
                 existing.IsDualApiGame          = fresh.IsDualApiGame;
                 existing.LumaMod                = fresh.LumaMod;
-                existing.IsLumaMode             = fresh.IsLumaMode;
+                existing.IsLumaMode             = false;
                 existing.LumaRecord             = fresh.LumaRecord;
                 existing.LumaNotes              = fresh.LumaNotes;
                 existing.LumaNotesUrl           = fresh.LumaNotesUrl;
                 existing.LumaNotesUrlLabel      = fresh.LumaNotesUrlLabel;
+                existing.LumaHdrSupported       = fresh.LumaHdrSupported;
+                existing.LumaDlssFsrSupported   = fresh.LumaDlssFsrSupported;
                 existing.IsNativeHdrGame        = fresh.IsNativeHdrGame;
                 existing.IsManifestUeExtended   = fresh.IsManifestUeExtended;
-                existing.LumaRenodxCompatible   = fresh.LumaRenodxCompatible;
+                existing.LumaRenodxCompatible   = fresh.LumaMod != null;
                 existing.EngineIniProjectOverride = fresh.EngineIniProjectOverride;
                 existing.DllOverrideEnabled      = fresh.DllOverrideEnabled;
                 existing.ExcludeFromUpdateAllReShade = fresh.ExcludeFromUpdateAllReShade;

@@ -1,9 +1,17 @@
-## v2.3.3-beta
+## v2.3.3-beta2
+
+### ✦ Generic Luma for Unreal Engine games
+
+RHI now supports Luma HDR for **all DX11 Unreal Engine games** — not just the named titles on the completed mods list. Every DX11 UE game in your library now shows a Luma row alongside RenoDX. Install it the same way you would any other component.
+
+Game-specific setup is handled automatically: if the Luma wiki lists Engine.ini tweaks for a game, they are written on install. If a game requires the `-dx11` launch argument to work correctly, RHI sets it for you.
+
+ReShade is now fully managed by RHI on all Luma games — your selected channel (Stable or Nightly) is deployed alongside Luma and kept up to date by Update All.
 
 ### New
 
 - RenoDX, ReLimiter, and Display Commander can now be installed without ReShade being managed by RHI. Uncheck ReShade in the Global Update Inclusion settings for a game to unlock installation of the dependent components — useful if you manage ReShade yourself or use a custom build.
-- Luma games now use RHI's own ReShade instead of the version bundled in the Luma zip. Your selected channel (Stable or Nightly) is installed alongside Luma, and ReShade updates work normally on Luma games going forward.
+- Luma games no longer have an ON/OFF toggle — both RenoDX and Luma rows are always visible simultaneously.
 
 ---
 

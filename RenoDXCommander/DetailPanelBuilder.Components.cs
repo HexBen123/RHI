@@ -506,8 +506,8 @@ public partial class DetailPanelBuilder
             ApplyInfoButtonStyle(_window.DetailRdxInfoBtn, card, AddonType.RenoDX);
         }
 
-        // Luma row
-        if (isLumaMode)
+        // Luma row — visible whenever this game has a Luma mod (always show alongside RenoDX)
+        if (card.LumaFeatureEnabled && card.LumaMod != null)
         {
             _window.DetailLumaRow.Visibility = Visibility.Visible;
             _window.DetailLumaStatus.Text = card.LumaStatusText;
@@ -523,9 +523,8 @@ public partial class DetailPanelBuilder
             _window.DetailLumaInstallBtn.BorderBrush = UIFactory.GetBrush(card.LumaBtnBorderBrush);
             _window.DetailLumaInstallBtn.BorderThickness = new Thickness(1);
             _window.DetailLumaIniBtn.Tag = card;
-            bool lumaIniExists = !string.IsNullOrEmpty(card.InstallPath) && File.Exists(Path.Combine(card.InstallPath, "reshade.ini"));
-            _window.DetailLumaIniBtn.IsEnabled = lumaIniExists;
-            _window.DetailLumaIniBtn.Opacity = lumaIniExists ? 1 : 0.3;
+            _window.DetailLumaIniBtn.IsEnabled = true;
+            _window.DetailLumaIniBtn.Opacity = 1.0;
             _window.DetailLumaDeleteBtn.Tag = card;
             var lumaShow = card.LumaReinstallVisibility == Visibility.Visible;
             _window.DetailLumaDeleteBtn.Opacity = lumaShow ? 1 : 0;
@@ -533,8 +532,6 @@ public partial class DetailPanelBuilder
             ApplyInfoButtonStyle(_window.DetailLumaInfoBtn, card, AddonType.Luma);
         }
         else _window.DetailLumaRow.Visibility = Visibility.Collapsed;
-
-        // RenoDX cog button — always visible
         _window.DetailUeExtendedBtn.Tag = card;
         _window.DetailUeExtendedBtn.Opacity = 1;
         _window.DetailUeExtendedBtn.IsHitTestVisible = true;
@@ -629,13 +626,6 @@ public partial class DetailPanelBuilder
                     _window.DetailInstalledFileBadge.Visibility = Visibility.Collapsed;
                     _window.DetailSepModPlatform.Visibility = Visibility.Collapsed;
                 }
-            }
-
-            // Refresh Luma mode buttons when luma state changes
-            if (e.PropertyName is "IsLumaMode" or "LumaStatus" or "LumaBadgeVisibility" or "LumaBadgeLabel")
-            {
-                _window.DetailLumaToggle.IsChecked = _currentDetailCard.IsLumaMode;
-                _window.UpdateLumaToggleStyle(_currentDetailCard.IsLumaMode);
             }
 
             // Refresh PCGW / Nexus Mods link visibility when URLs change
