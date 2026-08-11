@@ -175,10 +175,45 @@ public sealed partial class MainWindow
                 Margin = new Thickness(0, 0, 0, 4),
             });
 
-            var taaGrid = new Grid { ColumnSpacing = 12 };
-            taaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            taaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(110, GridUnitType.Pixel) });
+            var cogGrid = new Grid { ColumnSpacing = 12, RowSpacing = 8 };
+            cogGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            cogGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(110, GridUnitType.Pixel) });
+            cogGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            cogGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
+            // ── HDR on First Boot ──────────────────────────────────────────────
+            var hdrLabel = new TextBlock
+            {
+                Text = "HDR on First Boot",
+                FontSize = 11,
+                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            Grid.SetRow(hdrLabel, 0); Grid.SetColumn(hdrLabel, 0);
+            cogGrid.Children.Add(hdrLabel);
+
+            var hdrCombo = new ComboBox { FontSize = 11, MinWidth = 100, HorizontalAlignment = HorizontalAlignment.Stretch };
+            hdrCombo.Items.Add("Off");
+            hdrCombo.Items.Add("On");
+            ToolTipService.SetToolTip(hdrCombo,
+                "Controls EnableHDR in the [Luma] section of reshade.ini.\n" +
+                "Set to Off before first launch if you want to start without HDR enabled.");
+
+            var currentHdr = AuxInstallService.GetLumaReshadeIniValue(card.InstallPath, "EnableHDR");
+            hdrCombo.SelectedIndex = currentHdr == "0" ? 0 : 1; // default On
+            bool hdrInitializing = true;
+            hdrCombo.Loaded += (s2, e2) => hdrInitializing = false;
+            hdrCombo.SelectionChanged += (s2, ev) =>
+            {
+                if (hdrInitializing) return;
+                AuxInstallService.SetLumaReshadeIniValue(card.InstallPath, "EnableHDR", hdrCombo.SelectedIndex == 1 ? "1" : "0");
+                card.LumaActionMessage = hdrCombo.SelectedIndex == 1 ? "✅ HDR enabled in reshade.ini." : "✅ HDR disabled in reshade.ini.";
+                card.FadeMessage(m => card.LumaActionMessage = m, card.LumaActionMessage);
+            };
+            Grid.SetRow(hdrCombo, 0); Grid.SetColumn(hdrCombo, 1);
+            cogGrid.Children.Add(hdrCombo);
+
+            // ── TAA Settings ───────────────────────────────────────────────────
             var taaLabel = new TextBlock
             {
                 Text = "TAA Settings",
@@ -186,8 +221,8 @@ public sealed partial class MainWindow
                 Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
                 VerticalAlignment = VerticalAlignment.Center,
             };
-            Grid.SetColumn(taaLabel, 0);
-            taaGrid.Children.Add(taaLabel);
+            Grid.SetRow(taaLabel, 1); Grid.SetColumn(taaLabel, 0);
+            cogGrid.Children.Add(taaLabel);
 
             var taaCombo = new ComboBox { FontSize = 11, MinWidth = 100, HorizontalAlignment = HorizontalAlignment.Stretch };
             taaCombo.Items.Add("Off");
@@ -227,10 +262,10 @@ public sealed partial class MainWindow
                 }
                 card.FadeMessage(m => card.LumaActionMessage = m, card.LumaActionMessage);
             };
+            Grid.SetRow(taaCombo, 1); Grid.SetColumn(taaCombo, 1);
+            cogGrid.Children.Add(taaCombo);
 
-            Grid.SetColumn(taaCombo, 1);
-            taaGrid.Children.Add(taaCombo);
-            content.Children.Add(taaGrid);
+            content.Children.Add(cogGrid);
         }
 
         var dialog = new ContentDialog

@@ -1464,4 +1464,91 @@ public partial class AuxInstallService
             writer.WriteLine();
         }
     }
+
+    // ── Luma reshade.ini helpers ──────────────────────────────────────────────────
+
+    /// <summary>
+    /// Writes a key=value pair to the [Luma] section of the game's reshade.ini.
+    /// Creates the section if it doesn't exist. Overwrites existing key if present.
+    /// </summary>
+    public static void SetLumaReshadeIniValue(string gameDir, string key, string value)
+    {
+        try
+        {
+            var iniPath = Path.Combine(gameDir, "reshade.ini");
+            if (!File.Exists(iniPath)) return;
+
+            var lines = File.ReadAllLines(iniPath).ToList();
+            bool inLumaSection = false;
+            int keyLineIndex = -1;
+            int lumaHeaderIndex = -1;
+
+            for (int i = 0; i < lines.Count; i++)
+            {
+                var trimmed = lines[i].Trim();
+                if (trimmed.StartsWith('['))
+                {
+                    inLumaSection = trimmed.Equals("[Luma]", StringComparison.OrdinalIgnoreCase);
+                    if (inLumaSection) lumaHeaderIndex = i;
+                    continue;
+                }
+                if (inLumaSection && trimmed.StartsWith(key + "=", StringComparison.OrdinalIgnoreCase))
+                {
+                    keyLineIndex = i;
+                    break;
+                }
+            }
+
+            if (keyLineIndex >= 0)
+            {
+                lines[keyLineIndex] = $"{key}={value}";
+            }
+            else if (lumaHeaderIndex >= 0)
+            {
+                // Insert after [Luma] header
+                lines.Insert(lumaHeaderIndex + 1, $"{key}={value}");
+            }
+            else
+            {
+                // Append new [Luma] section
+                if (lines.Count > 0 && !string.IsNullOrWhiteSpace(lines[^1]))
+                    lines.Add("");
+                lines.Add("[Luma]");
+                lines.Add($"{key}={value}");
+            }
+
+            File.WriteAllLines(iniPath, lines);
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[AuxInstallService.SetLumaReshadeIniValue] Failed for '{gameDir}' — {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Reads a key from the [Luma] section of the game's reshade.ini.
+    /// Returns null if the file or key doesn't exist.
+    /// </summary>
+    public static string? GetLumaReshadeIniValue(string gameDir, string key)
+    {
+        try
+        {
+            var iniPath = Path.Combine(gameDir, "reshade.ini");
+            if (!File.Exists(iniPath)) return null;
+            bool inLumaSection = false;
+            foreach (var line in File.ReadAllLines(iniPath))
+            {
+                var trimmed = line.Trim();
+                if (trimmed.StartsWith('['))
+                {
+                    inLumaSection = trimmed.Equals("[Luma]", StringComparison.OrdinalIgnoreCase);
+                    continue;
+                }
+                if (inLumaSection && trimmed.StartsWith(key + "=", StringComparison.OrdinalIgnoreCase))
+                    return trimmed[(key.Length + 1)..].Trim();
+            }
+        }
+        catch { /* best-effort */ }
+        return null;
+    }
 }

@@ -789,6 +789,9 @@ public partial class MainViewModel
                 _crashReporter.Log($"[InstallLumaAsync] DLSS deploy failed for '{card.GameName}' — {ex.Message}");
             }
 
+            // Write EnableHDR=1 to reshade.ini [Luma] section — default On, user can disable via cog
+            AuxInstallService.SetLumaReshadeIniValue(card.InstallPath, "EnableHDR", "1");
+
             // Now install RHI's own ReShade (respects user's channel — Stable/Nightly)
             // Luma's bundled ReShade DLL was excluded from the zip — RHI manages ReShade.
             card.LumaActionMessage = "Installing ReShade...";
@@ -902,6 +905,29 @@ public partial class MainViewModel
                 SaveNameMappings();
                 _crashReporter.Log($"[UninstallLuma] Removed auto-set -dx11 for dual-API game '{card.GameName}'");
                 RequestOverridesPanelRebuild?.Invoke(card);
+            }
+
+            // Remove wiki-scraped Engine.ini keys if they were written on install
+            if (card.LumaMod?.IsGenericLuma == true
+                && _lumaGenericEntries.TryGetValue(card.GameName, out var iniEntry)
+                && iniEntry.EngineIniKeys.Count > 0)
+            {
+                try
+                {
+                    AuxInstallService.RemoveEngineIniCustomKeys(
+                        card.InstallPath,
+                        iniEntry.EngineIniKeys.Select(k => k.Key),
+                        card.EngineIniProjectOverride,
+                        card.GameName,
+                        card.Source);
+                    _gameNameService.LumaTaaEnabled.Remove(card.GameName);
+                    SaveNameMappings();
+                    _crashReporter.Log($"[UninstallLuma] Removed Engine.ini keys for '{card.GameName}'");
+                }
+                catch (Exception ex)
+                {
+                    _crashReporter.Log($"[UninstallLuma] Engine.ini key removal failed for '{card.GameName}' — {ex.Message}");
+                }
             }
 
             card.NotifyAll();
