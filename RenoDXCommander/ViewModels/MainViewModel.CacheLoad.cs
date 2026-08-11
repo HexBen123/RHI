@@ -779,7 +779,8 @@ public partial class MainViewModel
             }
             else if (LumaFeatureEnabled
                 && (engine == EngineType.Unreal || engine == EngineType.UnrealLegacy)
-                && graphicsApi == GraphicsApiType.DirectX11)
+                && (graphicsApi == GraphicsApiType.DirectX11
+                    || detectedApis.Contains(GraphicsApiType.DirectX11)))
             {
                 bool lumaBlocked = _lumaGenericEntries.TryGetValue(game.Name, out var blockCheck)
                     && blockCheck.DlssFsrBlocked && !blockCheck.HdrSupported;

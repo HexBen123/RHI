@@ -679,6 +679,10 @@ public class LumaService : ILumaService
                     || entry.Name.Equals("opengl32.dll", StringComparison.OrdinalIgnoreCase))
                     continue;
 
+                // Skip nvngx_dlss.dll — RHI deploys its own newest version after install
+                if (entry.Name.Equals("nvngx_dlss.dll", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
                 // Route .addon files to the addon deploy path
                 var isAddonFile = entry.Name.EndsWith(".addon", StringComparison.OrdinalIgnoreCase)
                                || entry.Name.EndsWith(".addon64", StringComparison.OrdinalIgnoreCase)
@@ -791,6 +795,12 @@ public class LumaService : ILumaService
                 || fileName.Equals("opengl32.dll", StringComparison.OrdinalIgnoreCase))
             {
                 CrashReporter.Log($"[LumaService.Uninstall] Skipping RHI-managed ReShade DLL '{relPath}'");
+                continue;
+            }
+            // Skip nvngx_dlss.dll — managed by RHI separately
+            if (fileName.Equals("nvngx_dlss.dll", StringComparison.OrdinalIgnoreCase))
+            {
+                CrashReporter.Log($"[LumaService.Uninstall] Skipping RHI-managed DLSS DLL '{relPath}'");
                 continue;
             }
 
@@ -1075,6 +1085,10 @@ public class LumaService : ILumaService
                     || entry.Name.Equals("opengl32.dll", StringComparison.OrdinalIgnoreCase))
                     continue;
 
+                // Skip nvngx_dlss.dll — RHI deploys its own newest version after install
+                if (entry.Name.Equals("nvngx_dlss.dll", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
                 // Skip non-game files
                 if (entry.Name.Equals("README.txt", StringComparison.OrdinalIgnoreCase)
                     || entry.Name.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)
@@ -1176,7 +1190,7 @@ public class LumaService : ILumaService
                     var relativePath = Path.GetRelativePath(contentRoot, file);
                     var fileName = Path.GetFileName(file);
 
-                    // Skip reshade.ini, README, images, debug/optional folders, and ReShade DLLs
+                    // Skip reshade.ini, README, images, debug/optional folders, ReShade DLLs, and nvngx_dlss.dll
                     if (fileName.Equals("reshade.ini", StringComparison.OrdinalIgnoreCase)
                         || fileName.Equals("ReShade.ini", StringComparison.OrdinalIgnoreCase)
                         || fileName.Equals("README.txt", StringComparison.OrdinalIgnoreCase)
@@ -1190,7 +1204,8 @@ public class LumaService : ILumaService
                         || fileName.Equals("d3d12.dll", StringComparison.OrdinalIgnoreCase)
                         || fileName.Equals("d3d9.dll", StringComparison.OrdinalIgnoreCase)
                         || fileName.Equals("d3d8.dll", StringComparison.OrdinalIgnoreCase)
-                        || fileName.Equals("opengl32.dll", StringComparison.OrdinalIgnoreCase))
+                        || fileName.Equals("opengl32.dll", StringComparison.OrdinalIgnoreCase)
+                        || fileName.Equals("nvngx_dlss.dll", StringComparison.OrdinalIgnoreCase))
                         continue;
 
                     if (fileName.Equals("dxgi.dll", StringComparison.OrdinalIgnoreCase))

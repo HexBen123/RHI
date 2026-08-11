@@ -772,6 +772,23 @@ public partial class MainViewModel
             card.LumaActionMessage = "Luma installed!";
             card.FadeMessage(m => card.LumaActionMessage = m, card.LumaActionMessage);
 
+            // Deploy RHI's newest DLSS version (Luma bundles its own — RHI manages it instead)
+            try
+            {
+                card.LumaActionMessage = "Updating DLSS...";
+                var newestDlssPath = await _dlssStreamlineService.EnsureNewestDlssCachedAsync();
+                if (newestDlssPath != null && File.Exists(newestDlssPath))
+                {
+                    var targetDlssPath = Path.Combine(card.InstallPath, "nvngx_dlss.dll");
+                    File.Copy(newestDlssPath, targetDlssPath, overwrite: true);
+                    _crashReporter.Log($"[InstallLumaAsync] Deployed newest DLSS to '{targetDlssPath}'");
+                }
+            }
+            catch (Exception ex)
+            {
+                _crashReporter.Log($"[InstallLumaAsync] DLSS deploy failed for '{card.GameName}' — {ex.Message}");
+            }
+
             // Now install RHI's own ReShade (respects user's channel — Stable/Nightly)
             // Luma's bundled ReShade DLL was excluded from the zip — RHI manages ReShade.
             card.LumaActionMessage = "Installing ReShade...";
@@ -824,6 +841,19 @@ public partial class MainViewModel
                         RequestOverridesPanelRebuild?.Invoke(card);
                     }
                 }
+                else if (card.DetectedApis.Contains(GraphicsApiType.DirectX11)
+                         && card.DetectedApis.Contains(GraphicsApiType.DirectX12))
+                {
+                    // Dual-API game (DX11+DX12) — Luma requires DX11 mode, auto-set -dx11 if not already set
+                    var existing = _gameNameService.LaunchArgsOverrides.TryGetValue(card.GameName, out var vd) ? vd : "";
+                    if (string.IsNullOrWhiteSpace(existing))
+                    {
+                        _gameNameService.LaunchArgsOverrides[card.GameName] = "-dx11";
+                        SaveNameMappings();
+                        _crashReporter.Log($"[InstallLumaAsync] Auto-set -dx11 for dual-API game '{card.GameName}'");
+                        RequestOverridesPanelRebuild?.Invoke(card);
+                    }
+                }
             }
         }
         catch (Exception ex)
@@ -860,6 +890,17 @@ public partial class MainViewModel
                 _gameNameService.LaunchArgsOverrides.Remove(card.GameName);
                 SaveNameMappings();
                 _crashReporter.Log($"[UninstallLuma] Removed auto-set -dx11 launch arg for '{card.GameName}'");
+                RequestOverridesPanelRebuild?.Invoke(card);
+            }
+            else if (card.LumaMod?.IsGenericLuma == true
+                && _gameNameService.LaunchArgsOverrides.TryGetValue(card.GameName, out var dualArgs)
+                && string.Equals(dualArgs, "-dx11", StringComparison.OrdinalIgnoreCase)
+                && card.DetectedApis.Contains(GraphicsApiType.DirectX11)
+                && card.DetectedApis.Contains(GraphicsApiType.DirectX12))
+            {
+                _gameNameService.LaunchArgsOverrides.Remove(card.GameName);
+                SaveNameMappings();
+                _crashReporter.Log($"[UninstallLuma] Removed auto-set -dx11 for dual-API game '{card.GameName}'");
                 RequestOverridesPanelRebuild?.Invoke(card);
             }
 

@@ -1152,7 +1152,8 @@ public partial class MainViewModel
             }
             else if (LumaFeatureEnabled
                 && (engine == EngineType.Unreal || engine == EngineType.UnrealLegacy || newCard.EngineHint.Contains("Unreal"))
-                && newCard.GraphicsApi == GraphicsApiType.DirectX11)
+                && (newCard.GraphicsApi == GraphicsApiType.DirectX11
+                    || newCard.DetectedApis.Contains(GraphicsApiType.DirectX11)))
             {
                 // Check if the wiki entry explicitly blocks this game (⛔ DLSS/FSR AND no HDR either)
                 bool lumaBlocked = _lumaGenericEntries.TryGetValue(game.Name, out var blockCheck)
