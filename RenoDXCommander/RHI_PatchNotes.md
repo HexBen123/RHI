@@ -28,6 +28,7 @@ ReShade is now fully managed by RHI on all Luma games — your selected channel 
 ### Manifest Updates
 
 - Added Skyrim Creation Kit to the blacklist — it will no longer show up in your game library.
+- Added REANIMAL install warning — the game has native HDR, no RenoDX mod is needed.
 
 ---
 
