@@ -4,18 +4,17 @@
 
 RHI now supports Luma HDR for **all DX11 Unreal Engine games** — not just the named titles on the completed mods list. Every DX11 UE game in your library now shows a Luma row alongside RenoDX. Install it the same way you would any other component.
 
-Game-specific setup is handled automatically: if the Luma wiki lists Engine.ini tweaks for a game, they are written on install. If a game requires the `-dx11` launch argument to work correctly, RHI sets it for you.
+Game-specific setup is handled automatically: if the Luma wiki lists Engine.ini tweaks or a required launch argument for a game, RHI applies them on install.
 
-ReShade is now fully managed by RHI on all Luma games — your selected channel (Stable or Nightly) is deployed alongside Luma and kept up to date by Update All. Both RenoDX and Luma rows are always visible side by side — no ON/OFF toggle needed.
+ReShade and DLSS are now fully managed by RHI on all Luma games — your selected channel and the newest DLSS version are deployed alongside Luma and kept up to date by Update All. Both RenoDX and Luma rows are always visible side by side — no ON/OFF toggle needed.
 
 **More details:**
 - The Info button on the Luma row shows DLSS/FSR and HDR support flags scraped from the Luma wiki, plus any game-specific notes.
-- A TAA settings toggle is available in the Luma ⚙ cog. For games where the wiki recommends TAA Engine.ini keys, these are applied automatically on install and the toggle is set to On.
-- Games that need a specific launch argument (like `-dx11`) have it set automatically on Luma install and cleared on uninstall. Games that support both DX11 and DX12 also get `-dx11` set automatically, since Luma requires DX11 mode.
-- Games with both DX11 and DX12 support now show the Luma row — previously only pure DX11 games did.
+- A TAA settings toggle is available in the Luma ⚙ cog. For games where the wiki recommends TAA Engine.ini keys, these are applied automatically on install.
+- Games that support both DX11 and DX12 show the Luma row and get `-dx11` set automatically on install — Luma needs DX11 mode to run.
 - Installing both RenoDX and Luma on the same game shows a one-time compatibility warning — there's no guarantee they'll work together on every title.
-- Luma is now greyed out until ReShade is installed, consistent with RenoDX and the other ReShade-dependent components.
-- Uninstalling Luma no longer removes ReShade — both are managed independently.
+- Luma is greyed out until ReShade is installed, consistent with RenoDX and other ReShade-dependent components.
+- Uninstalling Luma no longer removes ReShade or DLSS — all three are managed independently.
 
 ### New
 
@@ -25,6 +24,10 @@ ReShade is now fully managed by RHI on all Luma games — your selected channel 
 
 - DOF Fix moved to a new Recommended section, above the frame limiters.
 - Simple View window is slightly taller.
+
+### Bug Fixes
+
+- Fixed many UE4 DX12 games incorrectly showing as DX11 — the PE scanner now reads delay-load imports, where UE4 games place their DX12 dependency.
 
 ### Manifest Updates
 

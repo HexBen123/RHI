@@ -762,6 +762,19 @@ public partial class MainViewModel
                 }
             }
 
+            // Strip DX11 from UE5+ games in cache phase too
+            if (engine == EngineType.Unreal
+                && newCard.EngineHint.Contains("Unreal Engine 5.", StringComparison.OrdinalIgnoreCase)
+                && !_apiOverrides.ContainsKey(game.Name)
+                && (_manifest?.GraphicsApiOverrides?.ContainsKey(game.Name) != true))
+            {
+                detectedApis.Remove(GraphicsApiType.DirectX11);
+                if (graphicsApi == GraphicsApiType.DirectX11)
+                    graphicsApi = GraphicsApiType.DirectX12;
+                newCard.DetectedApis = detectedApis;
+                newCard.GraphicsApi = graphicsApi;
+            }
+
             // Luma matching (in-memory only, no filesystem)
             var lumaMatch = MatchLumaGame(game.Name);
             if (lumaMatch != null)
@@ -780,7 +793,8 @@ public partial class MainViewModel
             else if (LumaFeatureEnabled
                 && (engine == EngineType.Unreal || engine == EngineType.UnrealLegacy)
                 && (graphicsApi == GraphicsApiType.DirectX11
-                    || detectedApis.Contains(GraphicsApiType.DirectX11)))
+                    || detectedApis.Contains(GraphicsApiType.DirectX11))
+                && !IsUe5OrHigher(game.Name))
             {
                 bool lumaBlocked = _lumaGenericEntries.TryGetValue(game.Name, out var blockCheck)
                     && blockCheck.DlssFsrBlocked && !blockCheck.HdrSupported;

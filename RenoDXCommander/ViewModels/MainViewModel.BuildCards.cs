@@ -739,6 +739,17 @@ public partial class MainViewModel
             }
 
             // ── Luma matching ──────────────────────────────────────────────────────
+            // Strip DX11 from UE5+ games — they default to DX12; DX11 is a legacy import shim
+            if (engine == EngineType.Unreal
+                && newCard.EngineHint.Contains("Unreal Engine 5.", StringComparison.OrdinalIgnoreCase)
+                && !_apiOverrides.ContainsKey(game.Name)
+                && (_manifest?.GraphicsApiOverrides?.ContainsKey(game.Name) != true))
+            {
+                newCard.DetectedApis.Remove(GraphicsApiType.DirectX11);
+                if (newCard.GraphicsApi == GraphicsApiType.DirectX11)
+                    newCard.GraphicsApi = GraphicsApiType.DirectX12;
+            }
+
             newCard.IsDualApiGame = GraphicsApiDetector.IsDualApi(newCard.DetectedApis);
 
             // Cache the API detection results for subsequent launches
@@ -1153,7 +1164,8 @@ public partial class MainViewModel
             else if (LumaFeatureEnabled
                 && (engine == EngineType.Unreal || engine == EngineType.UnrealLegacy || newCard.EngineHint.Contains("Unreal"))
                 && (newCard.GraphicsApi == GraphicsApiType.DirectX11
-                    || newCard.DetectedApis.Contains(GraphicsApiType.DirectX11)))
+                    || newCard.DetectedApis.Contains(GraphicsApiType.DirectX11))
+                && !IsUe5OrHigher(game.Name))
             {
                 // Check if the wiki entry explicitly blocks this game (⛔ DLSS/FSR AND no HDR either)
                 bool lumaBlocked = _lumaGenericEntries.TryGetValue(game.Name, out var blockCheck)
