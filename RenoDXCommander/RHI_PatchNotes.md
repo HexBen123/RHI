@@ -32,6 +32,7 @@
 - Added DOOM 64 Vulkan API override.
 - Added Mistfall Hunter engine version (Unreal Engine 5.7.4).
 - Added Skyrim Creation Kit to the blacklist — it will no longer show up in your game library.
+- Added REANIMAL install warning — the game has native HDR, no RenoDX mod is needed.
 
 ---
 

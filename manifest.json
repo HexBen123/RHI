@@ -723,6 +723,9 @@
     },
     "The Sinking City Remastered": {
       "reshade": "\u26A0\uFE0F amd_FusionFX.dll must be deleted from the game folder for frame generation to work."
+    },
+    "REANIMAL": {
+      "renodx": "REANIMAL has native HDR that is literally \u0022HDR Den made\u0022.\rThere is no need to add RenoDX to this game."
     }
   },
   "forceExternalOnly": {
