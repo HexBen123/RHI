@@ -121,7 +121,7 @@ public interface IOptiScalerService
     /// Copies OptiScaler.ini from the INIs_Folder to the game folder,
     /// enforcing LoadReshade=true.
     /// </summary>
-    void CopyIniToGame(GameCardViewModel card);
+    void CopyIniToGame(GameCardViewModel card, string? hotkey = null);
 
     // ── Detection ─────────────────────────────────────────────────────────────
 
@@ -169,4 +169,15 @@ public interface IOptiScalerService
     /// Updates ShortcutKey= in all game folders where OptiScaler is installed.
     /// </summary>
     void ApplyHotkeyToAllGames(string hotkeyValue);
+
+    /// <summary>
+    /// Copies all Streamline DLLs from the RHI Streamline staging folder to
+    /// <paramref name="installPath"/>\OptiScaler\Streamline\.
+    /// </summary>
+    void DeployStreamlineToGame(string installPath);
+
+    /// <summary>
+    /// Removes the OptiScaler\Streamline\ subfolder from the given game install path.
+    /// </summary>
+    void RemoveStreamlineFromGame(string installPath);
 }

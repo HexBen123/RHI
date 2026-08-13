@@ -395,8 +395,8 @@ public partial class DetailPanelBuilder
             _window.DetailOsInstallBtn.Opacity = osGreyed ? 0.35 : 1.0;
             _window.DetailOsInstallBtn.IsHitTestVisible = !osGreyed;
             _window.DetailOsIniBtn.Tag = card;
-            _window.DetailOsIniBtn.IsEnabled = card.OsIniExists;
-            _window.DetailOsIniBtn.Opacity = osGreyed ? 0.35 : (card.OsIniExists ? 1 : 0.3);
+            _window.DetailOsIniBtn.IsEnabled = !osGreyed;
+            _window.DetailOsIniBtn.Opacity = osGreyed ? 0.35 : 1.0;
             _window.DetailOsIniBtn.IsHitTestVisible = !osGreyed;
             _window.DetailOsDeleteBtn.Tag = card;
             var osShow = card.OsDeleteVisibility == Visibility.Visible;

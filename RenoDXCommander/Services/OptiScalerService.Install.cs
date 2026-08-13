@@ -920,7 +920,7 @@ public partial class OptiScalerService
     }
 
     /// <inheritdoc />
-    public void CopyIniToGame(GameCardViewModel card)
+    public void CopyIniToGame(GameCardViewModel card, string? hotkey = null)
     {
         if (string.IsNullOrEmpty(card.InstallPath)) return;
 
@@ -953,7 +953,10 @@ public partial class OptiScalerService
         var destIni = Path.Combine(card.InstallPath, IniFileName);
         File.Copy(sourceIni, destIni, overwrite: true);
         EnforceLoadReshade(destIni);
-        CrashReporter.Log($"[OptiScalerService.CopyIniToGame] Copied {Path.GetFileName(sourceIni)} → OptiScaler.ini in '{card.InstallPath}' with LoadReshade=true enforced.");
+        EnforceLoadAsiPlugins(destIni);
+        if (!string.IsNullOrEmpty(hotkey))
+            WriteShortcutKey(destIni, hotkey);
+        CrashReporter.Log($"[OptiScalerService.CopyIniToGame] Copied {Path.GetFileName(sourceIni)} → OptiScaler.ini in '{card.InstallPath}' with LoadReshade=true, LoadAsiPlugins=true enforced.");
     }
 
     /// <summary>

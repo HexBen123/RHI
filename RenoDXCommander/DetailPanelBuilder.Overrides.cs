@@ -132,14 +132,14 @@ public partial class DetailPanelBuilder
             PlaceholderText = "Select ReShade DLL name",
             Header = (object?)null,
             FontSize = 12,
-            IsEnabled = isDllOverride && !card.IsOsInstalled,
+            IsEnabled = isDllOverride,
             HorizontalAlignment = HorizontalAlignment.Stretch,
             ItemsSource = DllOverrideConstants.CommonDllNames,
         };
         if (card.IsOsInstalled)
         {
             ToolTipService.SetToolTip(rsNameBox,
-                "ReShade DLL name is controlled by OptiScaler. Uninstall OptiScaler to change the ReShade DLL name.");
+                "Override the ReShade DLL name. When OptiScaler is installed, ReShade is renamed to ReShade64.dll — this sets the name it will be restored to when OptiScaler is uninstalled.");
         }
         if (!string.IsNullOrEmpty(existingRsName))
         {

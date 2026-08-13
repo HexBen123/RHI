@@ -108,6 +108,7 @@ public partial class App : Application
         services.AddSingleton<IDlssStreamlineService, DlssStreamlineService>();
         services.AddSingleton<DlssPresetService>();
         services.AddSingleton<DofFixService>();
+        services.AddSingleton<DlssEnablerService>();
         services.AddSingleton<CustomReShadeHashService>();
         services.AddSingleton<SeenWikiModsService>();
         services.AddSingleton<SeenUltraPlusModsService>();

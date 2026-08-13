@@ -327,6 +327,18 @@ public partial class MainViewModel
                 }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Deferred ReShade sync failed — {ex.Message}"); }
 
+                // Redeploy Streamline to all games where it's enabled (after OptiScaler staging is ready)
+                try
+                {
+                    foreach (var card in _allCards.Where(c => c.IsOsInstalled && !string.IsNullOrEmpty(c.InstallPath)
+                        && GetOsDeployStreamline(c.GameName, c.Source ?? "")))
+                    {
+                        try { _optiScalerService.DeployStreamlineToGame(card.InstallPath!); }
+                        catch (Exception ex) { _crashReporter.Log($"[StreamlineRedeploy] Failed for '{card.GameName}' — {ex.Message}"); }
+                    }
+                }
+                catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Streamline redeploy loop failed — {ex.Message}"); }
+
                 if (_shaderPackReadyTask != null)
                 {
                     try { await _shaderPackReadyTask; }

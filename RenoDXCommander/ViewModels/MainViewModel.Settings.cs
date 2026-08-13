@@ -226,6 +226,135 @@ public partial class MainViewModel
         SaveNameMappings();
     }
 
+    // ── Deploy Streamline ─────────────────────────────────────────────────────
+
+    /// <summary>Returns whether Deploy Streamline is enabled for a game.</summary>
+    public bool GetOsDeployStreamline(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        return _gameNameService.OsDeployStreamline.Contains(key)
+            || _gameNameService.OsDeployStreamline.Contains(gameName);
+    }
+
+    /// <summary>Sets whether Deploy Streamline is enabled for a game.</summary>
+    public void SetOsDeployStreamline(string gameName, bool value, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (value)
+            _gameNameService.OsDeployStreamline.Add(key);
+        else
+        {
+            _gameNameService.OsDeployStreamline.Remove(key);
+            _gameNameService.OsDeployStreamline.Remove(gameName);
+        }
+        SaveNameMappings();
+    }
+
+    // ── Deploy DLSS Enabler ───────────────────────────────────────────────────
+
+    /// <summary>Returns whether Deploy DLSS Enabler is enabled for a game.</summary>
+    public bool GetOsDeployDlssEnabler(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        return _gameNameService.OsDeployDlssEnabler.Contains(key)
+            || _gameNameService.OsDeployDlssEnabler.Contains(gameName);
+    }
+
+    /// <summary>Sets whether Deploy DLSS Enabler is enabled for a game.</summary>
+    public void SetOsDeployDlssEnabler(string gameName, bool value, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (value)
+            _gameNameService.OsDeployDlssEnabler.Add(key);
+        else
+        {
+            _gameNameService.OsDeployDlssEnabler.Remove(key);
+            _gameNameService.OsDeployDlssEnabler.Remove(gameName);
+        }
+        SaveNameMappings();
+    }
+
+    // ── Dilated Motion Vectors ────────────────────────────────────────────────
+
+    /// <summary>Returns whether Dilated Motion Vectors is set to Off for a game.</summary>
+    public bool GetOsDilatedMotionVectorsOff(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        return _gameNameService.OsDilatedMotionVectorsOff.Contains(key)
+            || _gameNameService.OsDilatedMotionVectorsOff.Contains(gameName);
+    }
+
+    /// <summary>Sets whether Dilated Motion Vectors is Off for a game.</summary>
+    public void SetOsDilatedMotionVectorsOff(string gameName, bool value, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (value)
+            _gameNameService.OsDilatedMotionVectorsOff.Add(key);
+        else
+        {
+            _gameNameService.OsDilatedMotionVectorsOff.Remove(key);
+            _gameNameService.OsDilatedMotionVectorsOff.Remove(gameName);
+        }
+        SaveNameMappings();
+    }
+
+    // ── FSR Crash Fix ─────────────────────────────────────────────────────────
+
+    public string GetOsFsrCrashFix(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (_gameNameService.OsFsrCrashFix.TryGetValue(key, out var v)) return v;
+        if (_gameNameService.OsFsrCrashFix.TryGetValue(gameName, out var v2)) return v2;
+        return "None";
+    }
+
+    public void SetOsFsrCrashFix(string gameName, string? value, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (value == null || value == "None")
+        {
+            _gameNameService.OsFsrCrashFix.Remove(key);
+            _gameNameService.OsFsrCrashFix.Remove(gameName);
+        }
+        else
+            _gameNameService.OsFsrCrashFix[key] = value;
+        SaveNameMappings();
+    }
+
+    // ── FSR-FG Swapchain ──────────────────────────────────────────────────────
+
+    public bool GetOsFsrFgSwapchain(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        return _gameNameService.OsFsrFgSwapchain.Contains(key)
+            || _gameNameService.OsFsrFgSwapchain.Contains(gameName);
+    }
+
+    public void SetOsFsrFgSwapchain(string gameName, bool value, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (value) _gameNameService.OsFsrFgSwapchain.Add(key);
+        else { _gameNameService.OsFsrFgSwapchain.Remove(key); _gameNameService.OsFsrFgSwapchain.Remove(gameName); }
+        SaveNameMappings();
+    }
+
+    // ── Upscaler Plugin ───────────────────────────────────────────────────────
+
+    public bool GetOsUpscalerPlugin(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        return _gameNameService.OsUpscalerPlugin.Contains(key)
+            || _gameNameService.OsUpscalerPlugin.Contains(gameName);
+    }
+
+    public void SetOsUpscalerPlugin(string gameName, bool value, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (value) _gameNameService.OsUpscalerPlugin.Add(key);
+        else { _gameNameService.OsUpscalerPlugin.Remove(key); _gameNameService.OsUpscalerPlugin.Remove(gameName); }
+        SaveNameMappings();
+    }
+
     // ── DLL Naming Override ───────────────────────────────────────────────────────
 
     /// <summary>Per-game DLL naming overrides — delegated to DllOverrideService.</summary>

@@ -70,6 +70,24 @@ public class GameNameService : IGameNameService
     /// <summary>Games with RTX HDR enabled via NVIDIA driver profile.</summary>
     private HashSet<string> _rtxHdrGames = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Games where Streamline should be deployed to the OptiScaler subfolder. Composite-keyed "GameName|Store".</summary>
+    private HashSet<string> _osDeployStreamline = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Games where DLSS Enabler should be deployed to the OptiScaler subfolder. Composite-keyed "GameName|Store".</summary>
+    private HashSet<string> _osDeployDlssEnabler = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Games where Dilated Motion Vectors should be disabled (Off) in Engine.ini. Composite-keyed "GameName|Store".</summary>
+    private HashSet<string> _osDilatedMotionVectorsOff = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>FSR crash fix level per game. Key = "GameName|Store", Value = "FSR2", "FSR3", or "FSR3.1". Absent = None.</summary>
+    private Dictionary<string, string> _osFsrCrashFix = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Games where FSR-FG swapchain override is enabled in Engine.ini. Composite-keyed "GameName|Store".</summary>
+    private HashSet<string> _osFsrFgSwapchain = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Games where upscaler plugin is enabled via Engine.ini. Composite-keyed "GameName|Store".</summary>
+    private HashSet<string> _osUpscalerPlugin = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Maps current (renamed) game name → original store-detected name.</summary>
     private Dictionary<string, string> _originalDetectedNames = new(StringComparer.OrdinalIgnoreCase);
 
@@ -125,6 +143,24 @@ public class GameNameService : IGameNameService
     /// <summary>Games with RTX HDR enabled via NVIDIA driver profile.</summary>
     public HashSet<string> RtxHdrGames => _rtxHdrGames;
     public Dictionary<string, string> OriginalDetectedNames => _originalDetectedNames;
+
+    /// <summary>Games where Streamline should be deployed. Composite-keyed "GameName|Store".</summary>
+    public HashSet<string> OsDeployStreamline => _osDeployStreamline;
+
+    /// <summary>Games where DLSS Enabler should be deployed. Composite-keyed "GameName|Store".</summary>
+    public HashSet<string> OsDeployDlssEnabler => _osDeployDlssEnabler;
+
+    /// <summary>Games where Dilated Motion Vectors are set to Off in Engine.ini. Composite-keyed "GameName|Store".</summary>
+    public HashSet<string> OsDilatedMotionVectorsOff => _osDilatedMotionVectorsOff;
+
+    /// <summary>FSR crash fix level per game. Value = "FSR2", "FSR3", or "FSR3.1". Absent = None.</summary>
+    public Dictionary<string, string> OsFsrCrashFix => _osFsrCrashFix;
+
+    /// <summary>Games where FSR-FG swapchain override is enabled. Composite-keyed "GameName|Store".</summary>
+    public HashSet<string> OsFsrFgSwapchain => _osFsrFgSwapchain;
+
+    /// <summary>Games where upscaler plugin is enabled via Engine.ini. Composite-keyed "GameName|Store".</summary>
+    public HashSet<string> OsUpscalerPlugin => _osUpscalerPlugin;
 
     public GameNameService(
         IGameDetectionService gameDetectionService,
@@ -413,6 +449,25 @@ public class GameNameService : IGameNameService
         _rtxHdrGames = new HashSet<string>(
             Load<List<string>>("RtxHdrGames", _rtxHdrGames?.ToList() ?? new()), StringComparer.OrdinalIgnoreCase);
 
+        _osDeployStreamline = new HashSet<string>(
+            Load<List<string>>("OsDeployStreamline", new()), StringComparer.OrdinalIgnoreCase);
+
+        _osDeployDlssEnabler = new HashSet<string>(
+            Load<List<string>>("OsDeployDlssEnabler", new()), StringComparer.OrdinalIgnoreCase);
+
+        _osDilatedMotionVectorsOff = new HashSet<string>(
+            Load<List<string>>("OsDilatedMotionVectorsOff", new()), StringComparer.OrdinalIgnoreCase);
+
+        var osFsrCrashFixDict = Load<Dictionary<string, string>>("OsFsrCrashFix", new(StringComparer.OrdinalIgnoreCase));
+        _osFsrCrashFix = new(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in osFsrCrashFixDict) _osFsrCrashFix[kv.Key] = kv.Value;
+
+        _osFsrFgSwapchain = new HashSet<string>(
+            Load<List<string>>("OsFsrFgSwapchain", new()), StringComparer.OrdinalIgnoreCase);
+
+        _osUpscalerPlugin = new HashSet<string>(
+            Load<List<string>>("OsUpscalerPlugin", new()), StringComparer.OrdinalIgnoreCase);
+
         if (s.TryGetValue("ViewLayout", out var vlVal) && int.TryParse(vlVal, out var vlInt) && Enum.IsDefined(typeof(ViewLayout), vlInt))
             setViewLayout((ViewLayout)vlInt);
         else if (s.TryGetValue("GridLayout", out var glVal))  // backward compat
@@ -494,6 +549,12 @@ public class GameNameService : IGameNameService
                 s["HiddenGames"]         = JsonSerializer.Serialize(_hiddenGames?.ToList() ?? new List<string>());
                 s["FavouriteGames"]      = JsonSerializer.Serialize(_favouriteGames?.ToList() ?? new List<string>());
                 s["RtxHdrGames"]         = JsonSerializer.Serialize(_rtxHdrGames?.ToList() ?? new List<string>());
+                s["OsDeployStreamline"]  = JsonSerializer.Serialize(_osDeployStreamline.ToList());
+                s["OsDeployDlssEnabler"] = JsonSerializer.Serialize(_osDeployDlssEnabler.ToList());
+                s["OsDilatedMotionVectorsOff"] = JsonSerializer.Serialize(_osDilatedMotionVectorsOff.ToList());
+                s["OsFsrCrashFix"] = JsonSerializer.Serialize(_osFsrCrashFix);
+                s["OsFsrFgSwapchain"] = JsonSerializer.Serialize(_osFsrFgSwapchain.ToList());
+                s["OsUpscalerPlugin"] = JsonSerializer.Serialize(_osUpscalerPlugin.ToList());
                 s["ViewLayout"]          = ((int)currentViewLayout).ToString();
                 s["FilterMode"]          = filterMode;
                 s["CustomFilters"]       = JsonSerializer.Serialize(customFilters);
@@ -614,6 +675,12 @@ public class GameNameService : IGameNameService
         MigrateCompositeHashSet(_lumaEnabledGames, oldName, newName);
         MigrateCompositeHashSet(_lumaDisabledGames, oldName, newName);
         MigrateCompositeHashSet(_normalReShadeGames, oldName, newName);
+        MigrateCompositeHashSet(_osDeployStreamline, oldName, newName);
+        MigrateCompositeHashSet(_osDeployDlssEnabler, oldName, newName);
+        MigrateCompositeHashSet(_osDilatedMotionVectorsOff, oldName, newName);
+        MigrateCompositeDict(_osFsrCrashFix, oldName, newName);
+        MigrateCompositeHashSet(_osFsrFgSwapchain, oldName, newName);
+        MigrateCompositeHashSet(_osUpscalerPlugin, oldName, newName);
 
         // Migrate name-only HashSets (shared across stores)
         MigrateHashSet(_wikiExclusions, oldName, newName);

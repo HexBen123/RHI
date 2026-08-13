@@ -28,6 +28,8 @@ public sealed partial class MainWindow : Window
     private readonly IShaderPackService _shaderPackService;
     private readonly DlssPresetService _dlssPresetService;
     private readonly DofFixService _dofFixService;
+    private readonly DlssEnablerService _dlssEnablerService;
+    private readonly IOptiScalerService _optiScalerService;
     private readonly IAddonPackService _addonPackService;
     private readonly DetailPanelBuilder _detailPanelBuilder;
     private readonly DialogService _dialogService;
@@ -54,6 +56,8 @@ public sealed partial class MainWindow : Window
         _shaderPackService = App.Services.GetRequiredService<IShaderPackService>();
         _dlssPresetService = App.Services.GetRequiredService<DlssPresetService>();
         _dofFixService = App.Services.GetRequiredService<DofFixService>();
+        _dlssEnablerService = App.Services.GetRequiredService<DlssEnablerService>();
+        _optiScalerService = App.Services.GetRequiredService<IOptiScalerService>();
         _addonPackService = viewModel.AddonPackServiceInstance;
         InitializeComponent();
         // Hide immediately if starting minimized — must be before any Activate() call

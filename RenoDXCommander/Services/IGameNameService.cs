@@ -119,6 +119,24 @@ public interface IGameNameService
     /// <summary>Games with RTX HDR enabled via NVIDIA driver profile.</summary>
     HashSet<string> RtxHdrGames { get; }
 
+    /// <summary>Games where Streamline should be deployed to the OptiScaler subfolder. Composite-keyed "GameName|Store".</summary>
+    HashSet<string> OsDeployStreamline { get; }
+
+    /// <summary>Games where DLSS Enabler should be deployed to the OptiScaler subfolder. Composite-keyed "GameName|Store".</summary>
+    HashSet<string> OsDeployDlssEnabler { get; }
+
+    /// <summary>Games where Dilated Motion Vectors are set to Off in Engine.ini. Composite-keyed "GameName|Store".</summary>
+    HashSet<string> OsDilatedMotionVectorsOff { get; }
+
+    /// <summary>FSR crash fix level per game. Value = "FSR2", "FSR3", or "FSR3.1". Absent = None.</summary>
+    Dictionary<string, string> OsFsrCrashFix { get; }
+
+    /// <summary>Games where FSR-FG swapchain override is enabled. Composite-keyed "GameName|Store".</summary>
+    HashSet<string> OsFsrFgSwapchain { get; }
+
+    /// <summary>Games where upscaler plugin is enabled via Engine.ini. Composite-keyed "GameName|Store".</summary>
+    HashSet<string> OsUpscalerPlugin { get; }
+
     // ── Load / Save ───────────────────────────────────────────────────────────
 
     /// <summary>

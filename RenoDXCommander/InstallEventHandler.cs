@@ -260,6 +260,26 @@ public class InstallEventHandler
             card.OsActionMessage = "✅ OptiScaler installed!";
             card.NotifyAll();
             card.FadeMessage(m => card.OsActionMessage = m, card.OsActionMessage);
+
+            // ── Post-install: Deploy Streamline and DLSS Enabler if pre-enabled ──
+            if (osVariant == "Nightly" && !string.IsNullOrEmpty(card.InstallPath))
+            {
+                if (ViewModel.GetOsDeployStreamline(card.GameName, card.Source ?? ""))
+                {
+                    try { _optiScalerService.DeployStreamlineToGame(card.InstallPath); }
+                    catch (Exception ex) { CrashReporter.Log($"[InstallEventHandler] Streamline post-install deploy failed — {ex.Message}"); }
+                }
+                if (ViewModel.GetOsDeployDlssEnabler(card.GameName, card.Source ?? ""))
+                {
+                    try
+                    {
+                        var dlssEnablerService = App.Services.GetRequiredService<DlssEnablerService>();
+                        var optiScalerDir = Path.Combine(card.InstallPath, "OptiScaler");
+                        _ = dlssEnablerService.InstallAsync(optiScalerDir);
+                    }
+                    catch (Exception ex) { CrashReporter.Log($"[InstallEventHandler] DLSS Enabler post-install deploy failed — {ex.Message}"); }
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -305,12 +325,7 @@ public class InstallEventHandler
         if (string.IsNullOrEmpty(card.InstallPath)) return;
         try
         {
-            if (!File.Exists(Services.OptiScalerService.OsIniPath))
-            {
-                card.OsActionMessage = "❌ No OptiScaler.ini found in INIs folder.";
-                return;
-            }
-            _optiScalerService.CopyIniToGame(card);
+            _optiScalerService.CopyIniToGame(card, ViewModel.Settings.OsHotkey);
             card.OsActionMessage = "✅ OptiScaler.ini copied to game folder.";
             card.FadeMessage(m => card.OsActionMessage = m, card.OsActionMessage);
         }

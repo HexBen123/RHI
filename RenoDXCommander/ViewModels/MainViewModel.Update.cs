@@ -1,5 +1,6 @@
 ﻿// MainViewModel.Update.cs -- Update-all commands, update checking, UL caching, and version management.
 
+using Microsoft.Extensions.DependencyInjection;
 using RenoDXCommander.Models;
 using RenoDXCommander.Services;
 
@@ -1152,6 +1153,19 @@ public partial class MainViewModel
             catch (Exception ex)
             {
                 _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] OptiPatcher update check failed — {ex.Message}");
+            }
+
+            // Check DLSS Enabler update and auto-deploy if newer version available
+            try
+            {
+                var dlssEnablerService = App.Services.GetRequiredService<DlssEnablerService>();
+                bool deHasUpdate = await dlssEnablerService.CheckForUpdateAsync().ConfigureAwait(false);
+                if (deHasUpdate)
+                    await dlssEnablerService.EnsureStagingAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] DLSS Enabler check failed — {ex.Message}");
             }
         }
         catch (Exception ex)
