@@ -594,9 +594,71 @@ public partial class MainViewModel
     public bool IsLumaEnabled(string gameName, string store = "") =>
         _lumaEnabledGames.Contains(GameKey.From(gameName, store).ToKey());
 
+    /// <summary>
+    /// Re-evaluates Luma injection for a single card after an API override change.
+    /// Updates LumaMod and LumaRenodxCompatible without a full BuildCards run.
+    /// </summary>
+    public void ReevaluateLumaForCard(GameCardViewModel card)
+    {
+        if (card.LumaRecord != null || card.LumaStatus == GameStatus.Installed)
+            return; // Already has Luma — don't change it
+
+        var isUnreal = card.EngineHint?.Contains("Unreal") == true;
+        var isDx11 = card.DetectedApis.Contains(GraphicsApiType.DirectX11)
+                     || card.GraphicsApi == GraphicsApiType.DirectX11;
+        var isUe5 = card.EngineHint?.Contains("Unreal Engine 5.") == true;
+
+        // Named Luma match takes priority
+        var lumaMatch = MatchLumaGame(card.GameName);
+        if (lumaMatch != null)
+        {
+            card.LumaMod = lumaMatch;
+            card.LumaRenodxCompatible = true;
+            card.NotifyAll();
+            return;
+        }
+
+        // Generic Luma injection — DX11 UE games that are not UE5+
+        // Exception: if the user has explicitly overridden the API to DX11, allow even UE5 games
+        var hasExplicitDx11Override = GetApiOverride(card.GameName, card.Source ?? "")
+            ?.Contains("DirectX11", StringComparer.OrdinalIgnoreCase) == true;
+        if (LumaFeatureEnabled && isUnreal && isDx11 && (!isUe5 || hasExplicitDx11Override))
+        {
+            var blockCheck = _lumaGenericEntries.TryGetValue(card.GameName, out var bc)
+                && bc.DlssFsrBlocked && !bc.HdrSupported;
+            if (!blockCheck)
+            {
+                var genericLuma = new LumaMod
+                {
+                    Name = card.GameName,
+                    IsGenericLuma = true,
+                    DownloadUrl = "https://github.com/Filoppi/Luma-Framework/releases/latest/download/Luma-Unreal_Engine.zip",
+                    Status = "✅",
+                };
+                if (_lumaGenericEntries.TryGetValue(card.GameName, out var entry))
+                {
+                    genericLuma.SpecialNotes = entry.Notes;
+                }
+                card.LumaMod = genericLuma;
+                card.LumaRenodxCompatible = true;
+                card.LumaHdrSupported = _lumaGenericEntries.TryGetValue(card.GameName, out var e2) && e2.HdrSupported;
+                card.LumaDlssFsrSupported = _lumaGenericEntries.TryGetValue(card.GameName, out var e3) && e3.DlssFsrSupported;
+            }
+        }
+        else
+        {
+            // API is now DX12 or UE5 — remove generic Luma if it was there
+            if (card.LumaMod?.IsGenericLuma == true)
+            {
+                card.LumaMod = null;
+                card.LumaRenodxCompatible = false;
+            }
+        }
+        card.NotifyAll();
+    }
+
     /// <summary>Returns true when Luma TAA Engine.ini settings are deployed for this game.</summary>
-    public bool IsLumaTaaEnabled(string gameName) =>
-        _gameNameService.LumaTaaEnabled.Contains(gameName);
+    public bool IsLumaTaaEnabled(string gameName) =>        _gameNameService.LumaTaaEnabled.Contains(gameName);
 
     /// <summary>Sets the Luma TAA enabled state and persists it.</summary>
     public void SetLumaTaaEnabled(string gameName, bool enabled)

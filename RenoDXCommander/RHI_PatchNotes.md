@@ -1,3 +1,13 @@
+## v2.3.3-beta3
+
+### Changes from beta2
+
+- UE5 games no longer show a Luma row by default — Unreal Engine 5 games use DX12, and generic Luma only supports DX11. If a UE5 game actually runs in DX11 mode, set the Graphics API override to DirectX11 in Game Overrides and the Luma row will appear.
+- Fixed UE-Extended toggling off after a background refresh for games that have both a named wiki mod and a user opt-in.
+- Fixed several UE4 games incorrectly showing DX12 when they actually default to DX11 (delay-load scan was too aggressive).
+
+---
+
 ## v2.3.3-beta2
 
 ### ✦ Generic Luma for Unreal Engine games
@@ -15,6 +25,7 @@ ReShade and DLSS are now fully managed by RHI on all Luma games — your selecte
 - Installing both RenoDX and Luma on the same game shows a one-time compatibility warning — there's no guarantee they'll work together on every title.
 - Luma is greyed out until ReShade is installed, consistent with RenoDX and other ReShade-dependent components.
 - Uninstalling Luma no longer removes ReShade or DLSS — all three are managed independently.
+- Luma is only offered for DX11 Unreal Engine games. UE5 games use DX12 by default and don't show a Luma row — if you need DX11 mode, set the Graphics API override in Game Overrides first.
 
 ### New
 

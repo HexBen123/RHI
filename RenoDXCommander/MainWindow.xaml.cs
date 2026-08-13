@@ -192,6 +192,14 @@ public sealed partial class MainWindow : Window
         ViewModel.ShowVulkanAdminRequiredDialog = _dialogService.ShowVulkanAdminRequiredDialogAsync;
         ViewModel.RequestOverridesPanelRebuild = card =>
             DispatcherQueue.TryEnqueue(() => BuildOverridesPanel(card));
+        ViewModel.RequestCardRebuild = card =>
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                // Re-evaluate Luma injection for this card after an API override change.
+                // This updates LumaMod/LumaRenodxCompatible without a full Refresh.
+                ViewModel.ReevaluateLumaForCard(card);
+                PopulateDetailPanel(card);
+            });
         ViewModel.ShowShaderSelectionPicker = async (current) =>
             await ShaderPopupHelper.ShowAsync(Content.XamlRoot, _shaderPackService, current, ShaderPopupHelper.PopupContext.Global);
         ViewModel.ShowPerGameShaderSelectionPicker = async (gameName, current) =>

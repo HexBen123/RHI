@@ -258,9 +258,11 @@ public static class GraphicsApiDetector
             if (importsDxgi && bestPriority < Priority[GraphicsApiType.DirectX11])
                 return GraphicsApiType.DirectX12;
 
-            // Scan delay-load import table — UE4/UE5 DX12 games delay-load d3d12.dll
-            // so it doesn't appear in the regular import table but is still there.
-            if (delayImportRva != 0)
+            // Scan delay-load import table ONLY when no explicit DX11+ was found in regular imports.
+            // UE4 games that support DX12 optionally but default to DX11 explicitly import d3d11.dll —
+            // delay-load scanning would incorrectly promote them to DX12.
+            // Only apply if bestApi is Unknown or a legacy API (DX9/DX8/DX10/OpenGL).
+            if (delayImportRva != 0 && bestPriority < Priority[GraphicsApiType.DirectX11])
             {
                 long delayFileOffset = RvaToFileOffset(sections, delayImportRva);
                 if (delayFileOffset >= 0)

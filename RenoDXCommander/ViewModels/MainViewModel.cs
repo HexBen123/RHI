@@ -214,6 +214,12 @@ public partial class MainViewModel : ObservableObject
     public Action<GameCardViewModel>? RequestOverridesPanelRebuild { get; set; }
 
     /// <summary>
+    /// Callback set by the UI layer to trigger a single-card rebuild after API override changes.
+    /// Re-evaluates Luma injection and UE5 DX11 suppression for the affected card.
+    /// </summary>
+    public Action<GameCardViewModel>? RequestCardRebuild { get; set; }
+
+    /// <summary>
     /// Async callback set by the UI layer. Shows the global shader selection picker.
     /// Takes the current selection, returns the confirmed selection or null on cancel.
     /// </summary>

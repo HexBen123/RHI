@@ -1004,12 +1004,17 @@ public partial class DetailPanelBuilder
                 targetCard.IsDualApiGame = GraphicsApiDetector.IsDualApi(targetCard.DetectedApis);
                 targetCard.GraphicsApi = _window.ViewModel.DetectGraphicsApi(
                     targetCard.InstallPath, EngineType.Unknown, capturedName, targetCard.Source);
+
+                // Re-evaluate Luma injection inline (synchronous) so LumaMod is updated
+                // before the panel rebuilds.
+                _window.ViewModel.ReevaluateLumaForCard(targetCard);
+
                 targetCard.NotifyAll();
 
-                // Rebuild the detail panel so install buttons reflect the new API
-                // (e.g., Vulkan games need the global layer install instead of per-game DLL)
-                _window.RequestReselect(capturedName);
-            }
+                // Rebuild the detail panel immediately — don't rely on RequestReselect
+                // since it's a no-op when the game is already selected.
+                _window.PopulateDetailPanel(targetCard);
+                _window.RequestReselect(capturedName);            }
         };
 
         // Add API dropdown to bitness panel (right column, side by side)

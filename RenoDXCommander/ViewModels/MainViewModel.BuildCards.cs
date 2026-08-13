@@ -445,9 +445,11 @@ public partial class MainViewModel
                     DiscordUrl = "https://discord.gg/gF4GRJWZ2A",
                 };
             }
-            bool useUeExt = !noUeExtended && (!hasNamedMod || isNativeHdr) && !hasNamedAddonOnDisk
+            // User explicit opt-in bypasses the hasNamedMod gate
+            bool userExplicitUeExt = IsUeExtendedGameMatch(game.Name);
+            bool useUeExt = !noUeExtended && (!hasNamedMod || isNativeHdr || userExplicitUeExt) && !hasNamedAddonOnDisk
                          && ((addonOnDisk == UeExtendedFile)
-                             || IsUeExtendedGameMatch(game.Name)
+                             || userExplicitUeExt
                              || isNativeHdr
                              || (effectiveMod?.IsGenericUnreal == true));
             if (useUeExt && effectiveMod != null)
@@ -738,11 +740,13 @@ public partial class MainViewModel
                 }
             }
 
-            // ── Luma matching ──────────────────────────────────────────────────────
             // Strip DX11 from UE5+ games — they default to DX12; DX11 is a legacy import shim
+            // Skip if user or manifest explicitly overrode the API
+            var ue5ApiKey = GameKey.FromCard(game.Name, game.Source).ToKey();
+            bool hasUserApiOverride = _apiOverrides.ContainsKey(ue5ApiKey) || _apiOverrides.ContainsKey(game.Name);
             if (engine == EngineType.Unreal
                 && newCard.EngineHint.Contains("Unreal Engine 5.", StringComparison.OrdinalIgnoreCase)
-                && !_apiOverrides.ContainsKey(game.Name)
+                && !hasUserApiOverride
                 && (_manifest?.GraphicsApiOverrides?.ContainsKey(game.Name) != true))
             {
                 newCard.DetectedApis.Remove(GraphicsApiType.DirectX11);
@@ -1165,7 +1169,7 @@ public partial class MainViewModel
                 && (engine == EngineType.Unreal || engine == EngineType.UnrealLegacy || newCard.EngineHint.Contains("Unreal"))
                 && (newCard.GraphicsApi == GraphicsApiType.DirectX11
                     || newCard.DetectedApis.Contains(GraphicsApiType.DirectX11))
-                && !IsUe5OrHigher(game.Name))
+                && (!IsUe5OrHigher(game.Name) || hasUserApiOverride))
             {
                 // Check if the wiki entry explicitly blocks this game (⛔ DLSS/FSR AND no HDR either)
                 bool lumaBlocked = _lumaGenericEntries.TryGetValue(game.Name, out var blockCheck)

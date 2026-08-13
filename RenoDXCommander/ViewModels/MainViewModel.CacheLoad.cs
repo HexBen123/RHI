@@ -763,9 +763,11 @@ public partial class MainViewModel
             }
 
             // Strip DX11 from UE5+ games in cache phase too
+            var clApiKey = GameKey.FromCard(game.Name, game.Source).ToKey();
+            bool clHasUserApiOverride = _apiOverrides.ContainsKey(clApiKey) || _apiOverrides.ContainsKey(game.Name);
             if (engine == EngineType.Unreal
                 && newCard.EngineHint.Contains("Unreal Engine 5.", StringComparison.OrdinalIgnoreCase)
-                && !_apiOverrides.ContainsKey(game.Name)
+                && !clHasUserApiOverride
                 && (_manifest?.GraphicsApiOverrides?.ContainsKey(game.Name) != true))
             {
                 detectedApis.Remove(GraphicsApiType.DirectX11);
