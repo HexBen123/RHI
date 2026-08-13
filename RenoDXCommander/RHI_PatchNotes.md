@@ -1,3 +1,17 @@
+## v2.3.3-beta4
+
+### Changes from beta3
+
+- Fixed startup scan slowness for games not on Steam or PCGamingWiki — RHI was making live HTTP requests to Steam and PCGW for every unrecognised game on every launch. Results are now cached so the lookup only happens once.
+- Fixed DLSS path matching incorrectly invalidating the fast-path cache every session due to path casing differences and mixed forward/backslash separators. Affected games like Nioh 3, AC Black Flag Resynced, and several others were doing a full recursive scan on every launch despite having unchanged installations.
+- Graphics API override to DirectX11 on a UE5 game now correctly shows the Luma row.
+
+### Maintenance
+
+- Session logs now include per-section timing for any game where a build phase takes over 50ms, making it easier to diagnose startup slowness from user-submitted logs.
+
+---
+
 ## v2.3.3-beta3
 
 ### Changes from beta2

@@ -463,8 +463,10 @@ public partial class DlssStreamlineService : IDlssStreamlineService
         EnsureTrustedCacheLoaded();
         if (_trustedPathCache!.TryGetValue(gameName, out var existing))
         {
-            if (existing.DlssPath == detection.DlssPath && existing.DlssdPath == detection.DlssdPath
-                && existing.DlssgPath == detection.DlssgPath && existing.StreamlineFolder == detection.StreamlineFolder)
+            if (string.Equals(existing.DlssPath, detection.DlssPath, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(existing.DlssdPath, detection.DlssdPath, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(existing.DlssgPath, detection.DlssgPath, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(existing.StreamlineFolder, detection.StreamlineFolder, StringComparison.OrdinalIgnoreCase))
                 existing.ConfirmCount++;
             else
             {
@@ -497,15 +499,25 @@ public partial class DlssStreamlineService : IDlssStreamlineService
     /// <summary>Checks if all non-null paths in the entry are within the given root directory.</summary>
     private static bool PathsAreWithin(TrustedPathEntry entry, string root)
     {
-        var normalizedRoot = root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+        // Normalize to backslashes so mixed forward/backslash paths don't cause false mismatches
+        var normalizedRoot = root.Replace('/', '\\').TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
             + Path.DirectorySeparatorChar;
-        if (entry.DlssPath != null && !entry.DlssPath.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase))
+        var dlssPath = entry.DlssPath?.Replace('/', '\\');
+        var dlssdPath = entry.DlssdPath?.Replace('/', '\\');
+        var dlssgPath = entry.DlssgPath?.Replace('/', '\\');
+        var streamlineFolder = entry.StreamlineFolder?.Replace('/', '\\');
+
+        if (dlssPath != null && !dlssPath.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase))
             return false;
-        if (entry.DlssdPath != null && !entry.DlssdPath.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase))
+        if (dlssdPath != null && !dlssdPath.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase))
             return false;
-        if (entry.DlssgPath != null && !entry.DlssgPath.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase))
+        if (dlssgPath != null && !dlssgPath.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase))
             return false;
-        if (entry.StreamlineFolder != null && !entry.StreamlineFolder.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase))
+        if (streamlineFolder != null
+            && !streamlineFolder.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(streamlineFolder.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                              root.Replace('/', '\\').TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                              StringComparison.OrdinalIgnoreCase))
             return false;
         return true;
     }

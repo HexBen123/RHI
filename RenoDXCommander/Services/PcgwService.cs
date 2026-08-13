@@ -90,14 +90,18 @@ public class PcgwService : IPcgwService
             return overrideUrl;
         }
 
-        // 2. Resolve Steam AppID via the priority chain (passing our cache).
+        // 2. Check for cached negative result — avoids HTTP calls every session for non-Steam/non-PCGW games.
+        var normalized = _gameDetection.NormalizeName(gameName);
+        if (!string.IsNullOrEmpty(normalized) && _appIdCache.TryGetValue(normalized, out var cachedId) && cachedId == -1)
+            return null;
+
+        // 3. Resolve Steam AppID via the priority chain (passing our cache).
         var appId = await _steamAppIdResolver.ResolveAsync(
             gameName, steamAppId, installPath, manifest, _appIdCache).ConfigureAwait(false);
 
         if (appId.HasValue)
         {
             // Persist to cache.
-            var normalized = _gameDetection.NormalizeName(gameName);
             if (!string.IsNullOrEmpty(normalized))
             {
                 _appIdCache[normalized] = appId.Value;
@@ -107,8 +111,17 @@ public class PcgwService : IPcgwService
             return BuildAppIdUrl(appId.Value);
         }
 
-        // 3. OpenSearch fallback (no AppID resolved).
-        return await OpenSearchFallbackAsync(gameName).ConfigureAwait(false);
+        // 4. OpenSearch fallback (no AppID resolved).
+        var result = await OpenSearchFallbackAsync(gameName).ConfigureAwait(false);
+
+        // Cache negative result so we don't retry HTTP calls next session.
+        if (result == null && !string.IsNullOrEmpty(normalized))
+        {
+            _appIdCache[normalized] = -1;
+            await SaveCacheAsync().ConfigureAwait(false);
+        }
+
+        return result;
     }
 
     /// <summary>
@@ -183,6 +196,19 @@ public class PcgwService : IPcgwService
             _pcgwDown = true;
             try { _pcgwCts.Cancel(); } catch { }
             return null;
+        }
+    }
+
+    /// <inheritdoc />
+    public void ClearNegativeCache()
+    {
+        var negativeKeys = _appIdCache.Where(kv => kv.Value == -1).Select(kv => kv.Key).ToList();
+        foreach (var key in negativeKeys)
+            _appIdCache.Remove(key);
+        if (negativeKeys.Count > 0)
+        {
+            WriteCacheToDisk();
+            CrashReporter.Log($"[PcgwService.ClearNegativeCache] Cleared {negativeKeys.Count} negative sentinel(s)");
         }
     }
 

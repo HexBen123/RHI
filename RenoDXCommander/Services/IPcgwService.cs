@@ -27,4 +27,11 @@ public interface IPcgwService
     /// Call during app shutdown to ensure pending debounced writes are flushed.
     /// </summary>
     Task FlushCacheAsync();
+
+    /// <summary>
+    /// Removes all negative sentinel (-1) entries from the cache so games that
+    /// previously had no Steam AppID or PCGW page are retried on the next launch.
+    /// Called on Full Refresh.
+    /// </summary>
+    void ClearNegativeCache();
 }

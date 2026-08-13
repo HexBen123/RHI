@@ -199,6 +199,16 @@ public partial class MainViewModel
         {
             var gameStopwatch = System.Diagnostics.Stopwatch.StartNew();
             var (game, installPath, engine, mod, origFallback, detectedMachine, engineOverrideLabel) = item;
+
+            // ── Targeted timing for slow games ───────────────────────────────────
+            var phaseTimer = System.Diagnostics.Stopwatch.StartNew();
+            void LogPhase(string phase)
+            {
+                var ms = phaseTimer.ElapsedMilliseconds;
+                if (ms > 50) _crashReporter.Log($"[BuildCards.Phase] '{game.Name}' — {phase} took {ms}ms");
+                phaseTimer.Restart();
+            }
+            // ─────────────────────────────────────────────────────────────────────
             // Always show every detected game — even if no wiki mod exists.
             // The card will have no install button if there's no snapshot URL,
             // but a RenoDX addon already on disk will still be detected and shown.
@@ -331,6 +341,7 @@ public partial class MainViewModel
                 safeAddonCache[cacheKey] = addonOnDisk != null;
             }
             newAddonFileCache[cacheKey] = addonOnDisk ?? "";
+            LogPhase("AddonScan");
 
             if (addonOnDisk != null && record == null)
             {
@@ -632,6 +643,7 @@ public partial class MainViewModel
 
             // Pre-compute Luma match before card initializer (needed for LumaRenodxCompatible)
             var lumaMatch = MatchLumaGame(game.Name);
+            LogPhase("LumaMatch");
 
             var newCard = new GameCardViewModel
             {
@@ -788,6 +800,7 @@ public partial class MainViewModel
                     newCard.UlInstalledVersion = ReadUlInstalledVersion(newCard.Is32Bit);
                 }
             }
+            LogPhase("ReLimiter");
 
             // ── Display Commander detection ────────────────────────────────────
             if (!string.IsNullOrEmpty(installPath) && Directory.Exists(installPath))
@@ -894,6 +907,7 @@ public partial class MainViewModel
                     }
                 }
             }
+            LogPhase("DC");
 
             // ── OptiScaler detection ───────────────────────────────────────
             if (!string.IsNullOrEmpty(installPath) && Directory.Exists(installPath) && !newCard.Is32Bit)
@@ -1038,6 +1052,7 @@ public partial class MainViewModel
                     newCard.RefInstalledVersion = refRec.InstalledVersion;
                 }
             }
+            LogPhase("OptiScaler");
 
             // ── DXVK detection ─────────────────────────────────────────────────
             if (!string.IsNullOrEmpty(installPath) && Directory.Exists(installPath))
@@ -1104,6 +1119,7 @@ public partial class MainViewModel
                 newCard.EngineHint = evOverride;
 
             // ── DOF Fix detection ────────────────────────────────────────────────
+            LogPhase("DXVK");
             newCard.IsDofFixEligible = _dofFixService.IsGameEligible(newCard.EngineHint, newCard.Is32Bit, game.Name);
             if (newCard.IsDofFixEligible && !string.IsNullOrEmpty(installPath) && Directory.Exists(installPath))
             {
@@ -1115,6 +1131,7 @@ public partial class MainViewModel
             }
 
             // ── DLSS / Streamline detection ──────────────────────────────────────
+            LogPhase("DofFix+CardInit");
             bool dlssSkipped = _manifest?.DlssSkipGames?.Contains(game.Name, StringComparer.OrdinalIgnoreCase) == true
                 || _dlssStreamlineService.ShouldSkipScan(game.Name);
             if (!dlssSkipped && !string.IsNullOrEmpty(installPath) && Directory.Exists(installPath))
@@ -1157,6 +1174,7 @@ public partial class MainViewModel
             {
                 newCard.LumaMod = lumaMatch;
                 newCard.IsLumaMode = false;
+                LogPhase("DLSS");
                 // Check if Luma is installed on disk
                 var lumaRec = LumaService.GetRecordByPath(installPath);
                 if (lumaRec != null)

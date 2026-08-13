@@ -160,24 +160,90 @@ public partial class DlssPresetService
         };
     }
 
+    // ── Persistent profile name cache ────────────────────────────────────────
+    // Stores gameName → NVIDIA profile name across sessions so the expensive
+    // recursive exe scan only runs once per game (cleared on Full Refresh).
+    // null value = confirmed no profile found (also cached to avoid re-scanning).
+
+    private static readonly string ProfileNameCachePath =
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "RHI", "nvidia_profile_cache.json");
+
+    private Dictionary<string, string?>? _persistentProfileNameCache;
+
+    private void EnsurePersistentProfileCacheLoaded()
+    {
+        if (_persistentProfileNameCache != null) return;
+        try
+        {
+            if (File.Exists(ProfileNameCachePath))
+                _persistentProfileNameCache = System.Text.Json.JsonSerializer
+                    .Deserialize<Dictionary<string, string?>>(File.ReadAllText(ProfileNameCachePath))
+                    ?? new Dictionary<string, string?>();
+            else
+                _persistentProfileNameCache = new Dictionary<string, string?>();
+        }
+        catch
+        {
+            _persistentProfileNameCache = new Dictionary<string, string?>();
+        }
+    }
+
+    private void SavePersistentProfileCache()
+    {
+        try
+        {
+            File.WriteAllText(ProfileNameCachePath,
+                System.Text.Json.JsonSerializer.Serialize(_persistentProfileNameCache,
+                    new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+        }
+        catch { }
+    }
+
+    public void ClearProfileNameCache()
+    {
+        _persistentProfileNameCache = new Dictionary<string, string?>();
+        try { if (File.Exists(ProfileNameCachePath)) File.Delete(ProfileNameCachePath); } catch { }
+        CrashReporter.Log("[DlssPresetService.ClearProfileNameCache] Persistent profile name cache cleared");
+    }
+
+    // ── Profile lookup ────────────────────────────────────────────────────────
+
     /// <summary>
     /// Finds the NVIDIA driver profile for a game by matching title or exe names.
+    /// Checks the persistent on-disk cache before doing the expensive exe scan.
     /// </summary>
     private DriverSettingsProfile? FindProfile(string gameName, string installPath)
     {
         if (_cachedProfiles == null) return null;
 
-        // Check the per-game lookup cache first (avoids repeated expensive scanning)
+        // Check the in-memory per-session lookup cache first
         if (_profileLookupCache.TryGetValue(gameName, out var cached))
             return cached;
 
+        // Check the persistent across-session name cache
+        EnsurePersistentProfileCacheLoaded();
+        if (_persistentProfileNameCache!.TryGetValue(gameName, out var cachedProfileName))
+        {
+            // null = confirmed miss (no profile exists for this game)
+            var profile = cachedProfileName != null && _cachedProfiles.TryGetValue(cachedProfileName, out var p) ? p : null;
+            _profileLookupCache[gameName] = profile;
+            return profile;
+        }
+
+        // Cache miss — run the full matching logic
         var result = FindProfileUncached(gameName, installPath);
+
+        // Persist the result (profile name or null for confirmed miss)
+        _persistentProfileNameCache[gameName] = result?.Name;
+        SavePersistentProfileCache();
+
         _profileLookupCache[gameName] = result;
         return result;
     }
 
     /// <summary>
-    /// The actual profile matching logic — called once per game, result is cached.
+    /// The actual profile matching logic — called once per game per install, result is cached.
     /// </summary>
     private DriverSettingsProfile? FindProfileUncached(string gameName, string installPath)
     {
@@ -352,6 +418,11 @@ public partial class DlssPresetService
             // Cache the new profile under both the sanitized name and original game name
             _cachedProfiles.TryAdd(profileName, profile);
             _profileLookupCache[gameName] = profile; // Map original game name to the profile
+
+            // Update persistent cache with the new profile name
+            EnsurePersistentProfileCacheLoaded();
+            _persistentProfileNameCache![gameName] = profileName;
+            SavePersistentProfileCache();
 
             CrashReporter.Log($"[DlssPresetService.CreateProfileForGame] Created profile '{gameName}' with app '{gameExe}'");
             ProfilesCreatedCount++;

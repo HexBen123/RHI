@@ -178,6 +178,8 @@ public partial class MainViewModel
             _gameApiCache.Clear();
             GraphicsApiDetector.ClearCache();
             _gameDetectionService.ClearEngineCache();
+            _dlssPresetService.ClearProfileNameCache();
+            _pcgwService.ClearNegativeCache();
         }
 
         try
