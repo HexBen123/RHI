@@ -1932,6 +1932,17 @@ public sealed partial class MainWindow
         {
             var selected = variantCombo.SelectedItem as string ?? "Stable";
             ViewModel.SetOsVariant(card.GameName, selected == "Stable" ? null : selected, card.Source ?? "");
+
+            // If OptiScaler is currently installed, uninstall it so the user reinstalls on the new channel
+            if (card.IsOsInstalled && !string.IsNullOrEmpty(card.InstallPath))
+            {
+                try
+                {
+                    _optiScalerService.Uninstall(card);
+                    card.NotifyAll();
+                }
+                catch (Exception ex) { CrashReporter.Log($"[OsCog] Uninstall on channel switch failed — {ex.Message}"); }
+            }
         };
         content.Children.Add(variantPanel);
 
@@ -2037,65 +2048,65 @@ public sealed partial class MainWindow
 
             // ── Dilated Motion Vectors row — only for Unreal Engine games ───────
             bool isUnrealGame = card.EngineHint?.Contains("Unreal", StringComparison.OrdinalIgnoreCase) == true;
-            if (isUnrealGame)
-            {
-            var dmvPanel = new Grid { ColumnSpacing = 12 };
-            dmvPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            dmvPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            var dmvLabel = new TextBlock
-            {
-                Text = "Dilated Motion Vectors",
-                FontSize = 12,
-                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-                VerticalAlignment = VerticalAlignment.Center,
-            };
-            Grid.SetColumn(dmvLabel, 0);
-            dmvPanel.Children.Add(dmvLabel);
-            var dmvCombo = new ComboBox
-            {
-                ItemsSource = new[] { "Default", "Off" },
-                SelectedItem = ViewModel.GetOsDilatedMotionVectorsOff(card.GameName, card.Source ?? "") ? "Off" : "Default",
-                FontSize = 12,
-                MinWidth = 100,
-                HorizontalAlignment = HorizontalAlignment.Right,
-            };
-            Grid.SetColumn(dmvCombo, 1);
-            dmvPanel.Children.Add(dmvCombo);
-            ToolTipService.SetToolTip(dmvCombo, "Off writes r.NGX.DLSS.DilateMotionVectors=0 and r.Streamline.DilateMotionVectors=0 to Engine.ini.");
-            content.Children.Add(dmvPanel);
 
-            dmvCombo.SelectionChanged += (s, ev) =>
-            {
-                bool isOff = dmvCombo.SelectedItem as string == "Off";
-                ViewModel.SetOsDilatedMotionVectorsOff(card.GameName, isOff, card.Source ?? "");
-                if (!string.IsNullOrEmpty(card.InstallPath))
-                {
-                    var dmvKeys = new (string Section, string Key, string Value)[]
-                    {
-                        ("SystemSettings", "r.NGX.DLSS.DilateMotionVectors", "0"),
-                        ("SystemSettings", "r.Streamline.DilateMotionVectors", "0"),
-                    };
-                    try
-                    {
-                        if (isOff)
-                            AuxInstallService.ApplyEngineIniCustomKeys(
-                                card.InstallPath, dmvKeys,
-                                card.EngineIniProjectOverride, card.GameName, card.Source);
-                        else
-                            AuxInstallService.RemoveEngineIniCustomKeys(
-                                card.InstallPath,
-                                dmvKeys.Select(k => k.Key),
-                                card.EngineIniProjectOverride, card.GameName, card.Source);
-                    }
-                    catch (Exception ex) { CrashReporter.Log($"[OsCog] DMV Engine.ini update failed — {ex.Message}"); }
-                }
-            };
-            } // end isUnrealGame
-
-            // ── FSR Crash Fix, FSR-FG Swapchain, Upscaler Plugin — UE games only ──
+            // ── FSR Crash Fix, FSR-FG Swapchain, Upscaler Plugin, DMV — UE games only ──
             if (isUnrealGame)
             {
                 content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 4, 0, 4) });
+
+                // Dilated Motion Vectors
+                var dmvPanel = new Grid { ColumnSpacing = 12 };
+                dmvPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                dmvPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                var dmvLabel = new TextBlock
+                {
+                    Text = "Dilated Motion Vectors",
+                    FontSize = 12,
+                    Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+                    VerticalAlignment = VerticalAlignment.Center,
+                };
+                Grid.SetColumn(dmvLabel, 0);
+                dmvPanel.Children.Add(dmvLabel);
+                var dmvCombo = new ComboBox
+                {
+                    ItemsSource = new[] { "Default", "Off" },
+                    SelectedItem = ViewModel.GetOsDilatedMotionVectorsOff(card.GameName, card.Source ?? "") ? "Off" : "Default",
+                    FontSize = 12,
+                    MinWidth = 100,
+                    HorizontalAlignment = HorizontalAlignment.Right,
+                };
+                Grid.SetColumn(dmvCombo, 1);
+                dmvPanel.Children.Add(dmvCombo);
+                ToolTipService.SetToolTip(dmvCombo, "Off writes r.NGX.DLSS.DilateMotionVectors=0 and r.Streamline.DilateMotionVectors=0 to Engine.ini.");
+                content.Children.Add(dmvPanel);
+
+                dmvCombo.SelectionChanged += (s, ev) =>
+                {
+                    bool isOff = dmvCombo.SelectedItem as string == "Off";
+                    ViewModel.SetOsDilatedMotionVectorsOff(card.GameName, isOff, card.Source ?? "");
+                    if (!string.IsNullOrEmpty(card.InstallPath))
+                    {
+                        var dmvKeys = new (string Section, string Key, string Value)[]
+                        {
+                            ("SystemSettings", "r.NGX.DLSS.DilateMotionVectors", "0"),
+                            ("SystemSettings", "r.Streamline.DilateMotionVectors", "0"),
+                        };
+                        try
+                        {
+                            if (isOff)
+                                AuxInstallService.ApplyEngineIniCustomKeys(
+                                    card.InstallPath, dmvKeys,
+                                    card.EngineIniProjectOverride, card.GameName, card.Source);
+                            else
+                                AuxInstallService.RemoveEngineIniCustomKeys(
+                                    card.InstallPath,
+                                    dmvKeys.Select(k => k.Key),
+                                    card.EngineIniProjectOverride, card.GameName, card.Source);
+                        }
+                        catch (Exception ex) { CrashReporter.Log($"[OsCog] DMV Engine.ini update failed — {ex.Message}"); }
+                    }
+                };
+
                 // FSR Crash Fix
                 var fsrPanel = new Grid { ColumnSpacing = 12 };
                 fsrPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
