@@ -6,6 +6,7 @@
 - Two new options in the OptiScaler ⚙ cog, visible when the game is set to Nightly: **Deploy Streamline** copies the RHI-managed Streamline DLLs into the game's OptiScaler/Streamline/ folder. **Deploy DLSS Enabler** installs dlss-enabler-headless.dll into OptiScaler/ (requires Deploy Streamline). Both settings are per-game and persist across sessions. Streamline is redeployed automatically when OptiScaler staging updates.
 - DLSS Enabler is hosted on the RHI GitHub releases (`DLSS-Enabler-` tag prefix) and auto-updates in the background whenever a new version is detected.
 - Four new Engine.ini options in the OptiScaler ⚙ cog for Unreal Engine games (Nightly only): **Dilated Motion Vectors** (Default/Off), **FSR Crash Fix** (None/FSR2/FSR3/FSR3.1), **FSR-FG Swapchain** (Default/On), and **Upscaler Plugin** (Default/On). Each option writes the relevant Engine.ini keys immediately and shows what gets written in the tooltip.
+- Three new Frame Generation options in the OptiScaler ⚙ cog (Nightly, all game types): **FG Input**, **FG Output**, and **FG Nvngx Replacement** (shown when Output = DLSSG). These write directly to the game's OptiScaler.ini `[FrameGen]` section and persist per-game. FG Nvngx Replacement's Enabler option is only available when both Deploy Streamline and Deploy DLSS Enabler are enabled.
 
 ### Changes from beta3
 
@@ -17,6 +18,7 @@
 - Fixed OptiPatcher never receiving automatic updates — the update check was defined but not wired up, and the version comparison used the wrong field. OptiPatcher now auto-updates silently and deploys to all installed games when a new version is detected.
 - The ReShade DLL filename can now be changed in DLL naming overrides even when OptiScaler is installed.
 - OptiScaler nightly bundled INI templates updated to match the current nightly format (new sections: DLSSG, NvngxFG, Magnifier, fakenvapi).
+- Switching the OptiScaler channel in the cog now automatically uninstalls the current version so you start fresh on the new channel.
 
 ### Maintenance
 
