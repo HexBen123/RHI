@@ -1900,328 +1900,184 @@ public sealed partial class MainWindow
     private async void OsCogButton_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
-        var content = new StackPanel { Spacing = 12 };
+        var content = new StackPanel { Spacing = 10 };
 
-        // ── OptiScaler Version variant selector ───────────────────────────────
-        var variantPanel = new Grid { ColumnSpacing = 12 };
-        variantPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        variantPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        var variantLabel = new TextBlock
+        // ── Helper: build a two-column label+combo row ────────────────────────
+        Grid MakeRow(string leftLabel, ComboBox leftCombo, string? rightLabel = null, ComboBox? rightCombo = null)
         {
-            Text = "OptiScaler Version",
-            FontSize = 12,
-            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        Grid.SetColumn(variantLabel, 0);
-        variantPanel.Children.Add(variantLabel);
+            var grid = new Grid { ColumnSpacing = 8 };
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            if (rightLabel != null && rightCombo != null)
+            {
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            }
 
-        var variantCombo = new ComboBox
-        {
-            ItemsSource = new[] { "Stable", "Nightly" },
-            SelectedItem = ViewModel.GetOsVariant(card.GameName, card.Source ?? ""),
-            FontSize = 12,
-            MinWidth = 100,
-            HorizontalAlignment = HorizontalAlignment.Right,
-        };
-        ToolTipService.SetToolTip(variantCombo, "Stable uses the official OptiScaler release. Nightly uses the latest daily build from the nightly repo.");
-        Grid.SetColumn(variantCombo, 1);
-        variantPanel.Children.Add(variantCombo);
+            var lbl1 = new TextBlock { Text = leftLabel, FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), VerticalAlignment = VerticalAlignment.Center };
+            Grid.SetColumn(lbl1, 0); grid.Children.Add(lbl1);
+            Grid.SetColumn(leftCombo, 1); leftCombo.FontSize = 12; leftCombo.MinWidth = 110; leftCombo.HorizontalAlignment = HorizontalAlignment.Right;
+            grid.Children.Add(leftCombo);
 
+            if (rightLabel != null && rightCombo != null)
+            {
+                var lbl2 = new TextBlock { Text = rightLabel, FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), VerticalAlignment = VerticalAlignment.Center };
+                Grid.SetColumn(lbl2, 2); grid.Children.Add(lbl2);
+                Grid.SetColumn(rightCombo, 3); rightCombo.FontSize = 12; rightCombo.MinWidth = 110; rightCombo.HorizontalAlignment = HorizontalAlignment.Right;
+                grid.Children.Add(rightCombo);
+            }
+            return grid;
+        }
+
+        Border MakeSeparator() => new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 2, 0, 2) };
+
+        // ── OptiScaler Version ────────────────────────────────────────────────
+        var variantCombo = new ComboBox { ItemsSource = new[] { "Stable", "Nightly" }, SelectedItem = ViewModel.GetOsVariant(card.GameName, card.Source ?? "") };
+        ToolTipService.SetToolTip(variantCombo, "Stable uses the official OptiScaler release. Nightly uses the latest daily build.");
+        content.Children.Add(MakeRow("OptiScaler Version", variantCombo));
+
+        ContentDialog? osCogDialog = null;
         variantCombo.SelectionChanged += (s, ev) =>
         {
             var selected = variantCombo.SelectedItem as string ?? "Stable";
             ViewModel.SetOsVariant(card.GameName, selected == "Stable" ? null : selected, card.Source ?? "");
-
-            // If OptiScaler is currently installed, uninstall it so the user reinstalls on the new channel
             if (card.IsOsInstalled && !string.IsNullOrEmpty(card.InstallPath))
             {
-                try
-                {
-                    _optiScalerService.Uninstall(card);
-                    card.NotifyAll();
-                }
-                catch (Exception ex) { CrashReporter.Log($"[OsCog] Uninstall on channel switch failed — {ex.Message}"); }
+                try { _optiScalerService.Uninstall(card); card.NotifyAll(); }
+                catch (Exception ex) { CrashReporter.Log($"[OsCog] Uninstall on channel switch — {ex.Message}"); }
             }
+            DispatcherQueue.TryEnqueue(async () => { osCogDialog?.Hide(); await Task.Delay(80); OsCogButton_Click(sender, e); });
         };
-        content.Children.Add(variantPanel);
 
-        // ── Nightly-only: Deploy Streamline + Deploy DLSS Enabler ─────────────
         bool isNightly = ViewModel.GetOsVariant(card.GameName, card.Source ?? "") == "Nightly";
         if (isNightly)
         {
-            content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 4, 0, 4) });
+            content.Children.Add(MakeSeparator());
 
-            // ── Deploy Streamline row ─────────────────────────────────────────
-            var streamlinePanel = new Grid { ColumnSpacing = 12 };
-            streamlinePanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            streamlinePanel.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            var streamlineLabel = new TextBlock
-            {
-                Text = "Deploy Streamline",
-                FontSize = 12,
-                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-                VerticalAlignment = VerticalAlignment.Center,
-            };
-            Grid.SetColumn(streamlineLabel, 0);
-            streamlinePanel.Children.Add(streamlineLabel);
-            var streamlineCombo = new ComboBox
-            {
-                ItemsSource = new[] { "No", "Yes" },
-                SelectedItem = ViewModel.GetOsDeployStreamline(card.GameName, card.Source ?? "") ? "Yes" : "No",
-                FontSize = 12,
-                MinWidth = 80,
-                HorizontalAlignment = HorizontalAlignment.Right,
-            };
-            Grid.SetColumn(streamlineCombo, 1);
-            streamlinePanel.Children.Add(streamlineCombo);
-            content.Children.Add(streamlinePanel);
-
-            // ── Deploy DLSS Enabler row ───────────────────────────────────────
-            var enablerPanel = new Grid { ColumnSpacing = 12 };
-            enablerPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            enablerPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            var enablerLabel = new TextBlock
-            {
-                Text = "Deploy DLSS Enabler",
-                FontSize = 12,
-                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-                VerticalAlignment = VerticalAlignment.Center,
-            };
-            Grid.SetColumn(enablerLabel, 0);
-            enablerPanel.Children.Add(enablerLabel);
-            var enablerCombo = new ComboBox
-            {
-                ItemsSource = new[] { "No", "Yes" },
-                SelectedItem = ViewModel.GetOsDeployDlssEnabler(card.GameName, card.Source ?? "") ? "Yes" : "No",
-                FontSize = 12,
-                MinWidth = 80,
-                HorizontalAlignment = HorizontalAlignment.Right,
-                IsEnabled = ViewModel.GetOsDeployStreamline(card.GameName, card.Source ?? ""),
-            };
-            Grid.SetColumn(enablerCombo, 1);
-            enablerPanel.Children.Add(enablerCombo);
+            // ── Row 1: Deploy Streamline | Deploy DLSS Enabler ─────────────
+            var streamlineCombo = new ComboBox { ItemsSource = new[] { "No", "Yes" }, SelectedItem = ViewModel.GetOsDeployStreamline(card.GameName, card.Source ?? "") ? "Yes" : "No" };
+            var enablerCombo = new ComboBox { ItemsSource = new[] { "No", "Yes" }, SelectedItem = ViewModel.GetOsDeployDlssEnabler(card.GameName, card.Source ?? "") ? "Yes" : "No", IsEnabled = ViewModel.GetOsDeployStreamline(card.GameName, card.Source ?? "") };
             ToolTipService.SetToolTip(enablerCombo, "Requires Deploy Streamline to be enabled.");
-            content.Children.Add(enablerPanel);
+            content.Children.Add(MakeRow("Deploy Streamline", streamlineCombo, "Deploy DLSS Enabler", enablerCombo));
 
-            // ── Wire SelectionChanged handlers ───────────────────────────────
+            // ── Row 2: FG Input | FG Output ────────────────────────────────
+            string FgInputToIni(string d) => d switch { "OptiFG (Upscaler)" => "upscaler", "DLSSG via Streamline" => "dlssg", "DLSSG via Nvngx" => "nvngxfg", "FSR 3.1 FG" => "fsrfg", "FSR 3.0 FG" => "fsrfg30", "XeFG" => "xefg", _ => "auto" };
+            string IniToFgInput(string v) => v switch { "upscaler" => "OptiFG (Upscaler)", "dlssg" => "DLSSG via Streamline", "nvngxfg" => "DLSSG via Nvngx", "fsrfg" => "FSR 3.1 FG", "fsrfg30" => "FSR 3.0 FG", "xefg" => "XeFG", _ => "Auto (Default)" };
+            string FgOutputToIni(string d) => d switch { "FSR FG" => "fsrfg", "DLSSG" => "dlssg", "XeFG" => "xefg", _ => "auto" };
+            string IniToFgOutput(string v) => v switch { "fsrfg" => "FSR FG", "dlssg" => "DLSSG", "xefg" => "XeFG", _ => "Auto (Default)" };
+            string FgNvngxToIni(string d) => d switch { "Nukem's" => "Nukems", "Enabler" => "Arturs", "FSR 3/4 FG" => "FFX", _ => "None" };
+            string IniToFgNvngx(string v) => v switch { "Nukems" => "Nukem's", "Arturs" => "Enabler", "FFX" => "FSR 3/4 FG", _ => "None (Real DLSSG)" };
+
+            var fgInputCombo = new ComboBox { ItemsSource = new[] { "Auto (Default)", "OptiFG (Upscaler)", "DLSSG via Streamline", "DLSSG via Nvngx", "FSR 3.1 FG", "FSR 3.0 FG", "XeFG" }, SelectedItem = IniToFgInput(ViewModel.GetOsFgInput(card.GameName, card.Source ?? "")) };
+            var fgOutputCombo = new ComboBox { ItemsSource = new[] { "Auto (Default)", "FSR FG", "DLSSG", "XeFG" }, SelectedItem = IniToFgOutput(ViewModel.GetOsFgOutput(card.GameName, card.Source ?? "")) };
+            content.Children.Add(MakeRow("FG Input", fgInputCombo, "FG Output", fgOutputCombo));
+
+            // ── Row 3: (empty left) | FG Nvngx Replacement ─────────────────
+            bool enablerAvail = ViewModel.GetOsDeployStreamline(card.GameName, card.Source ?? "") && ViewModel.GetOsDeployDlssEnabler(card.GameName, card.Source ?? "");
+            var nvngxItems = new List<object> { "None (Real DLSSG)", "Nukem's", new ComboBoxItem { Content = "Enabler", IsEnabled = enablerAvail }, "FSR 3/4 FG" };
+            var currentNvngxDisplay = IniToFgNvngx(ViewModel.GetOsFgNvngxReplacement(card.GameName, card.Source ?? ""));
+            object? nvngxSelected = nvngxItems.FirstOrDefault(i => i is ComboBoxItem cb ? (cb.Content as string) == currentNvngxDisplay : (i as string) == currentNvngxDisplay) ?? nvngxItems[0];
+            var fgNvngxCombo = new ComboBox { ItemsSource = nvngxItems, SelectedItem = nvngxSelected };
+            ToolTipService.SetToolTip(fgNvngxCombo, "Only relevant when FG Output = DLSSG. Enabler requires Deploy Streamline + Deploy DLSS Enabler.");
+
+            // Right-side-only row using a 2-col grid (left = spacer, right = label+combo)
+            var nvngxRow = new Grid { ColumnSpacing = 8 };
+            nvngxRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            nvngxRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            nvngxRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            var nvngxLabel = new TextBlock { Text = "FG Nvngx Replacement", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), VerticalAlignment = VerticalAlignment.Center };
+            Grid.SetColumn(nvngxLabel, 1); nvngxRow.Children.Add(nvngxLabel);
+            fgNvngxCombo.FontSize = 12; fgNvngxCombo.MinWidth = 110; fgNvngxCombo.HorizontalAlignment = HorizontalAlignment.Right;
+            Grid.SetColumn(fgNvngxCombo, 2); nvngxRow.Children.Add(fgNvngxCombo);
+            bool fgOutputIsDlssg = fgOutputCombo.SelectedItem as string == "DLSSG";
+            nvngxRow.Opacity = fgOutputIsDlssg ? 1.0 : 0.35;
+            nvngxRow.IsHitTestVisible = fgOutputIsDlssg;
+            content.Children.Add(nvngxRow);
+
+            // ── Wire handlers ──────────────────────────────────────────────
             streamlineCombo.SelectionChanged += (s, ev) =>
             {
-                bool enabled = streamlineCombo.SelectedItem as string == "Yes";
-                ViewModel.SetOsDeployStreamline(card.GameName, enabled, card.Source ?? "");
-                enablerCombo.IsEnabled = enabled;
-                if (!enabled)
-                {
-                    enablerCombo.SelectedItem = "No";
-                    ViewModel.SetOsDeployDlssEnabler(card.GameName, false, card.Source ?? "");
-                }
+                bool on = streamlineCombo.SelectedItem as string == "Yes";
+                ViewModel.SetOsDeployStreamline(card.GameName, on, card.Source ?? "");
+                enablerCombo.IsEnabled = on;
+                if (!on) { enablerCombo.SelectedItem = "No"; ViewModel.SetOsDeployDlssEnabler(card.GameName, false, card.Source ?? ""); }
                 if (!string.IsNullOrEmpty(card.InstallPath))
-                {
-                    try
-                    {
-                        if (enabled)
-                            _optiScalerService.DeployStreamlineToGame(card.InstallPath);
-                        else
-                            _optiScalerService.RemoveStreamlineFromGame(card.InstallPath);
-                    }
-                    catch (Exception ex) { CrashReporter.Log($"[OsCog] Streamline deploy failed — {ex.Message}"); }
-                }
+                    try { if (on) _optiScalerService.DeployStreamlineToGame(card.InstallPath); else _optiScalerService.RemoveStreamlineFromGame(card.InstallPath); }
+                    catch (Exception ex) { CrashReporter.Log($"[OsCog] Streamline deploy — {ex.Message}"); }
             };
-
             enablerCombo.SelectionChanged += (s, ev) =>
             {
-                bool enabled = enablerCombo.SelectedItem as string == "Yes";
-                ViewModel.SetOsDeployDlssEnabler(card.GameName, enabled, card.Source ?? "");
+                bool on = enablerCombo.SelectedItem as string == "Yes";
+                ViewModel.SetOsDeployDlssEnabler(card.GameName, on, card.Source ?? "");
                 if (!string.IsNullOrEmpty(card.InstallPath))
-                {
-                    var optiScalerDir = Path.Combine(card.InstallPath, "OptiScaler");
-                    try
-                    {
-                        if (enabled)
-                            _ = _dlssEnablerService.InstallAsync(optiScalerDir);
-                        else
-                            _dlssEnablerService.Uninstall(optiScalerDir);
-                    }
-                    catch (Exception ex) { CrashReporter.Log($"[OsCog] DLSS Enabler deploy failed — {ex.Message}"); }
-                }
+                    try { var d = Path.Combine(card.InstallPath, "OptiScaler"); if (on) _ = _dlssEnablerService.InstallAsync(d); else _dlssEnablerService.Uninstall(d); }
+                    catch (Exception ex) { CrashReporter.Log($"[OsCog] DLSS Enabler — {ex.Message}"); }
+            };
+            fgInputCombo.SelectionChanged += (s, ev) =>
+            {
+                if (fgInputCombo.SelectedItem is not string sel) return;
+                var v = FgInputToIni(sel); ViewModel.SetOsFgInput(card.GameName, v, card.Source ?? "");
+                if (!string.IsNullOrEmpty(card.InstallPath)) OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "FrameGen", "FGInput", v);
+            };
+            fgOutputCombo.SelectionChanged += (s, ev) =>
+            {
+                if (fgOutputCombo.SelectedItem is not string sel) return;
+                var v = FgOutputToIni(sel); ViewModel.SetOsFgOutput(card.GameName, v, card.Source ?? "");
+                if (!string.IsNullOrEmpty(card.InstallPath)) OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "FrameGen", "FGOutput", v);
+                bool isDlssg = sel == "DLSSG"; nvngxRow.Opacity = isDlssg ? 1.0 : 0.35; nvngxRow.IsHitTestVisible = isDlssg;
+            };
+            fgNvngxCombo.SelectionChanged += (s, ev) =>
+            {
+                string? display = fgNvngxCombo.SelectedItem is ComboBoxItem cb ? cb.Content as string : fgNvngxCombo.SelectedItem as string;
+                if (display == null) return;
+                var v = FgNvngxToIni(display); ViewModel.SetOsFgNvngxReplacement(card.GameName, v, card.Source ?? "");
+                if (!string.IsNullOrEmpty(card.InstallPath) && string.Equals(ViewModel.GetOsFgOutput(card.GameName, card.Source ?? ""), "dlssg", StringComparison.OrdinalIgnoreCase))
+                    OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "FrameGen", "FGNvngxReplacement", v);
             };
 
-            // ── Dilated Motion Vectors row — only for Unreal Engine games ───────
-            bool isUnrealGame = card.EngineHint?.Contains("Unreal", StringComparison.OrdinalIgnoreCase) == true;
-
-            // ── FSR Crash Fix, FSR-FG Swapchain, Upscaler Plugin, DMV — UE games only ──
-            if (isUnrealGame)
+            // ── UE-only Engine.ini settings ────────────────────────────────
+            bool isUnreal = card.EngineHint?.Contains("Unreal", StringComparison.OrdinalIgnoreCase) == true;
+            if (isUnreal)
             {
-                content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 4, 0, 4) });
+                content.Children.Add(MakeSeparator());
 
-                // Dilated Motion Vectors
-                var dmvPanel = new Grid { ColumnSpacing = 12 };
-                dmvPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                dmvPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-                var dmvLabel = new TextBlock
-                {
-                    Text = "Dilated Motion Vectors",
-                    FontSize = 12,
-                    Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
-                    VerticalAlignment = VerticalAlignment.Center,
-                };
-                Grid.SetColumn(dmvLabel, 0);
-                dmvPanel.Children.Add(dmvLabel);
-                var dmvCombo = new ComboBox
-                {
-                    ItemsSource = new[] { "Default", "Off" },
-                    SelectedItem = ViewModel.GetOsDilatedMotionVectorsOff(card.GameName, card.Source ?? "") ? "Off" : "Default",
-                    FontSize = 12,
-                    MinWidth = 100,
-                    HorizontalAlignment = HorizontalAlignment.Right,
-                };
-                Grid.SetColumn(dmvCombo, 1);
-                dmvPanel.Children.Add(dmvCombo);
-                ToolTipService.SetToolTip(dmvCombo, "Off writes r.NGX.DLSS.DilateMotionVectors=0 and r.Streamline.DilateMotionVectors=0 to Engine.ini.");
-                content.Children.Add(dmvPanel);
+                var dmvCombo = new ComboBox { ItemsSource = new[] { "Default", "Off" }, SelectedItem = ViewModel.GetOsDilatedMotionVectorsOff(card.GameName, card.Source ?? "") ? "Off" : "Default" };
+                ToolTipService.SetToolTip(dmvCombo, "Off: r.NGX.DLSS.DilateMotionVectors=0 + r.Streamline.DilateMotionVectors=0");
+                var fsrCombo = new ComboBox { ItemsSource = new[] { "None", "FSR2", "FSR3", "FSR3.1" }, SelectedItem = ViewModel.GetOsFsrCrashFix(card.GameName, card.Source ?? "") };
+                ToolTipService.SetToolTip(fsrCombo, "FSR2: r.FidelityFX.FSR2.UseNativeDX12=1\nFSR3: r.FidelityFX.FSR3.UseNativeDX12=1\nFSR3.1: above + r.FidelityFX.FSR3.UseRHI=0");
+                content.Children.Add(MakeRow("Dilated MV", dmvCombo, "FSR Crash Fix", fsrCombo));
+
+                var fgSwapCombo = new ComboBox { ItemsSource = new[] { "Default", "On" }, SelectedItem = ViewModel.GetOsFsrFgSwapchain(card.GameName, card.Source ?? "") ? "On" : "Default" };
+                ToolTipService.SetToolTip(fgSwapCombo, "On: r.FidelityFX.FI.OverrideSwapChainDX12=1");
+                var upscalerCombo = new ComboBox { ItemsSource = new[] { "Default", "On" }, SelectedItem = ViewModel.GetOsUpscalerPlugin(card.GameName, card.Source ?? "") ? "On" : "Default" };
+                ToolTipService.SetToolTip(upscalerCombo, "On: r.AntiAliasingMethod=4 + r.TemporalAA.Upscaler=1");
+                content.Children.Add(MakeRow("FSR-FG Swapchain", fgSwapCombo, "Upscaler Plugin", upscalerCombo));
 
                 dmvCombo.SelectionChanged += (s, ev) =>
                 {
-                    bool isOff = dmvCombo.SelectedItem as string == "Off";
-                    ViewModel.SetOsDilatedMotionVectorsOff(card.GameName, isOff, card.Source ?? "");
-                    if (!string.IsNullOrEmpty(card.InstallPath))
-                    {
-                        var dmvKeys = new (string Section, string Key, string Value)[]
-                        {
-                            ("SystemSettings", "r.NGX.DLSS.DilateMotionVectors", "0"),
-                            ("SystemSettings", "r.Streamline.DilateMotionVectors", "0"),
-                        };
-                        try
-                        {
-                            if (isOff)
-                                AuxInstallService.ApplyEngineIniCustomKeys(
-                                    card.InstallPath, dmvKeys,
-                                    card.EngineIniProjectOverride, card.GameName, card.Source);
-                            else
-                                AuxInstallService.RemoveEngineIniCustomKeys(
-                                    card.InstallPath,
-                                    dmvKeys.Select(k => k.Key),
-                                    card.EngineIniProjectOverride, card.GameName, card.Source);
-                        }
-                        catch (Exception ex) { CrashReporter.Log($"[OsCog] DMV Engine.ini update failed — {ex.Message}"); }
-                    }
+                    bool off = dmvCombo.SelectedItem as string == "Off"; ViewModel.SetOsDilatedMotionVectorsOff(card.GameName, off, card.Source ?? "");
+                    if (!string.IsNullOrEmpty(card.InstallPath)) { var keys = new (string, string, string)[] { ("SystemSettings", "r.NGX.DLSS.DilateMotionVectors", "0"), ("SystemSettings", "r.Streamline.DilateMotionVectors", "0") }; try { if (off) AuxInstallService.ApplyEngineIniCustomKeys(card.InstallPath, keys, card.EngineIniProjectOverride, card.GameName, card.Source); else AuxInstallService.RemoveEngineIniCustomKeys(card.InstallPath, keys.Select(k => k.Item2), card.EngineIniProjectOverride, card.GameName, card.Source); } catch { } }
                 };
-
-                // FSR Crash Fix
-                var fsrPanel = new Grid { ColumnSpacing = 12 };
-                fsrPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                fsrPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-                var fsrLabel = new TextBlock { Text = "FSR Crash Fix", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), VerticalAlignment = VerticalAlignment.Center };
-                Grid.SetColumn(fsrLabel, 0);
-                fsrPanel.Children.Add(fsrLabel);
-                var fsrCombo = new ComboBox
-                {
-                    ItemsSource = new[] { "None", "FSR2", "FSR3", "FSR3.1" },
-                    SelectedItem = ViewModel.GetOsFsrCrashFix(card.GameName, card.Source ?? ""),
-                    FontSize = 12, MinWidth = 100, HorizontalAlignment = HorizontalAlignment.Right,
-                };
-                ToolTipService.SetToolTip(fsrCombo,
-                    "FSR2: r.FidelityFX.FSR2.UseNativeDX12=1\n" +
-                    "FSR3: r.FidelityFX.FSR3.UseNativeDX12=1\n" +
-                    "FSR3.1: r.FidelityFX.FSR3.UseNativeDX12=1 + r.FidelityFX.FSR3.UseRHI=0");
-                Grid.SetColumn(fsrCombo, 1);
-                fsrPanel.Children.Add(fsrCombo);
-                content.Children.Add(fsrPanel);
-
                 fsrCombo.SelectionChanged += (s, ev) =>
                 {
-                    var selected = fsrCombo.SelectedItem as string ?? "None";
-                    // Remove all possible FSR keys first
-                    var allFsrKeys = new[] { "r.FidelityFX.FSR2.UseNativeDX12", "r.FidelityFX.FSR3.UseNativeDX12", "r.FidelityFX.FSR3.UseRHI" };
-                    if (!string.IsNullOrEmpty(card.InstallPath))
-                    {
-                        try { AuxInstallService.RemoveEngineIniCustomKeys(card.InstallPath, allFsrKeys, card.EngineIniProjectOverride, card.GameName, card.Source); } catch { }
-                        if (selected != "None")
-                        {
-                            var keys = selected switch
-                            {
-                                "FSR2" => new (string, string, string)[] { ("SystemSettings", "r.FidelityFX.FSR2.UseNativeDX12", "1") },
-                                "FSR3" => new (string, string, string)[] { ("SystemSettings", "r.FidelityFX.FSR3.UseNativeDX12", "1") },
-                                "FSR3.1" => new (string, string, string)[] { ("SystemSettings", "r.FidelityFX.FSR3.UseNativeDX12", "1"), ("SystemSettings", "r.FidelityFX.FSR3.UseRHI", "0") },
-                                _ => Array.Empty<(string, string, string)>()
-                            };
-                            try { AuxInstallService.ApplyEngineIniCustomKeys(card.InstallPath, keys, card.EngineIniProjectOverride, card.GameName, card.Source); } catch { }
-                        }
-                    }
-                    ViewModel.SetOsFsrCrashFix(card.GameName, selected == "None" ? null : selected, card.Source ?? "");
+                    var sel = fsrCombo.SelectedItem as string ?? "None"; var allK = new[] { "r.FidelityFX.FSR2.UseNativeDX12", "r.FidelityFX.FSR3.UseNativeDX12", "r.FidelityFX.FSR3.UseRHI" };
+                    if (!string.IsNullOrEmpty(card.InstallPath)) { try { AuxInstallService.RemoveEngineIniCustomKeys(card.InstallPath, allK, card.EngineIniProjectOverride, card.GameName, card.Source); } catch { } if (sel != "None") { var k = sel switch { "FSR2" => new (string, string, string)[] { ("SystemSettings", "r.FidelityFX.FSR2.UseNativeDX12", "1") }, "FSR3" => new (string, string, string)[] { ("SystemSettings", "r.FidelityFX.FSR3.UseNativeDX12", "1") }, _ => new (string, string, string)[] { ("SystemSettings", "r.FidelityFX.FSR3.UseNativeDX12", "1"), ("SystemSettings", "r.FidelityFX.FSR3.UseRHI", "0") } }; try { AuxInstallService.ApplyEngineIniCustomKeys(card.InstallPath, k, card.EngineIniProjectOverride, card.GameName, card.Source); } catch { } } }
+                    ViewModel.SetOsFsrCrashFix(card.GameName, sel == "None" ? null : sel, card.Source ?? "");
                 };
-
-                // FSR-FG Swapchain
-                var fgPanel = new Grid { ColumnSpacing = 12 };
-                fgPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                fgPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-                var fgLabel = new TextBlock { Text = "FSR-FG Swapchain", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), VerticalAlignment = VerticalAlignment.Center };
-                Grid.SetColumn(fgLabel, 0);
-                fgPanel.Children.Add(fgLabel);
-                var fgCombo = new ComboBox
+                fgSwapCombo.SelectionChanged += (s, ev) =>
                 {
-                    ItemsSource = new[] { "Default", "On" },
-                    SelectedItem = ViewModel.GetOsFsrFgSwapchain(card.GameName, card.Source ?? "") ? "On" : "Default",
-                    FontSize = 12, MinWidth = 100, HorizontalAlignment = HorizontalAlignment.Right,
+                    bool on = fgSwapCombo.SelectedItem as string == "On"; ViewModel.SetOsFsrFgSwapchain(card.GameName, on, card.Source ?? "");
+                    if (!string.IsNullOrEmpty(card.InstallPath)) { var k = new (string, string, string)[] { ("SystemSettings", "r.FidelityFX.FI.OverrideSwapChainDX12", "1") }; try { if (on) AuxInstallService.ApplyEngineIniCustomKeys(card.InstallPath, k, card.EngineIniProjectOverride, card.GameName, card.Source); else AuxInstallService.RemoveEngineIniCustomKeys(card.InstallPath, k.Select(x => x.Item2), card.EngineIniProjectOverride, card.GameName, card.Source); } catch { } }
                 };
-                ToolTipService.SetToolTip(fgCombo, "On: r.FidelityFX.FI.OverrideSwapChainDX12=1");
-                Grid.SetColumn(fgCombo, 1);
-                fgPanel.Children.Add(fgCombo);
-                content.Children.Add(fgPanel);
-
-                fgCombo.SelectionChanged += (s, ev) =>
+                upscalerCombo.SelectionChanged += (s, ev) =>
                 {
-                    bool on = fgCombo.SelectedItem as string == "On";
-                    ViewModel.SetOsFsrFgSwapchain(card.GameName, on, card.Source ?? "");
-                    if (!string.IsNullOrEmpty(card.InstallPath))
-                    {
-                        var keys = new (string, string, string)[] { ("SystemSettings", "r.FidelityFX.FI.OverrideSwapChainDX12", "1") };
-                        try
-                        {
-                            if (on) AuxInstallService.ApplyEngineIniCustomKeys(card.InstallPath, keys, card.EngineIniProjectOverride, card.GameName, card.Source);
-                            else AuxInstallService.RemoveEngineIniCustomKeys(card.InstallPath, keys.Select(k => k.Item2), card.EngineIniProjectOverride, card.GameName, card.Source);
-                        }
-                        catch (Exception ex) { CrashReporter.Log($"[OsCog] FSR-FG swapchain failed — {ex.Message}"); }
-                    }
-                };
-
-                // Upscaler Plugin
-                var upPanel = new Grid { ColumnSpacing = 12 };
-                upPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                upPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-                var upLabel = new TextBlock { Text = "Upscaler Plugin", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), VerticalAlignment = VerticalAlignment.Center };
-                Grid.SetColumn(upLabel, 0);
-                upPanel.Children.Add(upLabel);
-                var upCombo = new ComboBox
-                {
-                    ItemsSource = new[] { "Default", "On" },
-                    SelectedItem = ViewModel.GetOsUpscalerPlugin(card.GameName, card.Source ?? "") ? "On" : "Default",
-                    FontSize = 12, MinWidth = 100, HorizontalAlignment = HorizontalAlignment.Right,
-                };
-                ToolTipService.SetToolTip(upCombo, "On: r.AntiAliasingMethod=4 + r.TemporalAA.Upscaler=1");
-                Grid.SetColumn(upCombo, 1);
-                upPanel.Children.Add(upCombo);
-                content.Children.Add(upPanel);
-
-                upCombo.SelectionChanged += (s, ev) =>
-                {
-                    bool on = upCombo.SelectedItem as string == "On";
-                    ViewModel.SetOsUpscalerPlugin(card.GameName, on, card.Source ?? "");
-                    if (!string.IsNullOrEmpty(card.InstallPath))
-                    {
-                        var keys = new (string, string, string)[] { ("SystemSettings", "r.AntiAliasingMethod", "4"), ("SystemSettings", "r.TemporalAA.Upscaler", "1") };
-                        try
-                        {
-                            if (on) AuxInstallService.ApplyEngineIniCustomKeys(card.InstallPath, keys, card.EngineIniProjectOverride, card.GameName, card.Source);
-                            else AuxInstallService.RemoveEngineIniCustomKeys(card.InstallPath, keys.Select(k => k.Item2), card.EngineIniProjectOverride, card.GameName, card.Source);
-                        }
-                        catch (Exception ex) { CrashReporter.Log($"[OsCog] Upscaler plugin failed — {ex.Message}"); }
-                    }
+                    bool on = upscalerCombo.SelectedItem as string == "On"; ViewModel.SetOsUpscalerPlugin(card.GameName, on, card.Source ?? "");
+                    if (!string.IsNullOrEmpty(card.InstallPath)) { var k = new (string, string, string)[] { ("SystemSettings", "r.AntiAliasingMethod", "4"), ("SystemSettings", "r.TemporalAA.Upscaler", "1") }; try { if (on) AuxInstallService.ApplyEngineIniCustomKeys(card.InstallPath, k, card.EngineIniProjectOverride, card.GameName, card.Source); else AuxInstallService.RemoveEngineIniCustomKeys(card.InstallPath, k.Select(x => x.Item2), card.EngineIniProjectOverride, card.GameName, card.Source); } catch { } }
                 };
             }
         }
 
-        content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 4, 0, 4) });
+        content.Children.Add(MakeSeparator());
 
         var deployBtn = new Button
         {
@@ -2244,9 +2100,9 @@ public sealed partial class MainWindow
             XamlRoot = Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
+        osCogDialog = dialog;
         await DialogService.ShowSafeAsync(dialog);
     }
-
     private async void DxvkCogButton_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;

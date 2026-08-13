@@ -82,6 +82,15 @@ public class GameNameService : IGameNameService
     /// <summary>FSR crash fix level per game. Key = "GameName|Store", Value = "FSR2", "FSR3", or "FSR3.1". Absent = None.</summary>
     private Dictionary<string, string> _osFsrCrashFix = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Per-game FG Input override. Key = "GameName|Store", Value = INI string. Absent = "auto".</summary>
+    private Dictionary<string, string> _osFgInput = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Per-game FG Output override. Key = "GameName|Store", Value = INI string. Absent = "auto".</summary>
+    private Dictionary<string, string> _osFgOutput = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Per-game FG Nvngx Replacement. Key = "GameName|Store", Value = INI string. Absent = "None".</summary>
+    private Dictionary<string, string> _osFgNvngxReplacement = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Games where FSR-FG swapchain override is enabled in Engine.ini. Composite-keyed "GameName|Store".</summary>
     private HashSet<string> _osFsrFgSwapchain = new(StringComparer.OrdinalIgnoreCase);
 
@@ -155,6 +164,15 @@ public class GameNameService : IGameNameService
 
     /// <summary>FSR crash fix level per game. Value = "FSR2", "FSR3", or "FSR3.1". Absent = None.</summary>
     public Dictionary<string, string> OsFsrCrashFix => _osFsrCrashFix;
+
+    /// <summary>Per-game FG Input override. Key = "GameName|Store", Value = INI string. Absent = "auto".</summary>
+    public Dictionary<string, string> OsFgInput => _osFgInput;
+
+    /// <summary>Per-game FG Output override. Key = "GameName|Store", Value = INI string. Absent = "auto".</summary>
+    public Dictionary<string, string> OsFgOutput => _osFgOutput;
+
+    /// <summary>Per-game FG Nvngx Replacement. Key = "GameName|Store", Value = INI string. Absent = "None".</summary>
+    public Dictionary<string, string> OsFgNvngxReplacement => _osFgNvngxReplacement;
 
     /// <summary>Games where FSR-FG swapchain override is enabled. Composite-keyed "GameName|Store".</summary>
     public HashSet<string> OsFsrFgSwapchain => _osFsrFgSwapchain;
@@ -462,6 +480,18 @@ public class GameNameService : IGameNameService
         _osFsrCrashFix = new(StringComparer.OrdinalIgnoreCase);
         foreach (var kv in osFsrCrashFixDict) _osFsrCrashFix[kv.Key] = kv.Value;
 
+        var osFgInputDict = Load<Dictionary<string, string>>("OsFgInput", new(StringComparer.OrdinalIgnoreCase));
+        _osFgInput = new(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in osFgInputDict) _osFgInput[kv.Key] = kv.Value;
+
+        var osFgOutputDict = Load<Dictionary<string, string>>("OsFgOutput", new(StringComparer.OrdinalIgnoreCase));
+        _osFgOutput = new(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in osFgOutputDict) _osFgOutput[kv.Key] = kv.Value;
+
+        var osFgNvngxDict = Load<Dictionary<string, string>>("OsFgNvngxReplacement", new(StringComparer.OrdinalIgnoreCase));
+        _osFgNvngxReplacement = new(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in osFgNvngxDict) _osFgNvngxReplacement[kv.Key] = kv.Value;
+
         _osFsrFgSwapchain = new HashSet<string>(
             Load<List<string>>("OsFsrFgSwapchain", new()), StringComparer.OrdinalIgnoreCase);
 
@@ -553,6 +583,9 @@ public class GameNameService : IGameNameService
                 s["OsDeployDlssEnabler"] = JsonSerializer.Serialize(_osDeployDlssEnabler.ToList());
                 s["OsDilatedMotionVectorsOff"] = JsonSerializer.Serialize(_osDilatedMotionVectorsOff.ToList());
                 s["OsFsrCrashFix"] = JsonSerializer.Serialize(_osFsrCrashFix);
+                s["OsFgInput"] = JsonSerializer.Serialize(_osFgInput);
+                s["OsFgOutput"] = JsonSerializer.Serialize(_osFgOutput);
+                s["OsFgNvngxReplacement"] = JsonSerializer.Serialize(_osFgNvngxReplacement);
                 s["OsFsrFgSwapchain"] = JsonSerializer.Serialize(_osFsrFgSwapchain.ToList());
                 s["OsUpscalerPlugin"] = JsonSerializer.Serialize(_osUpscalerPlugin.ToList());
                 s["ViewLayout"]          = ((int)currentViewLayout).ToString();
@@ -679,6 +712,9 @@ public class GameNameService : IGameNameService
         MigrateCompositeHashSet(_osDeployDlssEnabler, oldName, newName);
         MigrateCompositeHashSet(_osDilatedMotionVectorsOff, oldName, newName);
         MigrateCompositeDict(_osFsrCrashFix, oldName, newName);
+        MigrateCompositeDict(_osFgInput, oldName, newName);
+        MigrateCompositeDict(_osFgOutput, oldName, newName);
+        MigrateCompositeDict(_osFgNvngxReplacement, oldName, newName);
         MigrateCompositeHashSet(_osFsrFgSwapchain, oldName, newName);
         MigrateCompositeHashSet(_osUpscalerPlugin, oldName, newName);
 

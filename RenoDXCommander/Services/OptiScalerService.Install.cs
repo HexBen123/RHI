@@ -1371,4 +1371,77 @@ public partial class OptiScalerService
         }
         return null;
     }
+
+    /// <summary>
+    /// Writes a specific key=value in the specified INI section of the game's OptiScaler.ini.
+    /// Creates the section if missing. Removes read-only before writing, restores after.
+    /// </summary>
+    public static void SetOptiScalerIniValue(string gameInstallPath, string section, string key, string value)
+    {
+        var iniPath = Path.Combine(gameInstallPath, IniFileName);
+        if (!File.Exists(iniPath)) return;
+
+        try
+        {
+            var attrs = File.GetAttributes(iniPath);
+            if (attrs.HasFlag(FileAttributes.ReadOnly))
+                File.SetAttributes(iniPath, attrs & ~FileAttributes.ReadOnly);
+
+            var lines = File.ReadAllLines(iniPath).ToList();
+            bool inSection = false;
+            bool keyWritten = false;
+
+            for (int i = 0; i < lines.Count; i++)
+            {
+                var trimmed = lines[i].Trim();
+                if (trimmed.StartsWith("["))
+                {
+                    if (inSection && !keyWritten)
+                    {
+                        // Insert key before the next section starts
+                        lines.Insert(i, $"{key}={value}");
+                        keyWritten = true;
+                        break;
+                    }
+                    inSection = string.Equals(trimmed, $"[{section}]", StringComparison.OrdinalIgnoreCase);
+                }
+                else if (inSection && trimmed.StartsWith(key + "=", StringComparison.OrdinalIgnoreCase)
+                         && !trimmed.StartsWith(";"))
+                {
+                    lines[i] = $"{key}={value}";
+                    keyWritten = true;
+                    break;
+                }
+            }
+
+            if (!keyWritten)
+            {
+                // Section not found or key not found at end of file — append section if missing
+                if (!lines.Any(l => l.Trim().Equals($"[{section}]", StringComparison.OrdinalIgnoreCase)))
+                    lines.Add($"[{section}]");
+                lines.Add($"{key}={value}");
+            }
+
+            File.WriteAllLines(iniPath, lines);
+            File.SetAttributes(iniPath, File.GetAttributes(iniPath) | FileAttributes.ReadOnly);
+            CrashReporter.Log($"[OptiScalerService] Set {section}.{key}={value} in {iniPath}");
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[OptiScalerService.SetOptiScalerIniValue] Failed — {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Applies all persisted FG settings to the game's OptiScaler.ini in one pass.
+    /// FGNvngxReplacement is only written when fgOutput == "dlssg".
+    /// </summary>
+    public static void ApplyFgSettings(string gameInstallPath, string fgInput, string fgOutput, string fgNvngxReplacement)
+    {
+        if (!File.Exists(Path.Combine(gameInstallPath, IniFileName))) return;
+        SetOptiScalerIniValue(gameInstallPath, "FrameGen", "FGInput", fgInput);
+        SetOptiScalerIniValue(gameInstallPath, "FrameGen", "FGOutput", fgOutput);
+        if (string.Equals(fgOutput, "dlssg", StringComparison.OrdinalIgnoreCase))
+            SetOptiScalerIniValue(gameInstallPath, "FrameGen", "FGNvngxReplacement", fgNvngxReplacement);
+    }
 }

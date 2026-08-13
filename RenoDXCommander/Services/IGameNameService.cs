@@ -131,6 +131,15 @@ public interface IGameNameService
     /// <summary>FSR crash fix level per game. Value = "FSR2", "FSR3", or "FSR3.1". Absent = None.</summary>
     Dictionary<string, string> OsFsrCrashFix { get; }
 
+    /// <summary>Per-game FG Input override. Key = "GameName|Store", Value = INI string. Absent = "auto".</summary>
+    Dictionary<string, string> OsFgInput { get; }
+
+    /// <summary>Per-game FG Output override. Key = "GameName|Store", Value = INI string. Absent = "auto".</summary>
+    Dictionary<string, string> OsFgOutput { get; }
+
+    /// <summary>Per-game FG Nvngx Replacement. Key = "GameName|Store", Value = INI string. Absent = "None".</summary>
+    Dictionary<string, string> OsFgNvngxReplacement { get; }
+
     /// <summary>Games where FSR-FG swapchain override is enabled. Composite-keyed "GameName|Store".</summary>
     HashSet<string> OsFsrFgSwapchain { get; }
 

@@ -321,6 +321,60 @@ public partial class MainViewModel
         SaveNameMappings();
     }
 
+    // ── FG Input ──────────────────────────────────────────────────────────────
+
+    public string GetOsFgInput(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (_gameNameService.OsFgInput.TryGetValue(key, out var v)) return v;
+        if (_gameNameService.OsFgInput.TryGetValue(gameName, out var v2)) return v2;
+        return "auto";
+    }
+
+    public void SetOsFgInput(string gameName, string value, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (value == "auto") { _gameNameService.OsFgInput.Remove(key); _gameNameService.OsFgInput.Remove(gameName); }
+        else _gameNameService.OsFgInput[key] = value;
+        SaveNameMappings();
+    }
+
+    // ── FG Output ─────────────────────────────────────────────────────────────
+
+    public string GetOsFgOutput(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (_gameNameService.OsFgOutput.TryGetValue(key, out var v)) return v;
+        if (_gameNameService.OsFgOutput.TryGetValue(gameName, out var v2)) return v2;
+        return "auto";
+    }
+
+    public void SetOsFgOutput(string gameName, string value, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (value == "auto") { _gameNameService.OsFgOutput.Remove(key); _gameNameService.OsFgOutput.Remove(gameName); }
+        else _gameNameService.OsFgOutput[key] = value;
+        SaveNameMappings();
+    }
+
+    // ── FG Nvngx Replacement ──────────────────────────────────────────────────
+
+    public string GetOsFgNvngxReplacement(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (_gameNameService.OsFgNvngxReplacement.TryGetValue(key, out var v)) return v;
+        if (_gameNameService.OsFgNvngxReplacement.TryGetValue(gameName, out var v2)) return v2;
+        return "None";
+    }
+
+    public void SetOsFgNvngxReplacement(string gameName, string value, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (value == "None") { _gameNameService.OsFgNvngxReplacement.Remove(key); _gameNameService.OsFgNvngxReplacement.Remove(gameName); }
+        else _gameNameService.OsFgNvngxReplacement[key] = value;
+        SaveNameMappings();
+    }
+
     // ── FSR-FG Swapchain ──────────────────────────────────────────────────────
 
     public bool GetOsFsrFgSwapchain(string gameName, string store = "")

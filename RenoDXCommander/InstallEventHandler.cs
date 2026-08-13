@@ -279,6 +279,13 @@ public class InstallEventHandler
                     }
                     catch (Exception ex) { CrashReporter.Log($"[InstallEventHandler] DLSS Enabler post-install deploy failed — {ex.Message}"); }
                 }
+
+                // Apply persisted FG settings to the newly deployed OptiScaler.ini
+                var fgInput2 = ViewModel.GetOsFgInput(card.GameName, card.Source ?? "");
+                var fgOutput2 = ViewModel.GetOsFgOutput(card.GameName, card.Source ?? "");
+                var fgNvngx2 = ViewModel.GetOsFgNvngxReplacement(card.GameName, card.Source ?? "");
+                if (fgInput2 != "auto" || fgOutput2 != "auto")
+                    OptiScalerService.ApplyFgSettings(card.InstallPath, fgInput2, fgOutput2, fgNvngx2);
             }
         }
         catch (Exception ex)
@@ -326,6 +333,11 @@ public class InstallEventHandler
         try
         {
             _optiScalerService.CopyIniToGame(card, ViewModel.Settings.OsHotkey);
+            // Apply persisted FG settings after copying the INI
+            var fgInput = ViewModel.GetOsFgInput(card.GameName, card.Source ?? "");
+            var fgOutput = ViewModel.GetOsFgOutput(card.GameName, card.Source ?? "");
+            var fgNvngx = ViewModel.GetOsFgNvngxReplacement(card.GameName, card.Source ?? "");
+            OptiScalerService.ApplyFgSettings(card.InstallPath, fgInput, fgOutput, fgNvngx);
             card.OsActionMessage = "✅ OptiScaler.ini copied to game folder.";
             card.FadeMessage(m => card.OsActionMessage = m, card.OsActionMessage);
         }
