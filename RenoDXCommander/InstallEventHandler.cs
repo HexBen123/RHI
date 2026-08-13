@@ -214,6 +214,7 @@ public class InstallEventHandler
         // ── Read GPU/DLSS settings from persisted preferences ──────────
         var gpuType = ViewModel.Settings.OsGpuType;
         var useDlssInputs = ViewModel.Settings.OsDlssInputs;
+        var osVariant = ViewModel.GetOsVariant(card.GameName, card.Source ?? "");
 
         card.OsIsInstalling = true;
         card.OsActionMessage = "Installing OptiScaler...";
@@ -228,7 +229,8 @@ public class InstallEventHandler
                 }),
                 gpuType,
                 useDlssInputs,
-                ViewModel.Settings.OsHotkey);
+                ViewModel.Settings.OsHotkey,
+                osVariant);
 
             // ── PD-Upscaler REFramework swap for compatible RE Engine games ──
             if (ViewModel.Manifest?.PdUpscalerGames != null

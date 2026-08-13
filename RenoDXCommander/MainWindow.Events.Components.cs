@@ -1899,6 +1899,42 @@ public sealed partial class MainWindow
     {
         if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
         var content = new StackPanel { Spacing = 12 };
+
+        // ── OptiScaler Version variant selector ───────────────────────────────
+        var variantPanel = new Grid { ColumnSpacing = 12 };
+        variantPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        variantPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var variantLabel = new TextBlock
+        {
+            Text = "OptiScaler Version",
+            FontSize = 12,
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        Grid.SetColumn(variantLabel, 0);
+        variantPanel.Children.Add(variantLabel);
+
+        var variantCombo = new ComboBox
+        {
+            ItemsSource = new[] { "Stable", "Nightly" },
+            SelectedItem = ViewModel.GetOsVariant(card.GameName, card.Source ?? ""),
+            FontSize = 12,
+            MinWidth = 100,
+            HorizontalAlignment = HorizontalAlignment.Right,
+        };
+        ToolTipService.SetToolTip(variantCombo, "Stable uses the official OptiScaler release. Nightly uses the latest daily build from the nightly repo.");
+        Grid.SetColumn(variantCombo, 1);
+        variantPanel.Children.Add(variantCombo);
+
+        variantCombo.SelectionChanged += (s, ev) =>
+        {
+            var selected = variantCombo.SelectedItem as string ?? "Stable";
+            ViewModel.SetOsVariant(card.GameName, selected == "Stable" ? null : selected, card.Source ?? "");
+        };
+        content.Children.Add(variantPanel);
+
+        content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 4, 0, 4) });
+
         var deployBtn = new Button
         {
             Content = "Deploy OptiScaler.ini",

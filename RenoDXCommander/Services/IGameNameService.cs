@@ -95,6 +95,9 @@ public interface IGameNameService
     /// <summary>Per-game Lilium HDR DXVK preset index. 0=Safest (default), 5=Experimental. Absent = 0.</summary>
     Dictionary<string, int> LiliumPresetOverrides { get; }
 
+    /// <summary>Per-game OptiScaler variant override. Key = "GameName|Store", Value = "Stable" or "Nightly".</summary>
+    Dictionary<string, string> OsVariantOverrides { get; }
+
     /// <summary>Per-game HDR auto-toggle overrides. "On" or "Off". Absent = use global.</summary>
     Dictionary<string, string> HdrToggleOverrides { get; }
 

@@ -36,8 +36,44 @@ public partial class OptiScalerService : IOptiScalerService
     public static readonly string OsIniPath = Path.Combine(
         AuxInstallService.InisDir, IniFileName);
 
+    /// <summary>
+    /// Returns all 6 possible user-editable INI paths in the inis folder.
+    /// Used for operations that apply to all variants/GPU configs (e.g. hotkey).
+    /// </summary>
+    public static IEnumerable<string> AllUserIniPaths()
+    {
+        var dir = AuxInstallService.InisDir;
+        yield return Path.Combine(dir, "OptiScaler.nvidia.ini");
+        yield return Path.Combine(dir, "OptiScaler.amd-dlss.ini");
+        yield return Path.Combine(dir, "OptiScaler.amd-nodlss.ini");
+        yield return Path.Combine(dir, "OptiScaler_nightly.nvidia.ini");
+        yield return Path.Combine(dir, "OptiScaler_nightly.amd-dlss.ini");
+        yield return Path.Combine(dir, "OptiScaler_nightly.amd-nodlss.ini");
+    }
+
+    /// <summary>
+    /// Returns the user-editable INI path in the inis folder for the given GPU type, DLSS setting, and variant.
+    /// </summary>
+    public static string GetUserIniPath(string gpuType, bool dlssInputs, string variant = "Stable")
+    {
+        var suffix = variant.Equals("Nightly", StringComparison.OrdinalIgnoreCase) ? "_nightly" : "";
+        var fileName = gpuType.Equals("NVIDIA", StringComparison.OrdinalIgnoreCase)
+            ? $"OptiScaler{suffix}.nvidia.ini"
+            : dlssInputs
+                ? $"OptiScaler{suffix}.amd-dlss.ini"
+                : $"OptiScaler{suffix}.amd-nodlss.ini";
+        return Path.Combine(AuxInstallService.InisDir, fileName);
+    }
+
     private static readonly string GitHubReleasesApi =
         "https://api.github.com/repos/optiscaler/OptiScaler/releases/latest";
+
+    private static readonly string NightlyStagingDir = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "RHI", "optiscaler-nightly");
+    private static readonly string NightlyVersionFilePath = Path.Combine(NightlyStagingDir, "version.txt");
+    private const string NightlyReleasesApi =
+        "https://api.github.com/repos/optiscaler/OptiScaler-nightly/releases";
 
     // ── OptiPatcher constants ─────────────────────────────────────────────────
     private static readonly string OptiPatcherReleasesApi =
@@ -119,6 +155,7 @@ public partial class OptiScalerService : IOptiScalerService
 
     // ── Backing fields ────────────────────────────────────────────────────────
     private bool _hasUpdate;
+    private bool _hasUpdateNightly;
     private bool _firstTimeWarningAcknowledged;
 
     public OptiScalerService(
@@ -176,6 +213,29 @@ public partial class OptiScalerService : IOptiScalerService
     {
         get => _firstTimeWarningAcknowledged;
         set => _firstTimeWarningAcknowledged = value;
+    }
+
+    /// <inheritdoc />
+    public bool IsStagingReadyNightly =>
+        Directory.Exists(NightlyStagingDir)
+        && File.Exists(NightlyVersionFilePath)
+        && File.Exists(Path.Combine(NightlyStagingDir, "OptiScaler.dll"));
+
+    /// <inheritdoc />
+    public bool HasUpdateNightly
+    {
+        get => _hasUpdateNightly;
+        private set => _hasUpdateNightly = value;
+    }
+
+    /// <inheritdoc />
+    public string? StagedVersionNightly
+    {
+        get
+        {
+            try { return File.Exists(NightlyVersionFilePath) ? File.ReadAllText(NightlyVersionFilePath).Trim() : null; }
+            catch { return null; }
+        }
     }
 
 }

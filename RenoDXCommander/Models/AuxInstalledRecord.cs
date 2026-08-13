@@ -15,4 +15,6 @@ public class AuxInstalledRecord
     public DateTime InstalledAt   { get; set; }
     /// <summary>ReShade build channel used at install time ("Stable" or "Nightly"). Null = legacy/unknown (treated as global default).</summary>
     public string? Channel        { get; set; }
+    /// <summary>OptiScaler variant used at install time ("Stable" or "Nightly"). Null = legacy/Stable.</summary>
+    public string? OsVariant      { get; set; }
 }

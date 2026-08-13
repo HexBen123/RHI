@@ -871,11 +871,21 @@ public partial class MainViewModel
         var osCards = _allCards.Where(c => c.OsStatus == GameStatus.UpdateAvailable && !c.IsHidden && !c.ExcludeFromUpdateAllOs).ToList();
         if (osCards.Count == 0) return;
 
-        // Ensure latest staging is available before updating games
-        if (!_optiScalerService.IsStagingReady)
+        var stableCards = osCards.Where(c => GetOsVariant(c.GameName, c.Source ?? "") != "Nightly").ToList();
+        var nightlyCards = osCards.Where(c => GetOsVariant(c.GameName, c.Source ?? "") == "Nightly").ToList();
+
+        // Ensure stable staging if any stable cards need updating
+        if (stableCards.Count > 0 && !_optiScalerService.IsStagingReady)
         {
             try { await _optiScalerService.EnsureStagingAsync(); }
-            catch (Exception ex) { _crashReporter.Log($"[UpdateAllOsAsync] Staging failed — {ex.Message}"); return; }
+            catch (Exception ex) { _crashReporter.Log($"[UpdateAllOsAsync] Stable staging failed — {ex.Message}"); return; }
+        }
+
+        // Ensure nightly staging if any nightly cards need updating
+        if (nightlyCards.Count > 0 && !_optiScalerService.IsStagingReadyNightly)
+        {
+            try { await _optiScalerService.EnsureNightlyStagingAsync(); }
+            catch (Exception ex) { _crashReporter.Log($"[UpdateAllOsAsync] Nightly staging failed — {ex.Message}"); return; }
         }
 
         foreach (var card in osCards)
@@ -1103,20 +1113,45 @@ public partial class MainViewModel
         {
             await _optiScalerService.CheckForUpdateAsync().ConfigureAwait(false);
             var osUpdateAvailable = _optiScalerService.HasUpdate;
-            _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] OS update result: {osUpdateAvailable}, cards with OS installed: {cards.Count(c => c.OsStatus == GameStatus.Installed)}");
-            if (osUpdateAvailable)
-            {
-                DispatcherQueue?.TryEnqueue(() =>
-                {
-                    foreach (var card in cards.Where(c => c.OsStatus == GameStatus.Installed))
-                        card.OsStatus = GameStatus.UpdateAvailable;
+            _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] OS stable update result: {osUpdateAvailable}, cards with OS installed: {cards.Count(c => c.OsStatus == GameStatus.Installed)}");
 
-                    HasUpdatesAvailable = AnyUpdateAvailable;
-                    OnPropertyChanged(nameof(AnyUpdateAvailable));
-                    OnPropertyChanged(nameof(UpdateAllBtnBackground));
-                    OnPropertyChanged(nameof(UpdateAllBtnForeground));
-                    OnPropertyChanged(nameof(UpdateAllBtnBorder));
-                });
+            // Also check nightly if any installed game uses it
+            bool anyNightly = cards.Any(c => c.OsStatus == GameStatus.Installed && GetOsVariant(c.GameName, c.Source ?? "") == "Nightly");
+            if (anyNightly)
+            {
+                await _optiScalerService.CheckForNightlyUpdateAsync().ConfigureAwait(false);
+                _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] OS nightly update result: {_optiScalerService.HasUpdateNightly}");
+            }
+
+            DispatcherQueue?.TryEnqueue(() =>
+            {
+                foreach (var card in cards.Where(c => c.OsStatus == GameStatus.Installed))
+                {
+                    var osVariant = GetOsVariant(card.GameName, card.Source ?? "");
+                    bool osHasUpdate = osVariant == "Nightly" ? _optiScalerService.HasUpdateNightly : _optiScalerService.HasUpdate;
+                    if (osHasUpdate) card.OsStatus = GameStatus.UpdateAvailable;
+                }
+
+                HasUpdatesAvailable = AnyUpdateAvailable;
+                OnPropertyChanged(nameof(AnyUpdateAvailable));
+                OnPropertyChanged(nameof(UpdateAllBtnBackground));
+                OnPropertyChanged(nameof(UpdateAllBtnForeground));
+                OnPropertyChanged(nameof(UpdateAllBtnBorder));
+            });
+
+            // Check OptiPatcher update and auto-deploy if newer version available
+            try
+            {
+                bool optiPatcherHasUpdate = await _optiScalerService.CheckOptiPatcherUpdateAsync().ConfigureAwait(false);
+                if (optiPatcherHasUpdate)
+                {
+                    _crashReporter.Log("[MainViewModel.CheckForUpdatesAsync] OptiPatcher update available — downloading and auto-deploying");
+                    await _optiScalerService.EnsureOptiPatcherStagingAsync().ConfigureAwait(false);
+                }
+            }
+            catch (Exception ex)
+            {
+                _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] OptiPatcher update check failed — {ex.Message}");
             }
         }
         catch (Exception ex)

@@ -94,6 +94,14 @@ public partial class MainViewModel
                 try { await _optiScalerService.EnsureStagingAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] OptiScaler staging task failed — {ex.Message}"); }
             });
+            var osNightlyTask2 = Task.Run(async () => {
+                try
+                {
+                    if (_allCards.Any(c => GetOsVariant(c.GameName, c.Source ?? "") == "Nightly"))
+                        await _optiScalerService.EnsureNightlyStagingAsync();
+                }
+                catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] OptiScaler nightly staging task failed — {ex.Message}"); }
+            });
             dlssTask         = Task.Run(async () => {
                 try { await _optiScalerService.EnsureDlssStagingAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] DLSS staging task failed — {ex.Message}"); }

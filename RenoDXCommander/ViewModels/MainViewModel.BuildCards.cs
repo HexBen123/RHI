@@ -961,7 +961,9 @@ public partial class MainViewModel
                 {
                     newCard.OsStatus = GameStatus.Installed;
                     newCard.OsInstalledFile = osRec.InstalledAs;
-                    newCard.OsInstalledVersion = _optiScalerService.StagedVersion;
+                    newCard.OsInstalledVersion = osRec.OsVariant == "Nightly"
+                        ? _optiScalerService.StagedVersionNightly
+                        : _optiScalerService.StagedVersion;
                 }
                 else if (osRec != null)
                 {

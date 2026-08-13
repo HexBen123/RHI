@@ -18,6 +18,15 @@ public interface IOptiScalerService
     /// <summary>The currently staged version tag (e.g. "v0.8.1"), or null.</summary>
     string? StagedVersion { get; }
 
+    /// <summary>Whether the nightly staging folder contains a valid OptiScaler nightly release.</summary>
+    bool IsStagingReadyNightly { get; }
+
+    /// <summary>Whether a newer OptiScaler nightly release is available on GitHub.</summary>
+    bool HasUpdateNightly { get; }
+
+    /// <summary>The currently staged nightly version (date string e.g. "20260813"), or null.</summary>
+    string? StagedVersionNightly { get; }
+
     /// <summary>
     /// Whether the first-time warning has been acknowledged.
     /// Persisted so the dialog is only shown once across all installs.
@@ -33,6 +42,18 @@ public interface IOptiScalerService
     Task EnsureStagingAsync(IProgress<(string message, double percent)>? progress = null);
 
     /// <summary>
+    /// Downloads OptiPatcher to the staging folder and auto-deploys to all installed games.
+    /// No-op if already up to date.
+    /// </summary>
+    Task EnsureOptiPatcherStagingAsync(IProgress<(string message, double percent)>? progress = null);
+
+    /// <summary>
+    /// Checks the GitHub rolling release for a newer OptiPatcher version.
+    /// Returns true if a newer version is available.
+    /// </summary>
+    Task<bool> CheckOptiPatcherUpdateAsync();
+
+    /// <summary>
     /// Checks the GitHub releases API for a newer version than the staged one.
     /// Sets <see cref="HasUpdate"/> accordingly.
     /// </summary>
@@ -42,6 +63,15 @@ public interface IOptiScalerService
     /// Removes the staging folder contents (called from Settings cache clear).
     /// </summary>
     void ClearStaging();
+
+    /// <summary>Downloads and extracts the latest OptiScaler nightly to the nightly staging folder.</summary>
+    Task EnsureNightlyStagingAsync(IProgress<(string message, double percent)>? progress = null);
+
+    /// <summary>Checks the nightly GitHub releases API for a newer version. Sets <see cref="HasUpdateNightly"/>.</summary>
+    Task CheckForNightlyUpdateAsync();
+
+    /// <summary>Removes the nightly staging folder contents.</summary>
+    void ClearNightlyStaging();
 
     // ── DLSS DLL staging ──────────────────────────────────────────────────────
 
@@ -63,7 +93,8 @@ public interface IOptiScalerService
         IProgress<(string message, double percent)>? progress = null,
         string gpuType = "NVIDIA",
         bool dlssInputs = true,
-        string? hotkey = null);
+        string? hotkey = null,
+        string variant = "Stable");
 
     /// <summary>
     /// Uninstalls OptiScaler from the specified game folder.
@@ -79,6 +110,12 @@ public interface IOptiScalerService
         IProgress<(string message, double percent)>? progress = null);
 
     // ── INI management ────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Seeds all 6 user-editable INI files in the inis folder from bundled templates,
+    /// only if they don't already exist. Called once at startup.
+    /// </summary>
+    void SeedUserInis();
 
     /// <summary>
     /// Copies OptiScaler.ini from the INIs_Folder to the game folder,

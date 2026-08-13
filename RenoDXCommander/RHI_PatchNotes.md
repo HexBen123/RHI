@@ -1,10 +1,17 @@
 ## v2.3.3-beta4
 
+### New
+
+- OptiScaler now supports the nightly build channel alongside the stable release. Switch between Stable and Nightly per game in the OptiScaler ⚙ cog. Update All keeps each game on its selected channel.
+
 ### Changes from beta3
 
 - Fixed startup scan slowness for games not on Steam or PCGamingWiki — RHI was making live HTTP requests to Steam and PCGW for every unrecognised game on every launch. Results are now cached so the lookup only happens once.
 - Fixed DLSS path matching incorrectly invalidating the fast-path cache every session due to path casing differences and mixed forward/backslash separators. Affected games like Nioh 3, AC Black Flag Resynced, and several others were doing a full recursive scan on every launch despite having unchanged installations.
 - Graphics API override to DirectX11 on a UE5 game now correctly shows the Luma row.
+- Fixed OptiScaler uninstall leaving DLSS files behind when the game didn't have DLSS before OptiScaler was installed.
+- Fixed OptiScaler uninstall not removing the OptiScaler/ subfolder.
+- Fixed OptiPatcher never receiving automatic updates — the update check was defined but not wired up, and the version comparison used the wrong field. OptiPatcher now auto-updates silently and deploys to all installed games when a new version is detected.
 
 ### Maintenance
 

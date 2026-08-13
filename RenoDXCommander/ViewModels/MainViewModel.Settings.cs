@@ -203,6 +203,29 @@ public partial class MainViewModel
         return _dxvkService.SelectedVariant;
     }
 
+    // ── OptiScaler Variant Override ───────────────────────────────────────────
+
+    /// <summary>Returns the OptiScaler variant for a game. "Stable" or "Nightly". Defaults to "Stable".</summary>
+    public string GetOsVariant(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (_gameNameService.OsVariantOverrides.TryGetValue(key, out var v)) return v;
+        // name-only fallback for legacy
+        if (_gameNameService.OsVariantOverrides.TryGetValue(gameName, out var v2)) return v2;
+        return "Stable";
+    }
+
+    /// <summary>Sets the OptiScaler variant for a game. Null or "Stable" removes the override.</summary>
+    public void SetOsVariant(string gameName, string? value, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (value == null || value == "Stable")
+            _gameNameService.OsVariantOverrides.Remove(key);
+        else
+            _gameNameService.OsVariantOverrides[key] = value;
+        SaveNameMappings();
+    }
+
     // ── DLL Naming Override ───────────────────────────────────────────────────────
 
     /// <summary>Per-game DLL naming overrides — delegated to DllOverrideService.</summary>

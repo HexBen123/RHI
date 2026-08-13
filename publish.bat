@@ -29,3 +29,9 @@ copy /y "%SRC%\reshade.rdr2.ini" "%OUT%\" >nul
 if not exist "%OUT%\Assets\icons" mkdir "%OUT%\Assets\icons"
 copy /y "%SRC%\Assets\icons\*.ico" "%OUT%\Assets\icons\" >nul
 copy /y "%SRC%\Assets\icons\*.png" "%OUT%\Assets\icons\" >nul
+copy /y "%SRC%\OptiScaler_nightly.nvidia.ini" "%OUT%\" >nul
+copy /y "%SRC%\OptiScaler_nightly.amd-dlss.ini" "%OUT%\" >nul
+copy /y "%SRC%\OptiScaler_nightly.amd-nodlss.ini" "%OUT%\" >nul
+copy /y "%SRC%\OptiScaler.nvidia.ini" "%OUT%\" >nul
+copy /y "%SRC%\OptiScaler.amd-dlss.ini" "%OUT%\" >nul
+copy /y "%SRC%\OptiScaler.amd-nodlss.ini" "%OUT%\" >nul

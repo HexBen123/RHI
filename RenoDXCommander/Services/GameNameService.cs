@@ -49,6 +49,9 @@ public class GameNameService : IGameNameService
     private Dictionary<string, string> _dxvkVariantOverrides = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, int> _liliumPresetOverrides = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Per-game OptiScaler variant override. Key = "GameName|Store", Value = "Stable" or "Nightly".</summary>
+    private Dictionary<string, string> _osVariantOverrides = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Per-game HDR auto-toggle overrides. Key = game name, Value = "On" or "Off". Absent = use global default.</summary>
     private Dictionary<string, string> _hdrToggleOverrides = new(StringComparer.OrdinalIgnoreCase);
 
@@ -107,6 +110,8 @@ public class GameNameService : IGameNameService
     public Dictionary<string, string> DxvkVariantOverrides => _dxvkVariantOverrides;
     /// <summary>Per-game Lilium HDR DXVK preset index. 0=Safest (default), 5=Experimental. Absent = 0.</summary>
     public Dictionary<string, int> LiliumPresetOverrides => _liliumPresetOverrides;
+    /// <summary>Per-game OptiScaler variant override. Key = "GameName|Store", Value = "Stable" or "Nightly".</summary>
+    public Dictionary<string, string> OsVariantOverrides => _osVariantOverrides;
     /// <summary>Per-game HDR auto-toggle overrides. "On" or "Off". Absent = use global.</summary>
     public Dictionary<string, string> HdrToggleOverrides => _hdrToggleOverrides;
     /// <summary>Per-game launch executable overrides. Key = game name, Value = absolute exe path.</summary>
@@ -352,6 +357,11 @@ public class GameNameService : IGameNameService
         foreach (var kv in dxvkVariantOvDict)
             _dxvkVariantOverrides[kv.Key] = kv.Value;
 
+        var osVariantOvDict = Load<Dictionary<string, string>>("OsVariantOverrides",
+            new(StringComparer.OrdinalIgnoreCase));
+        _osVariantOverrides = new(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in osVariantOvDict) _osVariantOverrides[kv.Key] = kv.Value;
+
         var liliumPresetOvDict = Load<Dictionary<string, int>>("LiliumPresetOverrides",
             new(StringComparer.OrdinalIgnoreCase));
         _liliumPresetOverrides = new(StringComparer.OrdinalIgnoreCase);
@@ -474,6 +484,7 @@ public class GameNameService : IGameNameService
                 s["ReShadeChannelOverrides"] = JsonSerializer.Serialize(_reShadeChannelOverrides);
                 s["DxvkVariantOverrides"] = JsonSerializer.Serialize(_dxvkVariantOverrides);
                 s["LiliumPresetOverrides"] = JsonSerializer.Serialize(_liliumPresetOverrides);
+                s["OsVariantOverrides"] = JsonSerializer.Serialize(_osVariantOverrides);
                 s["HdrToggleOverrides"] = JsonSerializer.Serialize(_hdrToggleOverrides);
                 s["LaunchExeOverrides"] = JsonSerializer.Serialize(_launchExeOverrides);
                 s["LaunchArgsOverrides"] = JsonSerializer.Serialize(_launchArgsOverrides);
@@ -623,6 +634,7 @@ public class GameNameService : IGameNameService
         MigrateCompositeDict(_dxvkVariantOverrides, oldName, newName);
         MigrateCompositeDict(_liliumPresetOverrides, oldName, newName);
         MigrateCompositeDict(_customReShadeSelection, oldName, newName);
+        MigrateCompositeDict(_osVariantOverrides, oldName, newName);
         // These four are name-only (not per-store) — use name-only migration
         MigrateDict(_hdrToggleOverrides, oldName, newName);
         MigrateDict(_launchExeOverrides, oldName, newName);

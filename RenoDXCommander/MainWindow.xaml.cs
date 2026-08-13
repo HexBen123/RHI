@@ -81,6 +81,7 @@ public sealed partial class MainWindow : Window
         AuxInstallService.EnsureInisDir();       // create inis folder on first run
         AuxInstallService.EnsureReShadeStaging(); // create staging dir (DLLs downloaded by ReShadeUpdateService)
         App.Services.GetRequiredService<CustomReShadeHashService>().EnsureInitialized(); // seed hash file on first run
+        App.Services.GetRequiredService<IOptiScalerService>().SeedUserInis(); // seed OptiScaler INIs if missing
         Title = "RHI";
         // Fire-and-forget: check/download shader packs in the background
         // When CacheAllShaders is off, skip the bulk download — packs will be fetched on demand.

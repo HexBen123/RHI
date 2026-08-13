@@ -298,6 +298,15 @@ public partial class MainViewModel
                 try { await _optiScalerService.EnsureStagingAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] OptiScaler staging task failed — {ex.Message}"); }
             });
+            var osNightlyTask = Task.Run(async () => {
+                try
+                {
+                    // Only download nightly staging if at least one game uses nightly variant
+                    if (_allCards.Any(c => GetOsVariant(c.GameName, c.Source ?? "") == "Nightly"))
+                        await _optiScalerService.EnsureNightlyStagingAsync();
+                }
+                catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] OptiScaler nightly staging task failed — {ex.Message}"); }
+            });
             dlssTask         = Task.Run(async () => {
                 try { await _optiScalerService.EnsureDlssStagingAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] DLSS staging task failed — {ex.Message}"); }
