@@ -1931,18 +1931,15 @@ public sealed partial class MainWindow
 
         Border MakeSeparator() => new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 4, 0, 4) };
 
-        // ── OptiScaler Version — label col 0, combo col 1 (aligned with settings grid) ──
-        var versionGrid = new Grid { ColumnSpacing = 12 };
-        versionGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        versionGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(110, GridUnitType.Pixel) });
-        versionGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        versionGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(110, GridUnitType.Pixel) });
-        var versionLabel = new TextBlock { Text = "OptiScaler Version", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), VerticalAlignment = VerticalAlignment.Center };
-        Grid.SetColumn(versionLabel, 0); versionGrid.Children.Add(versionLabel);
-        var variantCombo = new ComboBox { ItemsSource = new[] { "Stable", "Nightly" }, SelectedItem = ViewModel.GetOsVariant(card.GameName, card.Source ?? ""), FontSize = 12, HorizontalAlignment = HorizontalAlignment.Stretch };
+        // ── Unified grid: version row + all nightly rows share the same 4-col layout ──
+        // This guarantees the Nightly combo aligns perfectly with Deploy Streamline etc.
+        var unifiedGrid = MakeSettingsGrid();
+        AddRow(unifiedGrid, 0, "OptiScaler Version",
+            new ComboBox { ItemsSource = new[] { "Stable", "Nightly" }, SelectedItem = ViewModel.GetOsVariant(card.GameName, card.Source ?? ""), FontSize = 12, HorizontalAlignment = HorizontalAlignment.Stretch });
+        // Grab the combo we just added so we can wire events
+        var variantCombo = (ComboBox)unifiedGrid.Children.Cast<UIElement>().Last(c => c is ComboBox);
         ToolTipService.SetToolTip(variantCombo, "Stable uses the official OptiScaler release. Nightly uses the latest daily build.");
-        Grid.SetColumn(variantCombo, 1); versionGrid.Children.Add(variantCombo);
-        content.Children.Add(versionGrid);
+        content.Children.Add(unifiedGrid);
 
         ContentDialog? osCogDialog = null;
         variantCombo.SelectionChanged += (s, ev) =>
@@ -1960,8 +1957,6 @@ public sealed partial class MainWindow
         bool isNightly = ViewModel.GetOsVariant(card.GameName, card.Source ?? "") == "Nightly";
         if (isNightly)
         {
-            content.Children.Add(MakeSeparator());
-
             // ── INI value converters ───────────────────────────────────────
             string FgInputToIni(string d) => d switch { "OptiFG (Upscaler)" => "upscaler", "DLSSG via Streamline" => "dlssg", "DLSSG via Nvngx" => "nvngxfg", "FSR 3.1 FG" => "fsrfg", "FSR 3.0 FG" => "fsrfg30", "XeFG" => "xefg", _ => "auto" };
             string IniToFgInput(string v) => v switch { "upscaler" => "OptiFG (Upscaler)", "dlssg" => "DLSSG via Streamline", "nvngxfg" => "DLSSG via Nvngx", "fsrfg" => "FSR 3.1 FG", "fsrfg30" => "FSR 3.0 FG", "xefg" => "XeFG", _ => "Auto (Default)" };
@@ -1970,41 +1965,41 @@ public sealed partial class MainWindow
             string FgNvngxToIni(string d) => d switch { "Nukem's" => "Nukems", "Enabler" => "Arturs", "FSR 3/4 FG" => "FFX", _ => "None" };
             string IniToFgNvngx(string v) => v switch { "Nukems" => "Nukem's", "Arturs" => "Enabler", "FFX" => "FSR 3/4 FG", _ => "None (Real DLSSG)" };
 
-            // ── Single settings grid for all nightly rows ──────────────────
-            var nightlyGrid = MakeSettingsGrid();
+            // Separator row between version and nightly settings (spans all 4 columns)
+            unifiedGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            var versionSep = MakeSeparator();
+            Grid.SetRow(versionSep, 1); Grid.SetColumn(versionSep, 0); Grid.SetColumnSpan(versionSep, 4);
+            unifiedGrid.Children.Add(versionSep);
 
-            // Row 0: Deploy Streamline | Deploy DLSS Enabler
+            // All nightly rows go into the same unifiedGrid so columns align with the version row above
+            // Row 2: Deploy Streamline | Deploy DLSS Enabler
             var streamlineCombo = new ComboBox { ItemsSource = new[] { "No", "Yes" }, SelectedItem = ViewModel.GetOsDeployStreamline(card.GameName, card.Source ?? "") ? "Yes" : "No" };
             var enablerCombo = new ComboBox { ItemsSource = new[] { "No", "Yes" }, SelectedItem = ViewModel.GetOsDeployDlssEnabler(card.GameName, card.Source ?? "") ? "Yes" : "No", IsEnabled = ViewModel.GetOsDeployStreamline(card.GameName, card.Source ?? "") };
             ToolTipService.SetToolTip(enablerCombo, "Requires Deploy Streamline to be enabled.");
-            AddRow(nightlyGrid, 0, "Deploy Streamline", streamlineCombo, "Deploy DLSS Enabler", enablerCombo);
+            AddRow(unifiedGrid, 2, "Deploy Streamline", streamlineCombo, "Deploy DLSS Enabler", enablerCombo);
 
-            // Row 1: FG Input | FG Output
+            // Row 3: FG Input | FG Output
             var fgInputCombo = new ComboBox { ItemsSource = new[] { "Auto (Default)", "OptiFG (Upscaler)", "DLSSG via Streamline", "DLSSG via Nvngx", "FSR 3.1 FG", "FSR 3.0 FG", "XeFG" }, SelectedItem = IniToFgInput(ViewModel.GetOsFgInput(card.GameName, card.Source ?? "")) };
             var fgOutputCombo = new ComboBox { ItemsSource = new[] { "Auto (Default)", "FSR FG", "DLSSG", "XeFG" }, SelectedItem = IniToFgOutput(ViewModel.GetOsFgOutput(card.GameName, card.Source ?? "")) };
-            AddRow(nightlyGrid, 1, "FG Input", fgInputCombo, "FG Output", fgOutputCombo);
+            AddRow(unifiedGrid, 3, "FG Input", fgInputCombo, "FG Output", fgOutputCombo);
 
-            // Row 2: (spacer on left) | FG Nvngx Replacement
+            // Row 4: (right side only) FG Nvngx Replacement
             bool enablerAvail = ViewModel.GetOsDeployStreamline(card.GameName, card.Source ?? "") && ViewModel.GetOsDeployDlssEnabler(card.GameName, card.Source ?? "");
             var nvngxItems = new List<object> { "None (Real DLSSG)", "Nukem's", new ComboBoxItem { Content = "Enabler", IsEnabled = enablerAvail }, "FSR 3/4 FG" };
             var currentNvngxDisplay = IniToFgNvngx(ViewModel.GetOsFgNvngxReplacement(card.GameName, card.Source ?? ""));
             object? nvngxSelected = nvngxItems.FirstOrDefault(i => i is ComboBoxItem cb ? (cb.Content as string) == currentNvngxDisplay : (i as string) == currentNvngxDisplay) ?? nvngxItems[0];
             var fgNvngxCombo = new ComboBox { ItemsSource = nvngxItems, SelectedItem = nvngxSelected };
             ToolTipService.SetToolTip(fgNvngxCombo, "Only relevant when FG Output = DLSSG. Enabler requires Deploy Streamline + Deploy DLSS Enabler.");
-            // Add row 2 with only right side populated
-            nightlyGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            var nvngxLabel = new TextBlock { Text = "FG Nvngx Replacement", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), VerticalAlignment = VerticalAlignment.Center };
-            Grid.SetRow(nvngxLabel, 2); Grid.SetColumn(nvngxLabel, 2); nightlyGrid.Children.Add(nvngxLabel);
+            while (unifiedGrid.RowDefinitions.Count <= 4) unifiedGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            var nvngxLabel = new TextBlock { Text = "FG Nvngx Override", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), VerticalAlignment = VerticalAlignment.Center };
+            Grid.SetRow(nvngxLabel, 4); Grid.SetColumn(nvngxLabel, 2); unifiedGrid.Children.Add(nvngxLabel);
             fgNvngxCombo.FontSize = 12; fgNvngxCombo.HorizontalAlignment = HorizontalAlignment.Stretch;
-            Grid.SetRow(fgNvngxCombo, 2); Grid.SetColumn(fgNvngxCombo, 3); nightlyGrid.Children.Add(fgNvngxCombo);
+            Grid.SetRow(fgNvngxCombo, 4); Grid.SetColumn(fgNvngxCombo, 3); unifiedGrid.Children.Add(fgNvngxCombo);
 
             bool fgOutputIsDlssg = fgOutputCombo.SelectedItem as string == "DLSSG";
-            // Use Opacity on just row 2's elements to avoid layout jumps
             nvngxLabel.Opacity = fgOutputIsDlssg ? 1.0 : 0.35;
             fgNvngxCombo.Opacity = fgOutputIsDlssg ? 1.0 : 0.35;
             fgNvngxCombo.IsHitTestVisible = fgOutputIsDlssg;
-
-            content.Children.Add(nightlyGrid);
 
             // ── Wire handlers ──────────────────────────────────────────────
             streamlineCombo.SelectionChanged += (s, ev) =>
@@ -2098,6 +2093,66 @@ public sealed partial class MainWindow
 
         content.Children.Add(MakeSeparator());
 
+        if (isNightly)
+        {
+            var presetsLabel = new TextBlock { Text = "Presets", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) };
+            content.Children.Add(presetsLabel);
+
+            var presetsGrid = new Grid { ColumnSpacing = 8 };
+            for (int i = 0; i < 4; i++)
+                presetsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+            // Preset 1: DLSS Enabler
+            var dlssEnablerPreset = new Button
+            {
+                Content = "DLSS Enabler",
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                FontSize = 11,
+                Padding = new Thickness(8, 6, 8, 6),
+                CornerRadius = new CornerRadius(6),
+            };
+            dlssEnablerPreset.Click += (s, ev) =>
+            {
+                // Set: Streamline=Yes, DLSS Enabler=Yes, FG Input=OptiFG, FG Output=DLSSG, FG Nvngx=Enabler
+                ViewModel.SetOsDeployStreamline(card.GameName, true, card.Source ?? "");
+                ViewModel.SetOsDeployDlssEnabler(card.GameName, true, card.Source ?? "");
+                ViewModel.SetOsFgInput(card.GameName, "upscaler", card.Source ?? "");
+                ViewModel.SetOsFgOutput(card.GameName, "dlssg", card.Source ?? "");
+                ViewModel.SetOsFgNvngxReplacement(card.GameName, "Arturs", card.Source ?? "");
+                if (!string.IsNullOrEmpty(card.InstallPath))
+                {
+                    try { _optiScalerService.DeployStreamlineToGame(card.InstallPath); } catch { }
+                    try { var d = Path.Combine(card.InstallPath, "OptiScaler"); _ = _dlssEnablerService.InstallAsync(d); } catch { }
+                    OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "FrameGen", "FGInput", "upscaler");
+                    OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "FrameGen", "FGOutput", "dlssg");
+                    OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "FrameGen", "FGNvngxReplacement", "Arturs");
+                }
+                // Reopen cog to reflect new state
+                DispatcherQueue.TryEnqueue(async () => { osCogDialog?.Hide(); await Task.Delay(80); OsCogButton_Click(sender, e); });
+            };
+            Grid.SetColumn(dlssEnablerPreset, 0);
+            presetsGrid.Children.Add(dlssEnablerPreset);
+
+            // Presets 2–4: reserved
+            for (int i = 1; i < 4; i++)
+            {
+                var placeholder = new Button
+                {
+                    Content = "—",
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    FontSize = 11,
+                    Padding = new Thickness(8, 6, 8, 6),
+                    CornerRadius = new CornerRadius(6),
+                    IsEnabled = false,
+                    Opacity = 0.35,
+                };
+                Grid.SetColumn(placeholder, i);
+                presetsGrid.Children.Add(placeholder);
+            }
+
+            content.Children.Add(presetsGrid);
+        }
+
         var deployBtn = new Button
         {
             Content = "Deploy OptiScaler.ini",
@@ -2110,6 +2165,14 @@ public sealed partial class MainWindow
         };
         deployBtn.Click += (s, ev) => _installEventHandler.CopyOsIniButton_Click(sender, e);
         content.Children.Add(deployBtn);
+
+        content.Children.Add(new TextBlock
+        {
+            Text = "If the game crashes with both ReShade and OptiScaler installed, try renaming ReShade to d3d12.dll (or another DLL name) using DLL Naming Overrides in the Overrides panel.",
+            FontSize = 11,
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            TextWrapping = TextWrapping.Wrap,
+        });
 
         var dialog = new ContentDialog
         {

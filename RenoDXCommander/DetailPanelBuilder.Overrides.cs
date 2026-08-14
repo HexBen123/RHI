@@ -139,7 +139,7 @@ public partial class DetailPanelBuilder
         if (card.IsOsInstalled)
         {
             ToolTipService.SetToolTip(rsNameBox,
-                "Override the ReShade DLL name. When OptiScaler is installed, ReShade is renamed to ReShade64.dll — this sets the name it will be restored to when OptiScaler is uninstalled.");
+                "Override the ReShade DLL name. OptiScaler is installed — RHI will rename ReShade to this filename after OptiScaler is uninstalled.");
         }
         if (!string.IsNullOrEmpty(existingRsName))
         {
@@ -321,7 +321,7 @@ public partial class DetailPanelBuilder
 
         dllOverrideToggle.Toggled += (s, ev) =>
         {
-            rsNameBox.IsEnabled = dllOverrideToggle.IsOn && !card.IsOsInstalled;
+            rsNameBox.IsEnabled = dllOverrideToggle.IsOn;
             dcNameBox.IsEnabled = dllOverrideToggle.IsOn;
             osNameBox.IsEnabled = dllOverrideToggle.IsOn;
 

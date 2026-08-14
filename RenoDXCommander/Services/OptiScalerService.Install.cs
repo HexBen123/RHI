@@ -124,27 +124,33 @@ public partial class OptiScalerService
                     var rsCurrentName = Path.GetFileName(rsFilePath);
                     var rsDestPath = Path.Combine(card.InstallPath, ReShadeCoexistName);
 
-                    // Only rename if not already named ReShade64.dll
-                    if (!rsCurrentName.Equals(ReShadeCoexistName, StringComparison.OrdinalIgnoreCase))
+                    // Only rename if ReShade's current filename would conflict with OptiScaler's deploy name.
+                    // If ReShade is already e.g. d3d12.dll and OptiScaler deploys as dxgi.dll, no rename needed.
+                    bool conflicts = rsCurrentName.Equals(effectiveDllName, StringComparison.OrdinalIgnoreCase);
+                    if (conflicts && !rsCurrentName.Equals(ReShadeCoexistName, StringComparison.OrdinalIgnoreCase))
                     {
                         // If a file already exists at the destination, delete it first (stale leftover)
                         if (File.Exists(rsDestPath))
                             File.Delete(rsDestPath);
 
                         File.Move(rsFilePath, rsDestPath);
-                        CrashReporter.Log($"[OptiScalerService.InstallAsync] Renamed ReShade '{rsCurrentName}' → '{ReShadeCoexistName}'");
-                    }
+                        CrashReporter.Log($"[OptiScalerService.InstallAsync] Renamed ReShade '{rsCurrentName}' → '{ReShadeCoexistName}' (conflict with OptiScaler DLL name)");
 
-                    // Update ReShade tracking record
-                    if (rsRecord != null)
+                        // Update ReShade tracking record
+                        if (rsRecord != null)
+                        {
+                            rsRecord.InstalledAs = ReShadeCoexistName;
+                            _auxInstaller.SaveAuxRecord(rsRecord);
+                            CrashReporter.Log($"[OptiScalerService.InstallAsync] Updated ReShade record InstalledAs → '{ReShadeCoexistName}'");
+                        }
+
+                        // Update card RS state
+                        card.RsInstalledFile = ReShadeCoexistName;
+                    }
+                    else if (!conflicts)
                     {
-                        rsRecord.InstalledAs = ReShadeCoexistName;
-                        _auxInstaller.SaveAuxRecord(rsRecord);
-                        CrashReporter.Log($"[OptiScalerService.InstallAsync] Updated ReShade record InstalledAs → '{ReShadeCoexistName}'");
+                        CrashReporter.Log($"[OptiScalerService.InstallAsync] ReShade '{rsCurrentName}' does not conflict with OptiScaler '{effectiveDllName}' — no rename needed");
                     }
-
-                    // Update card RS state
-                    card.RsInstalledFile = ReShadeCoexistName;
                 }
             }
             catch (Exception rsEx)
@@ -1383,10 +1389,6 @@ public partial class OptiScalerService
 
         try
         {
-            var attrs = File.GetAttributes(iniPath);
-            if (attrs.HasFlag(FileAttributes.ReadOnly))
-                File.SetAttributes(iniPath, attrs & ~FileAttributes.ReadOnly);
-
             var lines = File.ReadAllLines(iniPath).ToList();
             bool inSection = false;
             bool keyWritten = false;
@@ -1423,7 +1425,6 @@ public partial class OptiScalerService
             }
 
             File.WriteAllLines(iniPath, lines);
-            File.SetAttributes(iniPath, File.GetAttributes(iniPath) | FileAttributes.ReadOnly);
             CrashReporter.Log($"[OptiScalerService] Set {section}.{key}={value} in {iniPath}");
         }
         catch (Exception ex)

@@ -1,3 +1,9 @@
+## v2.3.3-beta5
+
+### Changes from beta4
+
+---
+
 ## v2.3.3-beta4
 
 ### New
@@ -19,6 +25,11 @@
 - The ReShade DLL filename can now be changed in DLL naming overrides even when OptiScaler is installed.
 - OptiScaler nightly bundled INI templates updated to match the current nightly format (new sections: DLSSG, NvngxFG, Magnifier, fakenvapi).
 - Switching the OptiScaler channel in the cog now automatically uninstalls the current version so you start fresh on the new channel.
+- Fixed OptiScaler uninstall aborting after deleting the DLL and leaving everything else behind — the OptiScaler.ini was marked read-only, causing the delete to throw and bail out before clearing DLSS files, the OptiScaler/ subfolder, and the tracking record. OptiScaler.ini is no longer set read-only.
+- Fixed OptiScaler unnecessarily renaming ReShade to ReShade64.dll when there was no filename conflict — e.g. ReShade installed as d3d12.dll with OptiScaler deploying as dxgi.dll. The rename now only happens when both would use the same filename.
+- Fixed Engine.ini writers appending duplicate `[SystemSettings]` section headers when another feature had already written to that section. All Engine.ini writes now merge into the existing section instead of appending a new one. Existing Engine.ini files with duplicate headers from previous installs won't be cleaned up automatically — reinstall to get a fresh file.
+- Added four preset buttons to the OptiScaler ⚙ cog (Nightly only) — slot 1 is "DLSS Enabler" which configures Streamline, DLSS Enabler, FG Input, FG Output, and FG Nvngx Override in one click.
+- Added a tip below the Deploy OptiScaler.ini button suggesting DLL Naming Overrides as a fix for crashes when ReShade and OptiScaler are both installed.
 
 ### Maintenance
 

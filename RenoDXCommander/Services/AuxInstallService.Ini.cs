@@ -799,7 +799,6 @@ public partial class AuxInstallService
 
             // Read existing content as raw lines (preserves duplicate keys)
             var existingLines = File.Exists(engineIniPath) ? File.ReadAllLines(engineIniPath) : Array.Empty<string>();
-            var existingText = string.Join("\n", existingLines);
 
             // HDR settings to ensure exist — grouped by section
             var requiredEntries = new (string Section, string Key, string Value)[]
@@ -812,21 +811,11 @@ public partial class AuxInstallService
                 ("/Script/Engine.RendererSettings", "r.LUT.UpdateEveryFrame", "1"),
             };
 
-            // Check which keys are already present (case-insensitive key search)
-            var linesToAppend = new List<string>();
-            var sectionsNeeded = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            // Check which keys are already present — if all present, just ensure read-only
+            bool anyMissing = requiredEntries.Any(e =>
+                !existingLines.Any(l => l.TrimStart().StartsWith(e.Key + "=", StringComparison.OrdinalIgnoreCase)));
 
-            foreach (var (section, key, value) in requiredEntries)
-            {
-                // Check if key=value already exists anywhere in the file
-                bool found = existingLines.Any(l =>
-                    l.TrimStart().StartsWith(key + "=", StringComparison.OrdinalIgnoreCase));
-
-                if (!found)
-                    sectionsNeeded.Add(section);
-            }
-
-            if (sectionsNeeded.Count == 0)
+            if (!anyMissing)
             {
                 // All keys already present — just ensure read-only
                 if (File.Exists(engineIniPath))
@@ -834,42 +823,49 @@ public partial class AuxInstallService
                 return;
             }
 
-            // Build lines to append per section
-            var appendBuilder = new System.Text.StringBuilder();
+            // Build lines to write per section, merging into existing sections where possible
             var groupedBySection = requiredEntries
                 .Where(e => !existingLines.Any(l => l.TrimStart().StartsWith(e.Key + "=", StringComparison.OrdinalIgnoreCase)))
                 .GroupBy(e => e.Section, StringComparer.OrdinalIgnoreCase);
 
+            var lines = existingLines.ToList();
             foreach (var group in groupedBySection)
             {
                 var sectionHeader = $"[{group.Key}]";
-                // Check if section already exists in file
-                bool sectionExists = existingLines.Any(l =>
-                    l.Trim().Equals(sectionHeader, StringComparison.OrdinalIgnoreCase));
-
-                if (!sectionExists)
+                int sectionStart = -1;
+                for (int i = 0; i < lines.Count; i++)
                 {
-                    appendBuilder.AppendLine();
-                    appendBuilder.AppendLine(sectionHeader);
+                    if (lines[i].Trim().Equals(sectionHeader, StringComparison.OrdinalIgnoreCase))
+                    {
+                        sectionStart = i;
+                        break;
+                    }
+                }
+
+                if (sectionStart >= 0)
+                {
+                    // Find end of this section
+                    int insertAt = sectionStart + 1;
+                    while (insertAt < lines.Count && !lines[insertAt].TrimStart().StartsWith("["))
+                        insertAt++;
+                    // Step back over trailing blank lines within the section
+                    int insertPos = insertAt;
+                    while (insertPos > sectionStart + 1 && string.IsNullOrWhiteSpace(lines[insertPos - 1]))
+                        insertPos--;
+                    lines.InsertRange(insertPos, group.Select(e => $"{e.Key}={e.Value}"));
                 }
                 else
                 {
-                    // Find the section and insert keys after it — but since we're appending,
-                    // UE INI allows keys under a repeated section header at the end
-                    appendBuilder.AppendLine();
-                    appendBuilder.AppendLine(sectionHeader);
+                    // Section doesn't exist — append it
+                    if (lines.Count > 0 && !string.IsNullOrWhiteSpace(lines[^1]))
+                        lines.Add("");
+                    lines.Add(sectionHeader);
+                    foreach (var entry in group)
+                        lines.Add($"{entry.Key}={entry.Value}");
                 }
-
-                foreach (var entry in group)
-                    appendBuilder.AppendLine($"{entry.Key}={entry.Value}");
             }
 
-            // Append to file (preserves all existing content)
-            var appendText = appendBuilder.ToString();
-            if (!existingText.EndsWith("\n") && !existingText.EndsWith("\r\n") && existingText.Length > 0)
-                appendText = "\n" + appendText;
-
-            File.AppendAllText(engineIniPath, appendText);
+            File.WriteAllLines(engineIniPath, lines);
 
             // Set read-only to prevent engine from overwriting on launch
             File.SetAttributes(engineIniPath, File.GetAttributes(engineIniPath) | FileAttributes.ReadOnly);
@@ -918,6 +914,23 @@ public partial class AuxInstallService
                 var key = trimmed[..eqIdx].Trim();
                 return keySet.Contains(key);
             });
+            // Remove section headers that are now empty (no key lines before the next header or EOF)
+            for (int i = lines.Count - 1; i >= 0; i--)
+            {
+                var trimmed = lines[i].Trim();
+                if (!trimmed.StartsWith("[") || !trimmed.EndsWith("]")) continue;
+                // Check if there are any non-blank, non-header lines between this header and the next
+                int next = i + 1;
+                while (next < lines.Count && string.IsNullOrWhiteSpace(lines[next])) next++;
+                bool isEmpty = next >= lines.Count || (lines[next].Trim().StartsWith("[") && lines[next].Trim().EndsWith("]"));
+                if (isEmpty)
+                {
+                    // Remove the header and any blank lines immediately after it
+                    int end = i + 1;
+                    while (end < lines.Count && string.IsNullOrWhiteSpace(lines[end])) end++;
+                    lines.RemoveRange(i, end - i);
+                }
+            }
             // Remove trailing empty lines
             while (lines.Count > 0 && string.IsNullOrWhiteSpace(lines[^1]))
                 lines.RemoveAt(lines.Count - 1);
@@ -966,7 +979,6 @@ public partial class AuxInstallService
             }
 
             var existingLines = File.Exists(engineIniPath) ? File.ReadAllLines(engineIniPath) : Array.Empty<string>();
-            var existingText = string.Join("\n", existingLines);
 
             var toWrite = entryList.Where(e =>
                 !existingLines.Any(l => l.TrimStart().StartsWith(e.Key + "=", StringComparison.OrdinalIgnoreCase)))
@@ -979,21 +991,50 @@ public partial class AuxInstallService
                 return;
             }
 
-            var appendBuilder = new System.Text.StringBuilder();
+            // Merge into existing sections rather than always appending new section headers.
+            // For each group, find the last line of the existing section and insert there.
+            // If the section doesn't exist, append it at the end.
+            var lines = existingLines.ToList();
             var grouped = toWrite.GroupBy(e => e.Section, StringComparer.OrdinalIgnoreCase);
             foreach (var group in grouped)
             {
-                appendBuilder.AppendLine();
-                appendBuilder.AppendLine($"[{group.Key}]");
-                foreach (var entry in group)
-                    appendBuilder.AppendLine($"{entry.Key}={entry.Value}");
+                var sectionHeader = $"[{group.Key}]";
+                // Find the section start index
+                int sectionStart = -1;
+                for (int i = 0; i < lines.Count; i++)
+                {
+                    if (lines[i].Trim().Equals(sectionHeader, StringComparison.OrdinalIgnoreCase))
+                    {
+                        sectionStart = i;
+                        break;
+                    }
+                }
+
+                if (sectionStart >= 0)
+                {
+                    // Find the end of this section (next section header or EOF)
+                    int insertAt = sectionStart + 1;
+                    while (insertAt < lines.Count && !lines[insertAt].TrimStart().StartsWith("["))
+                        insertAt++;
+                    // Insert before the next section (or at end), skip back over trailing blanks
+                    int insertPos = insertAt;
+                    while (insertPos > sectionStart + 1 && string.IsNullOrWhiteSpace(lines[insertPos - 1]))
+                        insertPos--;
+                    var newLines = group.Select(e => $"{e.Key}={e.Value}").ToList();
+                    lines.InsertRange(insertPos, newLines);
+                }
+                else
+                {
+                    // Section doesn't exist — append it
+                    if (lines.Count > 0 && !string.IsNullOrWhiteSpace(lines[^1]))
+                        lines.Add("");
+                    lines.Add(sectionHeader);
+                    foreach (var entry in group)
+                        lines.Add($"{entry.Key}={entry.Value}");
+                }
             }
 
-            var appendText = appendBuilder.ToString();
-            if (!existingText.EndsWith("\n") && !existingText.EndsWith("\r\n") && existingText.Length > 0)
-                appendText = "\n" + appendText;
-
-            File.AppendAllText(engineIniPath, appendText);
+            File.WriteAllLines(engineIniPath, lines);
             File.SetAttributes(engineIniPath, File.GetAttributes(engineIniPath) | FileAttributes.ReadOnly);
 
             CrashReporter.Log($"[AuxInstallService.ApplyEngineIniCustomKeys] Wrote {toWrite.Count} key(s) to '{engineIniPath}'");
