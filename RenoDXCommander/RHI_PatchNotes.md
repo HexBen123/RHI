@@ -6,8 +6,13 @@
 
 ### Changes from beta4
 
+- Fixed Elden Ring Nightreign install path pointing to ArtbookOST subfolder instead of Game.
 - Fixed OptiScaler updates leaving stale files behind from the previous version — subdirectories (D3D12_OptiScaler, OptiScaler/Streamline etc.) are now wiped and redeployed fresh, and companion DLLs removed from the new nightly version are deleted before the update is applied.
 - OptiScaler.ini is now properly updated on nightly version changes — the fresh template INI is deployed and any settings you changed from the defaults are merged back in. New keys from the nightly build are picked up automatically.
+
+### Manifest Updates
+
+- Added ELDEN RING NIGHTREIGN install path override (`Game` subfolder).
 
 ---
 
