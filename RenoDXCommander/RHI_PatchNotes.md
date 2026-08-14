@@ -8,12 +8,14 @@
 ### Changes from beta4
 
 - Fixed Elden Ring Nightreign install path pointing to ArtbookOST subfolder instead of Game.
+- Fixed "Create NVIDIA Profile" registering the wrong executable in the driver profile for games that have multiple exe files — it now uses the manifest launch exe override when available, instead of always picking the largest exe in the folder. Affected games like Arma Reforger where the diagnostics exe was larger than the actual game exe. If you already created a wrong profile, delete it in NVPI and use "Create NVIDIA Profile" again.
 - Fixed OptiScaler updates leaving stale files behind from the previous version — subdirectories (D3D12_OptiScaler, OptiScaler/Streamline etc.) are now wiped and redeployed fresh, and companion DLLs removed from the new nightly version are deleted before the update is applied.
 - OptiScaler.ini is now properly updated on nightly version changes — the fresh template INI is deployed and any settings you changed from the defaults are merged back in. New keys from the nightly build are picked up automatically.
 
 ### Manifest Updates
 
 - Added ELDEN RING NIGHTREIGN install path override (`Game` subfolder).
+- Removed Skyrim Creation Kit from the split game entries — it will no longer show up in your game library.
 
 ---
 

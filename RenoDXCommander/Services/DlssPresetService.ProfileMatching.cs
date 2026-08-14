@@ -388,19 +388,35 @@ public partial class DlssPresetService
 
         try
         {
-            // Find the game exe (largest exe, excluding known non-game names)
-            var excludeNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-                { "unins000", "UnityCrashHandler64", "UnityCrashHandler32", "CrashReporter", "launcher" };
+            // Use manifest launchExeOverride if available — avoids picking wrong exe (e.g. a diag/launcher)
             string? gameExe = null;
-            try
+            if (_launchExeOverrides != null && _launchExeOverrides.TryGetValue(gameName, out var overrideExePath)
+                && !string.IsNullOrEmpty(overrideExePath))
             {
-                gameExe = Directory.GetFiles(installPath, "*.exe", SearchOption.TopDirectoryOnly)
-                    .Where(e => !excludeNames.Contains(Path.GetFileNameWithoutExtension(e)))
-                    .OrderByDescending(e => new FileInfo(e).Length)
-                    .Select(Path.GetFileName)
-                    .FirstOrDefault();
+                var overrideExeName = Path.GetFileName(overrideExePath);
+                if (!string.IsNullOrEmpty(overrideExeName))
+                {
+                    gameExe = overrideExeName;
+                    CrashReporter.Log($"[DlssPresetService.CreateProfileForGame] Using manifest launchExeOverride '{gameExe}' for '{gameName}'");
+                }
             }
-            catch { }
+
+            // Fall back to largest exe if no override
+            if (string.IsNullOrEmpty(gameExe))
+            {
+                // Find the game exe (largest exe, excluding known non-game names)
+                var excludeNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                    { "unins000", "UnityCrashHandler64", "UnityCrashHandler32", "CrashReporter", "launcher" };
+                try
+                {
+                    gameExe = Directory.GetFiles(installPath, "*.exe", SearchOption.TopDirectoryOnly)
+                        .Where(e => !excludeNames.Contains(Path.GetFileNameWithoutExtension(e)))
+                        .OrderByDescending(e => new FileInfo(e).Length)
+                        .Select(Path.GetFileName)
+                        .FirstOrDefault();
+                }
+                catch { }
+            }
 
             if (string.IsNullOrEmpty(gameExe)) return null;
 
