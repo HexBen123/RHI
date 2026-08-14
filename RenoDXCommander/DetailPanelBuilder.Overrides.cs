@@ -668,14 +668,18 @@ public partial class DetailPanelBuilder
 
         // ── Per-game Shader mode ComboBox ─────────────────────────────────────
         string currentShaderMode = _window.ViewModel.GetPerGameShaderMode(gameName, card.Source ?? "");
-        // Resolve effective display: if global UseCustomShaders is ON and mode is "Global", show "Custom"
+        // Resolve effective display: reflect the global setting when mode is "Global"
         string effectiveShaderDisplay = currentShaderMode;
         var shaderModeKey = GameKey.FromCard(gameName, card.Source).ToKey();
-        if (currentShaderMode == "Global"
-            && _window.ViewModel.Settings.UseCustomShaders
-            && !_gameNameService.PerGameShaderMode.ContainsKey(shaderModeKey)
-            && !_gameNameService.PerGameShaderMode.ContainsKey(gameName))
-            effectiveShaderDisplay = "Custom";
+        bool hasPerGameOverride = _gameNameService.PerGameShaderMode.ContainsKey(shaderModeKey)
+                               || _gameNameService.PerGameShaderMode.ContainsKey(gameName);
+        if (currentShaderMode == "Global" && !hasPerGameOverride)
+        {
+            if (_window.ViewModel.Settings.GlobalShadersOff)
+                effectiveShaderDisplay = "Off";
+            else if (_window.ViewModel.Settings.UseCustomShaders)
+                effectiveShaderDisplay = "Custom";
+        }
 
         var shaderModeItems = new[] { "Global", "Custom", "Select", "Off" };
         bool shaderComboInitializing = true;

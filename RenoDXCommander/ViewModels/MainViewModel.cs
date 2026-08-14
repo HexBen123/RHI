@@ -368,6 +368,10 @@ public partial class MainViewModel : ObservableObject
         if (string.Equals(shaderModeOverride, "Off", StringComparison.OrdinalIgnoreCase))
             return null;
 
+        // 0b. Global "Off" mode — overrides everything, no shaders deployed to any game
+        if (_settingsViewModel.GlobalShadersOff)
+            return null;
+
         // 1. Per-game "Custom" mode → custom shader sentinel
         if (string.Equals(shaderModeOverride, "Custom", StringComparison.OrdinalIgnoreCase))
             return new[] { ShaderPackService.CustomShaderSentinel };

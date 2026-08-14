@@ -46,7 +46,7 @@ public class SettingsHandler
         _window.SettingsPanel.Visibility = Visibility.Visible;
         _window.LoadingPanel.Visibility = Visibility.Collapsed;
         // Sync toggle state with ViewModel
-        _window.CustomShadersCombo.SelectedIndex = ViewModel.Settings.UseCustomShaders ? 1 : 0;
+        _window.CustomShadersCombo.SelectedIndex = ViewModel.Settings.GlobalShadersOff ? 0 : (ViewModel.Settings.UseCustomShaders ? 2 : 1);
         _window.AboutVersionText.Text = $"v{CrashReporter.AppVersion}  ·  Simplified PC Gaming by RankFTW";
         // Populate addon watch folder textbox
         _window.AddonWatchFolderBox.Text = ViewModel.Settings.AddonWatchFolder;
@@ -359,7 +359,8 @@ public class SettingsHandler
     {
         if (sender is ComboBox combo)
         {
-            ViewModel.Settings.UseCustomShaders = combo.SelectedIndex == 1;
+            ViewModel.Settings.GlobalShadersOff = combo.SelectedIndex == 0;
+            ViewModel.Settings.UseCustomShaders = combo.SelectedIndex == 2;
             ViewModel.SaveSettingsPublic();
         }
     }

@@ -215,7 +215,8 @@ public partial class OptiScalerService
                     var relativePath = Path.GetRelativePath(stagingSubDir, subFile);
                     var destPath = Path.Combine(destSubDir, relativePath);
                     Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
-                    BackupOriginalIfExists(destPath);
+                    // Subdirectory files (D3D12_OptiScaler, Streamline etc.) are OptiScaler's own —
+                    // never back them up as they are not game originals.
                     File.Copy(subFile, destPath, overwrite: true);
                     CrashReporter.Log($"[OptiScalerService.InstallAsync] Deployed {dirName}/{relativePath}");
                 }
@@ -844,15 +845,9 @@ public partial class OptiScalerService
                 else
                     destPath = Path.Combine(gameDir, fileName);
 
-                // During updates, don't backup OptiScaler's own companion files —
-                // they're from the previous version, not game originals.
-                // Only backup files that aren't known OptiScaler companions.
-                if (!CompanionFiles.Any(cf => cf.Equals(fileName, StringComparison.OrdinalIgnoreCase))
-                    && !fileName.Equals("OptiScaler.dll", StringComparison.OrdinalIgnoreCase)
-                    && !SupportedDllNames.Any(dn => dn.Equals(fileName, StringComparison.OrdinalIgnoreCase)))
-                {
-                    BackupOriginalIfExists(destPath);
-                }
+                // During updates, never create .original backups — these files are from
+                // the previous OptiScaler version, not game originals. Only fresh installs
+                // should create backups.
                 File.Copy(stagingFile, destPath, overwrite: true);
                 CrashReporter.Log($"[OptiScalerService.UpdateAsync] Replaced {fileName}");
             }

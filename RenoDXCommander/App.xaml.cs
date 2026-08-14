@@ -236,6 +236,7 @@ public partial class App : Application
                 {
                     rawSettings["GlobalSkipRsUpdates"] = "true";
                     rawSettings["CacheAllShaders"] = "false";
+                    rawSettings["GlobalShadersOff"] = "true";
                 }
                 SettingsViewModel.SaveSettingsFile(rawSettings);
                 CrashReporter.Log($"[App.OnLaunched] Setup complete — manageReShade={manageReShade}");

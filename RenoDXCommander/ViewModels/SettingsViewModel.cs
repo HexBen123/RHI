@@ -23,6 +23,7 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private List<string> _selectedShaderPacks = new();
     [ObservableProperty] private string _addonWatchFolder = "";
     [ObservableProperty] private bool _useCustomShaders;
+    [ObservableProperty] private bool _globalShadersOff;
     [ObservableProperty] private string _screenshotPath = "";
     [ObservableProperty] private string _overlayHotkey = "36,0,0,0";
     [ObservableProperty] private string _screenshotHotkey = "44,0,0,0";
@@ -177,6 +178,9 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("UseCustomShaders", out var ucsVal))
             UseCustomShaders = ucsVal == "true";
 
+        if (s.TryGetValue("GlobalShadersOff", out var gsoffVal))
+            GlobalShadersOff = gsoffVal == "true";
+
         if (s.TryGetValue("AddonWatchFolder", out var awfVal))
             AddonWatchFolder = awfVal ?? "";
 
@@ -306,6 +310,7 @@ public partial class SettingsViewModel : ObservableObject
         s["ShaderDeployMode"]  = SelectedShaderPacks.Count > 0 ? "Select" : "Off";
         s["SelectedShaderPacks"] = JsonSerializer.Serialize(SelectedShaderPacks);
         s["UseCustomShaders"]  = UseCustomShaders ? "true" : "false";
+        s["GlobalShadersOff"]  = GlobalShadersOff ? "true" : "false";
         if (!string.IsNullOrWhiteSpace(AddonWatchFolder))
             s["AddonWatchFolder"] = AddonWatchFolder;
         s["ScreenshotPath"] = ScreenshotPath;

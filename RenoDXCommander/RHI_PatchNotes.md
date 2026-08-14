@@ -2,7 +2,8 @@
 
 ### New
 
-- First-launch setup window: on a fresh install (no prior settings), RHI now shows a setup screen before the main window asking how you want ReShade managed. Choosing "Manage ReShade for me" enables automatic ReShade management across all your games. Choosing "I'll manage it myself" disables automatic ReShade updates and shader caching so RHI never touches your ReShade setup.
+- First-launch setup window: on a fresh install (no prior settings), RHI now shows a setup screen before the main window asking how you want ReShade managed. Choosing "Manage ReShade for me" enables automatic ReShade management across all your games. Choosing "I'll manage it myself" disables automatic ReShade updates, shader caching, and shader deployment so RHI never touches your ReShade setup.
+- New "Shader Management" global setting in Settings (replaces "Custom Shaders"): **RHI Managed** deploys built-in shader packs to all games (previous default), **Custom** uses your own shader directory (previous "On"), **Off** disables all shader deployment globally — RHI will never touch the reshade-shaders folder on any game. Selecting "Off" takes effect immediately without needing per-game overrides.
 
 ### Changes from beta4
 

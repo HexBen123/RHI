@@ -2033,13 +2033,13 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
-                                <!-- Left: Custom Shaders + Cache -->
+                                <!-- Left: Shader Management + Cache -->
                                 <StackPanel Grid.Column="0" Spacing="12">
                                     <StackPanel Spacing="4">
-                                        <TextBlock Text="Custom Shaders" FontSize="13" FontWeight="SemiBold"
+                                        <TextBlock Text="Shader Management" FontSize="13" FontWeight="SemiBold"
                                                    Foreground="{StaticResource TextPrimaryBrush}"/>
                                         <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                                   Text="Use your own shader and texture files from a custom directory instead of the built-in shader packs."/>
+                                                   Text="Control how RHI manages shader files across your games."/>
                                     </StackPanel>
                                     <Grid ColumnSpacing="16">
                                         <Grid.ColumnDefinitions>
@@ -2050,16 +2050,17 @@
                                             <RowDefinition Height="Auto"/>
                                             <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
-                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Custom Shaders" FontSize="11"
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Shader Management" FontSize="11"
                                                    Foreground="{StaticResource InlineDescriptionBrush}" Margin="0,0,0,3"/>
                                         <TextBlock Grid.Row="0" Grid.Column="1" Text="Cache All Shaders" FontSize="11"
                                                    Foreground="{StaticResource InlineDescriptionBrush}" Margin="0,0,0,3"/>
                                         <ComboBox Grid.Row="1" Grid.Column="0" x:Name="CustomShadersCombo" x:FieldModifier="internal"
                                                   FontSize="12" HorizontalAlignment="Stretch"
-                                                  ToolTipService.ToolTip="When On, deploys shaders and textures from your custom directory instead of the built-in shader packs."
+                                                  ToolTipService.ToolTip="RHI Managed: deploy built-in shader packs to all games.&#10;Custom: use your own shader directory.&#10;Off: RHI never touches shaders on any game."
                                                   SelectionChanged="CustomShadersCombo_SelectionChanged">
                                             <ComboBoxItem Content="Off"/>
-                                            <ComboBoxItem Content="On"/>
+                                            <ComboBoxItem Content="RHI Managed"/>
+                                            <ComboBoxItem Content="Custom"/>
                                         </ComboBox>
                                         <ComboBox Grid.Row="1" Grid.Column="1" x:Name="CacheAllShadersCombo" x:FieldModifier="internal"
                                                   FontSize="12" HorizontalAlignment="Stretch"
