@@ -1,6 +1,13 @@
 ## v2.3.3-beta5
 
+### New
+
+- First-launch setup window: on a fresh install (no prior settings), RHI now shows a setup screen before the main window asking how you want ReShade managed. Choosing "Manage ReShade for me" enables automatic ReShade management across all your games. Choosing "I'll manage it myself" disables automatic ReShade updates and shader caching so RHI never touches your ReShade setup.
+
 ### Changes from beta4
+
+- Fixed OptiScaler updates leaving stale files behind from the previous version — subdirectories (D3D12_OptiScaler, OptiScaler/Streamline etc.) are now wiped and redeployed fresh, and companion DLLs removed from the new nightly version are deleted before the update is applied.
+- OptiScaler.ini is now properly updated on nightly version changes — the fresh template INI is deployed and any settings you changed from the defaults are merged back in. New keys from the nightly build are picked up automatically.
 
 ---
 

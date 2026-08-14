@@ -41,6 +41,7 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _engineBadgeWarningDismissed;
     [ObservableProperty] private bool _lumaRenodxCombinedWarningDismissed;
     [ObservableProperty] private List<string> _enabledGlobalAddons = new();
+    [ObservableProperty] private bool _firstLaunchSetupDone;
     [ObservableProperty] private bool _globalSkipRdxUpdates;
     [ObservableProperty] private bool _globalSkipRsUpdates;
     [ObservableProperty] private bool _globalSkipUlUpdates;
@@ -233,6 +234,9 @@ public partial class SettingsViewModel : ObservableObject
             catch { EnabledGlobalAddons = new(); }
         }
 
+        if (s.TryGetValue("FirstLaunchSetupDone", out var flsdVal))
+            FirstLaunchSetupDone = flsdVal == "true";
+
         if (s.TryGetValue("GlobalSkipRdxUpdates", out var gsrVal)) GlobalSkipRdxUpdates = gsrVal == "true";
         if (s.TryGetValue("GlobalSkipRsUpdates", out var gssVal)) GlobalSkipRsUpdates = gssVal == "true";
         if (s.TryGetValue("GlobalSkipUlUpdates", out var gsuVal)) GlobalSkipUlUpdates = gsuVal == "true";
@@ -322,6 +326,7 @@ public partial class SettingsViewModel : ObservableObject
         s["MfgWarningDismissed"] = MfgWarningDismissed ? "true" : "false";
         s["EngineBadgeWarningDismissed"] = EngineBadgeWarningDismissed ? "true" : "false";
         s["EnabledGlobalAddons"] = JsonSerializer.Serialize(EnabledGlobalAddons);
+        s["FirstLaunchSetupDone"] = FirstLaunchSetupDone ? "true" : "false";
         s["GlobalSkipRdxUpdates"] = GlobalSkipRdxUpdates ? "true" : "false";
         s["GlobalSkipRsUpdates"] = GlobalSkipRsUpdates ? "true" : "false";
         s["GlobalSkipUlUpdates"] = GlobalSkipUlUpdates ? "true" : "false";

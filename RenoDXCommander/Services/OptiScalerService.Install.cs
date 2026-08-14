@@ -775,7 +775,51 @@ public partial class OptiScalerService
 
             progress?.Report(("Updating OptiScaler files...", 20));
 
-            // ── 3. Deploy all files from staging, overwriting OptiScaler files ──
+            // ── 3. Clean up old deployed files before deploying new ones ────
+            // Delete all previously deployed companion files and subdirectories
+            // so removed/renamed files from the new version don't linger.
+            // OptiScaler.ini is intentionally preserved for merging below.
+            // The installed DLL (.original backups) are left alone — they belong to the game.
+            var newStagingFileNames = new HashSet<string>(
+                Directory.GetFiles(effectiveStagingDir, "*", SearchOption.TopDirectoryOnly)
+                    .Select(Path.GetFileName)
+                    .Where(f => f != null)
+                    .Select(f => f!),
+                StringComparer.OrdinalIgnoreCase);
+
+            // Delete companion files in game root that are not in the new staging
+            foreach (var filePath in Directory.GetFiles(gameDir, "*.dll", SearchOption.TopDirectoryOnly)
+                .Concat(Directory.GetFiles(gameDir, "*.ini", SearchOption.TopDirectoryOnly))
+                .Where(fp => !Path.GetFileName(fp).Equals(IniFileName, StringComparison.OrdinalIgnoreCase)))
+            {
+                var fileName = Path.GetFileName(filePath);
+                // Only delete files that were OptiScaler-deployed companions (not game files, not ReShade, not the installed DLL)
+                bool isCompanion = CompanionFiles.Any(cf => cf.Equals(fileName, StringComparison.OrdinalIgnoreCase));
+                bool isOldStagingFile = !newStagingFileNames.Contains(fileName)
+                    && !SupportedDllNames.Any(dn => dn.Equals(fileName, StringComparison.OrdinalIgnoreCase))
+                    && !fileName.Equals(installedDll, StringComparison.OrdinalIgnoreCase);
+
+                if (isCompanion && isOldStagingFile)
+                {
+                    try { File.Delete(filePath); CrashReporter.Log($"[OptiScalerService.UpdateAsync] Removed stale companion: {fileName}"); }
+                    catch (Exception ex) { CrashReporter.Log($"[OptiScalerService.UpdateAsync] Failed to remove {fileName} — {ex.Message}"); }
+                }
+            }
+
+            // Clean up old staging subdirectories entirely, then redeploy fresh
+            foreach (var stagingSubDirPath in Directory.GetDirectories(effectiveStagingDir))
+            {
+                var dirName = Path.GetFileName(stagingSubDirPath);
+                if (dirName.Equals("Licenses", StringComparison.OrdinalIgnoreCase)) continue;
+                var gameSubDir = Path.Combine(gameDir, dirName);
+                if (Directory.Exists(gameSubDir))
+                {
+                    try { Directory.Delete(gameSubDir, recursive: true); CrashReporter.Log($"[OptiScalerService.UpdateAsync] Removed old subdir: {dirName}"); }
+                    catch (Exception ex) { CrashReporter.Log($"[OptiScalerService.UpdateAsync] Failed to remove subdir {dirName} — {ex.Message}"); }
+                }
+            }
+
+            // ── 4. Deploy all files from staging, overwriting OptiScaler files ──
             // Originals were already backed up during initial install.
             var stagingFiles = Directory.GetFiles(effectiveStagingDir, "*", SearchOption.TopDirectoryOnly);
             foreach (var stagingFile in stagingFiles)
@@ -836,9 +880,50 @@ public partial class OptiScalerService
                 }
             }
 
-            // ── 4. Do NOT overwrite OptiScaler.ini in the game folder ────────
-            // INI is intentionally preserved — no copy operation here
-            CrashReporter.Log("[OptiScalerService.UpdateAsync] Preserved existing OptiScaler.ini in game folder");
+            // ── 5. Do NOT overwrite OptiScaler.ini — merge user settings into new staging INI ──
+            // Read existing user INI keys, deploy the fresh staging INI, then re-apply user's
+            // non-default values so new nightly defaults are picked up while user changes are kept.
+            var gameIniPath = Path.Combine(gameDir, IniFileName);
+            var stagedIniPath = Path.Combine(effectiveStagingDir, IniFileName);
+
+            if (File.Exists(gameIniPath) && File.Exists(stagedIniPath))
+            {
+                // Parse existing user INI into section→key→value
+                var userValues = ParseIniSections(gameIniPath);
+                // Parse staged (template) INI defaults
+                var stagedValues = ParseIniSections(stagedIniPath);
+
+                // Deploy fresh staging INI
+                File.Copy(stagedIniPath, gameIniPath, overwrite: true);
+                CrashReporter.Log("[OptiScalerService.UpdateAsync] Deployed fresh OptiScaler.ini from staging");
+
+                // Merge user values that differ from the staged defaults back in
+                foreach (var (section, keys) in userValues)
+                {
+                    foreach (var (key, value) in keys)
+                    {
+                        // Skip if staged template has the same value (user didn't change it)
+                        if (stagedValues.TryGetValue(section, out var stagedKeys)
+                            && stagedKeys.TryGetValue(key, out var stagedVal)
+                            && string.Equals(value, stagedVal, StringComparison.OrdinalIgnoreCase))
+                            continue;
+
+                        // User had a different value — write it back
+                        SetOptiScalerIniValue(gameDir, section, key, value);
+                        CrashReporter.Log($"[OptiScalerService.UpdateAsync] Merged user setting [{section}] {key}={value}");
+                    }
+                }
+            }
+            else if (!File.Exists(gameIniPath) && File.Exists(stagedIniPath))
+            {
+                // No existing INI — just deploy the staged one fresh
+                File.Copy(stagedIniPath, gameIniPath, overwrite: true);
+                CrashReporter.Log("[OptiScalerService.UpdateAsync] Deployed fresh OptiScaler.ini (no existing INI)");
+            }
+            else
+            {
+                CrashReporter.Log("[OptiScalerService.UpdateAsync] Preserved existing OptiScaler.ini (no staged INI available)");
+            }
 
             // ── 4b. Update nvngx_dlss.dll in game folder if staged ──────────
             var stagedDlssUpdate = GetStagedDlssPath();
@@ -1010,6 +1095,38 @@ public partial class OptiScalerService
         {
             CrashReporter.Log($"[OptiScalerService] Failed to restore '{Path.GetFileName(filePath)}' — {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Parses an INI file into a nested dict: section → key → value.
+    /// Handles duplicate sections by merging keys (last value wins).
+    /// </summary>
+    private static Dictionary<string, Dictionary<string, string>> ParseIniSections(string iniPath)
+    {
+        var result = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
+        var currentSection = "";
+        foreach (var rawLine in File.ReadAllLines(iniPath))
+        {
+            var line = rawLine.Trim();
+            if (line.StartsWith(";") || line.StartsWith("#") || string.IsNullOrWhiteSpace(line)) continue;
+            if (line.StartsWith("[") && line.EndsWith("]"))
+            {
+                currentSection = line[1..^1].Trim();
+                if (!result.ContainsKey(currentSection))
+                    result[currentSection] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            }
+            else
+            {
+                var eqIdx = line.IndexOf('=');
+                if (eqIdx <= 0) continue;
+                var key = line[..eqIdx].Trim();
+                var value = line[(eqIdx + 1)..].Trim();
+                if (!result.ContainsKey(currentSection))
+                    result[currentSection] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                result[currentSection][key] = value;
+            }
+        }
+        return result;
     }
 
     /// <summary>
