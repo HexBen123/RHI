@@ -146,6 +146,9 @@ public interface IGameNameService
     /// <summary>Games where upscaler plugin is enabled via Engine.ini. Composite-keyed "GameName|Store".</summary>
     HashSet<string> OsUpscalerPlugin { get; }
 
+    /// <summary>Per-game Streamline version override. Key = "GameName|Store", Value = version string. Absent = use default.</summary>
+    Dictionary<string, string> OsStreamlineVersion { get; }
+
     // ── Load / Save ───────────────────────────────────────────────────────────
 
     /// <summary>

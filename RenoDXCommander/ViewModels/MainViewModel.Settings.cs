@@ -409,6 +409,26 @@ public partial class MainViewModel
         SaveNameMappings();
     }
 
+    // ── Streamline Version ────────────────────────────────────────────────────
+
+    public string GetOsStreamlineVersion(string gameName, string store)
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (_gameNameService.OsStreamlineVersion.TryGetValue(key, out var v) && !string.IsNullOrEmpty(v)) return v;
+        if (_gameNameService.OsStreamlineVersion.TryGetValue(gameName, out var vLegacy) && !string.IsNullOrEmpty(vLegacy)) return vLegacy;
+        return "";
+    }
+
+    public void SetOsStreamlineVersion(string gameName, string? version, string store)
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (string.IsNullOrEmpty(version))
+            _gameNameService.OsStreamlineVersion.Remove(key);
+        else
+            _gameNameService.OsStreamlineVersion[key] = version;
+        SaveNameMappings();
+    }
+
     // ── DLL Naming Override ───────────────────────────────────────────────────────
 
     /// <summary>Per-game DLL naming overrides — delegated to DllOverrideService.</summary>

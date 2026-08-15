@@ -254,11 +254,37 @@ public partial class DetailPanelBuilder
 
         // Label + spacer to match left column's "Shaders and Addons" title + sub-label row
         var launchExeHeaderPanel = new StackPanel { Spacing = 4 };
+
+        // Resolve the effective launch exe for display — user override > manifest > auto-detected
+        var currentLaunchExe = _gameNameService.LaunchExeOverrides
+            .TryGetValue(ctx.CapturedName, out var savedExe) ? savedExe : "";
+        var _exeExclusions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            { "UnityCrashHandler64", "UnityCrashHandler32", "CrashReporter", "CrashHandler",
+              "unins000", "Launcher", "BEService", "EasyAntiCheat",
+              "VC_redist.x64", "VC_redist.x86", "vcredist_x64", "vcredist_x86",
+              "dxwebsetup", "UEPrereqSetup_x64", "UEPrereqSetup_x86" };
+        string? effectiveExe = !string.IsNullOrEmpty(currentLaunchExe)
+            ? Path.GetFileName(currentLaunchExe)
+            : (_window.ViewModel.Manifest?.LaunchExeOverrides?.TryGetValue(ctx.CapturedName, out var manifestExe) == true && !string.IsNullOrEmpty(manifestExe)
+                ? Path.GetFileName(manifestExe)
+                : (!string.IsNullOrEmpty(card.InstallPath)
+                    ? Directory.GetFiles(card.InstallPath, "*.exe", SearchOption.TopDirectoryOnly)
+                        .Where(e => !_exeExclusions.Contains(Path.GetFileNameWithoutExtension(e)))
+                        .OrderByDescending(e => new FileInfo(e).Length)
+                        .Select(Path.GetFileName)
+                        .FirstOrDefault()
+                    : null));
+
+        var headerText = string.IsNullOrEmpty(effectiveExe)
+            ? "Launch executable"
+            : $"Launch executable  —  {effectiveExe}";
         launchExeHeaderPanel.Children.Add(new TextBlock
         {
-            Text = "Launch executable",
+            Text = headerText,
             FontSize = 12,
             Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+            TextWrapping = TextWrapping.NoWrap,
+            TextTrimming = TextTrimming.CharacterEllipsis,
         });
         // Invisible spacer matching the "Shaders" / "Addons" sub-label height
         launchExeHeaderPanel.Children.Add(new TextBlock
@@ -269,8 +295,7 @@ public partial class DetailPanelBuilder
         Grid.SetRow(launchExeHeaderPanel, 0);
         shadersAddonsRightColumn.Children.Add(launchExeHeaderPanel);
 
-        var currentLaunchExe = _gameNameService.LaunchExeOverrides
-            .TryGetValue(ctx.CapturedName, out var savedExe) ? savedExe : "";
+        // currentLaunchExe already resolved above
         var launchExeBox = new TextBox
         {
             Text = currentLaunchExe,

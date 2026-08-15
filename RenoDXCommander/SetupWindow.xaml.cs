@@ -29,8 +29,14 @@ public sealed partial class SetupWindow : Window
 
         Title = "RHI Setup";
 
-        // Size and position
-        AppWindow.Resize(new Windows.Graphics.SizeInt32(600, 530));
+        // Size and position — scale by display DPI so window is correct at any Windows scaling setting
+        var hwndForDpi = WindowNative.GetWindowHandle(this);
+        uint dpi = NativeInterop.GetDpiForWindow(hwndForDpi);
+        double dpiScale = dpi / 96.0;
+        int logicalW = 600, logicalH = 530;
+        AppWindow.Resize(new Windows.Graphics.SizeInt32(
+            (int)(logicalW * dpiScale),
+            (int)(logicalH * dpiScale)));
         CenterOnPrimaryDisplay();
 
         // Dark title bar — same as MainWindow

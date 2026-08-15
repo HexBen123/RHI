@@ -97,6 +97,9 @@ public class GameNameService : IGameNameService
     /// <summary>Games where upscaler plugin is enabled via Engine.ini. Composite-keyed "GameName|Store".</summary>
     private HashSet<string> _osUpscalerPlugin = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Per-game Streamline version override. Key = "GameName|Store", Value = version string. Absent = use default.</summary>
+    private Dictionary<string, string> _osStreamlineVersion = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Maps current (renamed) game name → original store-detected name.</summary>
     private Dictionary<string, string> _originalDetectedNames = new(StringComparer.OrdinalIgnoreCase);
 
@@ -179,6 +182,9 @@ public class GameNameService : IGameNameService
 
     /// <summary>Games where upscaler plugin is enabled via Engine.ini. Composite-keyed "GameName|Store".</summary>
     public HashSet<string> OsUpscalerPlugin => _osUpscalerPlugin;
+
+    /// <summary>Per-game Streamline version override. Key = "GameName|Store", Value = version string. Absent = use default.</summary>
+    public Dictionary<string, string> OsStreamlineVersion => _osStreamlineVersion;
 
     public GameNameService(
         IGameDetectionService gameDetectionService,
@@ -498,6 +504,10 @@ public class GameNameService : IGameNameService
         _osUpscalerPlugin = new HashSet<string>(
             Load<List<string>>("OsUpscalerPlugin", new()), StringComparer.OrdinalIgnoreCase);
 
+        var osStreamlineVersionDict = Load<Dictionary<string, string>>("OsStreamlineVersion", new(StringComparer.OrdinalIgnoreCase));
+        _osStreamlineVersion = new(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in osStreamlineVersionDict) _osStreamlineVersion[kv.Key] = kv.Value;
+
         if (s.TryGetValue("ViewLayout", out var vlVal) && int.TryParse(vlVal, out var vlInt) && Enum.IsDefined(typeof(ViewLayout), vlInt))
             setViewLayout((ViewLayout)vlInt);
         else if (s.TryGetValue("GridLayout", out var glVal))  // backward compat
@@ -588,6 +598,7 @@ public class GameNameService : IGameNameService
                 s["OsFgNvngxReplacement"] = JsonSerializer.Serialize(_osFgNvngxReplacement);
                 s["OsFsrFgSwapchain"] = JsonSerializer.Serialize(_osFsrFgSwapchain.ToList());
                 s["OsUpscalerPlugin"] = JsonSerializer.Serialize(_osUpscalerPlugin.ToList());
+                if (_osStreamlineVersion.Count > 0) s["OsStreamlineVersion"] = JsonSerializer.Serialize(_osStreamlineVersion);
                 s["ViewLayout"]          = ((int)currentViewLayout).ToString();
                 s["FilterMode"]          = filterMode;
                 s["CustomFilters"]       = JsonSerializer.Serialize(customFilters);
@@ -717,6 +728,7 @@ public class GameNameService : IGameNameService
         MigrateCompositeDict(_osFgNvngxReplacement, oldName, newName);
         MigrateCompositeHashSet(_osFsrFgSwapchain, oldName, newName);
         MigrateCompositeHashSet(_osUpscalerPlugin, oldName, newName);
+        MigrateCompositeDict(_osStreamlineVersion, oldName, newName);
 
         // Migrate name-only HashSets (shared across stores)
         MigrateHashSet(_wikiExclusions, oldName, newName);

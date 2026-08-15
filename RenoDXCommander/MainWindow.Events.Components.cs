@@ -1934,11 +1934,73 @@ public sealed partial class MainWindow
         // ── Unified grid: version row + all nightly rows share the same 4-col layout ──
         // This guarantees the Nightly combo aligns perfectly with Deploy Streamline etc.
         var unifiedGrid = MakeSettingsGrid();
+
+        // Read current FramerateLimit from the game's OptiScaler.ini
+        var vrrPresetsOs = new (float Fps, string Label)[]
+        {
+            (59f,  "59 (60Hz VRR)"),
+            (73f,  "73 (75Hz VRR)"),
+            (97f,  "97 (100Hz VRR)"),
+            (116f, "116 (120Hz VRR)"),
+            (138f, "138 (144Hz VRR)"),
+            (157f, "157 (165Hz VRR)"),
+            (171f, "171 (180Hz VRR)"),
+            (189f, "189 (200Hz VRR)"),
+            (224f, "224 (240Hz VRR)"),
+            (258f, "258 (280Hz VRR)"),
+            (275f, "275 (300Hz VRR)"),
+            (324f, "324 (360Hz VRR)"),
+            (416f, "416 (480Hz VRR)"),
+            (431f, "431 (500Hz VRR)"),
+        };
+        var fpsLabels = new[] { "Off" }.Concat(vrrPresetsOs.Select(p => p.Label)).ToArray();
+        var fpsLimitCombo = new ComboBox { ItemsSource = fpsLabels, FontSize = 12, HorizontalAlignment = HorizontalAlignment.Stretch };
+        ToolTipService.SetToolTip(fpsLimitCombo, "Framerate limit using Reflex whenever possible. 'Off' disables the limit.");
+
+        // Read current value from OptiScaler.ini
+        string currentFpsStr = "Off";
+        if (!string.IsNullOrEmpty(card.InstallPath))
+        {
+            var iniPath = Path.Combine(card.InstallPath, OptiScalerService.IniFileName);
+            if (File.Exists(iniPath))
+            {
+                var lines = File.ReadAllLines(iniPath);
+                var fpsLine = lines.FirstOrDefault(l => l.TrimStart().StartsWith("FramerateLimit", StringComparison.OrdinalIgnoreCase)
+                    && l.Contains("=") && !l.TrimStart().StartsWith(";"));
+                if (fpsLine != null)
+                {
+                    var val = fpsLine.Split('=', 2)[1].Trim();
+                    if (float.TryParse(val, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var fpsVal) && fpsVal > 0)
+                    {
+                        var match = vrrPresetsOs.FirstOrDefault(p => Math.Abs(p.Fps - fpsVal) < 1f);
+                        currentFpsStr = match.Label ?? "Off";
+                    }
+                }
+            }
+        }
+        fpsLimitCombo.SelectedItem = currentFpsStr;
+
         AddRow(unifiedGrid, 0, "OptiScaler Version",
-            new ComboBox { ItemsSource = new[] { "Stable", "Nightly" }, SelectedItem = ViewModel.GetOsVariant(card.GameName, card.Source ?? ""), FontSize = 12, HorizontalAlignment = HorizontalAlignment.Stretch });
-        // Grab the combo we just added so we can wire events
-        var variantCombo = (ComboBox)unifiedGrid.Children.Cast<UIElement>().Last(c => c is ComboBox);
+            new ComboBox { ItemsSource = new[] { "Stable", "Nightly" }, SelectedItem = ViewModel.GetOsVariant(card.GameName, card.Source ?? ""), FontSize = 12, HorizontalAlignment = HorizontalAlignment.Stretch },
+            "Framerate Limit", fpsLimitCombo);
+        // Grab the variant combo we just added
+        var variantCombo = (ComboBox)unifiedGrid.Children.Cast<UIElement>().Where(c => c is ComboBox).First();
         ToolTipService.SetToolTip(variantCombo, "Stable uses the official OptiScaler release. Nightly uses the latest daily build.");
+
+        fpsLimitCombo.SelectionChanged += (s, ev) =>
+        {
+            var sel = fpsLimitCombo.SelectedItem as string;
+            if (sel == null || !card.IsOsInstalled || string.IsNullOrEmpty(card.InstallPath)) return;
+            if (sel == "Off")
+                OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "Framerate", "FramerateLimit", "0");
+            else
+            {
+                var match = vrrPresetsOs.FirstOrDefault(p => p.Label == sel);
+                if (match.Label != null)
+                    OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "Framerate", "FramerateLimit", match.Fps.ToString("0.000000", System.Globalization.CultureInfo.InvariantCulture));
+            }
+        };
+
         content.Children.Add(unifiedGrid);
 
         ContentDialog? osCogDialog = null;
@@ -1971,54 +2033,118 @@ public sealed partial class MainWindow
             Grid.SetRow(versionSep, 1); Grid.SetColumn(versionSep, 0); Grid.SetColumnSpan(versionSep, 4);
             unifiedGrid.Children.Add(versionSep);
 
+            // Section heading: Frame Generation Settings
+            unifiedGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            var fgHeading = new TextBlock { Text = "Frame Generation Settings", FontSize = 13, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush), Margin = new Thickness(0, 2, 0, 0) };
+            Grid.SetRow(fgHeading, 2); Grid.SetColumn(fgHeading, 0); Grid.SetColumnSpan(fgHeading, 4);
+            unifiedGrid.Children.Add(fgHeading);
+
             // All nightly rows go into the same unifiedGrid so columns align with the version row above
-            // Row 2: Deploy Streamline | Deploy DLSS Enabler
-            var streamlineCombo = new ComboBox { ItemsSource = new[] { "No", "Yes" }, SelectedItem = ViewModel.GetOsDeployStreamline(card.GameName, card.Source ?? "") ? "Yes" : "No" };
-            var enablerCombo = new ComboBox { ItemsSource = new[] { "No", "Yes" }, SelectedItem = ViewModel.GetOsDeployDlssEnabler(card.GameName, card.Source ?? "") ? "Yes" : "No", IsEnabled = ViewModel.GetOsDeployStreamline(card.GameName, card.Source ?? "") };
-            ToolTipService.SetToolTip(enablerCombo, "Requires Deploy Streamline to be enabled.");
-            AddRow(unifiedGrid, 2, "Deploy Streamline", streamlineCombo, "Deploy DLSS Enabler", enablerCombo);
+            // Row 2: Streamline/DLSS Enabler (combined) | Streamline Version
+            var dlssStreamlineSvc = App.Services.GetRequiredService<IDlssStreamlineService>();
+            var slVersions = dlssStreamlineSvc.StreamlineVersions;
+            var persistedSlVersion = ViewModel.GetOsStreamlineVersion(card.GameName, card.Source ?? "");
+            string slVersionDefault;
+            if (!string.IsNullOrEmpty(persistedSlVersion) && slVersions.Contains(persistedSlVersion))
+                slVersionDefault = persistedSlVersion;
+            else if (slVersions.Contains("2.12.0"))
+                slVersionDefault = "2.12.0";
+            else
+                slVersionDefault = slVersions.Count > 0 ? slVersions[0] : "2.12.0";
 
-            // Row 3: FG Input | FG Output
+            bool combinedOn = ViewModel.GetOsDeployStreamline(card.GameName, card.Source ?? "");
+            var combinedCombo = new ComboBox { ItemsSource = new[] { "No", "Yes" }, SelectedItem = combinedOn ? "Yes" : "No" };
+            ToolTipService.SetToolTip(combinedCombo, "Deploys Streamline and DLSS Enabler to the game's OptiScaler folder. Required for DLSS Frame Generation with OptiScaler.");
+            var slVersionCombo = new ComboBox { ItemsSource = slVersions.Count > 0 ? (IEnumerable<string>)slVersions : new[] { slVersionDefault }, SelectedItem = slVersionDefault, IsEnabled = combinedOn };
+            AddRow(unifiedGrid, 3, "Streamline/DLSS Enabler", combinedCombo, "Streamline Version", slVersionCombo);
+
+            // Row 4: FG Input (left) | HUD Fix (right)
             var fgInputCombo = new ComboBox { ItemsSource = new[] { "Auto (Default)", "OptiFG (Upscaler)", "DLSSG via Streamline", "DLSSG via Nvngx", "FSR 3.1 FG", "FSR 3.0 FG", "XeFG" }, SelectedItem = IniToFgInput(ViewModel.GetOsFgInput(card.GameName, card.Source ?? "")) };
-            var fgOutputCombo = new ComboBox { ItemsSource = new[] { "Auto (Default)", "FSR FG", "DLSSG", "XeFG" }, SelectedItem = IniToFgOutput(ViewModel.GetOsFgOutput(card.GameName, card.Source ?? "")) };
-            AddRow(unifiedGrid, 3, "FG Input", fgInputCombo, "FG Output", fgOutputCombo);
 
-            // Row 4: (right side only) FG Nvngx Replacement
-            bool enablerAvail = ViewModel.GetOsDeployStreamline(card.GameName, card.Source ?? "") && ViewModel.GetOsDeployDlssEnabler(card.GameName, card.Source ?? "");
+            // Read HUD Fix from OptiScaler.ini
+            string hudFixCurrent = "auto";
+            if (!string.IsNullOrEmpty(card.InstallPath))
+            {
+                var hudIniPath = Path.Combine(card.InstallPath, OptiScalerService.IniFileName);
+                if (File.Exists(hudIniPath))
+                {
+                    bool inOptiFg = false;
+                    foreach (var hudLine in File.ReadAllLines(hudIniPath))
+                    {
+                        var t = hudLine.Trim();
+                        if (t.StartsWith("[")) inOptiFg = t.Equals("[OptiFG]", StringComparison.OrdinalIgnoreCase);
+                        else if (inOptiFg && !t.StartsWith(";") && (t.StartsWith("HUDFix=", StringComparison.OrdinalIgnoreCase) || t.StartsWith("HUDFix =", StringComparison.OrdinalIgnoreCase)))
+                        { hudFixCurrent = t.Split('=', 2)[1].Trim(); break; }
+                    }
+                }
+            }
+            var hudFixSelected = hudFixCurrent.Equals("true", StringComparison.OrdinalIgnoreCase) ? "On"
+                               : hudFixCurrent.Equals("false", StringComparison.OrdinalIgnoreCase) ? "Off"
+                               : "Default";
+            var hudFixCombo = new ComboBox { ItemsSource = new[] { "Default", "On", "Off" }, SelectedItem = hudFixSelected };
+            ToolTipService.SetToolTip(hudFixCombo, "HUD Fix: enables hudless resource tracking for Frame Generation. On = HUDFix=true in [OptiFG].");
+
+            AddRow(unifiedGrid, 4, "FG Input", fgInputCombo, "HUD Fix", hudFixCombo);
+
+            // Row 5: FG Output (left) | FG Nvngx Override (right)
+            var fgOutputCombo = new ComboBox { ItemsSource = new[] { "Auto (Default)", "FSR FG", "DLSSG", "XeFG" }, SelectedItem = IniToFgOutput(ViewModel.GetOsFgOutput(card.GameName, card.Source ?? "")) };
+            bool enablerAvail = true; // Always allow Enabler — requires Streamline deployed, user responsibility
             var nvngxItems = new List<object> { "None (Real DLSSG)", "Nukem's", new ComboBoxItem { Content = "Enabler", IsEnabled = enablerAvail }, "FSR 3/4 FG" };
             var currentNvngxDisplay = IniToFgNvngx(ViewModel.GetOsFgNvngxReplacement(card.GameName, card.Source ?? ""));
             object? nvngxSelected = nvngxItems.FirstOrDefault(i => i is ComboBoxItem cb ? (cb.Content as string) == currentNvngxDisplay : (i as string) == currentNvngxDisplay) ?? nvngxItems[0];
             var fgNvngxCombo = new ComboBox { ItemsSource = nvngxItems, SelectedItem = nvngxSelected };
             ToolTipService.SetToolTip(fgNvngxCombo, "Only relevant when FG Output = DLSSG. Enabler requires Deploy Streamline + Deploy DLSS Enabler.");
-            while (unifiedGrid.RowDefinitions.Count <= 4) unifiedGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            var nvngxLabel = new TextBlock { Text = "FG Nvngx Override", FontSize = 12, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush), VerticalAlignment = VerticalAlignment.Center };
-            Grid.SetRow(nvngxLabel, 4); Grid.SetColumn(nvngxLabel, 2); unifiedGrid.Children.Add(nvngxLabel);
-            fgNvngxCombo.FontSize = 12; fgNvngxCombo.HorizontalAlignment = HorizontalAlignment.Stretch;
-            Grid.SetRow(fgNvngxCombo, 4); Grid.SetColumn(fgNvngxCombo, 3); unifiedGrid.Children.Add(fgNvngxCombo);
+            AddRow(unifiedGrid, 5, "FG Output", fgOutputCombo, "FG Nvngx Override", fgNvngxCombo);
 
             bool fgOutputIsDlssg = fgOutputCombo.SelectedItem as string == "DLSSG";
-            nvngxLabel.Opacity = fgOutputIsDlssg ? 1.0 : 0.35;
             fgNvngxCombo.Opacity = fgOutputIsDlssg ? 1.0 : 0.35;
             fgNvngxCombo.IsHitTestVisible = fgOutputIsDlssg;
+            fgNvngxCombo.IsEnabled = fgOutputIsDlssg;
 
             // ── Wire handlers ──────────────────────────────────────────────
-            streamlineCombo.SelectionChanged += (s, ev) =>
+            combinedCombo.SelectionChanged += (s, ev) =>
             {
-                bool on = streamlineCombo.SelectedItem as string == "Yes";
+                bool on = combinedCombo.SelectedItem as string == "Yes";
                 ViewModel.SetOsDeployStreamline(card.GameName, on, card.Source ?? "");
-                enablerCombo.IsEnabled = on;
-                if (!on) { enablerCombo.SelectedItem = "No"; ViewModel.SetOsDeployDlssEnabler(card.GameName, false, card.Source ?? ""); }
-                if (!string.IsNullOrEmpty(card.InstallPath))
-                    try { if (on) _optiScalerService.DeployStreamlineToGame(card.InstallPath); else _optiScalerService.RemoveStreamlineFromGame(card.InstallPath); }
-                    catch (Exception ex) { CrashReporter.Log($"[OsCog] Streamline deploy — {ex.Message}"); }
-            };
-            enablerCombo.SelectionChanged += (s, ev) =>
-            {
-                bool on = enablerCombo.SelectedItem as string == "Yes";
                 ViewModel.SetOsDeployDlssEnabler(card.GameName, on, card.Source ?? "");
+                slVersionCombo.IsEnabled = on;
                 if (!string.IsNullOrEmpty(card.InstallPath))
-                    try { var d = Path.Combine(card.InstallPath, "OptiScaler"); if (on) _ = _dlssEnablerService.InstallAsync(d); else _dlssEnablerService.Uninstall(d); }
-                    catch (Exception ex) { CrashReporter.Log($"[OsCog] DLSS Enabler — {ex.Message}"); }
+                {
+                    try
+                    {
+                        if (on)
+                        {
+                            _optiScalerService.DeployStreamlineToGame(card.InstallPath);
+                            var d = Path.Combine(card.InstallPath, "OptiScaler");
+                            _ = _dlssEnablerService.InstallAsync(d);
+                            // Swap to the selected version immediately so the combo reflects reality
+                            var selVer = slVersionCombo.SelectedItem as string;
+                            if (!string.IsNullOrEmpty(selVer))
+                            {
+                                var slDir = Path.Combine(card.InstallPath, "OptiScaler", "Streamline");
+                                App.Services.GetRequiredService<IDlssStreamlineService>()
+                                    .SwapStreamlineAsync(slDir, selVer).SafeFireAndForget("OsCog.SwapStreamline");
+                            }
+                        }
+                        else
+                        {
+                            _optiScalerService.RemoveStreamlineFromGame(card.InstallPath);
+                            var d = Path.Combine(card.InstallPath, "OptiScaler");
+                            _dlssEnablerService.Uninstall(d);
+                        }
+                    }
+                    catch (Exception ex) { CrashReporter.Log($"[OsCog] Streamline/DLSS Enabler — {ex.Message}"); }
+                }
+            };
+            slVersionCombo.SelectionChanged += (s, ev) =>
+            {
+                if (slVersionCombo.SelectedItem is not string selectedVer) return;
+                ViewModel.SetOsStreamlineVersion(card.GameName, selectedVer, card.Source ?? "");
+                if (ViewModel.GetOsDeployStreamline(card.GameName, card.Source ?? "") && !string.IsNullOrEmpty(card.InstallPath))
+                {
+                    var slFolder = Path.Combine(card.InstallPath, "OptiScaler", "Streamline");
+                    dlssStreamlineSvc.SwapStreamlineAsync(slFolder, selectedVer).SafeFireAndForget("OsCog.SwapStreamline");
+                }
             };
             fgInputCombo.SelectionChanged += (s, ev) =>
             {
@@ -2026,15 +2152,21 @@ public sealed partial class MainWindow
                 var v = FgInputToIni(sel); ViewModel.SetOsFgInput(card.GameName, v, card.Source ?? "");
                 if (!string.IsNullOrEmpty(card.InstallPath)) OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "FrameGen", "FGInput", v);
             };
+            hudFixCombo.SelectionChanged += (s, ev) =>
+            {
+                if (hudFixCombo.SelectedItem is not string sel || string.IsNullOrEmpty(card.InstallPath)) return;
+                var val = sel == "On" ? "true" : sel == "Off" ? "false" : "auto";
+                OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "OptiFG", "HUDFix", val);
+            };
             fgOutputCombo.SelectionChanged += (s, ev) =>
             {
                 if (fgOutputCombo.SelectedItem is not string sel) return;
                 var v = FgOutputToIni(sel); ViewModel.SetOsFgOutput(card.GameName, v, card.Source ?? "");
                 if (!string.IsNullOrEmpty(card.InstallPath)) OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "FrameGen", "FGOutput", v);
                 bool isDlssg = sel == "DLSSG";
-                nvngxLabel.Opacity = isDlssg ? 1.0 : 0.35;
                 fgNvngxCombo.Opacity = isDlssg ? 1.0 : 0.35;
                 fgNvngxCombo.IsHitTestVisible = isDlssg;
+                fgNvngxCombo.IsEnabled = isDlssg;
             };
             fgNvngxCombo.SelectionChanged += (s, ev) =>
             {
@@ -2045,11 +2177,126 @@ public sealed partial class MainWindow
                     OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "FrameGen", "FGNvngxReplacement", v);
             };
 
+            // ── Additional Settings ────────────────────────────────────────
+            content.Children.Add(MakeSeparator());
+            content.Children.Add(new TextBlock { Text = "Additional Settings", FontSize = 13, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush), Margin = new Thickness(0, 2, 0, 0) });
+
+            var addGrid = MakeSettingsGrid();
+
+            // Read current DLSS SR and RR preset values from OptiScaler.ini
+            string ReadIniValue(string section, string key)
+            {
+                if (string.IsNullOrEmpty(card.InstallPath)) return "auto";
+                var iniP = Path.Combine(card.InstallPath, OptiScalerService.IniFileName);
+                if (!File.Exists(iniP)) return "auto";
+                var iniLines = File.ReadAllLines(iniP);
+                bool inSec = false;
+                foreach (var l in iniLines)
+                {
+                    var t = l.Trim();
+                    if (t.StartsWith("[")) inSec = t.Equals($"[{section}]", StringComparison.OrdinalIgnoreCase);
+                    else if (inSec && !t.StartsWith(";") && (t.StartsWith(key + "=", StringComparison.OrdinalIgnoreCase) || t.StartsWith(key + " =", StringComparison.OrdinalIgnoreCase)))
+                        return t.Split('=', 2)[1].Trim();
+                }
+                return "auto";
+            }
+
+            // DLSS SR preset: 10=J, 11=K, 12=L, 13=M
+            var srPresetMap = new[] { ("Default", "auto"), ("J", "10"), ("K", "11"), ("L", "12"), ("M", "13") };
+            var srCurrent = ReadIniValue("DLSS", "RenderPresetForAll");
+            var srSelected = srPresetMap.FirstOrDefault(p => p.Item2 == srCurrent).Item1 ?? "Default";
+            var srPresetCombo = new ComboBox { ItemsSource = srPresetMap.Select(p => p.Item1).ToArray(), SelectedItem = srSelected };
+            ToolTipService.SetToolTip(srPresetCombo, "DLSS Super Resolution render preset. J-M are the recommended modern presets.");
+
+            // DLSS RR preset: 3=D, 4=E
+            var rrPresetMap = new[] { ("Default", "auto"), ("D", "3"), ("E", "4") };
+            var rrCurrent = ReadIniValue("DLSSD", "RenderPresetForAll");
+            var rrSelected = rrPresetMap.FirstOrDefault(p => p.Item2 == rrCurrent).Item1 ?? "Default";
+            var rrPresetCombo = new ComboBox { ItemsSource = rrPresetMap.Select(p => p.Item1).ToArray(), SelectedItem = rrSelected };
+            ToolTipService.SetToolTip(rrPresetCombo, "DLSS Ray Reconstruction render preset.");
+
+            AddRow(addGrid, 0, "DLSS SR Preset", srPresetCombo, "DLSS RR Preset", rrPresetCombo);
+
+            // Disable Flip Metering + Render Scale
+            var flipCurrent = ReadIniValue("NvApi", "DisableFlipMetering");
+            var flipSelected = flipCurrent == "true" ? "On" : "Default";
+            var flipCombo = new ComboBox { ItemsSource = new[] { "Default", "On" }, SelectedItem = flipSelected };
+            ToolTipService.SetToolTip(flipCombo, "On: DisableFlipMetering=true — fixes thick frametime graph with NukemFG + fakenvapi.");
+
+            // Render Scale — UpscaleRatioOverride
+            var renderScaleMap = new[] {
+                ("Off",          0f),
+                ("100% DLAA",    1.0f),
+                ("99% DLAA Alt", 1.0101f),
+                ("88% DLAA Lite",1.136f),
+                ("77% Ultra Quality", 1.3f),
+                ("75% Quality+", 1.333f),
+                ("67% Quality",  1.5f),
+                ("58% Balanced", 1.724f),
+                ("50% Performance", 2.0f),
+                ("45% Performance-", 2.222f),
+                ("33% Ultra Perf", 3.0f),
+            };
+            var rsCurrentEnabled = ReadIniValue("UpscaleRatio", "UpscaleRatioOverrideEnabled");
+            var rsCurrentValue   = ReadIniValue("UpscaleRatio", "UpscaleRatioOverrideValue");
+            string rsSelected = "Off";
+            if (rsCurrentEnabled.Equals("true", StringComparison.OrdinalIgnoreCase)
+                && float.TryParse(rsCurrentValue, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var rsVal))
+            {
+                var match = renderScaleMap.Skip(1).FirstOrDefault(p => Math.Abs(p.Item2 - rsVal) < 0.01f);
+                if (match.Item1 != null) rsSelected = match.Item1;
+            }
+            var rsCombo = new ComboBox { ItemsSource = renderScaleMap.Select(p => p.Item1).ToArray(), SelectedItem = rsSelected };
+            ToolTipService.SetToolTip(rsCombo, "Override the internal render resolution. Off = use in-game quality preset as-is.");
+
+            AddRow(addGrid, 1, "Render Scale", rsCombo, "Disable Flip Metering", flipCombo);
+
+            content.Children.Add(addGrid);
+
+            srPresetCombo.SelectionChanged += (s, ev) =>
+            {
+                if (srPresetCombo.SelectedItem is not string sel || string.IsNullOrEmpty(card.InstallPath)) return;
+                var val = srPresetMap.FirstOrDefault(p => p.Item1 == sel).Item2 ?? "auto";
+                OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "DLSS", "RenderPresetOverride", "true");
+                OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "DLSS", "RenderPresetForAll", val == "auto" ? "0" : val);
+            };
+            rrPresetCombo.SelectionChanged += (s, ev) =>
+            {
+                if (rrPresetCombo.SelectedItem is not string sel || string.IsNullOrEmpty(card.InstallPath)) return;
+                var val = rrPresetMap.FirstOrDefault(p => p.Item1 == sel).Item2 ?? "auto";
+                OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "DLSSD", "RenderPresetOverride", "true");
+                OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "DLSSD", "RenderPresetForAll", val == "auto" ? "0" : val);
+            };
+            flipCombo.SelectionChanged += (s, ev) =>
+            {
+                if (flipCombo.SelectedItem is not string sel || string.IsNullOrEmpty(card.InstallPath)) return;
+                OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "NvApi", "DisableFlipMetering", sel == "On" ? "true" : "false");
+            };
+            rsCombo.SelectionChanged += (s, ev) =>
+            {
+                if (rsCombo.SelectedItem is not string sel || string.IsNullOrEmpty(card.InstallPath)) return;
+                if (sel == "Off")
+                {
+                    OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "UpscaleRatio", "UpscaleRatioOverrideEnabled", "false");
+                }
+                else
+                {
+                    var match = renderScaleMap.FirstOrDefault(p => p.Item1 == sel);
+                    if (match.Item1 != null)
+                    {
+                        OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "UpscaleRatio", "UpscaleRatioOverrideEnabled", "true");
+                        OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "UpscaleRatio", "UpscaleRatioOverrideValue",
+                            match.Item2.ToString("0.000000", System.Globalization.CultureInfo.InvariantCulture));
+                    }
+                }
+            };
+
             // ── UE-only Engine.ini settings ────────────────────────────────
             bool isUnreal = card.EngineHint?.Contains("Unreal", StringComparison.OrdinalIgnoreCase) == true;
             if (isUnreal)
             {
                 content.Children.Add(MakeSeparator());
+                content.Children.Add(new TextBlock { Text = "Engine.ini Settings", FontSize = 13, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush), Margin = new Thickness(0, 2, 0, 0) });
 
                 var ueGrid = MakeSettingsGrid();
 
@@ -2057,7 +2304,7 @@ public sealed partial class MainWindow
                 ToolTipService.SetToolTip(dmvCombo, "Off: r.NGX.DLSS.DilateMotionVectors=0 + r.Streamline.DilateMotionVectors=0");
                 var fsrCombo = new ComboBox { ItemsSource = new[] { "None", "FSR2", "FSR3", "FSR3.1" }, SelectedItem = ViewModel.GetOsFsrCrashFix(card.GameName, card.Source ?? "") };
                 ToolTipService.SetToolTip(fsrCombo, "FSR2: r.FidelityFX.FSR2.UseNativeDX12=1\nFSR3: r.FidelityFX.FSR3.UseNativeDX12=1\nFSR3.1: above + r.FidelityFX.FSR3.UseRHI=0");
-                AddRow(ueGrid, 0, "Dilated MV", dmvCombo, "FSR Crash Fix", fsrCombo);
+                AddRow(ueGrid, 0, "Dilated Motion Vectors", dmvCombo, "FSR Crash Fix", fsrCombo);
 
                 var fgSwapCombo = new ComboBox { ItemsSource = new[] { "Default", "On" }, SelectedItem = ViewModel.GetOsFsrFgSwapchain(card.GameName, card.Source ?? "") ? "On" : "Default" };
                 ToolTipService.SetToolTip(fgSwapCombo, "On: r.FidelityFX.FI.OverrideSwapChainDX12=1");
@@ -2093,10 +2340,16 @@ public sealed partial class MainWindow
 
         content.Children.Add(MakeSeparator());
 
+        // (Presets section is in the static bottom area below)
+
+        // ── Fixed bottom section (always visible, never scrolls) ──────────
+        var bottomBorder = new StackPanel { Spacing = 8, Margin = new Thickness(0, 8, 0, 0) };
+        bottomBorder.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush) });
+
         if (isNightly)
         {
-            var presetsLabel = new TextBlock { Text = "Presets", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush) };
-            content.Children.Add(presetsLabel);
+            var presetsLabel = new TextBlock { Text = "Presets", FontSize = 13, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
+            bottomBorder.Children.Add(presetsLabel);
 
             var presetsGrid = new Grid { ColumnSpacing = 8 };
             for (int i = 0; i < 4; i++)
@@ -2113,7 +2366,6 @@ public sealed partial class MainWindow
             };
             dlssEnablerPreset.Click += (s, ev) =>
             {
-                // Set: Streamline=Yes, DLSS Enabler=Yes, FG Input=OptiFG, FG Output=DLSSG, FG Nvngx=Enabler
                 ViewModel.SetOsDeployStreamline(card.GameName, true, card.Source ?? "");
                 ViewModel.SetOsDeployDlssEnabler(card.GameName, true, card.Source ?? "");
                 ViewModel.SetOsFgInput(card.GameName, "upscaler", card.Source ?? "");
@@ -2127,13 +2379,11 @@ public sealed partial class MainWindow
                     OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "FrameGen", "FGOutput", "dlssg");
                     OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "FrameGen", "FGNvngxReplacement", "Arturs");
                 }
-                // Reopen cog to reflect new state
                 DispatcherQueue.TryEnqueue(async () => { osCogDialog?.Hide(); await Task.Delay(80); OsCogButton_Click(sender, e); });
             };
             Grid.SetColumn(dlssEnablerPreset, 0);
             presetsGrid.Children.Add(dlssEnablerPreset);
 
-            // Presets 2–4: reserved
             for (int i = 1; i < 4; i++)
             {
                 var placeholder = new Button
@@ -2150,8 +2400,10 @@ public sealed partial class MainWindow
                 presetsGrid.Children.Add(placeholder);
             }
 
-            content.Children.Add(presetsGrid);
+            bottomBorder.Children.Add(presetsGrid);
         }
+
+        bottomBorder.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush) });
 
         var deployBtn = new Button
         {
@@ -2164,9 +2416,9 @@ public sealed partial class MainWindow
             CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 7, 12, 7), FontSize = 12,
         };
         deployBtn.Click += (s, ev) => _installEventHandler.CopyOsIniButton_Click(sender, e);
-        content.Children.Add(deployBtn);
+        bottomBorder.Children.Add(deployBtn);
 
-        content.Children.Add(new TextBlock
+        bottomBorder.Children.Add(new TextBlock
         {
             Text = "If the game crashes with both ReShade and OptiScaler installed, try renaming ReShade to d3d12.dll (or another DLL name) using DLL Naming Overrides in the Overrides panel.",
             FontSize = 11,
@@ -2174,14 +2426,61 @@ public sealed partial class MainWindow
             TextWrapping = TextWrapping.Wrap,
         });
 
+        // Gate: if OptiScaler is not installed, disable all settings except version/framerate (row 0 of unifiedGrid)
+        if (!card.IsOsInstalled)
+        {
+            for (int i = 1; i < content.Children.Count; i++)
+            {
+                if (content.Children[i] is FrameworkElement fe)
+                {
+                    fe.IsHitTestVisible = false;
+                    fe.Opacity = 0.45;
+                }
+            }
+            foreach (var child in unifiedGrid.Children.OfType<FrameworkElement>())
+            {
+                int row = Grid.GetRow(child);
+                int col = Grid.GetColumn(child);
+                if (row >= 1 || col >= 2)
+                {
+                    child.IsHitTestVisible = false;
+                    child.Opacity = 0.45;
+                }
+            }
+            foreach (var child in bottomBorder.Children.OfType<FrameworkElement>())
+            {
+                child.IsHitTestVisible = false;
+                child.Opacity = 0.45;
+            }
+        }
+
+        // Root layout: scrollable settings on top, fixed bottom always visible
+        var rootGrid = new Grid();
+        rootGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        rootGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+        var scrollViewer = new ScrollViewer
+        {
+            Content = content,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            Padding = new Thickness(0, 0, 16, 0),
+        };
+        Grid.SetRow(scrollViewer, 0);
+        rootGrid.Children.Add(scrollViewer);
+
+        Grid.SetRow(bottomBorder, 1);
+        rootGrid.Children.Add(bottomBorder);
+
         var dialog = new ContentDialog
         {
             Title = "OptiScaler Settings",
-            Content = content,
+            Content = rootGrid,
             CloseButtonText = "Close",
             XamlRoot = Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,
         };
+        dialog.Resources["ContentDialogMaxWidth"] = 680.0;
         osCogDialog = dialog;
         await DialogService.ShowSafeAsync(dialog);
     }

@@ -17,6 +17,12 @@ public partial class DragDropHandler
     {
         try
         {
+            // Fast path: filename contains "Luma" — strong signal it's a Luma release
+            var fileName = Path.GetFileNameWithoutExtension(archivePath);
+            if (fileName.Contains("Luma", StringComparison.OrdinalIgnoreCase)
+                && !fileName.Contains("addon", StringComparison.OrdinalIgnoreCase))
+                return true;
+
             if (archivePath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
             {
                 using var zip = ZipFile.OpenRead(archivePath);

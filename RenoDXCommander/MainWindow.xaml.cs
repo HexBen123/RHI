@@ -218,6 +218,18 @@ public sealed partial class MainWindow : Window
             CheckForAppUpdateAsync().SafeFireAndForget("MainWindow.PeriodicAppUpdate");
         ViewModel.PropertyChanged += OnViewModelChanged;
         GameList.ItemsSource = ViewModel.DisplayedGames;
+        // When the filtered game list changes, preserve selection if the selected game is still visible
+        ViewModel.DisplayedGames.CollectionChanged += (_, _) =>
+        {
+            if (_pendingReselect != null)
+                DispatcherQueue.TryEnqueue(TryRestoreSelection);
+        };
+        // Preserve selection across filter changes — if selected game is still in the new list, reselect it
+        ViewModel.Filter.PreFilterAction = () =>
+        {
+            if (GameList.SelectedItem is GameCardViewModel selected)
+                _pendingReselect = selected.GameName;
+        };
         // Apply initial visibility
         UpdatePageVisibility();
         // Show version in status bar

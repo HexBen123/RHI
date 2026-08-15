@@ -192,7 +192,7 @@ public partial class OptiScalerService
                 if (fileName.Equals(IniFileName, StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                BackupOriginalIfExists(destPath);
+                // All OptiScaler root files are RHI-managed — never back them up
                 File.Copy(stagingFile, destPath, overwrite: true);
                 CrashReporter.Log($"[OptiScalerService.InstallAsync] Deployed {fileName}" +
                     (fileName.Equals("OptiScaler.dll", StringComparison.OrdinalIgnoreCase) ? $" as {effectiveDllName}" : ""));
@@ -277,7 +277,7 @@ public partial class OptiScalerService
                 if (stagedDlssPath != null)
                 {
                     var gameDlssPath = Path.Combine(card.InstallPath, DlssDllFileName);
-                    BackupOriginalIfExists(gameDlssPath);
+                    // DLSS DLLs are always RHI-managed — never game originals, never back them up
                     File.Copy(stagedDlssPath, gameDlssPath, overwrite: true);
                     CrashReporter.Log($"[OptiScalerService.InstallAsync] Deployed {DlssDllFileName} ({new FileInfo(gameDlssPath).Length} bytes) to game folder");
                 }
@@ -287,7 +287,6 @@ public partial class OptiScalerService
                 if (stagedDlssdPath != null)
                 {
                     var gameDlssdPath = Path.Combine(card.InstallPath, DlssdDllFileName);
-                    BackupOriginalIfExists(gameDlssdPath);
                     File.Copy(stagedDlssdPath, gameDlssdPath, overwrite: true);
                     CrashReporter.Log($"[OptiScalerService.InstallAsync] Deployed {DlssdDllFileName} ({new FileInfo(gameDlssdPath).Length} bytes) to game folder");
                 }
@@ -297,7 +296,6 @@ public partial class OptiScalerService
                 if (stagedDlssgPath != null)
                 {
                     var gameDlssgPath = Path.Combine(card.InstallPath, DlssgDllFileName);
-                    BackupOriginalIfExists(gameDlssgPath);
                     File.Copy(stagedDlssgPath, gameDlssgPath, overwrite: true);
                     CrashReporter.Log($"[OptiScalerService.InstallAsync] Deployed {DlssgDllFileName} ({new FileInfo(gameDlssgPath).Length} bytes) to game folder");
                 }
@@ -713,6 +711,9 @@ public partial class OptiScalerService
             }
 
             // ── 6. Update card VM ────────────────────────────────────────────
+            // Engine.ini cleanup and per-game cog settings reset are handled in
+            // MainViewModel.Install.cs after Uninstall() returns (post-uninstall hook).
+
             card.OsStatus = GameStatus.NotInstalled;
             card.OsInstalledFile = null;
             card.OsInstalledVersion = null;
@@ -1519,7 +1520,8 @@ public partial class OptiScalerService
                     }
                     inSection = string.Equals(trimmed, $"[{section}]", StringComparison.OrdinalIgnoreCase);
                 }
-                else if (inSection && trimmed.StartsWith(key + "=", StringComparison.OrdinalIgnoreCase)
+                else if (inSection && (trimmed.StartsWith(key + "=", StringComparison.OrdinalIgnoreCase)
+                         || trimmed.StartsWith(key + " =", StringComparison.OrdinalIgnoreCase))
                          && !trimmed.StartsWith(";"))
                 {
                     lines[i] = $"{key}={value}";

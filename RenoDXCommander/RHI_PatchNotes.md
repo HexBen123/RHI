@@ -1,3 +1,29 @@
+## v2.3.3-beta6
+
+### New
+
+- The OptiScaler ⚙ cog now has a **Streamline Version** picker (Nightly only) — select which Streamline version to deploy per game from the same version list available in NVIDIA Profile Overrides. Defaults to 2.12.0. Changing the version immediately swaps the DLLs in the game's OptiScaler/Streamline folder.
+- "Deploy Streamline" and "Deploy DLSS Enabler" are now combined into a single **Streamline/DLSS Enabler** toggle — Yes deploys both, No removes both. They were always meant to go together.
+- The OptiScaler cog has a new **Framerate Limit** picker next to the version selector — set a VRR-optimal frame cap using Reflex. Same presets as the ReLimiter cog.
+- New **Additional Settings** section in the OptiScaler cog: **DLSS SR Preset** (J/K/L/M), **DLSS RR Preset** (D/E), **Render Scale** (Off + percentage presets from 33% Ultra Perf to 100% DLAA), and **Disable Flip Metering** (fixes thick frametime graph with NukemFG). All write directly to the game's OptiScaler.ini.
+- **HUD Fix** toggle added next to FG Input — controls `[OptiFG] HUDFix` for enabling hudless resource tracking with Frame Generation.
+- The OptiScaler cog settings now scroll when the content is too tall for the screen. Presets, Deploy button, and the crash tip are pinned to the bottom and always visible.
+- Section headings added to the OptiScaler cog: Frame Generation Settings, Additional Settings, Engine.ini Settings, Presets — matching the style of the UE-Extended cog.
+
+### Changes from beta5
+
+- Fixed the first-launch setup window appearing very small at high Windows display scaling (e.g. 150%, 200%, 300%).
+- Fixed "No RenoDX mod available" button showing at full brightness and being clickable — it is now greyed out and non-interactive.
+- Fixed OptiScaler install creating spurious `.dll.original` backup files for DLL files it deploys — OptiScaler-managed files (dxgi.dll, nvngx_dlss*.dll, companion DLLs) are never game originals and should not be backed up.
+- Fixed changing the Streamline version in the OptiScaler cog creating `.dll.original` backup files — Streamline DLLs in the OptiScaler folder are always RHI-managed, never game originals.
+- Fixed "Create NVIDIA Profile" registering the wrong executable for games with multiple exe files — the manifest launch exe override is now used when available instead of always picking the largest exe.
+- The Launch executable section in Game Overrides now shows the currently detected exe name next to the heading — e.g. "Launch executable — MonsterHunterStories3.exe". Shows the user override if set, otherwise the manifest override, otherwise the auto-detected exe.
+- Fixed Luma archives being misidentified as addon archives when the filename contains "Luma" but the archive doesn't include d3dcompiler_47.dll (newer Luma releases). RHI now detects Luma archives by filename first before inspecting contents.
+- Switching filter tabs (e.g. All Games → Installed) now keeps the selected game highlighted if it appears in the new filter — previously the selection was always cleared.
+- The per-game Shaders and Addons dropdowns now correctly reflect "Off" or "Custom" when those are set globally, instead of always showing "Global".
+
+---
+
 ## v2.3.3-beta5
 
 ### New

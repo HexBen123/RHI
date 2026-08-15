@@ -16,7 +16,7 @@ public partial class OptiScalerService : IOptiScalerService
 
     public static readonly string[] SupportedDllNames =
     [
-        "dxgi.dll", "winmm.dll", "d3d12.dll", "dbghelp.dll",
+        "dxgi.dll", "winmm.dll", "d3d11.dll", "d3d12.dll", "dbghelp.dll",
         "version.dll", "wininet.dll", "winhttp.dll"
     ];
 

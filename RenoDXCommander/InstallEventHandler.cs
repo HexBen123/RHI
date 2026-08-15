@@ -316,6 +316,38 @@ public class InstallEventHandler
             }
 
             _optiScalerService.Uninstall(card);
+
+            // Clear all per-game OptiScaler cog settings so they reset to defaults on next open
+            try
+            {
+                var gn = card.GameName; var st = card.Source ?? "";
+                // Remove Engine.ini keys written by cog settings (UE games)
+                if (!string.IsNullOrEmpty(card.InstallPath))
+                {
+                    if (ViewModel.GetOsDilatedMotionVectorsOff(gn, st))
+                        try { AuxInstallService.RemoveEngineIniCustomKeys(card.InstallPath, new[] { "r.NGX.DLSS.DilateMotionVectors", "r.Streamline.DilateMotionVectors" }, card.EngineIniProjectOverride, gn, card.Source); } catch { }
+                    var fsrFix = ViewModel.GetOsFsrCrashFix(gn, st);
+                    if (!string.IsNullOrEmpty(fsrFix) && fsrFix != "None")
+                        try { AuxInstallService.RemoveEngineIniCustomKeys(card.InstallPath, new[] { "r.FidelityFX.FSR2.UseNativeDX12", "r.FidelityFX.FSR3.UseNativeDX12", "r.FidelityFX.FSR3.UseRHI" }, card.EngineIniProjectOverride, gn, card.Source); } catch { }
+                    if (ViewModel.GetOsFsrFgSwapchain(gn, st))
+                        try { AuxInstallService.RemoveEngineIniCustomKeys(card.InstallPath, new[] { "r.FidelityFX.FI.OverrideSwapChainDX12" }, card.EngineIniProjectOverride, gn, card.Source); } catch { }
+                    if (ViewModel.GetOsUpscalerPlugin(gn, st))
+                        try { AuxInstallService.RemoveEngineIniCustomKeys(card.InstallPath, new[] { "r.AntiAliasingMethod", "r.TemporalAA.Upscaler" }, card.EngineIniProjectOverride, gn, card.Source); } catch { }
+                }
+                // Clear persisted per-game settings
+                ViewModel.SetOsDeployStreamline(gn, false, st);
+                ViewModel.SetOsDeployDlssEnabler(gn, false, st);
+                ViewModel.SetOsFgInput(gn, null, st);
+                ViewModel.SetOsFgOutput(gn, null, st);
+                ViewModel.SetOsFgNvngxReplacement(gn, null, st);
+                ViewModel.SetOsDilatedMotionVectorsOff(gn, false, st);
+                ViewModel.SetOsFsrCrashFix(gn, null, st);
+                ViewModel.SetOsFsrFgSwapchain(gn, false, st);
+                ViewModel.SetOsUpscalerPlugin(gn, false, st);
+                ViewModel.SetOsStreamlineVersion(gn, null, st);
+            }
+            catch (Exception cleanEx) { CrashReporter.Log($"[InstallEventHandler.UninstallOptiScaler] Settings cleanup failed — {cleanEx.Message}"); }
+
             card.OsActionMessage = "✖ OptiScaler removed.";
             card.NotifyAll();
             card.FadeMessage(m => card.OsActionMessage = m, card.OsActionMessage);
