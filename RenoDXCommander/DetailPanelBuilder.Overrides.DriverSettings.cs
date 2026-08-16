@@ -142,6 +142,9 @@ public partial class DetailPanelBuilder
                 var items = options.Select(o => o.Name).ToArray();
                 int idx = Array.FindIndex(options, o => o.Value == current);
                 if (idx < 0) idx = 0;
+                // Locked to Ultra while Smooth Motion is enabled — must turn off Smooth Motion first
+                bool smoothOn = nvidiaPresetService.GetSmoothMotionEnable(card.GameName, installPathSafe) != 0;
+                bool latencyLocked = smoothOn;
                 var combo2 = new ComboBox
                 {
                     ItemsSource = items,
@@ -149,8 +152,12 @@ public partial class DetailPanelBuilder
                     FontSize = 11,
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     CornerRadius = new CornerRadius(6),
+                    IsEnabled = !latencyLocked,
+                    Opacity = latencyLocked ? 0.4 : 1.0,
                 };
-                ToolTipService.SetToolTip(combo2, "Low Latency Mode — Off: game controls frame queue. On: limits pre-rendered frames to 1 (lower latency). Ultra: just-in-time frame submission (lowest latency, may reduce FPS slightly).");
+                ToolTipService.SetToolTip(combo2, latencyLocked
+                    ? "Low Latency is locked to Ultra while Smooth Motion is enabled. Turn off Smooth Motion to change this setting."
+                    : "Low Latency Mode — Off: game controls frame queue. On: limits pre-rendered frames to 1 (lower latency). Ultra: just-in-time frame submission (lowest latency, may reduce FPS slightly).");
                 var init2 = true;
                 combo2.SelectionChanged += (s, ev) =>
                 {
@@ -202,6 +209,22 @@ public partial class DetailPanelBuilder
                     // Cascade: set APIs to All when enabling, None when disabling
                     bool enabling = options[i].Value != 0;
                     nvidiaPresetService.SetSmoothMotionApis(card.GameName, installPathSafe, enabling ? 0x00000007u : 0x00000000u);
+                    // Cascade Low Latency: Ultra when enabling, restore previous value when disabling
+                    const uint LowLatencyOff   = 0x00000000;
+                    const uint LowLatencyUltra = 0x00000002;
+                    if (enabling)
+                    {
+                        uint prevLatency = nvidiaPresetService.GetLowLatencyMode(card.GameName, installPathSafe);
+                        // Save previous value only if it's not already Ultra (nothing to restore)
+                        card.PreSmoothMotionLowLatency = prevLatency != LowLatencyUltra ? prevLatency : (uint?)null;
+                        nvidiaPresetService.SetLowLatencyMode(card.GameName, installPathSafe, LowLatencyUltra);
+                    }
+                    else
+                    {
+                        uint restoreValue = card.PreSmoothMotionLowLatency ?? LowLatencyOff;
+                        nvidiaPresetService.SetLowLatencyMode(card.GameName, installPathSafe, restoreValue);
+                        card.PreSmoothMotionLowLatency = null;
+                    }
                     _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(card));
                 };
                 smoothCol.Children.Add(combo);

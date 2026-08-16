@@ -6,8 +6,12 @@
 
 ### Changes from beta6
 
+- Enabling **Smooth Motion** in Driver Profile Settings now automatically sets **Low Latency** to Ultra (required for smooth frame pacing). When Smooth Motion is turned off, Low Latency is restored to its previous value — or Off if it hadn't been changed.
 - Selecting a DXVK variant in Game Overrides no longer auto-installs DXVK. The variant preference is now saved and the Install DXVK button appears — you press it when ready. Switching variants while DXVK is already installed uninstalls it first; reinstall when ready.
 - Lilium HDR DXVK installs now write Standard (`0x000802A5` — Treat DXVK as Native) to the NVIDIA profile flags instead of Advanced (`0x00080004`). This matches the broader community recommendation.
+- All OptiScaler cog settings (except OptiScaler Version) are now greyed out and non-interactive when OptiScaler is not installed — settings require an active installation to take effect.
+- Fixed Display Commander update and download failing — updated the GitHub release tag from `latest_build` to `latest`. The URL is now also overridable via `componentUrls["dc"]` in the manifest.
+- Fixed OptiScaler cog settings resetting to defaults after uninstall — all per-game settings (FG Input/Output, Streamline, Engine.ini keys, etc.) are now cleared when OptiScaler is uninstalled, and Engine.ini keys written by the cog are removed.
 
 ---
 
