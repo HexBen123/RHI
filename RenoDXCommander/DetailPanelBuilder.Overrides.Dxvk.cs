@@ -169,9 +169,12 @@ public partial class DetailPanelBuilder
             Grid.SetColumn(dxvkDivider, 1);
             dxvkRowGrid.Children.Add(dxvkDivider);
 
-            // Right column — Lilium HDR Preset (only visible when Lilium HDR is active)
-            var isLiliumActive = card.DxvkEnabled && card.DxvkRecord?.IsLiliumHdrMode == true;
-            if (isLiliumActive || (card.DxvkEnabled && _window.ViewModel.GetDxvkVariantOverride(gameName, card.Source) == "LiliumHdr"))
+            // Right column — Lilium HDR Preset (visible when Lilium HDR is selected or active)
+            var liliumVariantSelected = _window.ViewModel.GetDxvkVariantOverride(gameName, card.Source) == "LiliumHdr"
+                                     || defaultDxvkSelection == "Lilium HDR";
+            var isLiliumActive = (card.DxvkEnabled || card.DxvkStatus == GameStatus.Installed || card.DxvkStatus == GameStatus.UpdateAvailable)
+                                 && card.DxvkRecord?.IsLiliumHdrMode == true;
+            if (isLiliumActive || liliumVariantSelected)
             {
                 var liliumPresetCol = new StackPanel { Spacing = 6 };
                 liliumPresetCol.Children.Add(new TextBlock

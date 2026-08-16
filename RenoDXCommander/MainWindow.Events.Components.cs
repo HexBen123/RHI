@@ -2017,14 +2017,33 @@ public sealed partial class MainWindow
         };
 
         bool isNightly = ViewModel.GetOsVariant(card.GameName, card.Source ?? "") == "Nightly";
+
+        // These are declared at method scope so the presets closures (built later, outside the
+        // nightly block) can capture them. They are only non-null when isNightly == true.
+        ComboBox? fgInputCombo   = null;
+        ComboBox? fgOutputCombo  = null;
+        ComboBox? fgNvngxCombo   = null;
+        ComboBox? combinedCombo  = null;
+        ComboBox? srPresetCombo  = null;
+        ComboBox? rrPresetCombo  = null;
+        ComboBox? rsCombo        = null;
+        ComboBox? flipCombo      = null;
+        ComboBox? hudFixCombo    = null;
+        Func<string, string>? FgInputToIni  = null;
+        Func<string, string>? FgOutputToIni = null;
+        Func<string, string>? FgNvngxToIni  = null;
+        (string Item1, string Item2)[]? srPresetMap   = null;
+        (string Item1, string Item2)[]? rrPresetMap   = null;
+        (string Item1, float Item2)[]?  renderScaleMap = null;
+
         if (isNightly)
         {
             // ── INI value converters ───────────────────────────────────────
-            string FgInputToIni(string d) => d switch { "OptiFG (Upscaler)" => "upscaler", "DLSSG via Streamline" => "dlssg", "DLSSG via Nvngx" => "nvngxfg", "FSR 3.1 FG" => "fsrfg", "FSR 3.0 FG" => "fsrfg30", "XeFG" => "xefg", _ => "auto" };
+            FgInputToIni  = (string d) => d switch { "OptiFG (Upscaler)" => "upscaler", "DLSSG via Streamline" => "dlssg", "DLSSG via Nvngx" => "nvngxfg", "FSR 3.1 FG" => "fsrfg", "FSR 3.0 FG" => "fsrfg30", "XeFG" => "xefg", _ => "auto" };
+            FgOutputToIni = (string d) => d switch { "FSR FG" => "fsrfg", "DLSSG" => "dlssg", "XeFG" => "xefg", _ => "auto" };
+            FgNvngxToIni  = (string d) => d switch { "Nukem's" => "Nukems", "Enabler" => "Arturs", "FSR 3/4 FG" => "FFX", _ => "None" };
             string IniToFgInput(string v) => v switch { "upscaler" => "OptiFG (Upscaler)", "dlssg" => "DLSSG via Streamline", "nvngxfg" => "DLSSG via Nvngx", "fsrfg" => "FSR 3.1 FG", "fsrfg30" => "FSR 3.0 FG", "xefg" => "XeFG", _ => "Auto (Default)" };
-            string FgOutputToIni(string d) => d switch { "FSR FG" => "fsrfg", "DLSSG" => "dlssg", "XeFG" => "xefg", _ => "auto" };
             string IniToFgOutput(string v) => v switch { "fsrfg" => "FSR FG", "dlssg" => "DLSSG", "xefg" => "XeFG", _ => "Auto (Default)" };
-            string FgNvngxToIni(string d) => d switch { "Nukem's" => "Nukems", "Enabler" => "Arturs", "FSR 3/4 FG" => "FFX", _ => "None" };
             string IniToFgNvngx(string v) => v switch { "Nukems" => "Nukem's", "Arturs" => "Enabler", "FFX" => "FSR 3/4 FG", _ => "None (Real DLSSG)" };
 
             // Separator row between version and nightly settings (spans all 4 columns)
@@ -2053,13 +2072,13 @@ public sealed partial class MainWindow
                 slVersionDefault = slVersions.Count > 0 ? slVersions[0] : "2.12.0";
 
             bool combinedOn = ViewModel.GetOsDeployStreamline(card.GameName, card.Source ?? "");
-            var combinedCombo = new ComboBox { ItemsSource = new[] { "No", "Yes" }, SelectedItem = combinedOn ? "Yes" : "No" };
+            combinedCombo = new ComboBox { ItemsSource = new[] { "No", "Yes" }, SelectedItem = combinedOn ? "Yes" : "No" };
             ToolTipService.SetToolTip(combinedCombo, "Deploys Streamline and DLSS Enabler to the game's OptiScaler folder. Required for DLSS Frame Generation with OptiScaler.");
             var slVersionCombo = new ComboBox { ItemsSource = slVersions.Count > 0 ? (IEnumerable<string>)slVersions : new[] { slVersionDefault }, SelectedItem = slVersionDefault, IsEnabled = combinedOn };
             AddRow(unifiedGrid, 3, "Streamline/DLSS Enabler", combinedCombo, "Streamline Version", slVersionCombo);
 
             // Row 4: FG Input (left) | HUD Fix (right)
-            var fgInputCombo = new ComboBox { ItemsSource = new[] { "Auto (Default)", "OptiFG (Upscaler)", "DLSSG via Streamline", "DLSSG via Nvngx", "FSR 3.1 FG", "FSR 3.0 FG", "XeFG" }, SelectedItem = IniToFgInput(ViewModel.GetOsFgInput(card.GameName, card.Source ?? "")) };
+            fgInputCombo = new ComboBox { ItemsSource = new[] { "Auto (Default)", "OptiFG (Upscaler)", "DLSSG via Streamline", "DLSSG via Nvngx", "FSR 3.1 FG", "FSR 3.0 FG", "XeFG" }, SelectedItem = IniToFgInput(ViewModel.GetOsFgInput(card.GameName, card.Source ?? "")) };
 
             // Read HUD Fix from OptiScaler.ini
             string hudFixCurrent = "auto";
@@ -2081,28 +2100,28 @@ public sealed partial class MainWindow
             var hudFixSelected = hudFixCurrent.Equals("true", StringComparison.OrdinalIgnoreCase) ? "On"
                                : hudFixCurrent.Equals("false", StringComparison.OrdinalIgnoreCase) ? "Off"
                                : "Default";
-            var hudFixCombo = new ComboBox { ItemsSource = new[] { "Default", "On", "Off" }, SelectedItem = hudFixSelected };
-            ToolTipService.SetToolTip(hudFixCombo, "HUD Fix: enables hudless resource tracking for Frame Generation. On = HUDFix=true in [OptiFG].");
+            hudFixCombo = new ComboBox { ItemsSource = new[] { "Default", "On", "Off" }, SelectedItem = hudFixSelected };
+            ToolTipService.SetToolTip(hudFixCombo!, "HUD Fix: enables hudless resource tracking for Frame Generation. On = HUDFix=true in [OptiFG].");
 
-            AddRow(unifiedGrid, 4, "FG Input", fgInputCombo, "HUD Fix", hudFixCombo);
+            AddRow(unifiedGrid, 4, "FG Input", fgInputCombo!, "HUD Fix", hudFixCombo!);
 
             // Row 5: FG Output (left) | FG Nvngx Override (right)
-            var fgOutputCombo = new ComboBox { ItemsSource = new[] { "Auto (Default)", "FSR FG", "DLSSG", "XeFG" }, SelectedItem = IniToFgOutput(ViewModel.GetOsFgOutput(card.GameName, card.Source ?? "")) };
+            fgOutputCombo = new ComboBox { ItemsSource = new[] { "Auto (Default)", "FSR FG", "DLSSG", "XeFG" }, SelectedItem = IniToFgOutput(ViewModel.GetOsFgOutput(card.GameName, card.Source ?? "")) };
             bool enablerAvail = true; // Always allow Enabler — requires Streamline deployed, user responsibility
             var nvngxItems = new List<object> { "None (Real DLSSG)", "Nukem's", new ComboBoxItem { Content = "Enabler", IsEnabled = enablerAvail }, "FSR 3/4 FG" };
             var currentNvngxDisplay = IniToFgNvngx(ViewModel.GetOsFgNvngxReplacement(card.GameName, card.Source ?? ""));
             object? nvngxSelected = nvngxItems.FirstOrDefault(i => i is ComboBoxItem cb ? (cb.Content as string) == currentNvngxDisplay : (i as string) == currentNvngxDisplay) ?? nvngxItems[0];
-            var fgNvngxCombo = new ComboBox { ItemsSource = nvngxItems, SelectedItem = nvngxSelected };
-            ToolTipService.SetToolTip(fgNvngxCombo, "Only relevant when FG Output = DLSSG. Enabler requires Deploy Streamline + Deploy DLSS Enabler.");
-            AddRow(unifiedGrid, 5, "FG Output", fgOutputCombo, "FG Nvngx Override", fgNvngxCombo);
+            fgNvngxCombo = new ComboBox { ItemsSource = nvngxItems, SelectedItem = nvngxSelected };
+            ToolTipService.SetToolTip(fgNvngxCombo!, "Only relevant when FG Output = DLSSG. Enabler requires Deploy Streamline + Deploy DLSS Enabler.");
+            AddRow(unifiedGrid, 5, "FG Output", fgOutputCombo!, "FG Nvngx Override", fgNvngxCombo!);
 
-            bool fgOutputIsDlssg = fgOutputCombo.SelectedItem as string == "DLSSG";
-            fgNvngxCombo.Opacity = fgOutputIsDlssg ? 1.0 : 0.35;
-            fgNvngxCombo.IsHitTestVisible = fgOutputIsDlssg;
-            fgNvngxCombo.IsEnabled = fgOutputIsDlssg;
+            bool fgOutputIsDlssg = fgOutputCombo!.SelectedItem as string == "DLSSG";
+            fgNvngxCombo!.Opacity = fgOutputIsDlssg ? 1.0 : 0.35;
+            fgNvngxCombo!.IsHitTestVisible = fgOutputIsDlssg;
+            fgNvngxCombo!.IsEnabled = fgOutputIsDlssg;
 
             // ── Wire handlers ──────────────────────────────────────────────
-            combinedCombo.SelectionChanged += (s, ev) =>
+            combinedCombo!.SelectionChanged += (s, ev) =>
             {
                 bool on = combinedCombo.SelectedItem as string == "Yes";
                 ViewModel.SetOsDeployStreamline(card.GameName, on, card.Source ?? "");
@@ -2146,33 +2165,33 @@ public sealed partial class MainWindow
                     dlssStreamlineSvc.SwapStreamlineAsync(slFolder, selectedVer).SafeFireAndForget("OsCog.SwapStreamline");
                 }
             };
-            fgInputCombo.SelectionChanged += (s, ev) =>
+            fgInputCombo!.SelectionChanged += (s, ev) =>
             {
                 if (fgInputCombo.SelectedItem is not string sel) return;
-                var v = FgInputToIni(sel); ViewModel.SetOsFgInput(card.GameName, v, card.Source ?? "");
+                var v = FgInputToIni!(sel); ViewModel.SetOsFgInput(card.GameName, v, card.Source ?? "");
                 if (!string.IsNullOrEmpty(card.InstallPath)) OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "FrameGen", "FGInput", v);
             };
-            hudFixCombo.SelectionChanged += (s, ev) =>
+            hudFixCombo!.SelectionChanged += (s, ev) =>
             {
                 if (hudFixCombo.SelectedItem is not string sel || string.IsNullOrEmpty(card.InstallPath)) return;
                 var val = sel == "On" ? "true" : sel == "Off" ? "false" : "auto";
                 OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "OptiFG", "HUDFix", val);
             };
-            fgOutputCombo.SelectionChanged += (s, ev) =>
+            fgOutputCombo!.SelectionChanged += (s, ev) =>
             {
                 if (fgOutputCombo.SelectedItem is not string sel) return;
-                var v = FgOutputToIni(sel); ViewModel.SetOsFgOutput(card.GameName, v, card.Source ?? "");
+                var v = FgOutputToIni!(sel); ViewModel.SetOsFgOutput(card.GameName, v, card.Source ?? "");
                 if (!string.IsNullOrEmpty(card.InstallPath)) OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "FrameGen", "FGOutput", v);
                 bool isDlssg = sel == "DLSSG";
-                fgNvngxCombo.Opacity = isDlssg ? 1.0 : 0.35;
-                fgNvngxCombo.IsHitTestVisible = isDlssg;
-                fgNvngxCombo.IsEnabled = isDlssg;
+                fgNvngxCombo!.Opacity = isDlssg ? 1.0 : 0.35;
+                fgNvngxCombo!.IsHitTestVisible = isDlssg;
+                fgNvngxCombo!.IsEnabled = isDlssg;
             };
-            fgNvngxCombo.SelectionChanged += (s, ev) =>
+            fgNvngxCombo!.SelectionChanged += (s, ev) =>
             {
                 string? display = fgNvngxCombo.SelectedItem is ComboBoxItem cb ? cb.Content as string : fgNvngxCombo.SelectedItem as string;
                 if (display == null) return;
-                var v = FgNvngxToIni(display); ViewModel.SetOsFgNvngxReplacement(card.GameName, v, card.Source ?? "");
+                var v = FgNvngxToIni!(display); ViewModel.SetOsFgNvngxReplacement(card.GameName, v, card.Source ?? "");
                 if (!string.IsNullOrEmpty(card.InstallPath) && string.Equals(ViewModel.GetOsFgOutput(card.GameName, card.Source ?? ""), "dlssg", StringComparison.OrdinalIgnoreCase))
                     OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "FrameGen", "FGNvngxReplacement", v);
             };
@@ -2202,29 +2221,29 @@ public sealed partial class MainWindow
             }
 
             // DLSS SR preset: 10=J, 11=K, 12=L, 13=M
-            var srPresetMap = new[] { ("Default", "auto"), ("J", "10"), ("K", "11"), ("L", "12"), ("M", "13") };
+            srPresetMap = new[] { ("Default", "auto"), ("J", "10"), ("K", "11"), ("L", "12"), ("M", "13") };
             var srCurrent = ReadIniValue("DLSS", "RenderPresetForAll");
             var srSelected = srPresetMap.FirstOrDefault(p => p.Item2 == srCurrent).Item1 ?? "Default";
-            var srPresetCombo = new ComboBox { ItemsSource = srPresetMap.Select(p => p.Item1).ToArray(), SelectedItem = srSelected };
-            ToolTipService.SetToolTip(srPresetCombo, "DLSS Super Resolution render preset. J-M are the recommended modern presets.");
+            srPresetCombo = new ComboBox { ItemsSource = srPresetMap.Select(p => p.Item1).ToArray(), SelectedItem = srSelected };
+            ToolTipService.SetToolTip(srPresetCombo!, "DLSS Super Resolution render preset. J-M are the recommended modern presets.");
 
             // DLSS RR preset: 3=D, 4=E
-            var rrPresetMap = new[] { ("Default", "auto"), ("D", "3"), ("E", "4") };
+            rrPresetMap = new[] { ("Default", "auto"), ("D", "3"), ("E", "4") };
             var rrCurrent = ReadIniValue("DLSSD", "RenderPresetForAll");
             var rrSelected = rrPresetMap.FirstOrDefault(p => p.Item2 == rrCurrent).Item1 ?? "Default";
-            var rrPresetCombo = new ComboBox { ItemsSource = rrPresetMap.Select(p => p.Item1).ToArray(), SelectedItem = rrSelected };
-            ToolTipService.SetToolTip(rrPresetCombo, "DLSS Ray Reconstruction render preset.");
+            rrPresetCombo = new ComboBox { ItemsSource = rrPresetMap.Select(p => p.Item1).ToArray(), SelectedItem = rrSelected };
+            ToolTipService.SetToolTip(rrPresetCombo!, "DLSS Ray Reconstruction render preset.");
 
-            AddRow(addGrid, 0, "DLSS SR Preset", srPresetCombo, "DLSS RR Preset", rrPresetCombo);
+            AddRow(addGrid, 0, "DLSS SR Preset", srPresetCombo!, "DLSS RR Preset", rrPresetCombo!);
 
             // Disable Flip Metering + Render Scale
             var flipCurrent = ReadIniValue("NvApi", "DisableFlipMetering");
             var flipSelected = flipCurrent == "true" ? "On" : "Default";
-            var flipCombo = new ComboBox { ItemsSource = new[] { "Default", "On" }, SelectedItem = flipSelected };
-            ToolTipService.SetToolTip(flipCombo, "On: DisableFlipMetering=true — fixes thick frametime graph with NukemFG + fakenvapi.");
+            flipCombo = new ComboBox { ItemsSource = new[] { "Default", "On" }, SelectedItem = flipSelected };
+            ToolTipService.SetToolTip(flipCombo!, "On: DisableFlipMetering=true — fixes thick frametime graph with NukemFG + fakenvapi.");
 
             // Render Scale — UpscaleRatioOverride
-            var renderScaleMap = new[] {
+            renderScaleMap = new[] {
                 ("Off",          0f),
                 ("100% DLAA",    1.0f),
                 ("99% DLAA Alt", 1.0101f),
@@ -2246,33 +2265,33 @@ public sealed partial class MainWindow
                 var match = renderScaleMap.Skip(1).FirstOrDefault(p => Math.Abs(p.Item2 - rsVal) < 0.01f);
                 if (match.Item1 != null) rsSelected = match.Item1;
             }
-            var rsCombo = new ComboBox { ItemsSource = renderScaleMap.Select(p => p.Item1).ToArray(), SelectedItem = rsSelected };
-            ToolTipService.SetToolTip(rsCombo, "Override the internal render resolution. Off = use in-game quality preset as-is.");
+            rsCombo = new ComboBox { ItemsSource = renderScaleMap.Select(p => p.Item1).ToArray(), SelectedItem = rsSelected };
+            ToolTipService.SetToolTip(rsCombo!, "Override the internal render resolution. Off = use in-game quality preset as-is.");
 
-            AddRow(addGrid, 1, "Render Scale", rsCombo, "Disable Flip Metering", flipCombo);
+            AddRow(addGrid, 1, "Render Scale", rsCombo!, "Disable Flip Metering", flipCombo!);
 
             content.Children.Add(addGrid);
 
-            srPresetCombo.SelectionChanged += (s, ev) =>
+            srPresetCombo!.SelectionChanged += (s, ev) =>
             {
                 if (srPresetCombo.SelectedItem is not string sel || string.IsNullOrEmpty(card.InstallPath)) return;
-                var val = srPresetMap.FirstOrDefault(p => p.Item1 == sel).Item2 ?? "auto";
+                var val = srPresetMap!.FirstOrDefault(p => p.Item1 == sel).Item2 ?? "auto";
                 OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "DLSS", "RenderPresetOverride", "true");
                 OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "DLSS", "RenderPresetForAll", val == "auto" ? "0" : val);
             };
-            rrPresetCombo.SelectionChanged += (s, ev) =>
+            rrPresetCombo!.SelectionChanged += (s, ev) =>
             {
                 if (rrPresetCombo.SelectedItem is not string sel || string.IsNullOrEmpty(card.InstallPath)) return;
-                var val = rrPresetMap.FirstOrDefault(p => p.Item1 == sel).Item2 ?? "auto";
+                var val = rrPresetMap!.FirstOrDefault(p => p.Item1 == sel).Item2 ?? "auto";
                 OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "DLSSD", "RenderPresetOverride", "true");
                 OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "DLSSD", "RenderPresetForAll", val == "auto" ? "0" : val);
             };
-            flipCombo.SelectionChanged += (s, ev) =>
+            flipCombo!.SelectionChanged += (s, ev) =>
             {
                 if (flipCombo.SelectedItem is not string sel || string.IsNullOrEmpty(card.InstallPath)) return;
                 OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "NvApi", "DisableFlipMetering", sel == "On" ? "true" : "false");
             };
-            rsCombo.SelectionChanged += (s, ev) =>
+            rsCombo!.SelectionChanged += (s, ev) =>
             {
                 if (rsCombo.SelectedItem is not string sel || string.IsNullOrEmpty(card.InstallPath)) return;
                 if (sel == "Off")
@@ -2281,7 +2300,7 @@ public sealed partial class MainWindow
                 }
                 else
                 {
-                    var match = renderScaleMap.FirstOrDefault(p => p.Item1 == sel);
+                    var match = renderScaleMap!.FirstOrDefault(p => p.Item1 == sel);
                     if (match.Item1 != null)
                     {
                         OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "UpscaleRatio", "UpscaleRatioOverrideEnabled", "true");
@@ -2351,53 +2370,224 @@ public sealed partial class MainWindow
             var presetsLabel = new TextBlock { Text = "Presets", FontSize = 13, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) };
             bottomBorder.Children.Add(presetsLabel);
 
+            // Load global presets from disk
+            var presets = OsPresetService.Load();
+
             var presetsGrid = new Grid { ColumnSpacing = 8 };
             for (int i = 0; i < 4; i++)
                 presetsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            presetsGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-            // Preset 1: DLSS Enabler
-            var dlssEnablerPreset = new Button
+            for (int slotIndex = 0; slotIndex < 4; slotIndex++)
             {
-                Content = "DLSS Enabler",
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                FontSize = 11,
-                Padding = new Thickness(8, 6, 8, 6),
-                CornerRadius = new CornerRadius(6),
-            };
-            dlssEnablerPreset.Click += (s, ev) =>
-            {
-                ViewModel.SetOsDeployStreamline(card.GameName, true, card.Source ?? "");
-                ViewModel.SetOsDeployDlssEnabler(card.GameName, true, card.Source ?? "");
-                ViewModel.SetOsFgInput(card.GameName, "upscaler", card.Source ?? "");
-                ViewModel.SetOsFgOutput(card.GameName, "dlssg", card.Source ?? "");
-                ViewModel.SetOsFgNvngxReplacement(card.GameName, "Arturs", card.Source ?? "");
-                if (!string.IsNullOrEmpty(card.InstallPath))
-                {
-                    try { _optiScalerService.DeployStreamlineToGame(card.InstallPath); } catch { }
-                    try { var d = Path.Combine(card.InstallPath, "OptiScaler"); _ = _dlssEnablerService.InstallAsync(d); } catch { }
-                    OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "FrameGen", "FGInput", "upscaler");
-                    OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "FrameGen", "FGOutput", "dlssg");
-                    OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "FrameGen", "FGNvngxReplacement", "Arturs");
-                }
-                DispatcherQueue.TryEnqueue(async () => { osCogDialog?.Hide(); await Task.Delay(80); OsCogButton_Click(sender, e); });
-            };
-            Grid.SetColumn(dlssEnablerPreset, 0);
-            presetsGrid.Children.Add(dlssEnablerPreset);
+                int i = slotIndex; // capture for lambdas
+                var preset = presets[i];
+                bool hasData = preset != null;
 
-            for (int i = 1; i < 4; i++)
-            {
-                var placeholder = new Button
+                var slotPanel = new StackPanel { Spacing = 4 };
+
+                // ── Name row: [TextBox][Save] ──────────────────────────────
+                var nameRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4 };
+
+                var nameBox = new TextBox
                 {
-                    Content = "—",
-                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    PlaceholderText = $"Slot {i + 1}",
+                    Text = preset?.Name ?? "",
                     FontSize = 11,
-                    Padding = new Thickness(8, 6, 8, 6),
-                    CornerRadius = new CornerRadius(6),
-                    IsEnabled = false,
-                    Opacity = 0.35,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    MinWidth = 0,
+                    Padding = new Thickness(6, 4, 6, 4),
                 };
-                Grid.SetColumn(placeholder, i);
-                presetsGrid.Children.Add(placeholder);
+
+                var saveBtn = new Button
+                {
+                    Content = "Save",
+                    FontSize = 11,
+                    Width = 42,
+                    Padding = new Thickness(4),
+                    CornerRadius = new CornerRadius(4),
+                };
+                ToolTipService.SetToolTip(saveBtn, "Save current cog settings into this slot");
+
+                // Stretch the textbox to fill remaining space
+                var nameRowGrid = new Grid { ColumnSpacing = 4 };
+                nameRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                nameRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                Grid.SetColumn(nameBox, 0);
+                Grid.SetColumn(saveBtn, 1);
+                nameRowGrid.Children.Add(nameBox);
+                nameRowGrid.Children.Add(saveBtn);
+
+                // ── Apply button ───────────────────────────────────────────
+                var applyBtn = new Button
+                {
+                    Content = hasData ? (preset!.Name ?? $"Slot {i + 1}") : $"Slot {i + 1}",
+                    FontSize = 11,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    Padding = new Thickness(6, 5, 6, 5),
+                    CornerRadius = new CornerRadius(4),
+                    IsEnabled = hasData,
+                    Opacity = hasData ? 1.0 : 0.40,
+                };
+                ToolTipService.SetToolTip(applyBtn, hasData ? "Apply this preset to the current game" : "No preset saved yet — click Save to capture current settings");
+
+                // ── Wire: TextBox name editing ─────────────────────────────
+                nameBox.TextChanged += (s, ev) =>
+                {
+                    if (presets[i] == null) presets[i] = new Models.OsPreset();
+                    presets[i]!.Name = string.IsNullOrWhiteSpace(nameBox.Text) ? null : nameBox.Text;
+                    applyBtn.Content = presets[i]!.Name ?? $"Slot {i + 1}";
+                    OsPresetService.Save(presets);
+                };
+
+                // ── Wire: Save button ──────────────────────────────────────
+                saveBtn.Click += (s, ev) =>
+                {
+                    // Capture current combo states (all combos are non-null when isNightly == true)
+                    string? capturedFgInput     = fgInputCombo?.SelectedItem is string fgi ? FgInputToIni!(fgi) : null;
+                    string? capturedFgOutput    = fgOutputCombo?.SelectedItem is string fgo ? FgOutputToIni!(fgo) : null;
+                    string? capturedFgNvngx     = fgNvngxCombo?.SelectedItem is ComboBoxItem cbi ? FgNvngxToIni!(cbi.Content as string ?? "") : fgNvngxCombo?.SelectedItem is string fgns ? FgNvngxToIni!(fgns) : null;
+                    bool?   capturedDeploySl    = combinedCombo?.SelectedItem as string == "Yes";
+                    string? capturedSrPreset    = srPresetCombo?.SelectedItem is string srp ? (srPresetMap?.FirstOrDefault(p => p.Item1 == srp).Item2 ?? "auto") : null;
+                    string? capturedRrPreset    = rrPresetCombo?.SelectedItem is string rrp ? (rrPresetMap?.FirstOrDefault(p => p.Item1 == rrp).Item2 ?? "auto") : null;
+                    string? capturedRenderScale = rsCombo?.SelectedItem as string;
+                    bool?   capturedFlip        = flipCombo?.SelectedItem as string == "On";
+                    string? capturedHudFix      = hudFixCombo?.SelectedItem is string hf ? (hf == "On" ? "true" : hf == "Off" ? "false" : "auto") : null;
+                    float?  capturedFps         = null;
+                    if (fpsLimitCombo.SelectedItem is string fpsSel)
+                    {
+                        if (fpsSel == "Off") capturedFps = 0f;
+                        else { var m = vrrPresetsOs.FirstOrDefault(p => p.Label == fpsSel); if (m.Label != null) capturedFps = m.Fps; }
+                    }
+
+                    if (presets[i] == null) presets[i] = new Models.OsPreset();
+                    var p = presets[i]!;
+                    // Preserve existing name
+                    p.FgInput             = capturedFgInput;
+                    p.FgOutput            = capturedFgOutput;
+                    p.FgNvngxReplacement  = capturedFgNvngx;
+                    p.DeployStreamline    = capturedDeploySl;
+                    p.DeployDlssEnabler   = capturedDeploySl; // same toggle
+                    p.SrPreset            = capturedSrPreset;
+                    p.RrPreset            = capturedRrPreset;
+                    p.RenderScale         = capturedRenderScale;
+                    p.DisableFlipMetering = capturedFlip;
+                    p.HudFix              = capturedHudFix;
+                    p.FramerateLimit      = capturedFps;
+
+                    OsPresetService.Save(presets);
+                    applyBtn.IsEnabled = true;
+                    applyBtn.Opacity = 1.0;
+                    applyBtn.Content = p.Name ?? $"Slot {i + 1}";
+                    ToolTipService.SetToolTip(applyBtn, "Apply this preset to the current game");
+                };
+
+                // ── Wire: Apply button ─────────────────────────────────────
+                applyBtn.Click += (s, ev) =>
+                {
+                    var p = presets[i];
+                    if (p == null) return;
+
+                    // Apply ViewModel settings
+                    if (p.FgInput != null)            ViewModel.SetOsFgInput(card.GameName, p.FgInput, card.Source ?? "");
+                    if (p.FgOutput != null)           ViewModel.SetOsFgOutput(card.GameName, p.FgOutput, card.Source ?? "");
+                    if (p.FgNvngxReplacement != null) ViewModel.SetOsFgNvngxReplacement(card.GameName, p.FgNvngxReplacement, card.Source ?? "");
+                    if (p.DeployStreamline.HasValue)
+                    {
+                        ViewModel.SetOsDeployStreamline(card.GameName, p.DeployStreamline.Value, card.Source ?? "");
+                        ViewModel.SetOsDeployDlssEnabler(card.GameName, p.DeployStreamline.Value, card.Source ?? "");
+                        if (!string.IsNullOrEmpty(card.InstallPath))
+                        {
+                            try
+                            {
+                                if (p.DeployStreamline.Value)
+                                {
+                                    _optiScalerService.DeployStreamlineToGame(card.InstallPath);
+                                    var d = Path.Combine(card.InstallPath, "OptiScaler");
+                                    _ = _dlssEnablerService.InstallAsync(d);
+                                }
+                                else
+                                {
+                                    _optiScalerService.RemoveStreamlineFromGame(card.InstallPath);
+                                    var d = Path.Combine(card.InstallPath, "OptiScaler");
+                                    _dlssEnablerService.Uninstall(d);
+                                }
+                            }
+                            catch (Exception ex) { CrashReporter.Log($"[OsPreset.Apply] Streamline — {ex.Message}"); }
+                        }
+                    }
+
+                    if (!string.IsNullOrEmpty(card.InstallPath))
+                    {
+                        // FG INI values
+                        if (p.FgInput != null)
+                            OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "FrameGen", "FGInput", p.FgInput);
+                        if (p.FgOutput != null)
+                            OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "FrameGen", "FGOutput", p.FgOutput);
+                        if (p.FgNvngxReplacement != null && string.Equals(p.FgOutput, "dlssg", StringComparison.OrdinalIgnoreCase))
+                            OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "FrameGen", "FGNvngxReplacement", p.FgNvngxReplacement);
+
+                        // SR preset
+                        if (p.SrPreset != null)
+                        {
+                            OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "DLSS", "RenderPresetOverride", "true");
+                            OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "DLSS", "RenderPresetForAll", p.SrPreset == "auto" ? "0" : p.SrPreset);
+                        }
+
+                        // RR preset
+                        if (p.RrPreset != null)
+                        {
+                            OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "DLSSD", "RenderPresetOverride", "true");
+                            OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "DLSSD", "RenderPresetForAll", p.RrPreset == "auto" ? "0" : p.RrPreset);
+                        }
+
+                        // Render scale
+                        if (p.RenderScale != null)
+                        {
+                            if (p.RenderScale == "Off")
+                            {
+                                OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "UpscaleRatio", "UpscaleRatioOverrideEnabled", "false");
+                            }
+                            else
+                            {
+                                var rsMatch = renderScaleMap.FirstOrDefault(rm => rm.Item1 == p.RenderScale);
+                                if (rsMatch.Item1 != null)
+                                {
+                                    OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "UpscaleRatio", "UpscaleRatioOverrideEnabled", "true");
+                                    OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "UpscaleRatio", "UpscaleRatioOverrideValue",
+                                        rsMatch.Item2.ToString("0.000000", System.Globalization.CultureInfo.InvariantCulture));
+                                }
+                            }
+                        }
+
+                        // Flip metering
+                        if (p.DisableFlipMetering.HasValue)
+                            OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "NvApi", "DisableFlipMetering", p.DisableFlipMetering.Value ? "true" : "false");
+
+                        // HUD fix
+                        if (p.HudFix != null)
+                            OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "OptiFG", "HUDFix", p.HudFix);
+
+                        // Framerate limit
+                        if (p.FramerateLimit.HasValue)
+                        {
+                            if (p.FramerateLimit.Value <= 0f)
+                                OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "Framerate", "FramerateLimit", "0");
+                            else
+                                OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "Framerate", "FramerateLimit",
+                                    p.FramerateLimit.Value.ToString("0.000000", System.Globalization.CultureInfo.InvariantCulture));
+                        }
+                    }
+
+                    // Rebuild the dialog to reflect applied settings
+                    DispatcherQueue.TryEnqueue(async () => { osCogDialog?.Hide(); await Task.Delay(80); OsCogButton_Click(sender, e); });
+                };
+
+                slotPanel.Children.Add(nameRowGrid);
+                slotPanel.Children.Add(applyBtn);
+
+                Grid.SetColumn(slotPanel, i);
+                presetsGrid.Children.Add(slotPanel);
             }
 
             bottomBorder.Children.Add(presetsGrid);
@@ -2542,17 +2732,18 @@ public sealed partial class MainWindow
             Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
             VerticalAlignment = VerticalAlignment.Center,
         };
-        ToolTipService.SetToolTip(flagsLabel, "Standard: Treat DXVK as Native (0x000802A5). Advanced: Allow DXVK Promotion + DirectFlip (0x00080004). Only active when Prefer DXGI Swapchain is Yes.");
+        ToolTipService.SetToolTip(flagsLabel, "Standard: Treat DXVK as Native (0x000802A5). Alternative: Allow DXVK Promotion + DirectFlip (0x00080004). Only active when Prefer DXGI Swapchain is Yes.");
         Grid.SetRow(flagsLabel, 1); Grid.SetColumn(flagsLabel, 0);
         presentGrid.Children.Add(flagsLabel);
 
         var flagOptions = new (string Label, uint Value)[]
         {
-            ("Standard",  0x000802A5u),
-            ("Advanced",  0x00080004u),
+            ("Standard",    0x000802A5u),
+            ("Alternative", 0x00080004u),
         };
         var flagsCombo = new ComboBox { FontSize = 11, HorizontalAlignment = HorizontalAlignment.Stretch };
         foreach (var (lbl, _) in flagOptions) flagsCombo.Items.Add(lbl);
+        ToolTipService.SetToolTip(flagsCombo, "Standard (0x000802A5): Treat DXVK as Native\nAlternative (0x00080004): Allow DXVK Promotion + DirectFlip");
 
         var currentFlags = _dlssPresetService.GetVulkanPresentMethodFlags(card.GameName, card.InstallPath ?? "");
         bool presentIsYes = currentPresentMethod == 0x00000001;

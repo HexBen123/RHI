@@ -577,15 +577,18 @@ public class DllOverrideService : IDllOverrideService
 
     /// <summary>
     /// Returns the supported OptiScaler DLL names filtered to exclude
-    /// names currently used by ReShade or Display Commander for the same game.
+    /// names actively in use by ReShade or Display Commander for the same game.
+    /// Only excludes a name when that component is physically installed
+    /// (non-null <paramref name="rsInstalledAs"/> / <paramref name="dcInstalledAs"/>).
+    /// When a component is not installed, its default name is NOT excluded so the
+    /// user can freely pick any name for OptiScaler.
     /// </summary>
-    public string[] GetAvailableOsDllNames(string gameName, bool is32Bit)
+    public string[] GetAvailableOsDllNames(string gameName, bool is32Bit,
+        string? rsInstalledAs = null, string? dcInstalledAs = null)
     {
-        var rsName = GetEffectiveRsName(gameName);
-        var dcName = GetEffectiveDcName(gameName, is32Bit);
         return OptiScalerService.SupportedDllNames
-            .Where(n => !n.Equals(rsName, StringComparison.OrdinalIgnoreCase)
-                      && !n.Equals(dcName, StringComparison.OrdinalIgnoreCase))
+            .Where(n => (string.IsNullOrEmpty(rsInstalledAs) || !n.Equals(rsInstalledAs, StringComparison.OrdinalIgnoreCase))
+                     && (string.IsNullOrEmpty(dcInstalledAs)  || !n.Equals(dcInstalledAs,  StringComparison.OrdinalIgnoreCase)))
             .ToArray();
     }
 

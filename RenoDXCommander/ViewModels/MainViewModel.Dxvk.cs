@@ -26,7 +26,7 @@ public partial class MainViewModel
         if (!await CheckInstallWarningAsync(card.GameName, "dxvk")) return;
 
         // ── DXVK warning (shown unless user has opted out via checkbox) ─────────
-        if (xamlRoot != null && !_dxvkService.FirstTimeWarningAcknowledged)
+        if (xamlRoot != null && !_settingsViewModel.DxvkWarningDismissed)
         {
             var dontShowAgain = new CheckBox
             {
@@ -72,7 +72,10 @@ public partial class MainViewModel
             if (result != ContentDialogResult.Primary) return;
 
             if (dontShowAgain.IsChecked == true)
-                _dxvkService.FirstTimeWarningAcknowledged = true;
+            {
+                _settingsViewModel.DxvkWarningDismissed = true;
+                SaveSettingsPublic();
+            }
         }
 
         // ── Install ──────────────────────────────────────────────────────

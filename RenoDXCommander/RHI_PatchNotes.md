@@ -1,8 +1,83 @@
+## v2.3.3
+
+### New
+
+- **Generic Luma for Unreal Engine games** — RHI now supports Luma HDR for all DX11 Unreal Engine games, not just named titles. Every DX11 UE game in your library shows a Luma row alongside RenoDX. Game-specific Engine.ini tweaks and launch arguments from the Luma wiki are applied automatically on install. ReShade and DLSS are managed by RHI on all Luma games and kept up to date by Update All. Both RenoDX and Luma rows are always visible side by side — no toggle needed.
+  - The Luma ⚙ cog has a TAA settings toggle; wiki-recommended TAA Engine.ini keys are applied on install when available.
+  - Games supporting both DX11 and DX12 show the Luma row and get `-dx11` set automatically on install.
+  - Uninstalling Luma no longer removes ReShade or DLSS — all three are managed independently.
+  - UE5 games use DX12 and don't show a Luma row by default. Set the Graphics API override to DirectX11 in Game Overrides first if needed.
+
+- **OptiScaler Nightly channel** — switch between Stable and Nightly per game in the OptiScaler ⚙ cog. The cog has significantly expanded for Nightly installs:
+  - **Streamline/DLSS Enabler** toggle deploys both together (Streamline is required for DLSS Enabler). Includes a **Streamline Version** picker to select which version to deploy per game.
+  - **Frame Generation settings**: FG Input, FG Output, FG Nvngx Replacement, and HUD Fix — all write directly to the game's OptiScaler.ini and persist per game.
+  - **Additional Settings**: DLSS SR Preset (J/K/L/M), DLSS RR Preset (D/E), Render Scale (Off + presets from 33% Ultra Perf to 100% DLAA), Disable Flip Metering, and Framerate Limit.
+  - **Engine.ini Settings** (UE games only): Dilated Motion Vectors, FSR Crash Fix, FSR-FG Swapchain, and Upscaler Plugin — each writes the relevant Engine.ini keys immediately.
+  - **4 user-configurable preset slots** — save the current cog settings into a named slot and apply them to any game. Slot 1 defaults to a DLSS Enabler preset.
+  - DLSS Enabler auto-updates in the background from the RHI GitHub releases.
+
+- **Shader Management** — new global setting in Settings (replaces "Custom Shaders"): **RHI Managed** deploys built-in shader packs to all games, **Custom** uses your own shader directory, **Off** disables all shader deployment globally. Also available as a per-game override in Game Overrides.
+
+- **DXVK ⚙ cog — DXVK as Native** — alongside Prefer DXGI Swapchain, a new Flags setting controls the Vulkan/OpenGL Present Method in the NVIDIA driver profile. Standard (`0x000802A5` — Treat DXVK as Native) is the default and community-recommended value; Alternative (`0x00080004`) adds DirectFlip.
+
+- **Smooth Motion → Low Latency cascade** — enabling Smooth Motion in Driver Profile Settings automatically sets Low Latency to Ultra. When Smooth Motion is turned off, Low Latency is restored to its previous value. Low Latency is locked while Smooth Motion is enabled.
+
+- **First-launch setup window** — a setup screen now appears on a fresh install asking how you want ReShade managed, before the main window opens.
+
+### Changes
+
+- DOF Fix moved to a new Recommended section, above the frame limiters.
+- Graphics API badges now show DX11 and DX12 separately with individual override options in Game Overrides.
+- The Launch executable section in Game Overrides now shows the currently detected exe name next to the heading.
+- RenoDX, ReLimiter, and Display Commander can now be installed without ReShade being managed by RHI. Uncheck ReShade in the Global Update Inclusion settings to unlock installation of dependent components.
+- The DXVK variant combo in Game Overrides saves your preference without auto-installing. The Install DXVK button appears when a variant is selected — press it when ready.
+- Selecting a DXVK variant while DXVK is already installed uninstalls the old version first — reinstall when ready.
+- Lilium HDR DXVK installs write Standard flags (`0x000802A5`) to the NVIDIA profile.
+- Switching filter tabs now keeps the selected game highlighted if it appears in the new filter.
+- The per-game Shaders and Addons dropdowns now correctly reflect the global Off/Custom setting instead of always showing Global.
+- Simple View window is slightly taller.
+
+### Bug Fixes
+
+- Fixed many UE4 DX12 games incorrectly showing as DX11.
+- Fixed UE-Extended toggling off after a background refresh for games with both a named wiki mod and a user opt-in.
+- Fixed startup scan slowness for games not on Steam or PCGamingWiki — live HTTP lookups are now cached so they only fire once per game.
+- Fixed DLSS path cache invalidating every session for games with installation paths containing mixed separators or path casing differences (affected Nioh 3, AC Black Flag Resynced, and others).
+- Fixed "Create NVIDIA Profile" registering the wrong executable for games that have multiple exe files — manifest launch exe overrides are now used when available.
+- Fixed app update being silently aborted if the MOTD dialog was open when you clicked Update Now.
+- Fixed DXVK "Don't show this warning again" checkbox not persisting across sessions.
+- Fixed Display Commander update and download failing — updated the GitHub release tag.
+- Fixed OptiScaler unnecessarily renaming ReShade to ReShade64.dll when there was no filename conflict.
+- Fixed ReShade DLL naming overrides allowing the ReShade name to be set to the same filename OptiScaler is using.
+- Fixed DLL naming override toggle not reverting OptiScaler's filename when disabled.
+- Fixed DLL naming override "Don't show again" not persisting.
+- Fixed Luma archives with newer format (no d3dcompiler_47.dll) being misidentified as addon archives.
+- Fixed OptiScalerini marked read-only causing uninstall to abort halfway, leaving DLSS files and the OptiScaler folder behind.
+- Fixed OptiScaler updates leaving stale files from the previous version.
+- Fixed OptiScaler install creating spurious `.dll.original` backup files for files it deploys.
+- Fixed OptiPatcher never receiving automatic updates.
+- Fixed Engine.ini writers appending duplicate section headers — all writes now merge into the existing section.
+- Fixed Graphics API override to DirectX11 on a UE5 game not showing the Luma row.
+- Fixed the first-launch setup window appearing very small at high Windows display scaling.
+- Fixed "No RenoDX mod available" button appearing clickable — it is now greyed out.
+
+### Manifest Updates
+
+- Added ELDEN RING NIGHTREIGN install path override.
+- Removed Skyrim Creation Kit from the game library.
+- Added REANIMAL install warning (native HDR, no mod needed).
+- Added `componentUrls.dc` — allows the Display Commander download URL to be updated remotely.
+- Added Skyrim Creation Kit to the blacklist.
+- Various engine tags, API overrides, and game-specific notes added across multiple releases.
+
+---
+
 ## v2.3.3-beta7
 
 ### New
 
-- The DXVK ⚙ cog now has a **DXVK as Native** setting (Standard / Advanced) alongside **Prefer DXGI Swapchain** — controls the Vulkan/OpenGL Present Method Flags in the NVIDIA driver profile. Standard (`0x000802A5`) is the community-recommended value for all DXVK games; Advanced (`0x00080004`) adds DirectFlip on top. The flags setting is only active when Prefer DXGI Swapchain is enabled.
+- The DXVK ⚙ cog now has a **DXVK as Native** setting (Standard / Alternative) alongside **Prefer DXGI Swapchain** — controls the Vulkan/OpenGL Present Method Flags in the NVIDIA driver profile. Standard (`0x000802A5`) is the community-recommended value for all DXVK games; Alternative (`0x00080004`) adds DirectFlip on top. The flags setting is only active when Prefer DXGI Swapchain is enabled.
+- The Presets section in the OptiScaler cog now supports **4 user-configurable slots** (Nightly only). Each slot has an editable name, a Save button to capture the current settings, and an Apply button to load the preset onto the current game. Presets are global — save once, apply to any game. Slot 1 defaults to a DLSS Enabler preset on first launch. Replaces the old hardcoded "DLSS Enabler" preset button.
 
 ### Changes from beta6
 
@@ -12,7 +87,7 @@
 - Fixed renaming ReShade to OptiScaler's filename in the overrides panel silently overwriting the OptiScaler DLL on disk. The rename is now blocked when the target name is occupied by OptiScaler.
 - Fixed app update being silently aborted if the MOTD dialog opened at the same moment the user clicked Update Now. The update download now waits up to 15 seconds for any concurrent dialog (MOTD, patch notes) to close before proceeding.
 - Selecting a DXVK variant in Game Overrides no longer auto-installs DXVK. The variant preference is now saved and the Install DXVK button appears — you press it when ready. Switching variants while DXVK is already installed uninstalls it first; reinstall when ready.
-- Lilium HDR DXVK installs now write Standard (`0x000802A5` — Treat DXVK as Native) to the NVIDIA profile flags instead of Advanced (`0x00080004`). This matches the broader community recommendation.
+- Lilium HDR DXVK installs now write Standard (`0x000802A5` — Treat DXVK as Native) to the NVIDIA profile flags instead of Alternative (`0x00080004`). This matches the broader community recommendation.
 - All OptiScaler cog settings (except OptiScaler Version) are now greyed out and non-interactive when OptiScaler is not installed — settings require an active installation to take effect.
 - Fixed Display Commander update and download failing — updated the GitHub release tag from `latest_build` to `latest`. The URL is now also overridable via `componentUrls["dc"]` in the manifest.
 - Fixed OptiScaler cog settings resetting to defaults after uninstall — all per-game settings (FG Input/Output, Streamline, Engine.ini keys, etc.) are now cleared when OptiScaler is uninstalled, and Engine.ini keys written by the cog are removed.
