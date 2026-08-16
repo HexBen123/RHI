@@ -112,6 +112,18 @@ public partial class DialogService
     }
 
     /// <summary>
+    /// Waits up to <paramref name="timeoutSeconds"/> for the dialog gate to become
+    /// available. Use this instead of <see cref="TryAcquireDialogGate"/> when the
+    /// action is critical (e.g. app update download) and should not be silently
+    /// skipped if another dialog (e.g. MOTD) is currently showing.
+    /// Must be paired with <see cref="ReleaseDialogGate"/> on success.
+    /// </summary>
+    public static async Task<bool> WaitDialogGateAsync(int timeoutSeconds = 15)
+    {
+        return await _dialogGate.WaitAsync(TimeSpan.FromSeconds(timeoutSeconds));
+    }
+
+    /// <summary>
     /// Releases the dialog gate after a non-blocking dialog is closed.
     /// </summary>
     public static void ReleaseDialogGate()

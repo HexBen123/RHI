@@ -197,12 +197,21 @@ public class DllOverrideService : IDllOverrideService
             {
                 if (File.Exists(oldPath) && !File.Exists(newPath))
                 {
-                    File.Move(oldPath, newPath);
-                    if (card.RsRecord != null)
+                    // Collision guard: skip RS rename if the target name is occupied by OptiScaler
+                    var osEffectiveName = GetEffectiveOsName(name);
+                    if (newRsName.Equals(osEffectiveName, StringComparison.OrdinalIgnoreCase))
                     {
-                        card.RsRecord.InstalledAs = newRsName;
-                        _auxInstaller.SaveAuxRecord(card.RsRecord);
-                        card.RsInstalledFile = newRsName;
+                        CrashReporter.Log($"[DllOverrideService.UpdateDllOverrideNames] Skipping RS rename — '{newRsName}' collides with OptiScaler name for '{name}'.");
+                    }
+                    else
+                    {
+                        File.Move(oldPath, newPath);
+                        if (card.RsRecord != null)
+                        {
+                            card.RsRecord.InstalledAs = newRsName;
+                            _auxInstaller.SaveAuxRecord(card.RsRecord);
+                            card.RsInstalledFile = newRsName;
+                        }
                     }
                 }
             }

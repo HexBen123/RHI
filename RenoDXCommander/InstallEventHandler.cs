@@ -196,7 +196,7 @@ public class InstallEventHandler
                 var warningDialog = new ContentDialog
                 {
                     Title = "⚠ OptiScaler Setup",
-                    Content = "Before installing OptiScaler, please configure your GPU type and DLSS input settings in the OptiScaler Settings section on the Settings page.\n\nThis ensures OptiScaler is configured correctly for your hardware.",
+                    Content = "Before installing OptiScaler, please configure your GPU type and DLSS input (AMD/Intel only) settings in the OptiScaler Settings section on the Settings page.\n\nThis ensures OptiScaler is configured correctly for your hardware.",
                     PrimaryButtonText = "Continue",
                     CloseButtonText = "Cancel",
                     XamlRoot = xamlRoot,

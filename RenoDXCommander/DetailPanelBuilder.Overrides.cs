@@ -301,9 +301,11 @@ public partial class DetailPanelBuilder
                 var dcCurrentName = dllOverrideToggle.IsOn
                     ? (dcNameBox.SelectedItem as string ?? "").Trim()
                     : "";
-                var filtered = string.IsNullOrEmpty(dcCurrentName)
-                    ? DllOverrideConstants.CommonDllNames
-                    : DllOverrideConstants.CommonDllNames.Where(n => !n.Equals(dcCurrentName, StringComparison.OrdinalIgnoreCase)).ToArray();
+                var osCurrentName = _dllOverrideService.GetEffectiveOsName(gameName);
+                var filtered = DllOverrideConstants.CommonDllNames
+                    .Where(n => (string.IsNullOrEmpty(dcCurrentName) || !n.Equals(dcCurrentName, StringComparison.OrdinalIgnoreCase))
+                             && !n.Equals(osCurrentName, StringComparison.OrdinalIgnoreCase))
+                    .ToArray();
                 var currentRs = rsNameBox.SelectedItem as string ?? rsNameBox.Text;
                 // Preserve custom RS name that isn't in the base list
                 if (!string.IsNullOrEmpty(currentRs) && !filtered.Contains(currentRs, StringComparer.OrdinalIgnoreCase))

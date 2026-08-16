@@ -6,7 +6,11 @@
 
 ### Changes from beta6
 
-- Enabling **Smooth Motion** in Driver Profile Settings now automatically sets **Low Latency** to Ultra (required for smooth frame pacing). When Smooth Motion is turned off, Low Latency is restored to its previous value — or Off if it hadn't been changed.
+- Enabling **Smooth Motion** in Driver Profile Settings now automatically sets **Low Latency** to Ultra (required for smooth frame pacing). When Smooth Motion is turned off, Low Latency is restored to its previous value — or Off if it hadn't been changed. Low Latency is locked and greyed out while Smooth Motion is enabled.
+- Fixed ReShade install incorrectly deploying as `ReShade64.dll` when OptiScaler was present but using a different DLL name (e.g. OptiScaler on `d3d12.dll`, ReShade on `dxgi.dll`). The coexistence rename now only triggers when both components would use the same filename.
+- Fixed the ReShade DLL rename combo not filtering out the OptiScaler DLL name — ReShade can no longer be renamed to the same filename OptiScaler is using via the override dropdown.
+- Fixed renaming ReShade to OptiScaler's filename in the overrides panel silently overwriting the OptiScaler DLL on disk. The rename is now blocked when the target name is occupied by OptiScaler.
+- Fixed app update being silently aborted if the MOTD dialog opened at the same moment the user clicked Update Now. The update download now waits up to 15 seconds for any concurrent dialog (MOTD, patch notes) to close before proceeding.
 - Selecting a DXVK variant in Game Overrides no longer auto-installs DXVK. The variant preference is now saved and the Install DXVK button appears — you press it when ready. Switching variants while DXVK is already installed uninstalls it first; reinstall when ready.
 - Lilium HDR DXVK installs now write Standard (`0x000802A5` — Treat DXVK as Native) to the NVIDIA profile flags instead of Advanced (`0x00080004`). This matches the broader community recommendation.
 - All OptiScaler cog settings (except OptiScaler Version) are now greyed out and non-interactive when OptiScaler is not installed — settings require an active installation to take effect.
