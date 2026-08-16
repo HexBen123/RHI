@@ -1,4 +1,4 @@
-﻿// MainViewModel.CacheLoad.cs -- Helper methods, library persistence, and cache-based card loading.
+// MainViewModel.CacheLoad.cs -- Helper methods, library persistence, and cache-based card loading.
 
 using System.Collections.Concurrent;
 using System.Globalization;
@@ -830,6 +830,24 @@ public partial class MainViewModel
                     newCard.LumaRecord = lumaRec;
                     newCard.LumaStatus = GameStatus.Installed;
                 }
+                }
+            }
+
+            // ── Bespoke drag-dropped Luma fallback ─────────────────────────────
+            if (newCard.LumaMod == null)
+            {
+                var bespokeLumaRec = LumaService.GetRecordByPath(installPath);
+                if (bespokeLumaRec != null)
+                {
+                    newCard.LumaMod = new LumaMod
+                    {
+                        Name = game.Name,
+                        IsGenericLuma = false,
+                        Status = "✅",
+                    };
+                    newCard.LumaRenodxCompatible = true;
+                    newCard.LumaRecord = bespokeLumaRec;
+                    newCard.LumaStatus = GameStatus.Installed;
                 }
             }
 

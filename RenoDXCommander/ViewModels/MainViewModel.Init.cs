@@ -420,7 +420,19 @@ public partial class MainViewModel
                 }
             }
 
-            // 6. Merge or use directly based on cache
+            // ── Detect new Luma completed mods ───────────────────────────────────
+            if (_lumaMods.Count > 0)
+            {
+                var currentLumaMods = _lumaMods.Select(m => m.Name).ToList();
+                _seenLumaModsService.SeedIfEmpty(currentLumaMods);
+                var newLumaMods = _seenLumaModsService.GetNewMods(currentLumaMods);
+                _crashReporter.Log($"[MainViewModel.InitializeAsync] New Luma mods: {newLumaMods.Count} (seen: {_seenLumaModsService.GetSeenMods().Count})");
+                if (newLumaMods.Count > 0)
+                {
+                    _crashReporter.Log($"[MainViewModel.InitializeAsync] New Luma mods: {string.Join(", ", newLumaMods.Take(10))}{(newLumaMods.Count > 10 ? "..." : "")}");
+                    DispatcherQueue?.TryEnqueue(() => NewLumaMods = newLumaMods);
+                }
+            }
             ApplyGameRenames(freshGames);
             if (hasCachedLibrary)
             {

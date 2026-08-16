@@ -199,8 +199,19 @@ public partial class MainViewModel
                 }
             }
 
-            // Store manifest
-            // (_manifest already assigned above in the try block)
+            // ── Detect new Luma completed mods ───────────────────────────────────
+            if (_lumaMods.Count > 0)
+            {
+                var currentLumaMods = _lumaMods.Select(m => m.Name).ToList();
+                _seenLumaModsService.SeedIfEmpty(currentLumaMods);
+                var newLumaMods = _seenLumaModsService.GetNewMods(currentLumaMods);
+                _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] New Luma mods: {newLumaMods.Count} (seen: {_seenLumaModsService.GetSeenMods().Count})");
+                if (newLumaMods.Count > 0)
+                {
+                    _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] New Luma mods: {string.Join(", ", newLumaMods.Take(10))}{(newLumaMods.Count > 10 ? "..." : "")}");
+                    DispatcherQueue?.TryEnqueue(() => NewLumaMods = newLumaMods);
+                }
+            }
 
             // Merge fresh games with cached games (same logic as InitializeAsync)
             ApplyGameRenames(freshGames);

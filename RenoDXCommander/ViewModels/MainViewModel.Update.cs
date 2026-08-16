@@ -80,7 +80,22 @@ public partial class MainViewModel
                 }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel] Periodic Ultra+ fetch failed — {ex.Message}"); }
 
-                // Re-fetch DLSS manifest
+                // Re-fetch Luma mods and detect new ones
+                try
+                {
+                    var lumaTask = _lumaService.FetchCompletedModsAsync();
+                    _lumaMods = await lumaTask;
+                    var currentLumaMods = _lumaMods.Select(m => m.Name).ToList();
+                    _crashReporter.Log($"[MainViewModel] Periodic Luma mods check: {currentLumaMods.Count} mods");
+                    var newLumaMods = _seenLumaModsService.GetNewMods(currentLumaMods);
+                    _crashReporter.Log($"[MainViewModel] Periodic new Luma mods: {newLumaMods.Count} (seen: {_seenLumaModsService.GetSeenMods().Count})");
+                    if (newLumaMods.Count > 0)
+                    {
+                        _crashReporter.Log($"[MainViewModel] Periodic new Luma mods: {string.Join(", ", newLumaMods.Take(10))}{(newLumaMods.Count > 10 ? "..." : "")}");
+                        DispatcherQueue?.TryEnqueue(() => NewLumaMods = newLumaMods);
+                    }
+                }
+                catch (Exception ex) { _crashReporter.Log($"[MainViewModel] Periodic Luma fetch failed — {ex.Message}"); }
                 try { await _dlssStreamlineService.FetchManifestAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel] Periodic DLSS manifest fetch failed — {ex.Message}"); }
 

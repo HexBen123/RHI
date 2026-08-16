@@ -194,8 +194,25 @@ public partial class DragDropHandler
             card.LumaStatus = GameStatus.Installed;
             if (card.RsStatus == GameStatus.NotInstalled || card.RsStatus == GameStatus.Available)
                 card.RsStatus = GameStatus.Installed;
+
+            // Ensure the card has a LumaMod so the Luma row becomes visible.
+            // For bespoke drag-dropped mods (not on the wiki), synthesize a minimal entry.
+            if (card.LumaMod == null)
+            {
+                card.LumaMod = new Models.LumaMod
+                {
+                    Name = gameName,
+                    IsGenericLuma = false,
+                    Status = "✅",
+                };
+                card.LumaRenodxCompatible = true;
+            }
+
             card.NotifyAll();
             _window.ViewModel.SaveSettingsPublic();
+
+            // Rebuild the detail panel so the Luma row appears immediately
+            _window.DispatcherQueue?.TryEnqueue(() => _window.PopulateDetailPanel(card));
 
             _crashReporter.Log($"[DragDropHandler.ProcessDroppedLumaArchive] Luma install complete for '{gameName}'");
         }
@@ -206,3 +223,4 @@ public partial class DragDropHandler
         }
     }
 }
+

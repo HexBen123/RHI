@@ -1459,7 +1459,8 @@ public sealed partial class MainWindow
     {
         var newWikiMods = ViewModel.NewWikiMods;
         var newUltraPlusMods = ViewModel.NewUltraPlusMods;
-        if (newWikiMods.Count == 0 && newUltraPlusMods.Count == 0) return;
+        var newLumaMods = ViewModel.NewLumaMods;
+        if (newWikiMods.Count == 0 && newUltraPlusMods.Count == 0 && newLumaMods.Count == 0) return;
 
         var contentPanel = new StackPanel { Spacing = 16 };
 
@@ -1551,13 +1552,54 @@ public sealed partial class MainWindow
             ultraPlusSection.Children.Add(new ScrollViewer
             {
                 Content = ultraPlusListPanel,
-                MaxHeight = newWikiMods.Count > 0 ? 150 : 300,
+                MaxHeight = (newWikiMods.Count > 0 || newLumaMods.Count > 0) ? 150 : 300,
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             });
             contentPanel.Children.Add(ultraPlusSection);
         }
 
-        var totalCount = newWikiMods.Count + newUltraPlusMods.Count;
+        // Luma section
+        if (newLumaMods.Count > 0)
+        {
+            var lumaListPanel = new StackPanel { Spacing = 4 };
+            foreach (var modName in newLumaMods.Take(30))
+            {
+                lumaListPanel.Children.Add(new TextBlock
+                {
+                    Text = $"• {modName}",
+                    FontSize = 12,
+                    Foreground = (SolidColorBrush)Application.Current.Resources["TextSecondaryBrush"],
+                });
+            }
+            if (newLumaMods.Count > 30)
+            {
+                lumaListPanel.Children.Add(new TextBlock
+                {
+                    Text = $"... and {newLumaMods.Count - 30} more",
+                    FontSize = 12,
+                    FontStyle = Windows.UI.Text.FontStyle.Italic,
+                    Foreground = (SolidColorBrush)Application.Current.Resources["TextTertiaryBrush"],
+                });
+            }
+
+            var lumaSection = new StackPanel { Spacing = 8 };
+            lumaSection.Children.Add(new TextBlock
+            {
+                Text = $"🌙 {newLumaMods.Count} new Luma mod{(newLumaMods.Count == 1 ? "" : "s")}:",
+                FontSize = 13,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground = (SolidColorBrush)Application.Current.Resources["TextPrimaryBrush"],
+            });
+            lumaSection.Children.Add(new ScrollViewer
+            {
+                Content = lumaListPanel,
+                MaxHeight = (newWikiMods.Count > 0 || newUltraPlusMods.Count > 0) ? 150 : 300,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            });
+            contentPanel.Children.Add(lumaSection);
+        }
+
+        var totalCount = newWikiMods.Count + newUltraPlusMods.Count + newLumaMods.Count;
         var dialog = new ContentDialog
         {
             Title = "New Mods Available",

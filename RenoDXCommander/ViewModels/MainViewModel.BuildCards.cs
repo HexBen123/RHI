@@ -1,4 +1,4 @@
-﻿// MainViewModel.BuildCards.cs -- Card building, engine detection, and game matching.
+// MainViewModel.BuildCards.cs -- Card building, engine detection, and game matching.
 
 using System.Collections.Concurrent;
 using CommunityToolkit.Mvvm.Input;
@@ -1222,6 +1222,26 @@ public partial class MainViewModel
                         newCard.LumaRecord = lumaRec;
                         newCard.LumaStatus = GameStatus.Installed;
                     }
+                }
+            }
+
+            // ── Bespoke drag-dropped Luma fallback ─────────────────────────────
+            // If a LumaRecord exists on disk but no LumaMod was injected (e.g. DX9 game with
+            // a bespoke mod not on the wiki), synthesize a Discord-style LumaMod so the row shows.
+            if (newCard.LumaMod == null)
+            {
+                var bespokeLumaRec = LumaService.GetRecordByPath(installPath);
+                if (bespokeLumaRec != null)
+                {
+                    newCard.LumaMod = new LumaMod
+                    {
+                        Name = game.Name,
+                        IsGenericLuma = false,
+                        Status = "✅",
+                    };
+                    newCard.LumaRenodxCompatible = true;
+                    newCard.LumaRecord = bespokeLumaRec;
+                    newCard.LumaStatus = GameStatus.Installed;
                 }
             }
 

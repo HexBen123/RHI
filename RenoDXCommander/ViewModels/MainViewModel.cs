@@ -46,6 +46,7 @@ public partial class MainViewModel : ObservableObject
     private readonly CustomReShadeHashService _customReShadeHashService;
     private readonly SeenWikiModsService _seenWikiModsService;
     private readonly SeenUltraPlusModsService _seenUltraPlusModsService;
+    private readonly SeenLumaModsService _seenLumaModsService;
     private readonly GitHubETagCache _etagCache;
     /// <summary>
     /// Task that tracks the background shader pack download/extraction.
@@ -103,11 +104,14 @@ public partial class MainViewModel : ObservableObject
     /// <summary>List of new Ultra+ mods detected since last dismiss.</summary>
     [ObservableProperty] private List<string> _newUltraPlusMods = new();
 
+    /// <summary>List of new Luma completed mods detected since last dismiss.</summary>
+    [ObservableProperty] private List<string> _newLumaMods = new();
+
     public Visibility HasUpdatesAvailableVisibility =>
         HasUpdatesAvailable ? Visibility.Visible : Visibility.Collapsed;
 
     public Visibility NewWikiModsButtonVisibility =>
-        NewWikiMods.Count > 0 || NewUltraPlusMods.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        NewWikiMods.Count > 0 || NewUltraPlusMods.Count > 0 || NewLumaMods.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
     partial void OnHasUpdatesAvailableChanged(bool value)
         => OnPropertyChanged(nameof(HasUpdatesAvailableVisibility));
@@ -116,6 +120,9 @@ public partial class MainViewModel : ObservableObject
         => OnPropertyChanged(nameof(NewWikiModsButtonVisibility));
 
     partial void OnNewUltraPlusModsChanged(List<string> value)
+        => OnPropertyChanged(nameof(NewWikiModsButtonVisibility));
+
+    partial void OnNewLumaModsChanged(List<string> value)
         => OnPropertyChanged(nameof(NewWikiModsButtonVisibility));
 
     public Visibility DetailPanelVisibility =>
@@ -274,6 +281,18 @@ public partial class MainViewModel : ObservableObject
     {
         DismissNewWikiMods();
         DismissNewUltraPlusMods();
+        DismissNewLumaMods();
+    }
+
+    /// <summary>
+    /// Marks all current new Luma mods as "seen" and hides the notification button.
+    /// </summary>
+    public void DismissNewLumaMods()
+    {
+        if (NewLumaMods.Count == 0) return;
+        _seenLumaModsService.MarkAsSeen(NewLumaMods);
+        NewLumaMods = new List<string>();
+        _crashReporter.Log("[MainViewModel.DismissNewLumaMods] Marked new Luma mods as seen");
     }
 
     /// <summary>
@@ -537,7 +556,8 @@ public partial class MainViewModel : ObservableObject
         DlssPresetService dlssPresetService,
         GitHubETagCache etagCache,
         SeenWikiModsService seenWikiModsService,
-        SeenUltraPlusModsService seenUltraPlusModsService)
+        SeenUltraPlusModsService seenUltraPlusModsService,
+        SeenLumaModsService seenLumaModsService)
     {
         _http = http;
         _installer = installer;
@@ -577,6 +597,7 @@ public partial class MainViewModel : ObservableObject
         _customReShadeHashService = App.Services.GetRequiredService<CustomReShadeHashService>();
         _seenWikiModsService = seenWikiModsService;
         _seenUltraPlusModsService = seenUltraPlusModsService;
+        _seenLumaModsService = seenLumaModsService;
         _etagCache = etagCache;
         // Wire up SettingsChanged so property changes trigger a full save
         _settingsViewModel.SettingsChanged = () => SaveNameMappings();
