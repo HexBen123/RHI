@@ -1,3 +1,16 @@
+## v2.3.3-beta7
+
+### New
+
+- The DXVK ⚙ cog now has a **DXVK as Native** setting (Standard / Advanced) alongside **Prefer DXGI Swapchain** — controls the Vulkan/OpenGL Present Method Flags in the NVIDIA driver profile. Standard (`0x000802A5`) is the community-recommended value for all DXVK games; Advanced (`0x00080004`) adds DirectFlip on top. The flags setting is only active when Prefer DXGI Swapchain is enabled.
+
+### Changes from beta6
+
+- Selecting a DXVK variant in Game Overrides no longer auto-installs DXVK. The variant preference is now saved and the Install DXVK button appears — you press it when ready. Switching variants while DXVK is already installed uninstalls it first; reinstall when ready.
+- Lilium HDR DXVK installs now write Standard (`0x000802A5` — Treat DXVK as Native) to the NVIDIA profile flags instead of Advanced (`0x00080004`). This matches the broader community recommendation.
+
+---
+
 ## v2.3.3-beta6
 
 ### New
@@ -12,6 +25,7 @@
 
 ### Changes from beta5
 
+- Fixed Display Commander update check and download using outdated GitHub release tag (`latest_build` → `latest`). The DC release API URL is now also overridable via `componentUrls["dc"]` in the manifest without a client update.
 - Fixed the first-launch setup window appearing very small at high Windows display scaling (e.g. 150%, 200%, 300%).
 - Fixed "No RenoDX mod available" button showing at full brightness and being clickable — it is now greyed out and non-interactive.
 - Fixed OptiScaler install creating spurious `.dll.original` backup files for DLL files it deploys — OptiScaler-managed files (dxgi.dll, nvngx_dlss*.dll, companion DLLs) are never game originals and should not be backed up.
@@ -21,6 +35,10 @@
 - Fixed Luma archives being misidentified as addon archives when the filename contains "Luma" but the archive doesn't include d3dcompiler_47.dll (newer Luma releases). RHI now detects Luma archives by filename first before inspecting contents.
 - Switching filter tabs (e.g. All Games → Installed) now keeps the selected game highlighted if it appears in the new filter — previously the selection was always cleared.
 - The per-game Shaders and Addons dropdowns now correctly reflect "Off" or "Custom" when those are set globally, instead of always showing "Global".
+
+### Manifest Updates
+
+- Added `componentUrls.dc` override — allows the Display Commander download URL to be updated remotely without a client release.
 
 ---
 

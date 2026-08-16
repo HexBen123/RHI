@@ -145,6 +145,8 @@ public partial class MainViewModel
             _dofFixService.SetForceGames(_manifest?.DofFixForceGames);
             if (_manifest?.ComponentUrls?.TryGetValue("ueDofFix", out var dofFixUrl2) == true)
                 _dofFixService.ManifestUrlOverride = dofFixUrl2;
+            if (_manifest?.ComponentUrls?.TryGetValue("dc", out var dcApiUrl2) == true && !string.IsNullOrEmpty(dcApiUrl2))
+                DcReleasesApiUrlOverride = dcApiUrl2;
 
             // Extract wiki/luma results
             var wikiResult = !wikiFetchFailed ? await wikiTask : default;

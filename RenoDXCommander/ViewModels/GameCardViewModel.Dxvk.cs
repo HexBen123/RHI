@@ -113,8 +113,11 @@ public partial class GameCardViewModel
     public bool IsDxvkInstalled => DxvkStatus == GameStatus.Installed || DxvkStatus == GameStatus.UpdateAvailable;
     public bool DxvkInstallEnabled => !DxvkIsInstalling;
 
-    /// <summary>DXVK row is visible only when the user has enabled the DXVK toggle.</summary>
-    public Visibility DxvkRowVisibility => DxvkEnabled ? Visibility.Visible : Visibility.Collapsed;
+    /// <summary>DXVK row is visible when installed OR when a variant has been selected (pending install).</summary>
+    public Visibility DxvkRowVisibility => (DxvkEnabled || DxvkVariantPending) ? Visibility.Visible : Visibility.Collapsed;
+
+    /// <summary>True when a DXVK variant override is set but DXVK is not yet installed — shows the Install button.</summary>
+    [ObservableProperty] private bool _dxvkVariantPending;
 
     // ── Card grid properties ──────────────────────────────────────────────────────
     public string CardDxvkStatusDot => DxvkIsInstalling ? "#2196F3"

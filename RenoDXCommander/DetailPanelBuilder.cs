@@ -80,6 +80,10 @@ public partial class DetailPanelBuilder
 
     public void PopulateDetailPanel(GameCardViewModel card)
     {
+        // Set DxvkVariantPending so the Install button row shows when a variant is selected but not installed
+        card.DxvkVariantPending = !card.DxvkEnabled
+            && _window.ViewModel.GetDxvkVariantOverride(card.GameName, card.Source) != null;
+
         // Unsubscribe from previous card
         if (_currentDetailCard != null)
             _currentDetailCard.PropertyChanged -= DetailCard_PropertyChanged;

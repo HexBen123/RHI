@@ -666,7 +666,7 @@ public partial class DlssPresetService
     public void SetLiliumPresentMethod(string gameName, string installPath)
     {
         SetPreset(gameName, installPath, VULKAN_OGL_PRESENT_METHOD_ID, 0x00000001); // Prefer layered on DXGI Swapchain
-        SetPreset(gameName, installPath, OGL_DX_PRESENT_METHOD_ID, 0x00080004);     // Allow DXVK Promotion (DXGI/DirectFlip)
+        SetPreset(gameName, installPath, OGL_DX_PRESENT_METHOD_ID, 0x000802A5);     // Treat DXVK as Native
     }
 
     /// <summary>

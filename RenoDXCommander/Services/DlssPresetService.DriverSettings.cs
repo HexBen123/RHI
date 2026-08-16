@@ -1225,6 +1225,16 @@ $session.Save()
 
     public bool SetVulkanPresentMethod(string gameName, string installPath, uint value)
         => SetRtxHdrRaw(gameName, installPath, VULKAN_PRESENT_METHOD_ID, value);
+
+    // ── Vulkan/OpenGL Present Method — Flags (companion setting) ─────────────
+    // ID 0x20324987 — controls DXVK promotion and present behaviour flags
+    private const uint VULKAN_PRESENT_FLAGS_ID = 0x20324987;
+
+    public uint GetVulkanPresentMethodFlags(string gameName, string installPath)
+        => GetPreset(gameName, installPath, VULKAN_PRESENT_FLAGS_ID);
+
+    public bool SetVulkanPresentMethodFlags(string gameName, string installPath, uint value)
+        => SetRtxHdrRaw(gameName, installPath, VULKAN_PRESENT_FLAGS_ID, value);
     private const uint RTX_HDR_DEBANDING_ID = 0x00432F84;        // No=0x06, Low=0x0A, High=0x02
 
     // ── RTX HDR get/set ───────────────────────────────────────────────────────

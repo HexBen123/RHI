@@ -2503,10 +2503,13 @@ public sealed partial class MainWindow
 
         // ── Vulkan/OpenGL Present Method ──────────────────────────────────
         content.Children.Add(new Border { Height = 1, Background = UIFactory.Brush(ResourceKeys.BorderDefaultBrush), Margin = new Thickness(0, 4, 0, 0) });
-        var presentGrid = new Grid { ColumnSpacing = 12 };
+        var presentGrid = new Grid { ColumnSpacing = 12, RowSpacing = 8 };
         presentGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        presentGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(110, GridUnitType.Pixel) });
+        presentGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(140, GridUnitType.Pixel) });
+        presentGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        presentGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
+        // Row 0: Prefer DXGI Swapchain
         var presentLabel = new TextBlock
         {
             Text = "Prefer DXGI Swapchain",
@@ -2515,10 +2518,10 @@ public sealed partial class MainWindow
             VerticalAlignment = VerticalAlignment.Center,
         };
         ToolTipService.SetToolTip(presentLabel, "Sets Vulkan/OpenGL Present Method to 'Preferred layered on DXGI Swapchain' in the NVIDIA driver profile. Recommended for DXVK — improves compatibility and HDR support.");
-        Grid.SetColumn(presentLabel, 0);
+        Grid.SetRow(presentLabel, 0); Grid.SetColumn(presentLabel, 0);
         presentGrid.Children.Add(presentLabel);
 
-        var presentCombo = new ComboBox { FontSize = 11, MinWidth = 100, HorizontalAlignment = HorizontalAlignment.Stretch };
+        var presentCombo = new ComboBox { FontSize = 11, HorizontalAlignment = HorizontalAlignment.Stretch };
         presentCombo.Items.Add("No");   // 0x00000002 — Auto
         presentCombo.Items.Add("Yes");  // 0x00000001 — Preferred layered on DXGI Swapchain
         var currentPresentMethod = _dlssPresetService.GetVulkanPresentMethod(card.GameName, card.InstallPath ?? "");
@@ -2528,8 +2531,70 @@ public sealed partial class MainWindow
             uint value = presentCombo.SelectedIndex == 1 ? 0x00000001u : 0x00000002u;
             _dlssPresetService.SetVulkanPresentMethod(card.GameName, card.InstallPath ?? "", value);
         };
-        Grid.SetColumn(presentCombo, 1);
+        Grid.SetRow(presentCombo, 0); Grid.SetColumn(presentCombo, 1);
         presentGrid.Children.Add(presentCombo);
+
+        // Row 1: DXVK as Native Flags
+        var flagsLabel = new TextBlock
+        {
+            Text = "DXVK as Native",
+            FontSize = 11,
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        ToolTipService.SetToolTip(flagsLabel, "Standard: Treat DXVK as Native (0x000802A5). Advanced: Allow DXVK Promotion + DirectFlip (0x00080004). Only active when Prefer DXGI Swapchain is Yes.");
+        Grid.SetRow(flagsLabel, 1); Grid.SetColumn(flagsLabel, 0);
+        presentGrid.Children.Add(flagsLabel);
+
+        var flagOptions = new (string Label, uint Value)[]
+        {
+            ("Standard",  0x000802A5u),
+            ("Advanced",  0x00080004u),
+        };
+        var flagsCombo = new ComboBox { FontSize = 11, HorizontalAlignment = HorizontalAlignment.Stretch };
+        foreach (var (lbl, _) in flagOptions) flagsCombo.Items.Add(lbl);
+
+        var currentFlags = _dlssPresetService.GetVulkanPresentMethodFlags(card.GameName, card.InstallPath ?? "");
+        bool presentIsYes = currentPresentMethod == 0x00000001;
+
+        if (presentIsYes)
+        {
+            var flagMatch = Array.FindIndex(flagOptions, f => f.Value == currentFlags);
+            flagsCombo.SelectedIndex = flagMatch >= 0 ? flagMatch : 0; // default to Standard
+        }
+        else
+        {
+            flagsCombo.SelectedIndex = 0;
+            flagsCombo.IsEnabled = false;
+            flagsCombo.Opacity = 0.35;
+        }
+
+        flagsCombo.SelectionChanged += (s, ev) =>
+        {
+            if (flagsCombo.SelectedIndex >= 0 && flagsCombo.SelectedIndex < flagOptions.Length)
+                _dlssPresetService.SetVulkanPresentMethodFlags(card.GameName, card.InstallPath ?? "", flagOptions[flagsCombo.SelectedIndex].Value);
+        };
+        Grid.SetRow(flagsCombo, 1); Grid.SetColumn(flagsCombo, 1);
+        presentGrid.Children.Add(flagsCombo);
+
+        // When Prefer DXGI Swapchain changes, update flags combo state
+        presentCombo.SelectionChanged += (s, ev) =>
+        {
+            bool isYes = presentCombo.SelectedIndex == 1;
+            flagsCombo.IsEnabled = isYes;
+            flagsCombo.Opacity = isYes ? 1.0 : 0.35;
+            if (!isYes)
+            {
+                // Write 0x00000000 when swapchain pref is off
+                _dlssPresetService.SetVulkanPresentMethodFlags(card.GameName, card.InstallPath ?? "", 0x00000000u);
+            }
+            else if (flagsCombo.SelectedIndex >= 0 && flagsCombo.SelectedIndex < flagOptions.Length)
+            {
+                // Re-apply the selected flag now that swapchain is on
+                _dlssPresetService.SetVulkanPresentMethodFlags(card.GameName, card.InstallPath ?? "", flagOptions[flagsCombo.SelectedIndex].Value);
+            }
+        };
+
         content.Children.Add(presentGrid);
 
         var dialog = new ContentDialog

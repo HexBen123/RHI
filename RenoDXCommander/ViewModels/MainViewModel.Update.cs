@@ -494,7 +494,7 @@ public partial class MainViewModel
         try
         {
             // ── Fetch latest release from GitHub API ──────────────────────
-            var json = await _etagCache.GetWithETagAsync(_http, DcReleasesApiUrl).ConfigureAwait(false);
+            var json = await _etagCache.GetWithETagAsync(_http, EffectiveDcReleasesApiUrl).ConfigureAwait(false);
             if (json == null)
             {
                 _crashReporter.Log($"[CheckDcUpdateAsync] API returned error");
