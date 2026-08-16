@@ -1,1 +1,1 @@
-Hi all. New beta version on Discord with generic Luma Unreal mod support. Could do with some help making sure it works ok!
+Hi all, some big improvements and additions in newest version. Any issues don't hesitate to contact me on Discord.
