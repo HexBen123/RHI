@@ -148,7 +148,7 @@ public class MassDeployHandler
         {
             try
             {
-                _optiScalerService.CopyIniToGame(card);
+                _optiScalerService.CopyIniToGame(card, _window.ViewModel.Settings.OsHotkey);
                 count++;
             }
             catch (Exception ex)

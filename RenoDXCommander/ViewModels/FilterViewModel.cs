@@ -29,6 +29,11 @@ public partial class FilterViewModel : ObservableObject
     public Action? FilterModeChanged { get; set; }
 
     /// <summary>
+    /// Called immediately before the filter is applied — allows the UI to capture the current selection.
+    /// </summary>
+    public Action? PreFilterAction { get; set; }
+
+    /// <summary>
     /// Callback invoked after CustomFilters list is modified (add/remove).
     /// MainViewModel sets this to trigger SaveNameMappings.
     /// </summary>
@@ -284,6 +289,9 @@ public partial class FilterViewModel : ObservableObject
     public void ApplyFilter()
     {
         if (_displayedGames == null) return;
+
+        // Notify UI to capture current selection before the list is rebuilt
+        PreFilterAction?.Invoke();
 
         var query = SearchQuery.Trim();
         var filters = _activeFilters;

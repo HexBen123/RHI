@@ -157,27 +157,127 @@ public sealed partial class MainWindow
         }
     }
 
-    private void LumaIniButton_Click(object sender, RoutedEventArgs e)
+    private async void LumaCogButton_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement { Tag: GameCardViewModel card }) return;
-        if (string.IsNullOrEmpty(card.InstallPath)) return;
-        try
-        {
-            var screenshotPath = BuildScreenshotSavePath(card.GameName);
-            var overlayHotkey = ViewModel.Settings.OverlayHotkey;
-            var screenshotHotkey = ViewModel.Settings.ScreenshotHotkey;
-            AuxInstallService.MergeRsIni(card.InstallPath, screenshotPath, overlayHotkey, screenshotHotkey);
 
-            // Apply [renodx] section if UE-Extended is installed
-            if (card.UseUeExtended && card.Status == GameStatus.Installed)
-                AuxInstallService.ApplyRenoDxNativeHdrSettings(card.InstallPath);
+        var content = new StackPanel { Spacing = 8 };
 
-            card.LumaActionMessage = "✅ reshade.ini merged into game folder.";
-        }
-        catch (Exception ex)
+        // ── Engine.ini Settings ───────────────────────────────────────────────
+        // Only show for Unreal Engine games with Luma installed
+        if (card.LumaMod != null && card.EngineHint?.Contains("Unreal") == true)
         {
-            card.LumaActionMessage = $"❌ {ex.Message}";
+            content.Children.Add(new TextBlock
+            {
+                Text = "Engine.ini Settings",
+                FontSize = 13,
+                Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+                Margin = new Thickness(0, 0, 0, 4),
+            });
+
+            var cogGrid = new Grid { ColumnSpacing = 12, RowSpacing = 8 };
+            cogGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            cogGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(110, GridUnitType.Pixel) });
+            cogGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            cogGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+            // ── HDR on First Boot ──────────────────────────────────────────────
+            var hdrLabel = new TextBlock
+            {
+                Text = "HDR on First Boot",
+                FontSize = 11,
+                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            Grid.SetRow(hdrLabel, 0); Grid.SetColumn(hdrLabel, 0);
+            cogGrid.Children.Add(hdrLabel);
+
+            var hdrCombo = new ComboBox { FontSize = 11, MinWidth = 100, HorizontalAlignment = HorizontalAlignment.Stretch };
+            hdrCombo.Items.Add("Off");
+            hdrCombo.Items.Add("On");
+            ToolTipService.SetToolTip(hdrCombo,
+                "Controls EnableHDR in the [Luma] section of reshade.ini.\n" +
+                "Set to Off before first launch if you want to start without HDR enabled.");
+
+            var currentHdr = AuxInstallService.GetLumaReshadeIniValue(card.InstallPath, "EnableHDR");
+            hdrCombo.SelectedIndex = currentHdr == "0" ? 0 : 1; // default On
+            bool hdrInitializing = true;
+            hdrCombo.Loaded += (s2, e2) => hdrInitializing = false;
+            hdrCombo.SelectionChanged += (s2, ev) =>
+            {
+                if (hdrInitializing) return;
+                AuxInstallService.SetLumaReshadeIniValue(card.InstallPath, "EnableHDR", hdrCombo.SelectedIndex == 1 ? "1" : "0");
+                card.LumaActionMessage = hdrCombo.SelectedIndex == 1 ? "✅ HDR enabled in reshade.ini." : "✅ HDR disabled in reshade.ini.";
+                card.FadeMessage(m => card.LumaActionMessage = m, card.LumaActionMessage);
+            };
+            Grid.SetRow(hdrCombo, 0); Grid.SetColumn(hdrCombo, 1);
+            cogGrid.Children.Add(hdrCombo);
+
+            // ── TAA Settings ───────────────────────────────────────────────────
+            var taaLabel = new TextBlock
+            {
+                Text = "TAA Settings",
+                FontSize = 11,
+                Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            Grid.SetRow(taaLabel, 1); Grid.SetColumn(taaLabel, 0);
+            cogGrid.Children.Add(taaLabel);
+
+            var taaCombo = new ComboBox { FontSize = 11, MinWidth = 100, HorizontalAlignment = HorizontalAlignment.Stretch };
+            taaCombo.Items.Add("Off");
+            taaCombo.Items.Add("On");
+            ToolTipService.SetToolTip(taaCombo,
+                "Writes r.DefaultFeature.AntiAliasing=2 and r.PostProcessAAQuality=4 to Engine.ini.\n" +
+                "Forces TAA with high quality for Luma HDR compatibility.");
+
+            bool taaActive = ViewModel.IsLumaTaaEnabled(card.GameName);
+            taaCombo.SelectedIndex = taaActive ? 1 : 0;
+            bool taaInitializing = true;
+            taaCombo.Loaded += (s2, e2) => taaInitializing = false;
+
+            taaCombo.SelectionChanged += (s2, ev) =>
+            {
+                if (taaInitializing) return;
+                var taaKeys = new (string Section, string Key, string Value)[]
+                {
+                    ("SystemSettings", "r.DefaultFeature.AntiAliasing", "2"),
+                    ("SystemSettings", "r.PostProcessAAQuality", "4"),
+                };
+                if (taaCombo.SelectedIndex == 1)
+                {
+                    AuxInstallService.ApplyEngineIniCustomKeys(
+                        card.InstallPath, taaKeys, card.EngineIniProjectOverride, card.GameName, card.Source);
+                    ViewModel.SetLumaTaaEnabled(card.GameName, true);
+                    card.LumaActionMessage = "✅ TAA settings written to Engine.ini.";
+                }
+                else
+                {
+                    AuxInstallService.RemoveEngineIniCustomKeys(
+                        card.InstallPath,
+                        taaKeys.Select(k => k.Key),
+                        card.EngineIniProjectOverride, card.GameName, card.Source);
+                    ViewModel.SetLumaTaaEnabled(card.GameName, false);
+                    card.LumaActionMessage = "✅ TAA settings removed from Engine.ini.";
+                }
+                card.FadeMessage(m => card.LumaActionMessage = m, card.LumaActionMessage);
+            };
+            Grid.SetRow(taaCombo, 1); Grid.SetColumn(taaCombo, 1);
+            cogGrid.Children.Add(taaCombo);
+
+            content.Children.Add(cogGrid);
         }
+
+        var dialog = new ContentDialog
+        {
+            Title = "Luma Settings",
+            Content = content,
+            CloseButtonText = "Close",
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = this.Content.XamlRoot,
+        };
+
+        await dialog.ShowAsync();
     }
 
     private void SupportDiscord_Click(object sender, RoutedEventArgs e)
@@ -438,29 +538,21 @@ public sealed partial class MainWindow
     {
         if ((sender as FrameworkElement)?.Tag is not GameCardViewModel card) return;
 
-        // Route to Luma install if in Luma mode, otherwise RenoDX combined install
-        if (card.LumaFeatureEnabled && card.IsLumaMode && card.LumaMod != null)
+        // Ensure install path exists
+        if (string.IsNullOrEmpty(card.InstallPath) || !System.IO.Directory.Exists(card.InstallPath))
         {
-            await ViewModel.InstallLumaAsync(card);
+            var folder = await PickFolderAsync();
+            if (folder == null) return;
+            card.InstallPath = folder;
+            ViewModel.SaveLibraryPublic();
         }
-        else
-        {
-            // Ensure install path exists
-            if (string.IsNullOrEmpty(card.InstallPath) || !System.IO.Directory.Exists(card.InstallPath))
-            {
-                var folder = await PickFolderAsync();
-                if (folder == null) return;
-                card.InstallPath = folder;
-                ViewModel.SaveLibraryPublic();
-            }
-            // Chain: RenoDX → RE Framework → ReShade (skip components that are N/A)
-            if (card.Mod?.SnapshotUrl != null)
-                await ViewModel.InstallModCommand.ExecuteAsync(card);
-            if (card.RefRowVisibility == Visibility.Visible)
-                await ViewModel.InstallREFrameworkCommand.ExecuteAsync(card);
-            if (card.ReShadeRowVisibility == Visibility.Visible)
-                await ViewModel.InstallReShadeCommand.ExecuteAsync(card);
-        }
+        // Chain: RenoDX → RE Framework → ReShade (skip components that are N/A)
+        if (card.Mod?.SnapshotUrl != null)
+            await ViewModel.InstallModCommand.ExecuteAsync(card);
+        if (card.RefRowVisibility == Visibility.Visible)
+            await ViewModel.InstallREFrameworkCommand.ExecuteAsync(card);
+        if (card.ReShadeRowVisibility == Visibility.Visible)
+            await ViewModel.InstallReShadeCommand.ExecuteAsync(card);
     }
 
     internal void CardFavouriteButton_Click(object sender, RoutedEventArgs e)
@@ -520,28 +612,6 @@ public sealed partial class MainWindow
         };
         hideItem.Click += (s, ev) => ViewModel.ToggleHideGameCommand.Execute(card);
         menu.Items.Add(hideItem);
-
-        // ── Luma toggle (conditional — only when Luma is available for this game) ──
-        if (card.LumaFeatureEnabled && card.IsLumaAvailable)
-        {
-            var lumaLabel = card.IsLumaMode ? "🟢 Luma Enabled" : "⚫ Enable Luma";
-            var lumaItem = new MenuFlyoutItem
-            {
-                Text = lumaLabel,
-                Tag = card,
-            };
-            lumaItem.Click += (s, ev) =>
-            {
-                ViewModel.ToggleLumaMode(card);
-                // Rebuild detail panel if this card is currently displayed
-                if (ViewModel.SelectedGame == card && ViewModel.CurrentViewLayout == Models.ViewLayout.Detail)
-                {
-                    PopulateDetailPanel(card);
-                    BuildOverridesPanel(card);
-                }
-            };
-            menu.Items.Add(lumaItem);
-        }
 
         menu.Items.Add(new MenuFlyoutSeparator());
 

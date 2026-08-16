@@ -38,6 +38,8 @@ public class GameNameService : IGameNameService
     private Dictionary<string, List<string>> _perGameAddonSelection = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _lumaEnabledGames = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _lumaDisabledGames = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>Games where Luma TAA Engine.ini settings are enabled (r.DefaultFeature.AntiAliasing=2, r.PostProcessAAQuality=4).</summary>
+    private HashSet<string> _lumaTaaEnabled = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _normalReShadeGames = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, string> _folderOverrides = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, string> _vulkanRenderingPaths = new(StringComparer.OrdinalIgnoreCase);
@@ -46,6 +48,9 @@ public class GameNameService : IGameNameService
     private Dictionary<string, string> _reShadeChannelOverrides = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, string> _dxvkVariantOverrides = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, int> _liliumPresetOverrides = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Per-game OptiScaler variant override. Key = "GameName|Store", Value = "Stable" or "Nightly".</summary>
+    private Dictionary<string, string> _osVariantOverrides = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Per-game HDR auto-toggle overrides. Key = game name, Value = "On" or "Off". Absent = use global default.</summary>
     private Dictionary<string, string> _hdrToggleOverrides = new(StringComparer.OrdinalIgnoreCase);
@@ -64,6 +69,36 @@ public class GameNameService : IGameNameService
 
     /// <summary>Games with RTX HDR enabled via NVIDIA driver profile.</summary>
     private HashSet<string> _rtxHdrGames = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Games where Streamline should be deployed to the OptiScaler subfolder. Composite-keyed "GameName|Store".</summary>
+    private HashSet<string> _osDeployStreamline = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Games where DLSS Enabler should be deployed to the OptiScaler subfolder. Composite-keyed "GameName|Store".</summary>
+    private HashSet<string> _osDeployDlssEnabler = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Games where Dilated Motion Vectors should be disabled (Off) in Engine.ini. Composite-keyed "GameName|Store".</summary>
+    private HashSet<string> _osDilatedMotionVectorsOff = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>FSR crash fix level per game. Key = "GameName|Store", Value = "FSR2", "FSR3", or "FSR3.1". Absent = None.</summary>
+    private Dictionary<string, string> _osFsrCrashFix = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Per-game FG Input override. Key = "GameName|Store", Value = INI string. Absent = "auto".</summary>
+    private Dictionary<string, string> _osFgInput = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Per-game FG Output override. Key = "GameName|Store", Value = INI string. Absent = "auto".</summary>
+    private Dictionary<string, string> _osFgOutput = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Per-game FG Nvngx Replacement. Key = "GameName|Store", Value = INI string. Absent = "None".</summary>
+    private Dictionary<string, string> _osFgNvngxReplacement = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Games where FSR-FG swapchain override is enabled in Engine.ini. Composite-keyed "GameName|Store".</summary>
+    private HashSet<string> _osFsrFgSwapchain = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Games where upscaler plugin is enabled via Engine.ini. Composite-keyed "GameName|Store".</summary>
+    private HashSet<string> _osUpscalerPlugin = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Per-game Streamline version override. Key = "GameName|Store", Value = version string. Absent = use default.</summary>
+    private Dictionary<string, string> _osStreamlineVersion = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Maps current (renamed) game name → original store-detected name.</summary>
     private Dictionary<string, string> _originalDetectedNames = new(StringComparer.OrdinalIgnoreCase);
@@ -89,6 +124,8 @@ public class GameNameService : IGameNameService
     public Dictionary<string, List<string>> PerGameAddonSelection => _perGameAddonSelection;
     public HashSet<string> LumaEnabledGames => _lumaEnabledGames;
     public HashSet<string> LumaDisabledGames => _lumaDisabledGames;
+    /// <summary>Games where Luma TAA Engine.ini settings are deployed.</summary>
+    public HashSet<string> LumaTaaEnabled => _lumaTaaEnabled;
     public HashSet<string> NormalReShadeGames => _normalReShadeGames;
     public Dictionary<string, string> FolderOverrides => _folderOverrides;
     /// <summary>Per-game Vulkan rendering path preferences. Key = game name, Value = "DirectX" or "Vulkan".</summary>
@@ -103,6 +140,8 @@ public class GameNameService : IGameNameService
     public Dictionary<string, string> DxvkVariantOverrides => _dxvkVariantOverrides;
     /// <summary>Per-game Lilium HDR DXVK preset index. 0=Safest (default), 5=Experimental. Absent = 0.</summary>
     public Dictionary<string, int> LiliumPresetOverrides => _liliumPresetOverrides;
+    /// <summary>Per-game OptiScaler variant override. Key = "GameName|Store", Value = "Stable" or "Nightly".</summary>
+    public Dictionary<string, string> OsVariantOverrides => _osVariantOverrides;
     /// <summary>Per-game HDR auto-toggle overrides. "On" or "Off". Absent = use global.</summary>
     public Dictionary<string, string> HdrToggleOverrides => _hdrToggleOverrides;
     /// <summary>Per-game launch executable overrides. Key = game name, Value = absolute exe path.</summary>
@@ -116,6 +155,36 @@ public class GameNameService : IGameNameService
     /// <summary>Games with RTX HDR enabled via NVIDIA driver profile.</summary>
     public HashSet<string> RtxHdrGames => _rtxHdrGames;
     public Dictionary<string, string> OriginalDetectedNames => _originalDetectedNames;
+
+    /// <summary>Games where Streamline should be deployed. Composite-keyed "GameName|Store".</summary>
+    public HashSet<string> OsDeployStreamline => _osDeployStreamline;
+
+    /// <summary>Games where DLSS Enabler should be deployed. Composite-keyed "GameName|Store".</summary>
+    public HashSet<string> OsDeployDlssEnabler => _osDeployDlssEnabler;
+
+    /// <summary>Games where Dilated Motion Vectors are set to Off in Engine.ini. Composite-keyed "GameName|Store".</summary>
+    public HashSet<string> OsDilatedMotionVectorsOff => _osDilatedMotionVectorsOff;
+
+    /// <summary>FSR crash fix level per game. Value = "FSR2", "FSR3", or "FSR3.1". Absent = None.</summary>
+    public Dictionary<string, string> OsFsrCrashFix => _osFsrCrashFix;
+
+    /// <summary>Per-game FG Input override. Key = "GameName|Store", Value = INI string. Absent = "auto".</summary>
+    public Dictionary<string, string> OsFgInput => _osFgInput;
+
+    /// <summary>Per-game FG Output override. Key = "GameName|Store", Value = INI string. Absent = "auto".</summary>
+    public Dictionary<string, string> OsFgOutput => _osFgOutput;
+
+    /// <summary>Per-game FG Nvngx Replacement. Key = "GameName|Store", Value = INI string. Absent = "None".</summary>
+    public Dictionary<string, string> OsFgNvngxReplacement => _osFgNvngxReplacement;
+
+    /// <summary>Games where FSR-FG swapchain override is enabled. Composite-keyed "GameName|Store".</summary>
+    public HashSet<string> OsFsrFgSwapchain => _osFsrFgSwapchain;
+
+    /// <summary>Games where upscaler plugin is enabled via Engine.ini. Composite-keyed "GameName|Store".</summary>
+    public HashSet<string> OsUpscalerPlugin => _osUpscalerPlugin;
+
+    /// <summary>Per-game Streamline version override. Key = "GameName|Store", Value = version string. Absent = use default.</summary>
+    public Dictionary<string, string> OsStreamlineVersion => _osStreamlineVersion;
 
     public GameNameService(
         IGameDetectionService gameDetectionService,
@@ -348,6 +417,11 @@ public class GameNameService : IGameNameService
         foreach (var kv in dxvkVariantOvDict)
             _dxvkVariantOverrides[kv.Key] = kv.Value;
 
+        var osVariantOvDict = Load<Dictionary<string, string>>("OsVariantOverrides",
+            new(StringComparer.OrdinalIgnoreCase));
+        _osVariantOverrides = new(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in osVariantOvDict) _osVariantOverrides[kv.Key] = kv.Value;
+
         var liliumPresetOvDict = Load<Dictionary<string, int>>("LiliumPresetOverrides",
             new(StringComparer.OrdinalIgnoreCase));
         _liliumPresetOverrides = new(StringComparer.OrdinalIgnoreCase);
@@ -359,6 +433,10 @@ public class GameNameService : IGameNameService
         _hdrToggleOverrides = new(StringComparer.OrdinalIgnoreCase);
         foreach (var kv in hdrToggleOvDict)
             _hdrToggleOverrides[kv.Key] = kv.Value;
+
+        _lumaTaaEnabled = new(StringComparer.OrdinalIgnoreCase);
+        foreach (var g in Load<List<string>>("LumaTaaEnabled", new()))
+            _lumaTaaEnabled.Add(g);
 
         var launchExeOvDict = Load<Dictionary<string, string>>("LaunchExeOverrides",
             new(StringComparer.OrdinalIgnoreCase));
@@ -394,6 +472,41 @@ public class GameNameService : IGameNameService
 
         _rtxHdrGames = new HashSet<string>(
             Load<List<string>>("RtxHdrGames", _rtxHdrGames?.ToList() ?? new()), StringComparer.OrdinalIgnoreCase);
+
+        _osDeployStreamline = new HashSet<string>(
+            Load<List<string>>("OsDeployStreamline", new()), StringComparer.OrdinalIgnoreCase);
+
+        _osDeployDlssEnabler = new HashSet<string>(
+            Load<List<string>>("OsDeployDlssEnabler", new()), StringComparer.OrdinalIgnoreCase);
+
+        _osDilatedMotionVectorsOff = new HashSet<string>(
+            Load<List<string>>("OsDilatedMotionVectorsOff", new()), StringComparer.OrdinalIgnoreCase);
+
+        var osFsrCrashFixDict = Load<Dictionary<string, string>>("OsFsrCrashFix", new(StringComparer.OrdinalIgnoreCase));
+        _osFsrCrashFix = new(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in osFsrCrashFixDict) _osFsrCrashFix[kv.Key] = kv.Value;
+
+        var osFgInputDict = Load<Dictionary<string, string>>("OsFgInput", new(StringComparer.OrdinalIgnoreCase));
+        _osFgInput = new(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in osFgInputDict) _osFgInput[kv.Key] = kv.Value;
+
+        var osFgOutputDict = Load<Dictionary<string, string>>("OsFgOutput", new(StringComparer.OrdinalIgnoreCase));
+        _osFgOutput = new(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in osFgOutputDict) _osFgOutput[kv.Key] = kv.Value;
+
+        var osFgNvngxDict = Load<Dictionary<string, string>>("OsFgNvngxReplacement", new(StringComparer.OrdinalIgnoreCase));
+        _osFgNvngxReplacement = new(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in osFgNvngxDict) _osFgNvngxReplacement[kv.Key] = kv.Value;
+
+        _osFsrFgSwapchain = new HashSet<string>(
+            Load<List<string>>("OsFsrFgSwapchain", new()), StringComparer.OrdinalIgnoreCase);
+
+        _osUpscalerPlugin = new HashSet<string>(
+            Load<List<string>>("OsUpscalerPlugin", new()), StringComparer.OrdinalIgnoreCase);
+
+        var osStreamlineVersionDict = Load<Dictionary<string, string>>("OsStreamlineVersion", new(StringComparer.OrdinalIgnoreCase));
+        _osStreamlineVersion = new(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in osStreamlineVersionDict) _osStreamlineVersion[kv.Key] = kv.Value;
 
         if (s.TryGetValue("ViewLayout", out var vlVal) && int.TryParse(vlVal, out var vlInt) && Enum.IsDefined(typeof(ViewLayout), vlInt))
             setViewLayout((ViewLayout)vlInt);
@@ -466,14 +579,26 @@ public class GameNameService : IGameNameService
                 s["ReShadeChannelOverrides"] = JsonSerializer.Serialize(_reShadeChannelOverrides);
                 s["DxvkVariantOverrides"] = JsonSerializer.Serialize(_dxvkVariantOverrides);
                 s["LiliumPresetOverrides"] = JsonSerializer.Serialize(_liliumPresetOverrides);
+                s["OsVariantOverrides"] = JsonSerializer.Serialize(_osVariantOverrides);
                 s["HdrToggleOverrides"] = JsonSerializer.Serialize(_hdrToggleOverrides);
                 s["LaunchExeOverrides"] = JsonSerializer.Serialize(_launchExeOverrides);
                 s["LaunchArgsOverrides"] = JsonSerializer.Serialize(_launchArgsOverrides);
                 s["EngineVersionOverrides"] = JsonSerializer.Serialize(_engineVersionOverrides);
+                s["LumaTaaEnabled"] = JsonSerializer.Serialize(_lumaTaaEnabled.ToList());
                 s["CustomReShadeSelection"] = JsonSerializer.Serialize(_customReShadeSelection);
                 s["HiddenGames"]         = JsonSerializer.Serialize(_hiddenGames?.ToList() ?? new List<string>());
                 s["FavouriteGames"]      = JsonSerializer.Serialize(_favouriteGames?.ToList() ?? new List<string>());
                 s["RtxHdrGames"]         = JsonSerializer.Serialize(_rtxHdrGames?.ToList() ?? new List<string>());
+                s["OsDeployStreamline"]  = JsonSerializer.Serialize(_osDeployStreamline.ToList());
+                s["OsDeployDlssEnabler"] = JsonSerializer.Serialize(_osDeployDlssEnabler.ToList());
+                s["OsDilatedMotionVectorsOff"] = JsonSerializer.Serialize(_osDilatedMotionVectorsOff.ToList());
+                s["OsFsrCrashFix"] = JsonSerializer.Serialize(_osFsrCrashFix);
+                s["OsFgInput"] = JsonSerializer.Serialize(_osFgInput);
+                s["OsFgOutput"] = JsonSerializer.Serialize(_osFgOutput);
+                s["OsFgNvngxReplacement"] = JsonSerializer.Serialize(_osFgNvngxReplacement);
+                s["OsFsrFgSwapchain"] = JsonSerializer.Serialize(_osFsrFgSwapchain.ToList());
+                s["OsUpscalerPlugin"] = JsonSerializer.Serialize(_osUpscalerPlugin.ToList());
+                if (_osStreamlineVersion.Count > 0) s["OsStreamlineVersion"] = JsonSerializer.Serialize(_osStreamlineVersion);
                 s["ViewLayout"]          = ((int)currentViewLayout).ToString();
                 s["FilterMode"]          = filterMode;
                 s["CustomFilters"]       = JsonSerializer.Serialize(customFilters);
@@ -594,6 +719,16 @@ public class GameNameService : IGameNameService
         MigrateCompositeHashSet(_lumaEnabledGames, oldName, newName);
         MigrateCompositeHashSet(_lumaDisabledGames, oldName, newName);
         MigrateCompositeHashSet(_normalReShadeGames, oldName, newName);
+        MigrateCompositeHashSet(_osDeployStreamline, oldName, newName);
+        MigrateCompositeHashSet(_osDeployDlssEnabler, oldName, newName);
+        MigrateCompositeHashSet(_osDilatedMotionVectorsOff, oldName, newName);
+        MigrateCompositeDict(_osFsrCrashFix, oldName, newName);
+        MigrateCompositeDict(_osFgInput, oldName, newName);
+        MigrateCompositeDict(_osFgOutput, oldName, newName);
+        MigrateCompositeDict(_osFgNvngxReplacement, oldName, newName);
+        MigrateCompositeHashSet(_osFsrFgSwapchain, oldName, newName);
+        MigrateCompositeHashSet(_osUpscalerPlugin, oldName, newName);
+        MigrateCompositeDict(_osStreamlineVersion, oldName, newName);
 
         // Migrate name-only HashSets (shared across stores)
         MigrateHashSet(_wikiExclusions, oldName, newName);
@@ -614,6 +749,7 @@ public class GameNameService : IGameNameService
         MigrateCompositeDict(_dxvkVariantOverrides, oldName, newName);
         MigrateCompositeDict(_liliumPresetOverrides, oldName, newName);
         MigrateCompositeDict(_customReShadeSelection, oldName, newName);
+        MigrateCompositeDict(_osVariantOverrides, oldName, newName);
         // These four are name-only (not per-store) — use name-only migration
         MigrateDict(_hdrToggleOverrides, oldName, newName);
         MigrateDict(_launchExeOverrides, oldName, newName);

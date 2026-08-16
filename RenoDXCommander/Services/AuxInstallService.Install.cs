@@ -29,12 +29,14 @@ public partial class AuxInstallService
             ? filenameOverride
             : RsNormalName;
 
-        // ── OptiScaler coexistence: deploy as ReShade64.dll when OptiScaler is installed ──
+        // ── OptiScaler coexistence: deploy as ReShade64.dll only when filenames actually conflict ──
+        // Only rename when RS and OS would use the same DLL name (e.g. both want dxgi.dll).
+        // If they use different names (e.g. OS=d3d12.dll, RS=dxgi.dll), no rename is needed.
         var osRecord = FindRecord(gameName, installPath, OptiScalerService.AddonType);
-        if (osRecord != null)
+        if (osRecord != null && string.Equals(osRecord.InstalledAs, destName, StringComparison.OrdinalIgnoreCase))
         {
+            CrashReporter.Log($"[AuxInstallService.InstallReShadeAsync] OptiScaler occupies '{destName}' — deploying ReShade as '{OptiScalerService.ReShadeCoexistName}'");
             destName = OptiScalerService.ReShadeCoexistName;
-            CrashReporter.Log($"[AuxInstallService.InstallReShadeAsync] OptiScaler installed — deploying ReShade as '{destName}'");
         }
 
         // ── DC occupancy check: avoid overwriting a DC file at the target name ──

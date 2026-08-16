@@ -67,6 +67,13 @@ public class InstallEventHandler
         }
 
         if (sender is not Button btn || btn.Tag is not GameCardViewModel card) return;
+
+        // Warn when installing RenoDX alongside an already-installed Luma mod
+        if (card.IsLumaInstalled && !ViewModel.Settings.LumaRenodxCombinedWarningDismissed)
+        {
+            if (!await ShowLumaRenodxCombinedWarning(sender)) return;
+        }
+
         await EnsurePathAndInstall(card, () => ViewModel.InstallModCommand.ExecuteAsync(card));
     }
 
@@ -189,7 +196,7 @@ public class InstallEventHandler
                 var warningDialog = new ContentDialog
                 {
                     Title = "⚠ OptiScaler Setup",
-                    Content = "Before installing OptiScaler, please configure your GPU type and DLSS input settings in the OptiScaler Settings section on the Settings page.\n\nThis ensures OptiScaler is configured correctly for your hardware.",
+                    Content = "Before installing OptiScaler, please configure your GPU type and DLSS input (AMD/Intel only) settings in the OptiScaler Settings section on the Settings page.\n\nThis ensures OptiScaler is configured correctly for your hardware.",
                     PrimaryButtonText = "Continue",
                     CloseButtonText = "Cancel",
                     XamlRoot = xamlRoot,
@@ -207,6 +214,7 @@ public class InstallEventHandler
         // ── Read GPU/DLSS settings from persisted preferences ──────────
         var gpuType = ViewModel.Settings.OsGpuType;
         var useDlssInputs = ViewModel.Settings.OsDlssInputs;
+        var osVariant = ViewModel.GetOsVariant(card.GameName, card.Source ?? "");
 
         card.OsIsInstalling = true;
         card.OsActionMessage = "Installing OptiScaler...";
@@ -221,7 +229,8 @@ public class InstallEventHandler
                 }),
                 gpuType,
                 useDlssInputs,
-                ViewModel.Settings.OsHotkey);
+                ViewModel.Settings.OsHotkey,
+                osVariant);
 
             // ── PD-Upscaler REFramework swap for compatible RE Engine games ──
             if (ViewModel.Manifest?.PdUpscalerGames != null
@@ -251,6 +260,33 @@ public class InstallEventHandler
             card.OsActionMessage = "✅ OptiScaler installed!";
             card.NotifyAll();
             card.FadeMessage(m => card.OsActionMessage = m, card.OsActionMessage);
+
+            // ── Post-install: Deploy Streamline and DLSS Enabler if pre-enabled ──
+            if (osVariant == "Nightly" && !string.IsNullOrEmpty(card.InstallPath))
+            {
+                if (ViewModel.GetOsDeployStreamline(card.GameName, card.Source ?? ""))
+                {
+                    try { _optiScalerService.DeployStreamlineToGame(card.InstallPath); }
+                    catch (Exception ex) { CrashReporter.Log($"[InstallEventHandler] Streamline post-install deploy failed — {ex.Message}"); }
+                }
+                if (ViewModel.GetOsDeployDlssEnabler(card.GameName, card.Source ?? ""))
+                {
+                    try
+                    {
+                        var dlssEnablerService = App.Services.GetRequiredService<DlssEnablerService>();
+                        var optiScalerDir = Path.Combine(card.InstallPath, "OptiScaler");
+                        _ = dlssEnablerService.InstallAsync(optiScalerDir);
+                    }
+                    catch (Exception ex) { CrashReporter.Log($"[InstallEventHandler] DLSS Enabler post-install deploy failed — {ex.Message}"); }
+                }
+
+                // Apply persisted FG settings to the newly deployed OptiScaler.ini
+                var fgInput2 = ViewModel.GetOsFgInput(card.GameName, card.Source ?? "");
+                var fgOutput2 = ViewModel.GetOsFgOutput(card.GameName, card.Source ?? "");
+                var fgNvngx2 = ViewModel.GetOsFgNvngxReplacement(card.GameName, card.Source ?? "");
+                if (fgInput2 != "auto" || fgOutput2 != "auto")
+                    OptiScalerService.ApplyFgSettings(card.InstallPath, fgInput2, fgOutput2, fgNvngx2);
+            }
         }
         catch (Exception ex)
         {
@@ -280,6 +316,38 @@ public class InstallEventHandler
             }
 
             _optiScalerService.Uninstall(card);
+
+            // Clear all per-game OptiScaler cog settings so they reset to defaults on next open
+            try
+            {
+                var gn = card.GameName; var st = card.Source ?? "";
+                // Remove Engine.ini keys written by cog settings (UE games)
+                if (!string.IsNullOrEmpty(card.InstallPath))
+                {
+                    if (ViewModel.GetOsDilatedMotionVectorsOff(gn, st))
+                        try { AuxInstallService.RemoveEngineIniCustomKeys(card.InstallPath, new[] { "r.NGX.DLSS.DilateMotionVectors", "r.Streamline.DilateMotionVectors" }, card.EngineIniProjectOverride, gn, card.Source); } catch { }
+                    var fsrFix = ViewModel.GetOsFsrCrashFix(gn, st);
+                    if (!string.IsNullOrEmpty(fsrFix) && fsrFix != "None")
+                        try { AuxInstallService.RemoveEngineIniCustomKeys(card.InstallPath, new[] { "r.FidelityFX.FSR2.UseNativeDX12", "r.FidelityFX.FSR3.UseNativeDX12", "r.FidelityFX.FSR3.UseRHI" }, card.EngineIniProjectOverride, gn, card.Source); } catch { }
+                    if (ViewModel.GetOsFsrFgSwapchain(gn, st))
+                        try { AuxInstallService.RemoveEngineIniCustomKeys(card.InstallPath, new[] { "r.FidelityFX.FI.OverrideSwapChainDX12" }, card.EngineIniProjectOverride, gn, card.Source); } catch { }
+                    if (ViewModel.GetOsUpscalerPlugin(gn, st))
+                        try { AuxInstallService.RemoveEngineIniCustomKeys(card.InstallPath, new[] { "r.AntiAliasingMethod", "r.TemporalAA.Upscaler" }, card.EngineIniProjectOverride, gn, card.Source); } catch { }
+                }
+                // Clear persisted per-game settings
+                ViewModel.SetOsDeployStreamline(gn, false, st);
+                ViewModel.SetOsDeployDlssEnabler(gn, false, st);
+                ViewModel.SetOsFgInput(gn, null, st);
+                ViewModel.SetOsFgOutput(gn, null, st);
+                ViewModel.SetOsFgNvngxReplacement(gn, null, st);
+                ViewModel.SetOsDilatedMotionVectorsOff(gn, false, st);
+                ViewModel.SetOsFsrCrashFix(gn, null, st);
+                ViewModel.SetOsFsrFgSwapchain(gn, false, st);
+                ViewModel.SetOsUpscalerPlugin(gn, false, st);
+                ViewModel.SetOsStreamlineVersion(gn, null, st);
+            }
+            catch (Exception cleanEx) { CrashReporter.Log($"[InstallEventHandler.UninstallOptiScaler] Settings cleanup failed — {cleanEx.Message}"); }
+
             card.OsActionMessage = "✖ OptiScaler removed.";
             card.NotifyAll();
             card.FadeMessage(m => card.OsActionMessage = m, card.OsActionMessage);
@@ -296,12 +364,12 @@ public class InstallEventHandler
         if (string.IsNullOrEmpty(card.InstallPath)) return;
         try
         {
-            if (!File.Exists(Services.OptiScalerService.OsIniPath))
-            {
-                card.OsActionMessage = "❌ No OptiScaler.ini found in INIs folder.";
-                return;
-            }
-            _optiScalerService.CopyIniToGame(card);
+            _optiScalerService.CopyIniToGame(card, ViewModel.Settings.OsHotkey);
+            // Apply persisted FG settings after copying the INI
+            var fgInput = ViewModel.GetOsFgInput(card.GameName, card.Source ?? "");
+            var fgOutput = ViewModel.GetOsFgOutput(card.GameName, card.Source ?? "");
+            var fgNvngx = ViewModel.GetOsFgNvngxReplacement(card.GameName, card.Source ?? "");
+            OptiScalerService.ApplyFgSettings(card.InstallPath, fgInput, fgOutput, fgNvngx);
             card.OsActionMessage = "✅ OptiScaler.ini copied to game folder.";
             card.FadeMessage(m => card.OsActionMessage = m, card.OsActionMessage);
         }
@@ -334,7 +402,15 @@ public class InstallEventHandler
     public async void InstallLumaButton_Click(object sender, RoutedEventArgs e)
     {
         var card = (sender as FrameworkElement)?.Tag as GameCardViewModel;
-        if (card != null) await ViewModel.InstallLumaAsync(card);
+        if (card == null) return;
+
+        // Warn when installing Luma alongside an already-installed RenoDX mod
+        if (card.IsRdxInstalled && !ViewModel.Settings.LumaRenodxCombinedWarningDismissed)
+        {
+            if (!await ShowLumaRenodxCombinedWarning(sender)) return;
+        }
+
+        await ViewModel.InstallLumaAsync(card);
     }
 
     public void UninstallLumaButton_Click(object sender, RoutedEventArgs e)
@@ -458,4 +534,58 @@ public class InstallEventHandler
     /// <summary>Looks up a SolidColorBrush from the merged theme resource dictionaries.</summary>
     private static SolidColorBrush Brush(string key) =>
         (SolidColorBrush)Application.Current.Resources[key];
+
+    /// <summary>
+    /// Shows the "Installing both RenoDX and Luma" compatibility warning dialog.
+    /// Returns true if the user chose to continue, false if cancelled.
+    /// Persists dismissal if the user checks "Don't show again".
+    /// </summary>
+    private async Task<bool> ShowLumaRenodxCombinedWarning(object sender)
+    {
+        var xamlRoot = (sender as FrameworkElement)?.XamlRoot ?? _window.Content.XamlRoot;
+        if (xamlRoot == null) return true;
+
+        var dontShowCheck = new CheckBox
+        {
+            Content = "Don't show this again",
+            FontSize = 12,
+            Margin = new Thickness(0, 12, 0, 0),
+        };
+
+        var messageText = new TextBlock
+        {
+            Text = "Heads up — you're installing both RenoDX and Luma on this game.\n\n" +
+                   "There's no guarantee they'll work well together. If you're using RenoDX for HDR and just want Luma for DLAA, make sure to disable HDR in the Luma mod settings to avoid conflicts.\n\n" +
+                   "If something doesn't look right, uninstalling one of them is the first thing to try. We can't offer support for issues that come from running both together.",
+            TextWrapping = TextWrapping.Wrap,
+            FontSize = 13,
+            LineHeight = 22,
+            Foreground = Brush(ResourceKeys.TextPrimaryBrush),
+        };
+
+        var content = new StackPanel { Spacing = 4 };
+        content.Children.Add(messageText);
+        content.Children.Add(dontShowCheck);
+
+        var dialog = new ContentDialog
+        {
+            Title = "Installing both RenoDX and Luma",
+            Content = content,
+            PrimaryButtonText = "Continue",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Primary,
+            XamlRoot = xamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+
+        var result = await DialogService.ShowSafeAsync(dialog);
+
+        if (dontShowCheck.IsChecked == true)
+        {
+            ViewModel.Settings.LumaRenodxCombinedWarningDismissed = true;
+            ViewModel.SaveSettingsPublic();
+        }
+
+        return result == ContentDialogResult.Primary;
+    }
 }

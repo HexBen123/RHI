@@ -113,8 +113,18 @@ public partial class GameCardViewModel
     public bool IsDxvkInstalled => DxvkStatus == GameStatus.Installed || DxvkStatus == GameStatus.UpdateAvailable;
     public bool DxvkInstallEnabled => !DxvkIsInstalling;
 
-    /// <summary>DXVK row is visible only when the user has enabled the DXVK toggle.</summary>
-    public Visibility DxvkRowVisibility => DxvkEnabled ? Visibility.Visible : Visibility.Collapsed;
+    /// <summary>DXVK row is visible when installed OR when a variant has been selected (pending install).</summary>
+    public Visibility DxvkRowVisibility => (DxvkEnabled || DxvkVariantPending) ? Visibility.Visible : Visibility.Collapsed;
+
+    /// <summary>True when a DXVK variant override is set but DXVK is not yet installed — shows the Install button.</summary>
+    [ObservableProperty] private bool _dxvkVariantPending;
+
+    /// <summary>
+    /// Stores the Low Latency Mode value that was active before Smooth Motion was enabled.
+    /// Used to restore the previous value when Smooth Motion is turned off.
+    /// null = no saved value (smooth motion was off or latency was already Ultra).
+    /// </summary>
+    public uint? PreSmoothMotionLowLatency { get; set; }
 
     // ── Card grid properties ──────────────────────────────────────────────────────
     public string CardDxvkStatusDot => DxvkIsInstalling ? "#2196F3"

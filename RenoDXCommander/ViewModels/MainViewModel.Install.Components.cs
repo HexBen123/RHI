@@ -583,9 +583,13 @@ public partial class MainViewModel
     private const string LegacyDcFileName64 = "zzz_display_commander_lite.addon64";
     private const string LegacyDcFileName32 = "zzz_display_commander_lite.addon32";
     private const string DcReleasesUrl =
-        "https://github.com/pmnoxx/display-commander/releases/tag/latest_build";
+        "https://github.com/pmnoxx/display-commander/releases/tag/latest";
     private const string DcReleasesApiUrl =
-        "https://api.github.com/repos/pmnoxx/display-commander/releases/tags/latest_build";
+        "https://api.github.com/repos/pmnoxx/display-commander/releases/tags/latest";
+
+    /// <summary>Manifest override for the DC GitHub API URL. Set from componentUrls["dc"] if present.</summary>
+    internal string? DcReleasesApiUrlOverride { get; set; }
+    private string EffectiveDcReleasesApiUrl => !string.IsNullOrEmpty(DcReleasesApiUrlOverride) ? DcReleasesApiUrlOverride : DcReleasesApiUrl;
 
     internal static string GetDcFileName(bool is32Bit) =>
         is32Bit ? DcFileName32 : DcFileName64;
@@ -691,7 +695,7 @@ public partial class MainViewModel
     {
         try
         {
-            var json = await _etagCache.GetWithETagAsync(_http, DcReleasesApiUrl).ConfigureAwait(false);
+            var json = await _etagCache.GetWithETagAsync(_http, EffectiveDcReleasesApiUrl).ConfigureAwait(false);
             if (json == null) return;
 
             using var doc = System.Text.Json.JsonDocument.Parse(json);

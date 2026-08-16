@@ -28,6 +28,8 @@ public sealed partial class MainWindow : Window
     private readonly IShaderPackService _shaderPackService;
     private readonly DlssPresetService _dlssPresetService;
     private readonly DofFixService _dofFixService;
+    private readonly DlssEnablerService _dlssEnablerService;
+    private readonly IOptiScalerService _optiScalerService;
     private readonly IAddonPackService _addonPackService;
     private readonly DetailPanelBuilder _detailPanelBuilder;
     private readonly DialogService _dialogService;
@@ -54,6 +56,8 @@ public sealed partial class MainWindow : Window
         _shaderPackService = App.Services.GetRequiredService<IShaderPackService>();
         _dlssPresetService = App.Services.GetRequiredService<DlssPresetService>();
         _dofFixService = App.Services.GetRequiredService<DofFixService>();
+        _dlssEnablerService = App.Services.GetRequiredService<DlssEnablerService>();
+        _optiScalerService = App.Services.GetRequiredService<IOptiScalerService>();
         _addonPackService = viewModel.AddonPackServiceInstance;
         InitializeComponent();
         // Hide immediately if starting minimized — must be before any Activate() call
@@ -81,6 +85,7 @@ public sealed partial class MainWindow : Window
         AuxInstallService.EnsureInisDir();       // create inis folder on first run
         AuxInstallService.EnsureReShadeStaging(); // create staging dir (DLLs downloaded by ReShadeUpdateService)
         App.Services.GetRequiredService<CustomReShadeHashService>().EnsureInitialized(); // seed hash file on first run
+        App.Services.GetRequiredService<IOptiScalerService>().SeedUserInis(); // seed OptiScaler INIs if missing
         Title = "RHI";
         // Fire-and-forget: check/download shader packs in the background
         // When CacheAllShaders is off, skip the bulk download — packs will be fetched on demand.
@@ -190,6 +195,16 @@ public sealed partial class MainWindow : Window
         ViewModel.SetDispatcher(DispatcherQueue);
         ViewModel.ConfirmForeignDxgiOverwrite = _dialogService.ShowForeignDxgiConfirmDialogAsync;
         ViewModel.ShowVulkanAdminRequiredDialog = _dialogService.ShowVulkanAdminRequiredDialogAsync;
+        ViewModel.RequestOverridesPanelRebuild = card =>
+            DispatcherQueue.TryEnqueue(() => BuildOverridesPanel(card));
+        ViewModel.RequestCardRebuild = card =>
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                // Re-evaluate Luma injection for this card after an API override change.
+                // This updates LumaMod/LumaRenodxCompatible without a full Refresh.
+                ViewModel.ReevaluateLumaForCard(card);
+                PopulateDetailPanel(card);
+            });
         ViewModel.ShowShaderSelectionPicker = async (current) =>
             await ShaderPopupHelper.ShowAsync(Content.XamlRoot, _shaderPackService, current, ShaderPopupHelper.PopupContext.Global);
         ViewModel.ShowPerGameShaderSelectionPicker = async (gameName, current) =>
@@ -203,6 +218,18 @@ public sealed partial class MainWindow : Window
             CheckForAppUpdateAsync().SafeFireAndForget("MainWindow.PeriodicAppUpdate");
         ViewModel.PropertyChanged += OnViewModelChanged;
         GameList.ItemsSource = ViewModel.DisplayedGames;
+        // When the filtered game list changes, preserve selection if the selected game is still visible
+        ViewModel.DisplayedGames.CollectionChanged += (_, _) =>
+        {
+            if (_pendingReselect != null)
+                DispatcherQueue.TryEnqueue(TryRestoreSelection);
+        };
+        // Preserve selection across filter changes — if selected game is still in the new list, reselect it
+        ViewModel.Filter.PreFilterAction = () =>
+        {
+            if (GameList.SelectedItem is GameCardViewModel selected)
+                _pendingReselect = selected.GameName;
+        };
         // Apply initial visibility
         UpdatePageVisibility();
         // Show version in status bar

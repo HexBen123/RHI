@@ -9,6 +9,13 @@ public interface ILumaService
 {
     Task<List<LumaMod>> FetchCompletedModsAsync(IProgress<string>? progress = null);
 
+    /// <summary>
+    /// Fetches and parses the Luma Framework generic Unreal Engine wiki table.
+    /// Returns per-game entries with notes, Engine.ini keys, HDR flag, UE version,
+    /// and whether -dx11 launch arg is required.
+    /// </summary>
+    Task<Dictionary<string, LumaGenericGameEntry>> FetchGenericUeTableAsync(IProgress<string>? progress = null);
+
     Task<LumaInstalledRecord> InstallAsync(
         LumaMod mod,
         string gameInstallPath,

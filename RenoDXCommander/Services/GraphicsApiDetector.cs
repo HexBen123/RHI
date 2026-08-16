@@ -12,7 +12,7 @@ namespace RenoDXCommander.Services;
 public static class GraphicsApiDetector
 {
     private const int HeaderBufferSize = 4096; // enough for DOS + PE + section headers
-    private const int ImportReadSize = 8192;   // enough for import directory + DLL name strings
+    private const int ImportReadSize = 65536;  // 64KB — large enough for import tables in big UE4/UE5 executables
 
     // ── API detection cache ───────────────────────────────────────────────────────
     private static readonly ConcurrentDictionary<string, HashSet<GraphicsApiType>> _apiCache = new(StringComparer.OrdinalIgnoreCase);
@@ -164,10 +164,17 @@ public static class GraphicsApiDetector
 
             ushort magic = BitConverter.ToUInt16(header, optionalHeaderOffset);
             int importDirOffset;
+            int delayImportDirOffset;
             if (magic == 0x10B) // PE32
-                importDirOffset = optionalHeaderOffset + 104;
+            {
+                importDirOffset      = optionalHeaderOffset + 104;
+                delayImportDirOffset = optionalHeaderOffset + 200; // data dir index 13 * 8 + 96
+            }
             else if (magic == 0x20B) // PE32+
-                importDirOffset = optionalHeaderOffset + 120;
+            {
+                importDirOffset      = optionalHeaderOffset + 120;
+                delayImportDirOffset = optionalHeaderOffset + 216; // data dir index 13 * 8 + 112
+            }
             else
                 return GraphicsApiType.Unknown;
 
@@ -177,6 +184,11 @@ public static class GraphicsApiDetector
             uint importRva = BitConverter.ToUInt32(header, importDirOffset);
             if (importRva == 0)
                 return GraphicsApiType.Unknown;
+
+            // Delay-load import directory (optional — may be zero if no delay imports)
+            uint delayImportRva = (delayImportDirOffset + 4 <= headerRead)
+                ? BitConverter.ToUInt32(header, delayImportDirOffset)
+                : 0;
 
             // Parse section table to build RVA-to-file-offset mapping
             int sectionTableOffset = optionalHeaderOffset + sizeOfOptionalHeader;
@@ -246,7 +258,50 @@ public static class GraphicsApiDetector
             if (importsDxgi && bestPriority < Priority[GraphicsApiType.DirectX11])
                 return GraphicsApiType.DirectX12;
 
-            return bestApi;
+            // Scan delay-load import table ONLY when no explicit DX11+ was found in regular imports.
+            // UE4 games that support DX12 optionally but default to DX11 explicitly import d3d11.dll —
+            // delay-load scanning would incorrectly promote them to DX12.
+            // Only apply if bestApi is Unknown or a legacy API (DX9/DX8/DX10/OpenGL).
+            if (delayImportRva != 0 && bestPriority < Priority[GraphicsApiType.DirectX11])
+            {
+                long delayFileOffset = RvaToFileOffset(sections, delayImportRva);
+                if (delayFileOffset >= 0)
+                {
+                    stream.Seek(delayFileOffset, SeekOrigin.Begin);
+                    var delayBuf = new byte[ImportReadSize];
+                    int delayRead = stream.Read(delayBuf, 0, delayBuf.Length);
+
+                    // Delay-load descriptor is 32 bytes; DLL name RVA is at offset 4
+                    for (int i = 0; ; i++)
+                    {
+                        int entryOff = i * 32;
+                        if (entryOff + 32 > delayRead) break;
+                        uint nameRva2 = BitConverter.ToUInt32(delayBuf, entryOff + 4);
+                        if (nameRva2 == 0) break;
+                        string? dllName2 = ReadDllName(stream, sections, nameRva2);
+                        if (dllName2 == null) continue;
+                        if (DllMap.TryGetValue(dllName2, out var delayApi))
+                        {
+                            int p = Priority[delayApi];
+                            if (p > bestPriority)
+                            {
+                                bestPriority = p;
+                                bestApi = delayApi;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Re-check: if delay-load raised DX12, return it
+            if (bestApi != GraphicsApiType.Unknown)
+                return bestApi;
+
+            // Final dxgi-only inference
+            if (importsDxgi)
+                return GraphicsApiType.DirectX12;
+
+            return GraphicsApiType.Unknown;
         }
         catch (FileNotFoundException)
         {
@@ -390,6 +445,34 @@ public static class GraphicsApiDetector
             // lower-priority APIs), add DX12 — same inference as Detect().
             if (importsDxgi && !hasExplicitDx)
                 result.Add(GraphicsApiType.DirectX12);
+
+            // Scan delay-load import table — UE4/UE5 DX12 games delay-load d3d12.dll
+            uint delayImportRvaAll = 0;
+            if (magic == 0x10B)
+                delayImportRvaAll = (optionalHeaderOffset + 200 + 4 <= headerRead) ? BitConverter.ToUInt32(header, optionalHeaderOffset + 200) : 0;
+            else if (magic == 0x20B)
+                delayImportRvaAll = (optionalHeaderOffset + 216 + 4 <= headerRead) ? BitConverter.ToUInt32(header, optionalHeaderOffset + 216) : 0;
+
+            if (delayImportRvaAll != 0)
+            {
+                long delayFileOffsetAll = RvaToFileOffset(sections, delayImportRvaAll);
+                if (delayFileOffsetAll >= 0)
+                {
+                    stream.Seek(delayFileOffsetAll, SeekOrigin.Begin);
+                    var delayBufAll = new byte[ImportReadSize];
+                    int delayReadAll = stream.Read(delayBufAll, 0, delayBufAll.Length);
+                    for (int i = 0; ; i++)
+                    {
+                        int entryOff = i * 32;
+                        if (entryOff + 32 > delayReadAll) break;
+                        uint nameRvaD = BitConverter.ToUInt32(delayBufAll, entryOff + 4);
+                        if (nameRvaD == 0) break;
+                        string? dllNameD = ReadDllName(stream, sections, nameRvaD);
+                        if (dllNameD != null && DllMap.TryGetValue(dllNameD, out var delayApiAll))
+                            result.Add(delayApiAll);
+                    }
+                }
+            }
 
             // Store result in cache
             try

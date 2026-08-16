@@ -140,9 +140,8 @@ public partial class DetailPanelBuilder
             ApplyInfoButtonStyle(_window.DetailRefInfoBtn, card, AddonType.REFramework);
         }
 
-        // ReShade row
-        _window.DetailRsRow.Visibility = isLumaMode ? Visibility.Collapsed : Visibility.Visible;
-        if (!isLumaMode)
+        // ReShade row — always visible (RHI now manages ReShade even in Luma mode)
+        _window.DetailRsRow.Visibility = Visibility.Visible;
         {
             if (card.RequiresVulkanInstall)
             {
@@ -320,7 +319,11 @@ public partial class DetailPanelBuilder
 
         // OptiScaler row — always visible, greyed out for 32-bit games
         _window.DetailOsRow.Visibility = card.OsRowVisibility;
-        _window.DetailOptionalSeparator.Visibility = card.OsRowVisibility == Visibility.Visible || card.DofFixRowVisibility == Visibility.Visible
+        _window.DetailOptionalSeparator.Visibility = card.OsRowVisibility == Visibility.Visible
+            ? Visibility.Visible : Visibility.Collapsed;
+
+        // Recommended separator — visible when DOF Fix is available
+        _window.DetailRecommendedSeparator.Visibility = card.DofFixRowVisibility == Visibility.Visible
             ? Visibility.Visible : Visibility.Collapsed;
 
         // DOF Fix row
@@ -392,8 +395,8 @@ public partial class DetailPanelBuilder
             _window.DetailOsInstallBtn.Opacity = osGreyed ? 0.35 : 1.0;
             _window.DetailOsInstallBtn.IsHitTestVisible = !osGreyed;
             _window.DetailOsIniBtn.Tag = card;
-            _window.DetailOsIniBtn.IsEnabled = card.OsIniExists;
-            _window.DetailOsIniBtn.Opacity = osGreyed ? 0.35 : (card.OsIniExists ? 1 : 0.3);
+            _window.DetailOsIniBtn.IsEnabled = !osGreyed;
+            _window.DetailOsIniBtn.Opacity = osGreyed ? 0.35 : 1.0;
             _window.DetailOsIniBtn.IsHitTestVisible = !osGreyed;
             _window.DetailOsDeleteBtn.Tag = card;
             var osShow = card.OsDeleteVisibility == Visibility.Visible;
@@ -431,7 +434,8 @@ public partial class DetailPanelBuilder
             _window.DetailDxvkDeleteBtn.Opacity = dxvkShow ? 1 : 0;
             _window.DetailDxvkDeleteBtn.IsHitTestVisible = dxvkShow;
         }
-        bool rdxGreyed = !card.IsRtxHdrEnabled && (card.UseNormalReShade || (!card.IsRsInstalled && !card.ExcludeFromUpdateAllReShade));
+        bool rdxGreyed = !card.IsRtxHdrEnabled && (card.UseNormalReShade || (!card.IsRsInstalled && !card.ExcludeFromUpdateAllReShade)
+            || (card.Mod?.SnapshotUrl == null && !card.IsExternalOnly && string.IsNullOrEmpty(card.InstalledAddonFileName)));
         _window.DetailRdxRow.Opacity = 1.0;
         _window.DetailRdxRow.IsHitTestVisible = true;
         if (showRdx)
@@ -498,7 +502,8 @@ public partial class DetailPanelBuilder
                 _window.DetailRdxInstallBtn.BorderBrush = UIFactory.GetBrush(card.InstallBtnBorderBrush);
                 _window.DetailRdxInstallBtn.BorderThickness = new Thickness(1);
                 _window.DetailRdxInstallBtn.Opacity = rdxGreyed ? 0.35 : 1.0;
-                _window.DetailRdxInstallBtn.IsHitTestVisible = card.IsRtxHdrEnabled || (!card.UseNormalReShade && (card.IsRsInstalled || card.ExcludeFromUpdateAllReShade));
+                bool noModAvailable = card.Mod?.SnapshotUrl == null && !card.IsExternalOnly && string.IsNullOrEmpty(card.InstalledAddonFileName);
+                _window.DetailRdxInstallBtn.IsHitTestVisible = !noModAvailable && (card.IsRtxHdrEnabled || (!card.UseNormalReShade && (card.IsRsInstalled || card.ExcludeFromUpdateAllReShade)));
                 _window.DetailRdxDeleteBtn.Tag = card;
                 var rdxShow = card.ReinstallRowVisibility == Visibility.Visible;
                 _window.DetailRdxDeleteBtn.Opacity = rdxShow ? 1 : 0;
@@ -507,8 +512,10 @@ public partial class DetailPanelBuilder
             ApplyInfoButtonStyle(_window.DetailRdxInfoBtn, card, AddonType.RenoDX);
         }
 
-        // Luma row
-        if (isLumaMode)
+        // Luma row — visible whenever this game has a Luma mod (always show alongside RenoDX)
+        bool hasLumaRow = card.LumaFeatureEnabled && card.LumaMod != null;
+        _window.DetailHdrModSeparator.Visibility = hasLumaRow ? Visibility.Visible : Visibility.Collapsed;
+        if (hasLumaRow)
         {
             _window.DetailLumaRow.Visibility = Visibility.Visible;
             _window.DetailLumaStatus.Text = card.LumaStatusText;
@@ -523,20 +530,32 @@ public partial class DetailPanelBuilder
             _window.DetailLumaInstallBtn.Foreground = UIFactory.GetBrush(card.LumaBtnForeground);
             _window.DetailLumaInstallBtn.BorderBrush = UIFactory.GetBrush(card.LumaBtnBorderBrush);
             _window.DetailLumaInstallBtn.BorderThickness = new Thickness(1);
+
+            // Grey out Luma install/cog/label when ReShade is not installed (Info stays bright)
+            bool lumaRsRequired = !card.IsRsInstalled && !card.ExcludeFromUpdateAllReShade
+                                  && card.LumaStatus == GameStatus.NotInstalled;
+            _window.DetailLumaRow.Opacity = 1.0;
+            _window.DetailLumaLabel.Opacity = lumaRsRequired ? 0.35 : 1.0;
+            _window.DetailLumaStatus.Opacity = lumaRsRequired ? 0.35 : 1.0;
+            _window.DetailLumaInstallBtn.Opacity = lumaRsRequired ? 0.35 : 1.0;
+            _window.DetailLumaInstallBtn.IsHitTestVisible = !lumaRsRequired;
+            _window.DetailLumaInstallBtn.IsEnabled = card.IsLumaNotInstalling && !lumaRsRequired;
+            _window.DetailLumaIniBtn.Opacity = lumaRsRequired ? 0.35 : 1.0;
+            _window.DetailLumaIniBtn.IsHitTestVisible = !lumaRsRequired;
             _window.DetailLumaIniBtn.Tag = card;
-            bool lumaIniExists = !string.IsNullOrEmpty(card.InstallPath) && File.Exists(Path.Combine(card.InstallPath, "reshade.ini"));
-            _window.DetailLumaIniBtn.IsEnabled = lumaIniExists;
-            _window.DetailLumaIniBtn.Opacity = lumaIniExists ? 1 : 0.3;
+            _window.DetailLumaIniBtn.IsEnabled = true;
+            _window.DetailLumaIniBtn.Opacity = 1.0;
             _window.DetailLumaDeleteBtn.Tag = card;
             var lumaShow = card.LumaReinstallVisibility == Visibility.Visible;
             _window.DetailLumaDeleteBtn.Opacity = lumaShow ? 1 : 0;
             _window.DetailLumaDeleteBtn.IsHitTestVisible = lumaShow;
             ApplyInfoButtonStyle(_window.DetailLumaInfoBtn, card, AddonType.Luma);
         }
-        else _window.DetailLumaRow.Visibility = Visibility.Collapsed;
-
-        // RenoDX cog button — always visible
-        _window.DetailUeExtendedBtn.Tag = card;
+        else
+        {
+            _window.DetailLumaRow.Visibility = Visibility.Collapsed;
+            _window.DetailLumaRow.Opacity = 1.0;
+        }        _window.DetailUeExtendedBtn.Tag = card;
         _window.DetailUeExtendedBtn.Opacity = 1;
         _window.DetailUeExtendedBtn.IsHitTestVisible = true;
 
@@ -630,13 +649,6 @@ public partial class DetailPanelBuilder
                     _window.DetailInstalledFileBadge.Visibility = Visibility.Collapsed;
                     _window.DetailSepModPlatform.Visibility = Visibility.Collapsed;
                 }
-            }
-
-            // Refresh Luma mode buttons when luma state changes
-            if (e.PropertyName is "IsLumaMode" or "LumaStatus" or "LumaBadgeVisibility" or "LumaBadgeLabel")
-            {
-                _window.DetailLumaToggle.IsChecked = _currentDetailCard.IsLumaMode;
-                _window.UpdateLumaToggleStyle(_currentDetailCard.IsLumaMode);
             }
 
             // Refresh PCGW / Nexus Mods link visibility when URLs change

@@ -199,6 +199,16 @@ public partial class MainViewModel
         {
             var gameStopwatch = System.Diagnostics.Stopwatch.StartNew();
             var (game, installPath, engine, mod, origFallback, detectedMachine, engineOverrideLabel) = item;
+
+            // ── Targeted timing for slow games ───────────────────────────────────
+            var phaseTimer = System.Diagnostics.Stopwatch.StartNew();
+            void LogPhase(string phase)
+            {
+                var ms = phaseTimer.ElapsedMilliseconds;
+                if (ms > 50) _crashReporter.Log($"[BuildCards.Phase] '{game.Name}' — {phase} took {ms}ms");
+                phaseTimer.Restart();
+            }
+            // ─────────────────────────────────────────────────────────────────────
             // Always show every detected game — even if no wiki mod exists.
             // The card will have no install button if there's no snapshot URL,
             // but a RenoDX addon already on disk will still be detected and shown.
@@ -331,6 +341,7 @@ public partial class MainViewModel
                 safeAddonCache[cacheKey] = addonOnDisk != null;
             }
             newAddonFileCache[cacheKey] = addonOnDisk ?? "";
+            LogPhase("AddonScan");
 
             if (addonOnDisk != null && record == null)
             {
@@ -445,9 +456,11 @@ public partial class MainViewModel
                     DiscordUrl = "https://discord.gg/gF4GRJWZ2A",
                 };
             }
-            bool useUeExt = !noUeExtended && (!hasNamedMod || isNativeHdr) && !hasNamedAddonOnDisk
+            // User explicit opt-in bypasses the hasNamedMod gate
+            bool userExplicitUeExt = IsUeExtendedGameMatch(game.Name);
+            bool useUeExt = !noUeExtended && (!hasNamedMod || isNativeHdr || userExplicitUeExt) && !hasNamedAddonOnDisk
                          && ((addonOnDisk == UeExtendedFile)
-                             || IsUeExtendedGameMatch(game.Name)
+                             || userExplicitUeExt
                              || isNativeHdr
                              || (effectiveMod?.IsGenericUnreal == true));
             if (useUeExt && effectiveMod != null)
@@ -628,6 +641,10 @@ public partial class MainViewModel
             // Composite key for per-game settings lookups
             var gameKey = GameKey.FromCard(game.Name, game.Source).ToKey();
 
+            // Pre-compute Luma match before card initializer (needed for LumaRenodxCompatible)
+            var lumaMatch = MatchLumaGame(game.Name);
+            LogPhase("LumaMatch");
+
             var newCard = new GameCardViewModel
             {
                 GameName               = game.Name,
@@ -691,7 +708,7 @@ public partial class MainViewModel
                 DllOverrideEnabled     = _dllOverrides.ContainsKey(game.Name),
                 IsNativeHdrGame        = isNativeHdr,
                 IsManifestUeExtended   = useUeExt && !isNativeHdr,
-                LumaRenodxCompatible   = _manifest?.LumaRenodxCompat?.Contains(game.Name) == true,
+                LumaRenodxCompatible   = lumaMatch != null,
                 EngineIniProjectOverride = _manifest?.EngineIniPathOverrides?.TryGetValue(game.Name, out var eiOverride) == true ? eiOverride : null,
                 RsRecord               = rsRec,
                 RsStatus               = rsRec != null ? GameStatus.Installed : GameStatus.NotInstalled,
@@ -735,7 +752,20 @@ public partial class MainViewModel
                 }
             }
 
-            // ── Luma matching ──────────────────────────────────────────────────────
+            // Strip DX11 from UE5+ games — they default to DX12; DX11 is a legacy import shim
+            // Skip if user or manifest explicitly overrode the API
+            var ue5ApiKey = GameKey.FromCard(game.Name, game.Source).ToKey();
+            bool hasUserApiOverride = _apiOverrides.ContainsKey(ue5ApiKey) || _apiOverrides.ContainsKey(game.Name);
+            if (engine == EngineType.Unreal
+                && newCard.EngineHint.Contains("Unreal Engine 5.", StringComparison.OrdinalIgnoreCase)
+                && !hasUserApiOverride
+                && (_manifest?.GraphicsApiOverrides?.ContainsKey(game.Name) != true))
+            {
+                newCard.DetectedApis.Remove(GraphicsApiType.DirectX11);
+                if (newCard.GraphicsApi == GraphicsApiType.DirectX11)
+                    newCard.GraphicsApi = GraphicsApiType.DirectX12;
+            }
+
             newCard.IsDualApiGame = GraphicsApiDetector.IsDualApi(newCard.DetectedApis);
 
             // Cache the API detection results for subsequent launches
@@ -770,6 +800,7 @@ public partial class MainViewModel
                     newCard.UlInstalledVersion = ReadUlInstalledVersion(newCard.Is32Bit);
                 }
             }
+            LogPhase("ReLimiter");
 
             // ── Display Commander detection ────────────────────────────────────
             if (!string.IsNullOrEmpty(installPath) && Directory.Exists(installPath))
@@ -876,6 +907,7 @@ public partial class MainViewModel
                     }
                 }
             }
+            LogPhase("DC");
 
             // ── OptiScaler detection ───────────────────────────────────────
             if (!string.IsNullOrEmpty(installPath) && Directory.Exists(installPath) && !newCard.Is32Bit)
@@ -929,7 +961,9 @@ public partial class MainViewModel
                 {
                     newCard.OsStatus = GameStatus.Installed;
                     newCard.OsInstalledFile = osRec.InstalledAs;
-                    newCard.OsInstalledVersion = _optiScalerService.StagedVersion;
+                    newCard.OsInstalledVersion = osRec.OsVariant == "Nightly"
+                        ? _optiScalerService.StagedVersionNightly
+                        : _optiScalerService.StagedVersion;
                 }
                 else if (osRec != null)
                 {
@@ -1020,6 +1054,7 @@ public partial class MainViewModel
                     newCard.RefInstalledVersion = refRec.InstalledVersion;
                 }
             }
+            LogPhase("OptiScaler");
 
             // ── DXVK detection ─────────────────────────────────────────────────
             if (!string.IsNullOrEmpty(installPath) && Directory.Exists(installPath))
@@ -1086,6 +1121,7 @@ public partial class MainViewModel
                 newCard.EngineHint = evOverride;
 
             // ── DOF Fix detection ────────────────────────────────────────────────
+            LogPhase("DXVK");
             newCard.IsDofFixEligible = _dofFixService.IsGameEligible(newCard.EngineHint, newCard.Is32Bit, game.Name);
             if (newCard.IsDofFixEligible && !string.IsNullOrEmpty(installPath) && Directory.Exists(installPath))
             {
@@ -1097,6 +1133,7 @@ public partial class MainViewModel
             }
 
             // ── DLSS / Streamline detection ──────────────────────────────────────
+            LogPhase("DofFix+CardInit");
             bool dlssSkipped = _manifest?.DlssSkipGames?.Contains(game.Name, StringComparer.OrdinalIgnoreCase) == true
                 || _dlssStreamlineService.ShouldSkipScan(game.Name);
             if (!dlssSkipped && !string.IsNullOrEmpty(installPath) && Directory.Exists(installPath))
@@ -1135,28 +1172,56 @@ public partial class MainViewModel
                 }
             }
 
-            var lumaMatch = MatchLumaGame(game.Name);
             if (lumaMatch != null)
             {
                 newCard.LumaMod = lumaMatch;
-
-                // Auto-enable Luma for manifest-listed games (unless user explicitly disabled)
-                var lumaKey = GameKey.FromCard(game.Name, game.Source).ToKey();
-                if (_manifest?.LumaDefaultGames != null
-                    && !_lumaEnabledGames.Contains(lumaKey)
-                    && !_lumaDisabledGames.Contains(lumaKey)
-                    && _manifest.LumaDefaultGames.Any(g => g.Equals(game.Name, StringComparison.OrdinalIgnoreCase)))
-                {
-                    _lumaEnabledGames.Add(lumaKey);
-                }
-
-                newCard.IsLumaMode = _lumaEnabledGames.Contains(lumaKey);
+                newCard.IsLumaMode = false;
+                LogPhase("DLSS");
                 // Check if Luma is installed on disk
                 var lumaRec = LumaService.GetRecordByPath(installPath);
                 if (lumaRec != null)
                 {
                     newCard.LumaRecord = lumaRec;
                     newCard.LumaStatus = GameStatus.Installed;
+                }
+            }
+            else if (LumaFeatureEnabled
+                && (engine == EngineType.Unreal || engine == EngineType.UnrealLegacy || newCard.EngineHint.Contains("Unreal"))
+                && (newCard.GraphicsApi == GraphicsApiType.DirectX11
+                    || newCard.DetectedApis.Contains(GraphicsApiType.DirectX11))
+                && (!IsUe5OrHigher(game.Name) || hasUserApiOverride))
+            {
+                // Check if the wiki entry explicitly blocks this game (⛔ DLSS/FSR AND no HDR either)
+                bool lumaBlocked = _lumaGenericEntries.TryGetValue(game.Name, out var blockCheck)
+                    && blockCheck.DlssFsrBlocked && !blockCheck.HdrSupported;
+                if (!lumaBlocked)
+                {
+                    // Generic Luma UE mod — available for all DX11 Unreal Engine games
+                    var genericLuma = new LumaMod
+                    {
+                        Name = game.Name,
+                        IsGenericLuma = true,
+                        DownloadUrl = "https://github.com/Filoppi/Luma-Framework/releases/latest/download/Luma-Unreal_Engine.zip",
+                        Status = "✅",
+                    };
+                    // Populate notes from the scraped UE wiki table if available
+                    if (_lumaGenericEntries.TryGetValue(game.Name, out var genericEntry))
+                        genericLuma.SpecialNotes = genericEntry.Notes;
+                    newCard.LumaMod = genericLuma;
+                    newCard.LumaRenodxCompatible = true;
+                    newCard.IsLumaMode = false;
+                    // Populate feature flags from the scraped wiki entry
+                    if (_lumaGenericEntries.TryGetValue(game.Name, out var bcEntry))
+                    {
+                        newCard.LumaHdrSupported = bcEntry.HdrSupported;
+                        newCard.LumaDlssFsrSupported = bcEntry.DlssFsrSupported;
+                    }
+                    var lumaRec = LumaService.GetRecordByPath(installPath);
+                    if (lumaRec != null)
+                    {
+                        newCard.LumaRecord = lumaRec;
+                        newCard.LumaStatus = GameStatus.Installed;
+                    }
                 }
             }
 

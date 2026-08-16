@@ -80,6 +80,10 @@ public partial class DetailPanelBuilder
 
     public void PopulateDetailPanel(GameCardViewModel card)
     {
+        // Set DxvkVariantPending so the Install button row shows when a variant is selected but not installed
+        card.DxvkVariantPending = !card.DxvkEnabled
+            && _window.ViewModel.GetDxvkVariantOverride(card.GameName, card.Source) != null;
+
         // Unsubscribe from previous card
         if (_currentDetailCard != null)
             _currentDetailCard.PropertyChanged -= DetailCard_PropertyChanged;
@@ -272,26 +276,9 @@ public partial class DetailPanelBuilder
         _window.DetailUltraPlusBtn.Tag = card;
         _window.DetailUltraPlusBtn.Visibility = card.HasUltraPlusUrl ? Visibility.Visible : Visibility.Collapsed;
 
-        // Luma toggle and info text (shown when game supports Luma)
-        if (card.LumaBadgeVisibility == Visibility.Visible)
-        {
-            _window.DetailLumaToggle.Visibility = Visibility.Visible;
-            _window.DetailLumaToggle.IsChecked = card.IsLumaMode;
-            _window.UpdateLumaToggleStyle(card.IsLumaMode);
-
-            // Dynamic info text explaining Luma support
-            _window.DetailLumaInfoText.Visibility = Visibility.Visible;
-            var isAutoLuma = _window.ViewModel.Manifest?.LumaDefaultGames
-                ?.Any(g => g.Equals(card.GameName, StringComparison.OrdinalIgnoreCase)) == true;
-            _window.DetailLumaInfoText.Text = isAutoLuma
-                ? "This game is automatically configured for Luma HDR. Both RenoDX and Luma are supported. Toggle →"
-                : "This game supports both RenoDX and Luma HDR. Use the toggle to switch →";
-        }
-        else
-        {
-            _window.DetailLumaToggle.Visibility = Visibility.Collapsed;
-            _window.DetailLumaInfoText.Visibility = Visibility.Collapsed;
-        }
+        // Luma toggle removed — both RenoDX and Luma rows always visible when Luma is available
+        _window.DetailLumaToggle.Visibility = Visibility.Collapsed;
+        _window.DetailLumaInfoText.Visibility = Visibility.Collapsed;
 
         // Populate component rows
         UpdateDetailComponentRows(card);

@@ -590,7 +590,7 @@ public partial class MainViewModel
                 VulkanRenderingPath    = _vulkanRenderingPaths.TryGetValue(savedLibKey, out var vrpCache) ? vrpCache : "DirectX",
                 DllOverrideEnabled     = _dllOverrides.ContainsKey(game.Name),
                 LumaFeatureEnabled     = LumaFeatureEnabled,
-                IsLumaMode             = _lumaEnabledGames.Contains(savedLibKey),
+                IsLumaMode             = false,
                 LumaRenodxCompatible   = cachedManifest?.LumaRenodxCompat?.Contains(game.Name) == true,
 
                 // Wiki/mod data left empty — Phase 2 MergeCards will fill these in:
@@ -634,7 +634,9 @@ public partial class MainViewModel
             {
                 newCard.OsStatus = GameStatus.Installed;
                 newCard.OsInstalledFile = osRec.InstalledAs;
-                newCard.OsInstalledVersion = _optiScalerService.StagedVersion;
+                newCard.OsInstalledVersion = osRec.OsVariant == "Nightly"
+                    ? _optiScalerService.StagedVersionNightly
+                    : _optiScalerService.StagedVersion;
             }
 
             // RE Framework from records: prefer Name+Store match, fallback to Name+InstallPath
@@ -762,18 +764,72 @@ public partial class MainViewModel
                 }
             }
 
+            // Strip DX11 from UE5+ games in cache phase too
+            var clApiKey = GameKey.FromCard(game.Name, game.Source).ToKey();
+            bool clHasUserApiOverride = _apiOverrides.ContainsKey(clApiKey) || _apiOverrides.ContainsKey(game.Name);
+            if (engine == EngineType.Unreal
+                && newCard.EngineHint.Contains("Unreal Engine 5.", StringComparison.OrdinalIgnoreCase)
+                && !clHasUserApiOverride
+                && (_manifest?.GraphicsApiOverrides?.ContainsKey(game.Name) != true))
+            {
+                detectedApis.Remove(GraphicsApiType.DirectX11);
+                if (graphicsApi == GraphicsApiType.DirectX11)
+                    graphicsApi = GraphicsApiType.DirectX12;
+                newCard.DetectedApis = detectedApis;
+                newCard.GraphicsApi = graphicsApi;
+            }
+
             // Luma matching (in-memory only, no filesystem)
             var lumaMatch = MatchLumaGame(game.Name);
             if (lumaMatch != null)
             {
                 newCard.LumaMod = lumaMatch;
-                newCard.IsLumaMode = _lumaEnabledGames.Contains(savedLibKey);
+                newCard.IsLumaMode = false;
+                newCard.LumaRenodxCompatible = true;
                 // Luma install record is checked by path — uses a local JSON file read
                 var lumaRec = LumaService.GetRecordByPath(installPath);
                 if (lumaRec != null)
                 {
                     newCard.LumaRecord = lumaRec;
                     newCard.LumaStatus = GameStatus.Installed;
+                }
+            }
+            else if (LumaFeatureEnabled
+                && (engine == EngineType.Unreal || engine == EngineType.UnrealLegacy)
+                && (graphicsApi == GraphicsApiType.DirectX11
+                    || detectedApis.Contains(GraphicsApiType.DirectX11))
+                && !IsUe5OrHigher(game.Name))
+            {
+                bool lumaBlocked = _lumaGenericEntries.TryGetValue(game.Name, out var blockCheck)
+                    && blockCheck.DlssFsrBlocked && !blockCheck.HdrSupported;
+                if (!lumaBlocked)
+                {
+                // Generic Luma UE mod — available for all DX11 Unreal Engine games
+                var genericLuma = new LumaMod
+                {
+                    Name = game.Name,
+                    IsGenericLuma = true,
+                    DownloadUrl = "https://github.com/Filoppi/Luma-Framework/releases/latest/download/Luma-Unreal_Engine.zip",
+                    Status = "✅",
+                };
+                // Notes from the scraped UE wiki table — populated when Phase 2 merge runs
+                // (_lumaGenericEntries may be empty during cache phase; MergeCards will update)
+                if (_lumaGenericEntries.TryGetValue(game.Name, out var cachedGenericEntry))
+                    genericLuma.SpecialNotes = cachedGenericEntry.Notes;
+                newCard.LumaMod = genericLuma;
+                newCard.LumaRenodxCompatible = true;
+                newCard.IsLumaMode = false;
+                if (_lumaGenericEntries.TryGetValue(game.Name, out var clEntry))
+                {
+                    newCard.LumaHdrSupported = clEntry.HdrSupported;
+                    newCard.LumaDlssFsrSupported = clEntry.DlssFsrSupported;
+                }
+                var lumaRec = LumaService.GetRecordByPath(installPath);
+                if (lumaRec != null)
+                {
+                    newCard.LumaRecord = lumaRec;
+                    newCard.LumaStatus = GameStatus.Installed;
+                }
                 }
             }
 

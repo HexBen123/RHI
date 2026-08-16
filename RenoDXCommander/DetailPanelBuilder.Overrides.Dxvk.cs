@@ -37,7 +37,15 @@ public partial class DetailPanelBuilder
             string defaultDxvkSelection;
             if (!card.DxvkEnabled)
             {
-                defaultDxvkSelection = "Off";
+                // Show persisted variant override even when not installed, so user's selection persists
+                var pendingOverride = _window.ViewModel.GetDxvkVariantOverride(gameName, card.Source);
+                defaultDxvkSelection = pendingOverride switch
+                {
+                    "Development" => "Development",
+                    "Stable" => "Stable",
+                    "LiliumHdr" => "Lilium HDR",
+                    _ => "Off",
+                };
             }
             else
             {
@@ -81,19 +89,27 @@ public partial class DetailPanelBuilder
             var dxvkToggle = new ToggleSwitch { IsOn = card.DxvkEnabled, Visibility = Visibility.Collapsed };
             dxvkToggleResult = dxvkToggle;
 
+            var dxvkComboInitializing = true;
             dxvkModeCombo.SelectionChanged += async (s, ev) =>
             {
+                if (dxvkComboInitializing) return;
                 var selected = dxvkModeCombo.SelectedItem as string;
                 if (string.IsNullOrEmpty(selected)) return;
-                var targetCard = _window.ViewModel.AllCards.FirstOrDefault(c =>
-                    c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
-                if (targetCard == null) return;
+                // Use card directly — re-finding by name can return a stale/wrong card
+                var targetCard = card;
 
                 if (selected == "Off")
                 {
                     if (targetCard.DxvkEnabled)
                     {
                         await _window.ViewModel.HandleDxvkToggleAsync(targetCard, false, _window.Content.XamlRoot);
+                        _window.ViewModel.SetDxvkVariantOverride(capturedName, null, targetCard.Source);
+                        _window.PopulateDetailPanel(targetCard);
+                        BuildOverridesPanel(targetCard);
+                    }
+                    else
+                    {
+                        targetCard.DxvkVariantPending = false;
                         _window.ViewModel.SetDxvkVariantOverride(capturedName, null, targetCard.Source);
                         _window.PopulateDetailPanel(targetCard);
                         BuildOverridesPanel(targetCard);
@@ -110,27 +126,23 @@ public partial class DetailPanelBuilder
                     };
                     _window.ViewModel.SetDxvkVariantOverride(capturedName, variantValue, targetCard.Source);
 
-                    if (!targetCard.DxvkEnabled)
+                    if (targetCard.DxvkEnabled || targetCard.DxvkStatus == GameStatus.Installed || targetCard.DxvkStatus == GameStatus.UpdateAvailable)
                     {
-                        var resolvedVariant = _window.ViewModel.ResolveDxvkVariant(capturedName, targetCard.Source);
-                        var savedVariant = _dxvkService.SelectedVariant;
-                        _dxvkService.SelectedVariant = resolvedVariant;
-                        await _window.ViewModel.HandleDxvkToggleAsync(targetCard, true, _window.Content.XamlRoot);
-                        _dxvkService.SelectedVariant = savedVariant;
-                        if (!targetCard.DxvkEnabled) dxvkModeCombo.SelectedItem = "Off";
+                        // DXVK already installed — uninstall it so user can install the new variant
+                        await _window.ViewModel.HandleDxvkToggleAsync(targetCard, false, _window.Content.XamlRoot);
+                        targetCard.DxvkVariantPending = true;
+                        targetCard.NotifyAll();
                         _window.PopulateDetailPanel(targetCard);
                         BuildOverridesPanel(targetCard);
                     }
                     else
                     {
-                        var resolvedVariant = _window.ViewModel.ResolveDxvkVariant(capturedName, targetCard.Source);
-                        var savedVariant = _dxvkService.SelectedVariant;
-                        _dxvkService.SelectedVariant = resolvedVariant;
-                        await _dxvkService.EnsureStagingAsync();
-                        if (_dxvkService.IsStagingReady)
-                            await _window.ViewModel.InstallDxvkAsync(targetCard, _window.Content.XamlRoot);
-                        _dxvkService.SelectedVariant = savedVariant;
+                        // Not installed — mark pending so Install button appears
+                        targetCard.DxvkVariantPending = true;
+                        _window.PopulateDetailPanel(targetCard);
+                        BuildOverridesPanel(targetCard);
                     }
+                    // User must press Install DXVK to actually install
                 }
             };
 
@@ -143,6 +155,7 @@ public partial class DetailPanelBuilder
                 Margin = new Thickness(0, 0, 0, 4),
             });
             dxvkColumn.Children.Add(dxvkModeCombo);
+            dxvkComboInitializing = false;
             Grid.SetColumn(dxvkColumn, 0);
             dxvkRowGrid.Children.Add(dxvkColumn);
 
@@ -156,9 +169,12 @@ public partial class DetailPanelBuilder
             Grid.SetColumn(dxvkDivider, 1);
             dxvkRowGrid.Children.Add(dxvkDivider);
 
-            // Right column — Lilium HDR Preset (only visible when Lilium HDR is active)
-            var isLiliumActive = card.DxvkEnabled && card.DxvkRecord?.IsLiliumHdrMode == true;
-            if (isLiliumActive || (card.DxvkEnabled && _window.ViewModel.GetDxvkVariantOverride(gameName, card.Source) == "LiliumHdr"))
+            // Right column — Lilium HDR Preset (visible when Lilium HDR is selected or active)
+            var liliumVariantSelected = _window.ViewModel.GetDxvkVariantOverride(gameName, card.Source) == "LiliumHdr"
+                                     || defaultDxvkSelection == "Lilium HDR";
+            var isLiliumActive = (card.DxvkEnabled || card.DxvkStatus == GameStatus.Installed || card.DxvkStatus == GameStatus.UpdateAvailable)
+                                 && card.DxvkRecord?.IsLiliumHdrMode == true;
+            if (isLiliumActive || liliumVariantSelected)
             {
                 var liliumPresetCol = new StackPanel { Spacing = 6 };
                 liliumPresetCol.Children.Add(new TextBlock

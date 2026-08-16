@@ -371,26 +371,53 @@ public partial class DialogService
         SolidColorBrush linkColour,
         SolidColorBrush dimColour)
     {
-        // ── Luma badge ───────────────────────────────────────────────────────
-        var lumaLabel = card.LumaMod != null
-            ? $"Luma — {card.LumaMod.Status} {card.LumaMod.Author}"
-            : "Luma";
-        var lumaBadge = new Border
+        // ── Luma badge — only show for named mods (generic mods use DLSS/HDR ticks instead) ──
+        if (card.LumaMod?.IsGenericLuma != true)
         {
-            CornerRadius        = new CornerRadius(6),
-            Padding             = new Thickness(10, 4, 10, 4),
-            HorizontalAlignment = HorizontalAlignment.Left,
-            Background          = Brush(ResourceKeys.AccentGreenBgBrush),
-            BorderBrush         = Brush(ResourceKeys.AccentGreenBorderBrush),
-            BorderThickness     = new Thickness(1),
-            Child = new TextBlock
+            var lumaLabel = card.LumaMod != null
+                ? $"Luma — {card.LumaMod.Status} {card.LumaMod.Author}".TrimEnd()
+                : "Luma";
+            var lumaBadge = new Border
             {
-                Text       = lumaLabel,
-                FontSize   = 12,
-                Foreground = Brush(ResourceKeys.AccentGreenBrush),
-            }
-        };
-        panel.Children.Add(lumaBadge);
+                CornerRadius        = new CornerRadius(6),
+                Padding             = new Thickness(10, 4, 10, 4),
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Background          = Brush(ResourceKeys.AccentGreenBgBrush),
+                BorderBrush         = Brush(ResourceKeys.AccentGreenBorderBrush),
+                BorderThickness     = new Thickness(1),
+                Child = new TextBlock
+                {
+                    Text       = lumaLabel,
+                    FontSize   = 12,
+                    Foreground = Brush(ResourceKeys.AccentGreenBrush),
+                }
+            };
+            panel.Children.Add(lumaBadge);
+        }
+
+        // ── Feature flags (HDR / DLSS+FSR) for generic Luma games ─────────────
+        if (card.LumaMod?.IsGenericLuma == true && (card.LumaHdrSupported || card.LumaDlssFsrSupported))
+        {
+            var flagPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, Margin = new Thickness(0, 4, 0, 0) };
+
+            if (card.LumaDlssFsrSupported)
+                flagPanel.Children.Add(new TextBlock
+                {
+                    Text = "✅ DLSS / FSR",
+                    FontSize = 12,
+                    Foreground = Brush(ResourceKeys.AccentGreenBrush),
+                });
+
+            if (card.LumaHdrSupported)
+                flagPanel.Children.Add(new TextBlock
+                {
+                    Text = "✅ HDR",
+                    FontSize = 12,
+                    Foreground = Brush(ResourceKeys.AccentGreenBrush),
+                });
+
+            panel.Children.Add(flagPanel);
+        }
 
         // ── LumaMod wiki notes (SpecialNotes + FeatureNotes) ─────────────────
         var lumaNotesText = "";
@@ -458,7 +485,7 @@ public partial class DialogService
         }
 
         // ── Fallback if no content at all ────────────────────────────────────
-        if (panel.Children.Count <= 1) // only badge, no notes
+        if (panel.Children.Count == 0) // no content at all
         {
             if (result.Source == InfoSourceType.Fallback && !string.IsNullOrWhiteSpace(result.Content))
             {

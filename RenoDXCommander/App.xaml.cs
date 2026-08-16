@@ -108,6 +108,7 @@ public partial class App : Application
         services.AddSingleton<IDlssStreamlineService, DlssStreamlineService>();
         services.AddSingleton<DlssPresetService>();
         services.AddSingleton<DofFixService>();
+        services.AddSingleton<DlssEnablerService>();
         services.AddSingleton<CustomReShadeHashService>();
         services.AddSingleton<SeenWikiModsService>();
         services.AddSingleton<SeenUltraPlusModsService>();
@@ -216,8 +217,55 @@ public partial class App : Application
         CrashReporter.Log("[App.OnLaunched] Creating MainWindow");
         GraphicsApiDetector.LoadCache();
         MainViewModel.LoadGameApiCache();
+
+        // Check if first-launch setup is needed
+        // Check if first-launch setup is needed.
+        // Skip if settings.json already exists with content — that's an existing user.
+        var rawSettings = SettingsViewModel.LoadSettingsFile();
+        bool setupDone = rawSettings.Count > 0
+            || (rawSettings.TryGetValue("FirstLaunchSetupDone", out var fls) && fls == "true");
+
+        if (!setupDone)
+        {
+            CrashReporter.Log("[App.OnLaunched] First-launch setup not done — showing SetupWindow");
+            var setupWindow = new SetupWindow();
+            setupWindow.OnComplete = (manageReShade) =>
+            {
+                rawSettings["FirstLaunchSetupDone"] = "true";
+                if (!manageReShade)
+                {
+                    rawSettings["GlobalSkipRsUpdates"] = "true";
+                    rawSettings["CacheAllShaders"] = "false";
+                    rawSettings["GlobalShadersOff"] = "true";
+                }
+                SettingsViewModel.SaveSettingsFile(rawSettings);
+                CrashReporter.Log($"[App.OnLaunched] Setup complete — manageReShade={manageReShade}");
+
+                CrashReporter.Log($"[App.OnLaunched] Setup complete — manageReShade={manageReShade}");
+
+                setupWindow.AppWindow.Hide();
+                try
+                {
+                    _window = Services.GetRequiredService<MainWindow>();
+                    if (!startMinimized)
+                        _window.Activate();
+                    SingleInstanceService.StartListening();
+                    SingleInstanceService.FileReceived += OnFileReceived;
+                    if (addonArg != null && _window is MainWindow mwAddon)
+                        mwAddon.HandleAddonFile(addonArg);
+                    setupWindow.Close();
+                }
+                catch (Exception ex)
+                {
+                    CrashReporter.Log($"[App.OnLaunched] MainWindow creation failed after setup — {ex.Message}");
+                }
+            };
+            setupWindow.Activate();
+            return;
+        }
+
         _window = Services.GetRequiredService<MainWindow>();
-        
+
         if (!startMinimized)
         {
             _window.Activate();
@@ -230,30 +278,7 @@ public partial class App : Application
 
         // Start listening for file paths from subsequent instances
         SingleInstanceService.StartListening();
-        SingleInstanceService.FileReceived += path =>
-        {
-            if (path == "--activate")
-            {
-                if (_window is MainWindow mw0)
-                    mw0.DispatcherQueue.TryEnqueue(() => mw0.Activate());
-                return;
-            }
-            if (path.StartsWith("--launch:"))
-            {
-                var gameName = path.Substring("--launch:".Length);
-                if (_window is MainWindow mw)
-                    mw.DispatcherQueue.TryEnqueue(() =>
-                    {
-                        mw.Activate();
-                        var card = mw.ViewModel.AllCards.FirstOrDefault(c =>
-                            c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
-                        if (card != null) mw.LaunchGame(card);
-                    });
-                return;
-            }
-            if (_window is MainWindow mw2)
-                mw2.DispatcherQueue.TryEnqueue(() => mw2.HandleAddonFile(path));
-        };
+        SingleInstanceService.FileReceived += OnFileReceived;
 
         // Handle addon file passed on first launch
         if (addonArg != null)
@@ -262,6 +287,31 @@ public partial class App : Application
             if (_window is MainWindow mw)
                 mw.HandleAddonFile(addonArg);
         }
+    }
+
+    private void OnFileReceived(string path)
+    {
+        if (path == "--activate")
+        {
+            if (_window is MainWindow mw0)
+                mw0.DispatcherQueue.TryEnqueue(() => mw0.Activate());
+            return;
+        }
+        if (path.StartsWith("--launch:"))
+        {
+            var gameName = path.Substring("--launch:".Length);
+            if (_window is MainWindow mw)
+                mw.DispatcherQueue.TryEnqueue(() =>
+                {
+                    mw.Activate();
+                    var card = mw.ViewModel.AllCards.FirstOrDefault(c =>
+                        c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
+                    if (card != null) mw.LaunchGame(card);
+                });
+            return;
+        }
+        if (_window is MainWindow mw2)
+            mw2.DispatcherQueue.TryEnqueue(() => mw2.HandleAddonFile(path));
     }
 
     /// <summary>

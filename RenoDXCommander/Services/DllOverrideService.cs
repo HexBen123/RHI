@@ -197,12 +197,21 @@ public class DllOverrideService : IDllOverrideService
             {
                 if (File.Exists(oldPath) && !File.Exists(newPath))
                 {
-                    File.Move(oldPath, newPath);
-                    if (card.RsRecord != null)
+                    // Collision guard: skip RS rename if the target name is occupied by OptiScaler
+                    var osEffectiveName = GetEffectiveOsName(name);
+                    if (newRsName.Equals(osEffectiveName, StringComparison.OrdinalIgnoreCase))
                     {
-                        card.RsRecord.InstalledAs = newRsName;
-                        _auxInstaller.SaveAuxRecord(card.RsRecord);
-                        card.RsInstalledFile = newRsName;
+                        CrashReporter.Log($"[DllOverrideService.UpdateDllOverrideNames] Skipping RS rename — '{newRsName}' collides with OptiScaler name for '{name}'.");
+                    }
+                    else
+                    {
+                        File.Move(oldPath, newPath);
+                        if (card.RsRecord != null)
+                        {
+                            card.RsRecord.InstalledAs = newRsName;
+                            _auxInstaller.SaveAuxRecord(card.RsRecord);
+                            card.RsInstalledFile = newRsName;
+                        }
                     }
                 }
             }
@@ -568,15 +577,18 @@ public class DllOverrideService : IDllOverrideService
 
     /// <summary>
     /// Returns the supported OptiScaler DLL names filtered to exclude
-    /// names currently used by ReShade or Display Commander for the same game.
+    /// names actively in use by ReShade or Display Commander for the same game.
+    /// Only excludes a name when that component is physically installed
+    /// (non-null <paramref name="rsInstalledAs"/> / <paramref name="dcInstalledAs"/>).
+    /// When a component is not installed, its default name is NOT excluded so the
+    /// user can freely pick any name for OptiScaler.
     /// </summary>
-    public string[] GetAvailableOsDllNames(string gameName, bool is32Bit)
+    public string[] GetAvailableOsDllNames(string gameName, bool is32Bit,
+        string? rsInstalledAs = null, string? dcInstalledAs = null)
     {
-        var rsName = GetEffectiveRsName(gameName);
-        var dcName = GetEffectiveDcName(gameName, is32Bit);
         return OptiScalerService.SupportedDllNames
-            .Where(n => !n.Equals(rsName, StringComparison.OrdinalIgnoreCase)
-                      && !n.Equals(dcName, StringComparison.OrdinalIgnoreCase))
+            .Where(n => (string.IsNullOrEmpty(rsInstalledAs) || !n.Equals(rsInstalledAs, StringComparison.OrdinalIgnoreCase))
+                     && (string.IsNullOrEmpty(dcInstalledAs)  || !n.Equals(dcInstalledAs,  StringComparison.OrdinalIgnoreCase)))
             .ToArray();
     }
 

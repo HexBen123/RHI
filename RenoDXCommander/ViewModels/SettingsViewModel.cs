@@ -23,6 +23,7 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private List<string> _selectedShaderPacks = new();
     [ObservableProperty] private string _addonWatchFolder = "";
     [ObservableProperty] private bool _useCustomShaders;
+    [ObservableProperty] private bool _globalShadersOff;
     [ObservableProperty] private string _screenshotPath = "";
     [ObservableProperty] private string _overlayHotkey = "36,0,0,0";
     [ObservableProperty] private string _screenshotHotkey = "44,0,0,0";
@@ -37,9 +38,12 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _ueExtendedWarningDismissed;
     [ObservableProperty] private bool _perGameScreenshotFolders;
     [ObservableProperty] private bool _addonWarningDismissed;
+    [ObservableProperty] private bool _dxvkWarningDismissed;
     [ObservableProperty] private bool _mfgWarningDismissed;
     [ObservableProperty] private bool _engineBadgeWarningDismissed;
+    [ObservableProperty] private bool _lumaRenodxCombinedWarningDismissed;
     [ObservableProperty] private List<string> _enabledGlobalAddons = new();
+    [ObservableProperty] private bool _firstLaunchSetupDone;
     [ObservableProperty] private bool _globalSkipRdxUpdates;
     [ObservableProperty] private bool _globalSkipRsUpdates;
     [ObservableProperty] private bool _globalSkipUlUpdates;
@@ -175,6 +179,9 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("UseCustomShaders", out var ucsVal))
             UseCustomShaders = ucsVal == "true";
 
+        if (s.TryGetValue("GlobalShadersOff", out var gsoffVal))
+            GlobalShadersOff = gsoffVal == "true";
+
         if (s.TryGetValue("AddonWatchFolder", out var awfVal))
             AddonWatchFolder = awfVal ?? "";
 
@@ -220,6 +227,9 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("AddonWarningDismissed", out var awdVal))
             AddonWarningDismissed = awdVal == "true";
 
+        if (s.TryGetValue("DxvkWarningDismissed", out var dwdVal))
+            DxvkWarningDismissed = dwdVal == "true";
+
         if (s.TryGetValue("MfgWarningDismissed", out var mwdVal))
             MfgWarningDismissed = mwdVal == "true";
 
@@ -231,6 +241,9 @@ public partial class SettingsViewModel : ObservableObject
             try { EnabledGlobalAddons = JsonSerializer.Deserialize<List<string>>(egaVal) ?? new(); }
             catch { EnabledGlobalAddons = new(); }
         }
+
+        if (s.TryGetValue("FirstLaunchSetupDone", out var flsdVal))
+            FirstLaunchSetupDone = flsdVal == "true";
 
         if (s.TryGetValue("GlobalSkipRdxUpdates", out var gsrVal)) GlobalSkipRdxUpdates = gsrVal == "true";
         if (s.TryGetValue("GlobalSkipRsUpdates", out var gssVal)) GlobalSkipRsUpdates = gssVal == "true";
@@ -301,6 +314,7 @@ public partial class SettingsViewModel : ObservableObject
         s["ShaderDeployMode"]  = SelectedShaderPacks.Count > 0 ? "Select" : "Off";
         s["SelectedShaderPacks"] = JsonSerializer.Serialize(SelectedShaderPacks);
         s["UseCustomShaders"]  = UseCustomShaders ? "true" : "false";
+        s["GlobalShadersOff"]  = GlobalShadersOff ? "true" : "false";
         if (!string.IsNullOrWhiteSpace(AddonWatchFolder))
             s["AddonWatchFolder"] = AddonWatchFolder;
         s["ScreenshotPath"] = ScreenshotPath;
@@ -318,9 +332,11 @@ public partial class SettingsViewModel : ObservableObject
         s["UeExtendedWarningDismissed"] = UeExtendedWarningDismissed ? "true" : "false";
         s["PerGameScreenshotFolders"] = PerGameScreenshotFolders ? "true" : "false";
         s["AddonWarningDismissed"] = AddonWarningDismissed ? "true" : "false";
+        s["DxvkWarningDismissed"] = DxvkWarningDismissed ? "true" : "false";
         s["MfgWarningDismissed"] = MfgWarningDismissed ? "true" : "false";
         s["EngineBadgeWarningDismissed"] = EngineBadgeWarningDismissed ? "true" : "false";
         s["EnabledGlobalAddons"] = JsonSerializer.Serialize(EnabledGlobalAddons);
+        s["FirstLaunchSetupDone"] = FirstLaunchSetupDone ? "true" : "false";
         s["GlobalSkipRdxUpdates"] = GlobalSkipRdxUpdates ? "true" : "false";
         s["GlobalSkipRsUpdates"] = GlobalSkipRsUpdates ? "true" : "false";
         s["GlobalSkipUlUpdates"] = GlobalSkipUlUpdates ? "true" : "false";

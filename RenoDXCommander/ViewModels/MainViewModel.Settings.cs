@@ -203,6 +203,232 @@ public partial class MainViewModel
         return _dxvkService.SelectedVariant;
     }
 
+    // ── OptiScaler Variant Override ───────────────────────────────────────────
+
+    /// <summary>Returns the OptiScaler variant for a game. "Stable" or "Nightly". Defaults to "Stable".</summary>
+    public string GetOsVariant(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (_gameNameService.OsVariantOverrides.TryGetValue(key, out var v)) return v;
+        // name-only fallback for legacy
+        if (_gameNameService.OsVariantOverrides.TryGetValue(gameName, out var v2)) return v2;
+        return "Stable";
+    }
+
+    /// <summary>Sets the OptiScaler variant for a game. Null or "Stable" removes the override.</summary>
+    public void SetOsVariant(string gameName, string? value, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (value == null || value == "Stable")
+            _gameNameService.OsVariantOverrides.Remove(key);
+        else
+            _gameNameService.OsVariantOverrides[key] = value;
+        SaveNameMappings();
+    }
+
+    // ── Deploy Streamline ─────────────────────────────────────────────────────
+
+    /// <summary>Returns whether Deploy Streamline is enabled for a game.</summary>
+    public bool GetOsDeployStreamline(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        return _gameNameService.OsDeployStreamline.Contains(key)
+            || _gameNameService.OsDeployStreamline.Contains(gameName);
+    }
+
+    /// <summary>Sets whether Deploy Streamline is enabled for a game.</summary>
+    public void SetOsDeployStreamline(string gameName, bool value, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (value)
+            _gameNameService.OsDeployStreamline.Add(key);
+        else
+        {
+            _gameNameService.OsDeployStreamline.Remove(key);
+            _gameNameService.OsDeployStreamline.Remove(gameName);
+        }
+        SaveNameMappings();
+    }
+
+    // ── Deploy DLSS Enabler ───────────────────────────────────────────────────
+
+    /// <summary>Returns whether Deploy DLSS Enabler is enabled for a game.</summary>
+    public bool GetOsDeployDlssEnabler(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        return _gameNameService.OsDeployDlssEnabler.Contains(key)
+            || _gameNameService.OsDeployDlssEnabler.Contains(gameName);
+    }
+
+    /// <summary>Sets whether Deploy DLSS Enabler is enabled for a game.</summary>
+    public void SetOsDeployDlssEnabler(string gameName, bool value, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (value)
+            _gameNameService.OsDeployDlssEnabler.Add(key);
+        else
+        {
+            _gameNameService.OsDeployDlssEnabler.Remove(key);
+            _gameNameService.OsDeployDlssEnabler.Remove(gameName);
+        }
+        SaveNameMappings();
+    }
+
+    // ── Dilated Motion Vectors ────────────────────────────────────────────────
+
+    /// <summary>Returns whether Dilated Motion Vectors is set to Off for a game.</summary>
+    public bool GetOsDilatedMotionVectorsOff(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        return _gameNameService.OsDilatedMotionVectorsOff.Contains(key)
+            || _gameNameService.OsDilatedMotionVectorsOff.Contains(gameName);
+    }
+
+    /// <summary>Sets whether Dilated Motion Vectors is Off for a game.</summary>
+    public void SetOsDilatedMotionVectorsOff(string gameName, bool value, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (value)
+            _gameNameService.OsDilatedMotionVectorsOff.Add(key);
+        else
+        {
+            _gameNameService.OsDilatedMotionVectorsOff.Remove(key);
+            _gameNameService.OsDilatedMotionVectorsOff.Remove(gameName);
+        }
+        SaveNameMappings();
+    }
+
+    // ── FSR Crash Fix ─────────────────────────────────────────────────────────
+
+    public string GetOsFsrCrashFix(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (_gameNameService.OsFsrCrashFix.TryGetValue(key, out var v)) return v;
+        if (_gameNameService.OsFsrCrashFix.TryGetValue(gameName, out var v2)) return v2;
+        return "None";
+    }
+
+    public void SetOsFsrCrashFix(string gameName, string? value, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (value == null || value == "None")
+        {
+            _gameNameService.OsFsrCrashFix.Remove(key);
+            _gameNameService.OsFsrCrashFix.Remove(gameName);
+        }
+        else
+            _gameNameService.OsFsrCrashFix[key] = value;
+        SaveNameMappings();
+    }
+
+    // ── FG Input ──────────────────────────────────────────────────────────────
+
+    public string GetOsFgInput(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (_gameNameService.OsFgInput.TryGetValue(key, out var v)) return v;
+        if (_gameNameService.OsFgInput.TryGetValue(gameName, out var v2)) return v2;
+        return "auto";
+    }
+
+    public void SetOsFgInput(string gameName, string value, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (value == "auto") { _gameNameService.OsFgInput.Remove(key); _gameNameService.OsFgInput.Remove(gameName); }
+        else _gameNameService.OsFgInput[key] = value;
+        SaveNameMappings();
+    }
+
+    // ── FG Output ─────────────────────────────────────────────────────────────
+
+    public string GetOsFgOutput(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (_gameNameService.OsFgOutput.TryGetValue(key, out var v)) return v;
+        if (_gameNameService.OsFgOutput.TryGetValue(gameName, out var v2)) return v2;
+        return "auto";
+    }
+
+    public void SetOsFgOutput(string gameName, string value, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (value == "auto") { _gameNameService.OsFgOutput.Remove(key); _gameNameService.OsFgOutput.Remove(gameName); }
+        else _gameNameService.OsFgOutput[key] = value;
+        SaveNameMappings();
+    }
+
+    // ── FG Nvngx Replacement ──────────────────────────────────────────────────
+
+    public string GetOsFgNvngxReplacement(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (_gameNameService.OsFgNvngxReplacement.TryGetValue(key, out var v)) return v;
+        if (_gameNameService.OsFgNvngxReplacement.TryGetValue(gameName, out var v2)) return v2;
+        return "None";
+    }
+
+    public void SetOsFgNvngxReplacement(string gameName, string value, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (value == "None") { _gameNameService.OsFgNvngxReplacement.Remove(key); _gameNameService.OsFgNvngxReplacement.Remove(gameName); }
+        else _gameNameService.OsFgNvngxReplacement[key] = value;
+        SaveNameMappings();
+    }
+
+    // ── FSR-FG Swapchain ──────────────────────────────────────────────────────
+
+    public bool GetOsFsrFgSwapchain(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        return _gameNameService.OsFsrFgSwapchain.Contains(key)
+            || _gameNameService.OsFsrFgSwapchain.Contains(gameName);
+    }
+
+    public void SetOsFsrFgSwapchain(string gameName, bool value, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (value) _gameNameService.OsFsrFgSwapchain.Add(key);
+        else { _gameNameService.OsFsrFgSwapchain.Remove(key); _gameNameService.OsFsrFgSwapchain.Remove(gameName); }
+        SaveNameMappings();
+    }
+
+    // ── Upscaler Plugin ───────────────────────────────────────────────────────
+
+    public bool GetOsUpscalerPlugin(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        return _gameNameService.OsUpscalerPlugin.Contains(key)
+            || _gameNameService.OsUpscalerPlugin.Contains(gameName);
+    }
+
+    public void SetOsUpscalerPlugin(string gameName, bool value, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (value) _gameNameService.OsUpscalerPlugin.Add(key);
+        else { _gameNameService.OsUpscalerPlugin.Remove(key); _gameNameService.OsUpscalerPlugin.Remove(gameName); }
+        SaveNameMappings();
+    }
+
+    // ── Streamline Version ────────────────────────────────────────────────────
+
+    public string GetOsStreamlineVersion(string gameName, string store)
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (_gameNameService.OsStreamlineVersion.TryGetValue(key, out var v) && !string.IsNullOrEmpty(v)) return v;
+        if (_gameNameService.OsStreamlineVersion.TryGetValue(gameName, out var vLegacy) && !string.IsNullOrEmpty(vLegacy)) return vLegacy;
+        return "";
+    }
+
+    public void SetOsStreamlineVersion(string gameName, string? version, string store)
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (string.IsNullOrEmpty(version))
+            _gameNameService.OsStreamlineVersion.Remove(key);
+        else
+            _gameNameService.OsStreamlineVersion[key] = version;
+        SaveNameMappings();
+    }
+
     // ── DLL Naming Override ───────────────────────────────────────────────────────
 
     /// <summary>Per-game DLL naming overrides — delegated to DllOverrideService.</summary>
@@ -602,7 +828,7 @@ public partial class MainViewModel
             && !string.IsNullOrEmpty(c.InstallPath)
             && Directory.Exists(c.InstallPath)
             && ((c.Status   == GameStatus.UpdateAvailable && !c.ExcludeFromUpdateAllRenoDx && !c.IsExternalOnly) ||
-                (c.RsStatus == GameStatus.UpdateAvailable && !c.ExcludeFromUpdateAllReShade && !c.RequiresVulkanInstall && !c.IsLumaMode) ||
+                (c.RsStatus == GameStatus.UpdateAvailable && !c.ExcludeFromUpdateAllReShade && !c.RequiresVulkanInstall) ||
                 (c.UlStatus == GameStatus.UpdateAvailable && !c.ExcludeFromUpdateAllUl) ||
                 (c.DcStatus == GameStatus.UpdateAvailable && !c.ExcludeFromUpdateAllDc) ||
                 (c.OsStatus == GameStatus.UpdateAvailable && !c.ExcludeFromUpdateAllOs) ||

@@ -52,9 +52,10 @@ public partial class MainViewModel
             });
 
             // Launch all background tasks (identical to InitializeAsync)
-            var wikiTask     = _wikiService.FetchAllAsync();
-            var lumaTask     = _lumaService.FetchCompletedModsAsync();
-            var manifestTask = _manifestService.FetchAsync();
+            var wikiTask        = _wikiService.FetchAllAsync();
+            var lumaTask        = _lumaService.FetchCompletedModsAsync();
+            var lumaUeTask      = _lumaService.FetchGenericUeTableAsync();
+            var manifestTask    = _manifestService.FetchAsync();
             var detectTask   = DetectAllGamesDedupedAsync();
             var osWikiTask   = Task.Run(async () => {
                 try { await _optiScalerWikiService.FetchAsync(); }
@@ -93,6 +94,14 @@ public partial class MainViewModel
                 try { await _optiScalerService.EnsureStagingAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] OptiScaler staging task failed — {ex.Message}"); }
             });
+            var osNightlyTask2 = Task.Run(async () => {
+                try
+                {
+                    if (_allCards.Any(c => GetOsVariant(c.GameName, c.Source ?? "") == "Nightly"))
+                        await _optiScalerService.EnsureNightlyStagingAsync();
+                }
+                catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] OptiScaler nightly staging task failed — {ex.Message}"); }
+            });
             dlssTask         = Task.Run(async () => {
                 try { await _optiScalerService.EnsureDlssStagingAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] DLSS staging task failed — {ex.Message}"); }
@@ -121,6 +130,7 @@ public partial class MainViewModel
             // Await network tasks individually so failures don't block
             try { await wikiTask; } catch (Exception ex) { wikiFetchFailed = true; _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Wiki fetch failed (offline?) — {ex.Message}"); }
             try { await lumaTask; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Luma fetch failed (offline?) — {ex.Message}"); }
+            try { await lumaUeTask; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Luma UE table fetch failed (offline?) — {ex.Message}"); }
             try { _manifest = await manifestTask; AuxInstallService.GlobalManifest = _manifest; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Manifest fetch failed — {ex.Message}"); }
             try { await osWikiTask; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] OptiScaler wiki task failed — {ex.Message}"); }
             try { await hdrDbTask; } catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] HDR database task failed — {ex.Message}"); }
@@ -135,6 +145,8 @@ public partial class MainViewModel
             _dofFixService.SetForceGames(_manifest?.DofFixForceGames);
             if (_manifest?.ComponentUrls?.TryGetValue("ueDofFix", out var dofFixUrl2) == true)
                 _dofFixService.ManifestUrlOverride = dofFixUrl2;
+            if (_manifest?.ComponentUrls?.TryGetValue("dc", out var dcApiUrl2) == true && !string.IsNullOrEmpty(dcApiUrl2))
+                DcReleasesApiUrlOverride = dcApiUrl2;
 
             // Extract wiki/luma results
             var wikiResult = !wikiFetchFailed ? await wikiTask : default;
@@ -142,6 +154,8 @@ public partial class MainViewModel
             _genericNotes = wikiResult.GenericNotes ?? new();
             try { _lumaMods = lumaTask.IsCompletedSuccessfully ? await lumaTask : new(); }
             catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Luma mods deserialization failed — {ex.Message}"); _lumaMods = new(); }
+            try { _lumaGenericEntries = lumaUeTask.IsCompletedSuccessfully ? await lumaUeTask : new(StringComparer.OrdinalIgnoreCase); }
+            catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Luma UE entries failed — {ex.Message}"); _lumaGenericEntries = new(StringComparer.OrdinalIgnoreCase); }
 
             // ── Detect new wiki mods ────────────────────────────────────────────
             if (!wikiFetchFailed)
@@ -315,6 +329,18 @@ public partial class MainViewModel
                 }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Deferred ReShade sync failed — {ex.Message}"); }
 
+                // Redeploy Streamline to all games where it's enabled (after OptiScaler staging is ready)
+                try
+                {
+                    foreach (var card in _allCards.Where(c => c.IsOsInstalled && !string.IsNullOrEmpty(c.InstallPath)
+                        && GetOsDeployStreamline(c.GameName, c.Source ?? "")))
+                    {
+                        try { _optiScalerService.DeployStreamlineToGame(card.InstallPath!); }
+                        catch (Exception ex) { _crashReporter.Log($"[StreamlineRedeploy] Failed for '{card.GameName}' — {ex.Message}"); }
+                    }
+                }
+                catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Streamline redeploy loop failed — {ex.Message}"); }
+
                 if (_shaderPackReadyTask != null)
                 {
                     try { await _shaderPackReadyTask; }
@@ -481,14 +507,16 @@ public partial class MainViewModel
                 existing.DetectedApis           = fresh.DetectedApis;
                 existing.IsDualApiGame          = fresh.IsDualApiGame;
                 existing.LumaMod                = fresh.LumaMod;
-                existing.IsLumaMode             = fresh.IsLumaMode;
+                existing.IsLumaMode             = false;
                 existing.LumaRecord             = fresh.LumaRecord;
                 existing.LumaNotes              = fresh.LumaNotes;
                 existing.LumaNotesUrl           = fresh.LumaNotesUrl;
                 existing.LumaNotesUrlLabel      = fresh.LumaNotesUrlLabel;
+                existing.LumaHdrSupported       = fresh.LumaHdrSupported;
+                existing.LumaDlssFsrSupported   = fresh.LumaDlssFsrSupported;
                 existing.IsNativeHdrGame        = fresh.IsNativeHdrGame;
                 existing.IsManifestUeExtended   = fresh.IsManifestUeExtended;
-                existing.LumaRenodxCompatible   = fresh.LumaRenodxCompatible;
+                existing.LumaRenodxCompatible   = fresh.LumaMod != null;
                 existing.EngineIniProjectOverride = fresh.EngineIniProjectOverride;
                 existing.DllOverrideEnabled      = fresh.DllOverrideEnabled;
                 existing.ExcludeFromUpdateAllReShade = fresh.ExcludeFromUpdateAllReShade;

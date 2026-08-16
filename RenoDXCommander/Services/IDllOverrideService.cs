@@ -125,9 +125,10 @@ public interface IDllOverrideService
 
     /// <summary>
     /// Returns the supported OptiScaler DLL names filtered to exclude
-    /// names currently used by ReShade or Display Commander for the same game.
+    /// names actively in use by installed ReShade or Display Commander for the same game.
     /// </summary>
-    string[] GetAvailableOsDllNames(string gameName, bool is32Bit);
+    string[] GetAvailableOsDllNames(string gameName, bool is32Bit,
+        string? rsInstalledAs = null, string? dcInstalledAs = null);
 
     /// <summary>
     /// Sets or updates the OptiScaler DLL filename override for the specified game.

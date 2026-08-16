@@ -103,6 +103,7 @@ public partial class DlssStreamlineService
         }
 
         // Only replace files that already exist in the game folder
+        // Use plain copy — no backup needed, these files are always RHI-managed
         int replaced = 0;
         foreach (var slDll in KnownStreamlineDlls)
         {
@@ -111,7 +112,7 @@ public partial class DlssStreamlineService
 
             if (File.Exists(gameDllPath) && File.Exists(cachedDllPath))
             {
-                BackupAndReplace(gameDllPath, cachedDllPath);
+                File.Copy(cachedDllPath, gameDllPath, overwrite: true);
                 replaced++;
             }
         }
@@ -153,7 +154,7 @@ public partial class DlssStreamlineService
 
             if (File.Exists(gameDllPath) && File.Exists(customDllPath))
             {
-                BackupAndReplace(gameDllPath, customDllPath);
+                File.Copy(customDllPath, gameDllPath, overwrite: true);
                 replaced++;
             }
         }

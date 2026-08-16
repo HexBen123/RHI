@@ -178,6 +178,8 @@ public partial class MainViewModel
             _gameApiCache.Clear();
             GraphicsApiDetector.ClearCache();
             _gameDetectionService.ClearEngineCache();
+            _dlssPresetService.ClearProfileNameCache();
+            _pcgwService.ClearNegativeCache();
         }
 
         try
@@ -261,9 +263,10 @@ public partial class MainViewModel
             }
 
             // 2. Launch all background tasks (identical for both paths)
-            var wikiTask     = _wikiService.FetchAllAsync();
-            var lumaTask     = _lumaService.FetchCompletedModsAsync();
-            var manifestTask = _manifestService.FetchAsync();
+            var wikiTask        = _wikiService.FetchAllAsync();
+            var lumaTask        = _lumaService.FetchCompletedModsAsync();
+            var lumaUeTask      = _lumaService.FetchGenericUeTableAsync();
+            var manifestTask    = _manifestService.FetchAsync();
             var detectTask   = DetectAllGamesDedupedAsync();
             var osWikiTask   = Task.Run(async () => {
                 try { await _optiScalerWikiService.FetchAsync(); }
@@ -294,6 +297,15 @@ public partial class MainViewModel
             osTask           = Task.Run(async () => {
                 try { await _optiScalerService.EnsureStagingAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] OptiScaler staging task failed — {ex.Message}"); }
+            });
+            var osNightlyTask = Task.Run(async () => {
+                try
+                {
+                    // Only download nightly staging if at least one game uses nightly variant
+                    if (_allCards.Any(c => GetOsVariant(c.GameName, c.Source ?? "") == "Nightly"))
+                        await _optiScalerService.EnsureNightlyStagingAsync();
+                }
+                catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] OptiScaler nightly staging task failed — {ex.Message}"); }
             });
             dlssTask         = Task.Run(async () => {
                 try { await _optiScalerService.EnsureDlssStagingAsync(); }
@@ -339,6 +351,7 @@ public partial class MainViewModel
             // 4. Await network tasks individually so failures don't block game display
             try { await wikiTask; } catch (Exception ex) { wikiFetchFailed = true; _crashReporter.Log($"[MainViewModel.InitializeAsync] Wiki fetch failed (offline?) — {ex.Message}"); }
             try { await lumaTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Luma fetch failed (offline?) — {ex.Message}"); }
+            try { await lumaUeTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Luma UE table fetch failed (offline?) — {ex.Message}"); }
             try { _manifest = await manifestTask; AuxInstallService.GlobalManifest = _manifest; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Manifest fetch failed — {ex.Message}"); }
             try { await osWikiTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] OptiScaler wiki task failed — {ex.Message}"); }
             try { await hdrDbTask; } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] HDR database task failed — {ex.Message}"); }
@@ -355,12 +368,15 @@ public partial class MainViewModel
             _dofFixService.SetForceGames(_manifest?.DofFixForceGames);
             if (_manifest?.ComponentUrls?.TryGetValue("ueDofFix", out var dofFixUrl) == true)
                 _dofFixService.ManifestUrlOverride = dofFixUrl;
+            if (_manifest?.ComponentUrls?.TryGetValue("dc", out var dcApiUrl) == true && !string.IsNullOrEmpty(dcApiUrl))
+                DcReleasesApiUrlOverride = dcApiUrl;
 
             // 5. Extract wiki/luma results
             var wikiResult = !wikiFetchFailed ? await wikiTask : default;
             _allMods      = wikiResult.Mods ?? new();
             _genericNotes = wikiResult.GenericNotes ?? new();
             try { _lumaMods = lumaTask.IsCompletedSuccessfully ? await lumaTask : new(); } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Luma mods deserialization failed — {ex.Message}"); _lumaMods = new(); }
+            try { _lumaGenericEntries = lumaUeTask.IsCompletedSuccessfully ? await lumaUeTask : new(StringComparer.OrdinalIgnoreCase); } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] Luma UE entries failed — {ex.Message}"); _lumaGenericEntries = new(StringComparer.OrdinalIgnoreCase); }
 
             // ── Detect new wiki mods ────────────────────────────────────────────
             if (!wikiFetchFailed)

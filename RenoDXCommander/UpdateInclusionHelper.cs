@@ -29,7 +29,7 @@ public static class UpdateInclusionHelper
         summaryTb.Inlines.Clear();
         var items = new List<(string label, bool isOn)>
         {
-            ("RS", !viewModel.IsUpdateAllExcludedReShade(gameName, store)),
+            ("RS", !viewModel.Settings.GlobalSkipRsUpdates && !viewModel.IsUpdateAllExcludedReShade(gameName, store)),
             ("RDX", !viewModel.IsUpdateAllExcludedRenoDx(gameName, store)),
             ("RL", !viewModel.IsUpdateAllExcludedUl(gameName, store)),
             ("DC", !viewModel.IsUpdateAllExcludedDc(gameName, store)),

@@ -668,6 +668,21 @@
                                     </Button>
                                 </Grid>
 
+                                <!-- Labeled separator: HDR mods — choose one or both -->
+                                <Grid x:Name="DetailHdrModSeparator" x:FieldModifier="internal" Margin="0,4,0,4" ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="36"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="36"/>
+                                        <ColumnDefinition Width="36"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="3" Text="———  HDR Mods — Install one or both  ———" FontSize="11"
+                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Grid>
+
                                 <!-- RenoDX row -->
                                 <Grid x:Name="DetailRdxRow" x:FieldModifier="internal" ColumnSpacing="8">
                                     <Grid.ColumnDefinitions>
@@ -723,7 +738,7 @@
                                         <ColumnDefinition Width="36"/>
                                         <ColumnDefinition Width="36"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="Luma" FontSize="12"
+                                    <TextBlock x:Name="DetailLumaLabel" x:FieldModifier="internal" Grid.Column="0" Text="Luma" FontSize="12"
                                                Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" FontWeight="SemiBold"/>
                                     <TextBlock x:Name="DetailLumaStatus" x:FieldModifier="internal" Grid.Column="1" FontSize="12"
                                                VerticalAlignment="Center" HorizontalTextAlignment="Center"
@@ -742,12 +757,12 @@
                                             CornerRadius="8" FontSize="12" Height="32"
                                             BorderThickness="1"/>
                                     <Button x:Name="DetailLumaIniBtn" x:FieldModifier="internal" Grid.Column="4"
-                                            Click="LumaIniButton_Click"
+                                            Click="LumaCogButton_Click"
                                             Background="{StaticResource SurfaceOverlayBrush}" Foreground="{StaticResource TextSecondaryBrush}"
                                             BorderBrush="{StaticResource BorderStrongBrush}" BorderThickness="1"
                                             CornerRadius="8" Width="36" Height="32" Padding="0"
-                                            ToolTipService.ToolTip="Copy ReShade.ini to game folder">
-                                        <TextBlock Text="📋" FontSize="12" HorizontalAlignment="Center"/>
+                                            ToolTipService.ToolTip="Luma Settings">
+                                        <TextBlock Text="⚙" FontSize="12" HorizontalAlignment="Center"/>
                                     </Button>
                                     <Button x:Name="DetailLumaDeleteBtn" x:FieldModifier="internal" Grid.Column="5"
                                             Click="UninstallLumaButton_Click"
@@ -755,6 +770,67 @@
                                             BorderBrush="{StaticResource AccentPurpleBorderBrush}" BorderThickness="1"
                                             CornerRadius="8" Width="36" Height="32" Padding="0"
                                             ToolTipService.ToolTip="Remove Luma mod" Opacity="0" IsHitTestVisible="False">
+                                        <TextBlock Text="✕" FontSize="12" HorizontalAlignment="Center" Foreground="{StaticResource AccentRedBrush}"/>
+                                    </Button>
+                                </Grid>
+
+                                <!-- Labeled separator: recommended components -->
+                                <Grid x:Name="DetailRecommendedSeparator" x:FieldModifier="internal" Margin="0,4,0,4" ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="36"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="36"/>
+                                        <ColumnDefinition Width="36"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="3" Text="——  Recommended  ——" FontSize="11"
+                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Grid>
+
+                                <!-- DOF Fix row (moved from Optional) -->
+                                <Grid x:Name="DetailDofFixRow" x:FieldModifier="internal" ColumnSpacing="8" Visibility="Collapsed">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="36"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="36"/>
+                                        <ColumnDefinition Width="36"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock x:Name="DetailDofFixLabel" x:FieldModifier="internal" Grid.Column="0" Text="DOF Fix" FontSize="12"
+                                               Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="DetailDofFixStatus" x:FieldModifier="internal" Grid.Column="1" FontSize="12"
+                                               VerticalAlignment="Center" HorizontalTextAlignment="Center"
+                                               PointerPressed="DetailDofFixStatus_PointerPressed"
+                                               PointerEntered="LinkText_PointerEntered" PointerExited="LinkText_PointerExited"/>
+                                    <Button x:Name="DetailDofFixInfoBtn" x:FieldModifier="internal" Grid.Column="2"
+                                            Content="Info" FontSize="11" Padding="6,2,6,2"
+                                            Background="{StaticResource SurfaceOverlayBrush}"
+                                            Foreground="{StaticResource TextSecondaryBrush}"
+                                            BorderBrush="{StaticResource BorderStrongBrush}" BorderThickness="1"
+                                            CornerRadius="8" Width="36" Height="32"
+                                            Click="DofFixInfoButton_Click"/>
+                                    <Button x:Name="DetailDofFixInstallBtn" x:FieldModifier="internal" Grid.Column="3"
+                                            Click="InstallDofFixButton_Click"
+                                            HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                            CornerRadius="8" FontSize="12" Height="32"/>
+                                    <Button x:Name="DetailDofFixCogBtn" x:FieldModifier="internal" Grid.Column="4"
+                                            Visibility="Collapsed"
+                                            Click="DofFixCogButton_Click"
+                                            Background="{StaticResource SurfaceOverlayBrush}" Foreground="{StaticResource TextSecondaryBrush}"
+                                            BorderBrush="{StaticResource BorderStrongBrush}" BorderThickness="1"
+                                            CornerRadius="8" Width="36" Height="32" Padding="0"
+                                            ToolTipService.ToolTip="DOF Fix Settings">
+                                        <TextBlock Text="⚙" FontSize="14" HorizontalAlignment="Center"/>
+                                    </Button>
+                                    <Button x:Name="DetailDofFixDeleteBtn" x:FieldModifier="internal" Grid.Column="5"
+                                            Click="UninstallDofFixButton_Click"
+                                            Background="{StaticResource AccentRedBgBrush}" Foreground="{StaticResource AccentRedBrush}"
+                                            BorderBrush="{StaticResource AccentPurpleBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Width="36" Height="32" Padding="0"
+                                            ToolTipService.ToolTip="Remove DOF Fix" Opacity="0" IsHitTestVisible="False">
                                         <TextBlock Text="✕" FontSize="12" HorizontalAlignment="Center" Foreground="{StaticResource AccentRedBrush}"/>
                                     </Button>
                                 </Grid>
@@ -877,52 +953,6 @@
                                     <TextBlock Grid.Column="3" Text="──  Optional  ──" FontSize="11"
                                                Foreground="{StaticResource TextSecondaryBrush}"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Grid>
-
-                                <!-- DOF Fix row -->
-                                <Grid x:Name="DetailDofFixRow" x:FieldModifier="internal" ColumnSpacing="8" Visibility="Collapsed">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="120"/>
-                                        <ColumnDefinition Width="80"/>
-                                        <ColumnDefinition Width="36"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="36"/>
-                                        <ColumnDefinition Width="36"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock x:Name="DetailDofFixLabel" x:FieldModifier="internal" Grid.Column="0" Text="DOF Fix" FontSize="12"
-                                               Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
-                                    <TextBlock x:Name="DetailDofFixStatus" x:FieldModifier="internal" Grid.Column="1" FontSize="12"
-                                               VerticalAlignment="Center" HorizontalTextAlignment="Center"
-                                               PointerPressed="DetailDofFixStatus_PointerPressed"
-                                               PointerEntered="LinkText_PointerEntered" PointerExited="LinkText_PointerExited"/>
-                                    <Button x:Name="DetailDofFixInfoBtn" x:FieldModifier="internal" Grid.Column="2"
-                                            Content="Info" FontSize="11" Padding="6,2,6,2"
-                                            Background="{StaticResource SurfaceOverlayBrush}"
-                                            Foreground="{StaticResource TextSecondaryBrush}"
-                                            BorderBrush="{StaticResource BorderStrongBrush}" BorderThickness="1"
-                                            CornerRadius="8" Width="36" Height="32"
-                                            Click="DofFixInfoButton_Click"/>
-                                    <Button x:Name="DetailDofFixInstallBtn" x:FieldModifier="internal" Grid.Column="3"
-                                            Click="InstallDofFixButton_Click"
-                                            HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                                            CornerRadius="8" FontSize="12" Height="32"/>
-                                    <Button x:Name="DetailDofFixCogBtn" x:FieldModifier="internal" Grid.Column="4"
-                                            Visibility="Collapsed"
-                                            Click="DofFixCogButton_Click"
-                                            Background="{StaticResource SurfaceOverlayBrush}" Foreground="{StaticResource TextSecondaryBrush}"
-                                            BorderBrush="{StaticResource BorderStrongBrush}" BorderThickness="1"
-                                            CornerRadius="8" Width="36" Height="32" Padding="0"
-                                            ToolTipService.ToolTip="DOF Fix Settings">
-                                        <TextBlock Text="⚙" FontSize="14" HorizontalAlignment="Center"/>
-                                    </Button>
-                                    <Button x:Name="DetailDofFixDeleteBtn" x:FieldModifier="internal" Grid.Column="5"
-                                            Click="UninstallDofFixButton_Click"
-                                            Background="{StaticResource AccentRedBgBrush}" Foreground="{StaticResource AccentRedBrush}"
-                                            BorderBrush="{StaticResource AccentPurpleBorderBrush}" BorderThickness="1"
-                                            CornerRadius="8" Width="36" Height="32" Padding="0"
-                                            ToolTipService.ToolTip="Remove DOF Fix" Opacity="0" IsHitTestVisible="False">
-                                        <TextBlock Text="✕" FontSize="12" HorizontalAlignment="Center" Foreground="{StaticResource AccentRedBrush}"/>
-                                    </Button>
                                 </Grid>
 
                                 <!-- OptiScaler row -->
@@ -1745,6 +1775,10 @@
                                             CornerRadius="8" Padding="12,7" FontSize="12"
                                             HorizontalAlignment="Stretch"/>
 
+                                    <TextBlock Text="Export saves all per-game NVIDIA driver settings to a backup file. Import restores them — useful before updating drivers."
+                                               TextWrapping="Wrap" FontSize="11"
+                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                               Margin="0,8,0,0"/>
                                     <Grid ColumnSpacing="12" Margin="0,8,0,0">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
@@ -1999,13 +2033,13 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
-                                <!-- Left: Custom Shaders + Cache -->
+                                <!-- Left: Shader Management + Cache -->
                                 <StackPanel Grid.Column="0" Spacing="12">
                                     <StackPanel Spacing="4">
-                                        <TextBlock Text="Custom Shaders" FontSize="13" FontWeight="SemiBold"
+                                        <TextBlock Text="Shader Management" FontSize="13" FontWeight="SemiBold"
                                                    Foreground="{StaticResource TextPrimaryBrush}"/>
                                         <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                                   Text="Use your own shader and texture files from a custom directory instead of the built-in shader packs."/>
+                                                   Text="Control how RHI manages shader files across your games."/>
                                     </StackPanel>
                                     <Grid ColumnSpacing="16">
                                         <Grid.ColumnDefinitions>
@@ -2016,16 +2050,17 @@
                                             <RowDefinition Height="Auto"/>
                                             <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
-                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Custom Shaders" FontSize="11"
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Shader Management" FontSize="11"
                                                    Foreground="{StaticResource InlineDescriptionBrush}" Margin="0,0,0,3"/>
                                         <TextBlock Grid.Row="0" Grid.Column="1" Text="Cache All Shaders" FontSize="11"
                                                    Foreground="{StaticResource InlineDescriptionBrush}" Margin="0,0,0,3"/>
                                         <ComboBox Grid.Row="1" Grid.Column="0" x:Name="CustomShadersCombo" x:FieldModifier="internal"
                                                   FontSize="12" HorizontalAlignment="Stretch"
-                                                  ToolTipService.ToolTip="When On, deploys shaders and textures from your custom directory instead of the built-in shader packs."
+                                                  ToolTipService.ToolTip="RHI Managed: deploy built-in shader packs to all games.&#10;Custom: use your own shader directory.&#10;Off: RHI never touches shaders on any game."
                                                   SelectionChanged="CustomShadersCombo_SelectionChanged">
                                             <ComboBoxItem Content="Off"/>
-                                            <ComboBoxItem Content="On"/>
+                                            <ComboBoxItem Content="RHI Managed"/>
+                                            <ComboBoxItem Content="Custom"/>
                                         </ComboBox>
                                         <ComboBox Grid.Row="1" Grid.Column="1" x:Name="CacheAllShadersCombo" x:FieldModifier="internal"
                                                   FontSize="12" HorizontalAlignment="Stretch"

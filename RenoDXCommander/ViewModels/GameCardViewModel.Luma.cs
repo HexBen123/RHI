@@ -12,15 +12,20 @@ public partial class GameCardViewModel
     /// <summary>True when a matching Luma mod exists in the wiki.</summary>
     public bool IsLumaAvailable => LumaMod != null;
 
+    /// <summary>True when the scraped Luma UE wiki entry shows HDR support for this game.</summary>
+    public bool LumaHdrSupported { get; set; }
+    /// <summary>True when the scraped Luma UE wiki entry shows DLSS/FSR support for this game.</summary>
+    public bool LumaDlssFsrSupported { get; set; }
+
     // ── Luma badge + button visibility ─────────────────────────────────────────────
     public Visibility LumaBadgeVisibility => (LumaFeatureEnabled && IsLumaAvailable) ? Visibility.Visible : Visibility.Collapsed;
-    public string LumaBadgeLabel => IsLumaMode ? "Luma ON" : "Luma";
-    public string LumaBadgeBackground => IsLumaMode ? "#122818" : "#1A2030";
-    public string LumaBadgeForeground => IsLumaMode ? "#5ECB7D" : "#6B7A8E";
-    public string LumaBadgeBorderBrush => IsLumaMode ? "#1E4028" : "#283240";
+    public string LumaBadgeLabel => "Luma";
+    public string LumaBadgeBackground => "#1A2030";
+    public string LumaBadgeForeground => "#6B7A8E";
+    public string LumaBadgeBorderBrush => "#283240";
 
-    // In Luma mode: hide RenoDX install, hide ReShade row, show Luma install
-    private bool EffectiveLumaMode => LumaFeatureEnabled && IsLumaMode;
+    // EffectiveLumaMode: true when Luma feature is enabled and a Luma mod is available
+    private bool EffectiveLumaMode => LumaFeatureEnabled && LumaMod != null;
     public Visibility LumaInstallVisibility => (EffectiveLumaMode && LumaMod?.DownloadUrl != null
         && LumaStatus == GameStatus.NotInstalled) ? Visibility.Visible : Visibility.Collapsed;
     public Visibility LumaReinstallVisibility => (EffectiveLumaMode
@@ -30,6 +35,7 @@ public partial class GameCardViewModel
     public Visibility LumaProgressVisibility => IsLumaInstalling ? Visibility.Visible : Visibility.Collapsed;
     public Visibility LumaMessageVisibility => string.IsNullOrEmpty(LumaActionMessage) ? Visibility.Collapsed : Visibility.Visible;
     public string LumaActionLabel => IsLumaInstalling ? "Installing..."
+        : (!IsRsInstalled && !ExcludeFromUpdateAllReShade && LumaStatus == GameStatus.NotInstalled) ? "⚠  ReShade required"
         : LumaStatus == GameStatus.UpdateAvailable ? "⬆  Update Luma"
         : LumaStatus == GameStatus.Installed ? "↺  Reinstall Luma"
         : "⬇  Install Luma";
@@ -55,8 +61,8 @@ public partial class GameCardViewModel
 
     public bool IsLumaInstalled => LumaStatus is GameStatus.Installed or GameStatus.UpdateAvailable;
 
-    // In Luma mode: hide RenoDX row (also hidden when IsExternalOnly) — unless game is in lumaRenodxCompat
-    public Visibility RenoDxRowVisibility => ((EffectiveLumaMode && !LumaRenodxCompatible) || IsExternalOnly) ? Visibility.Collapsed : Visibility.Visible;
+    // RenoDX row: hidden only when IsExternalOnly (Luma condition removed — both rows always visible)
+    public Visibility RenoDxRowVisibility => IsExternalOnly ? Visibility.Collapsed : Visibility.Visible;
 
     // ── Targeted notification: LumaStatus changed ─────────────────────────────────
     private void NotifyLumaStatusDependents()

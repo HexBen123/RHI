@@ -208,6 +208,18 @@ public partial class MainViewModel : ObservableObject
     internal Action<Action>? DispatchUiAction { get; set; }
 
     /// <summary>
+    /// Callback set by the UI layer to rebuild the overrides panel for a given card.
+    /// Called after post-install changes (e.g. launch arg auto-set) so the panel reflects the new state.
+    /// </summary>
+    public Action<GameCardViewModel>? RequestOverridesPanelRebuild { get; set; }
+
+    /// <summary>
+    /// Callback set by the UI layer to trigger a single-card rebuild after API override changes.
+    /// Re-evaluates Luma injection and UE5 DX11 suppression for the affected card.
+    /// </summary>
+    public Action<GameCardViewModel>? RequestCardRebuild { get; set; }
+
+    /// <summary>
     /// Async callback set by the UI layer. Shows the global shader selection picker.
     /// Takes the current selection, returns the confirmed selection or null on cancel.
     /// </summary>
@@ -354,6 +366,10 @@ public partial class MainViewModel : ObservableObject
     {
         // 0. Per-game "Off" mode → null (removes managed shaders)
         if (string.Equals(shaderModeOverride, "Off", StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        // 0b. Global "Off" mode — overrides everything, no shaders deployed to any game
+        if (_settingsViewModel.GlobalShadersOff)
             return null;
 
         // 1. Per-game "Custom" mode → custom shader sentinel
@@ -609,6 +625,7 @@ public partial class MainViewModel : ObservableObject
     private readonly INormalReShadeUpdateService _normalRsUpdateService;
     private readonly ReShadeNightlyService _rsNightlyService;
     private List<LumaMod> _lumaMods = new();
+    private Dictionary<string, LumaGenericGameEntry> _lumaGenericEntries = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _lumaEnabledGames => _gameNameService.LumaEnabledGames;
     /// <summary>
     /// Games the user has explicitly disabled Luma for — prevents manifest lumaDefaultGames

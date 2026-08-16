@@ -1246,7 +1246,10 @@
     "Avowed",
     "Clair Obscur: Expedition 33"
   ],
-  "_comment_packs_components": "=== PACKS \u0026 COMPONENT URLS ===\nshaderPacks adds, modifies, or disables shader packs without a client update.\naddonPacks adds, modifies, or disables addon pack entries without a client update.\ncomponentUrls overrides download URLs for specific components (keys: ueExtended, ueDofFix).\nrenodxExtraSettings adds extra toggle rows to the RenoDX cog Compatibility Settings dialog.",
+  "_comment_packs_components": "=== PACKS & COMPONENT URLS ===\nshaderPacks adds, modifies, or disables shader packs without a client update.\naddonPacks adds, modifies, or disables addon pack entries without a client update.\ncomponentUrls overrides download URLs for specific components (keys: ueExtended, ueDofFix, dc).\nrenodxExtraSettings adds extra toggle rows to the RenoDX cog Compatibility Settings dialog.",
+  "componentUrls": {
+    "dc": "https://api.github.com/repos/pmnoxx/display-commander/releases/tags/latest"
+  },
   "shaderPacks": {
     "CrosireLegacy": {
       "requires": [

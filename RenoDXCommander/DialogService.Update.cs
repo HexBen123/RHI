@@ -108,10 +108,16 @@ public partial class DialogService
             // No buttons — dialog will be closed programmatically when download completes
         };
 
-        // Show dialog non-blocking (acquire dialog gate to prevent concurrent dialogs)
-        if (!DialogService.TryAcquireDialogGate())
+        // Show dialog non-blocking — wait up to 15s for any concurrently-showing dialog
+        // (e.g. MOTD) to finish. Using TryAcquireDialogGate (zero timeout) here would
+        // silently abort the update if the MOTD dialog happened to open first.
+        if (!await DialogService.WaitDialogGateAsync(15))
         {
-            CrashReporter.Log("[DialogService.Update] Skipped download dialog — another dialog is open");
+            CrashReporter.Log("[DialogService.Update] Timed out waiting for dialog gate — proceeding with update download without progress dialog");
+            // Still launch the download even if we can't show the progress UI
+            var installerPathFallback = await _updateService.DownloadInstallerAsync(updateInfo.DownloadUrl, null);
+            if (!string.IsNullOrEmpty(installerPathFallback))
+                _updateService.LaunchInstallerAndExit(installerPathFallback, () => _dispatcherQueue.TryEnqueue(() => _window.Close()));
             return;
         }
         bool gateReleased = false;

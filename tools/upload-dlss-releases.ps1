@@ -32,6 +32,11 @@ foreach ($file in $files) {
         $tag = "streamline-$version"
         $title = "Streamline $version"
     }
+    elseif ($name -match "^DLSS-Enabler-(.+)$") {
+        $version = $Matches[1]
+        $tag = "DLSS-Enabler-$version"
+        $title = "DLSS-Enabler-$version"
+    }
     else {
         Write-Host "SKIP: Unknown filename pattern: $($file.Name)" -ForegroundColor Yellow
         continue

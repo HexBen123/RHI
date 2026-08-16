@@ -170,6 +170,271 @@ public class LumaService : ILumaService
     }
 
     /// <summary>
+    /// Fetches and parses the Luma Framework generic Unreal Engine wiki table.
+    /// Returns a dictionary keyed by game name (case-insensitive) with per-game metadata:
+    /// notes text, Engine.ini keys, HDR flag, UE version, and -dx11 launch arg requirement.
+    /// </summary>
+    public async Task<Dictionary<string, LumaGenericGameEntry>> FetchGenericUeTableAsync(IProgress<string>? progress = null)
+    {
+        progress?.Report("Fetching Luma UE wiki...");
+        var result = new Dictionary<string, LumaGenericGameEntry>(StringComparer.OrdinalIgnoreCase);
+
+        try
+        {
+            // The UE table is on the main Luma wiki page (same page as completed mods)
+            var html = await _http.GetStringAsync(WikiUrl);
+            var doc = new HtmlDocument();
+            doc.LoadHtml(html);
+
+            var tables = doc.DocumentNode.SelectNodes("//table");
+            if (tables == null) return result;
+
+            // Find the UE game table — specifically the one with DLSS/FSR and HDR columns
+            HtmlNode? gameTable = null;
+            foreach (var table in tables)
+            {
+                var headerRow = table.SelectSingleNode(".//tr");
+                var headerCells = headerRow?.SelectNodes("th|td");
+                if (headerCells == null || headerCells.Count < 4) continue;
+                var headers = headerCells.Select(h => Clean(h.InnerText).ToLowerInvariant()).ToList();
+                bool hasName = headers.Any(h => h.Contains("name"));
+                bool hasDlss = headers.Any(h => h.Contains("dlss") || h.Contains("fsr"));
+                bool hasHdr  = headers.Any(h => h.Contains("hdr"));
+                bool hasUeVer = headers.Any(h => h.Contains("ue") || h.Contains("version"));
+                if (hasName && hasDlss && hasHdr && hasUeVer)
+                {
+                    gameTable = table;
+                    break;
+                }
+            }
+
+            if (gameTable == null)
+            {
+                CrashReporter.Log("[LumaService.FetchGenericUeTableAsync] No suitable table found on UE wiki page");
+                return result;
+            }
+
+            var headerRowMain = gameTable.SelectSingleNode(".//tr");
+            var headerCellsMain = headerRowMain?.SelectNodes("th|td");
+            if (headerCellsMain == null) return result;
+
+            var headerTexts = headerCellsMain.Select(h => Clean(h.InnerText).ToLowerInvariant()).ToList();
+            int nameCol    = headerTexts.FindIndex(h => h.Contains("name"));
+            int hdrCol     = headerTexts.FindIndex(h => h.Contains("hdr"));
+            int dlssCol    = headerTexts.FindIndex(h => h.Contains("dlss") || h.Contains("fsr") || h.Contains("upscal"));
+            int notesCol   = headerTexts.FindIndex(h => h.Contains("notes") || h.Contains("note"));
+            int ueVerCol   = headerTexts.FindIndex(h => (h.Contains("ue") && h.Contains("version")) || h == "ue version");
+            // Fallback: last column is usually UE version
+            if (ueVerCol < 0) ueVerCol = headerTexts.Count - 1;
+            if (nameCol < 0) nameCol = 0;
+
+            CrashReporter.Log($"[LumaService.FetchGenericUeTableAsync] Table cols: name={nameCol} hdr={hdrCol} dlss={dlssCol} notes={notesCol} ueVer={ueVerCol} headers=[{string.Join("|", headerTexts)}]");
+
+            var rows = gameTable.SelectNodes(".//tr")?.Skip(1);
+            if (rows == null) return result;
+
+            foreach (var row in rows)
+            {
+                var cells = row.SelectNodes("td");
+                if (cells == null || cells.Count < 2) continue;
+
+                var name = Clean(cells[nameCol].InnerText);
+                if (string.IsNullOrWhiteSpace(name)) continue;
+
+                // HDR: check for green checkbox emoji or ✅
+                bool hdrSupported = false;
+                if (hdrCol >= 0 && hdrCol < cells.Count)
+                {
+                    var hdrText = cells[hdrCol].InnerText;
+                    hdrSupported = hdrText.Contains("✅") || hdrText.Contains("☑")
+                        || hdrText.Contains("✓") || hdrText.Contains("🟢");
+                }
+
+                // DLSS/FSR support
+                bool dlssFsrSupported = false;
+                bool dlssFsrBlocked = false;
+                if (dlssCol >= 0 && dlssCol < cells.Count)
+                {
+                    var dlssText = cells[dlssCol].InnerText;
+                    dlssFsrSupported = dlssText.Contains("✅") || dlssText.Contains("☑")
+                        || dlssText.Contains("✓") || dlssText.Contains("🟢");
+                    dlssFsrBlocked = dlssText.Contains("⛔") || dlssText.Contains("🚫");
+                }
+
+                // Notes: parse text + detect Engine.ini block
+                string? notesText = null;
+                var iniKeys = new List<(string Section, string Key, string Value)>();
+                if (notesCol >= 0 && notesCol < cells.Count)
+                {
+                    var notesCell = cells[notesCol];
+                    notesText = ParseNotesCell(notesCell, out iniKeys);
+                }
+
+                // UE version
+                string? ueVersion = null;
+                if (ueVerCol >= 0 && ueVerCol < cells.Count)
+                {
+                    ueVersion = Clean(cells[ueVerCol].InnerText);
+                    if (string.IsNullOrWhiteSpace(ueVersion)) ueVersion = null;
+                }
+
+                // Extract launch args from code elements in the notes cell
+                // e.g. <code>-dx11</code>, <code>-nod3d9ex</code>, <code>-oss=Steam -dx11</code>
+                // Only extract args that appear alongside "launch" or "argument" keywords
+                string? launchArgs = null;
+                if (notesCol >= 0 && notesCol < cells.Count && notesText != null)
+                {
+                    var notesLower = notesText.ToLowerInvariant();
+                    bool hasLaunchKeyword = notesLower.Contains("launch") || notesLower.Contains("argument");
+                    if (hasLaunchKeyword)
+                    {
+                        // Collect all <code> elements that look like launch args (start with -)
+                        var codeNodes = cells[notesCol].SelectNodes(".//code");
+                        if (codeNodes != null)
+                        {
+                            var argParts = new List<string>();
+                            foreach (var codeNode in codeNodes)
+                            {
+                                var codeText = HtmlEntity.DeEntitize(codeNode.InnerText).Trim();
+                                // Skip if it looks like an Engine.ini key (contains = and no spaces before =)
+                                if (codeText.StartsWith('-') || (codeText.Contains(' ') && codeText.TrimStart().StartsWith('-')))
+                                    argParts.Add(codeText);
+                            }
+                            if (argParts.Count > 0)
+                                launchArgs = string.Join(" ", argParts);
+                        }
+                        // Fallback: regex match -word patterns in the notes text
+                        if (launchArgs == null)
+                        {
+                            var argMatch = System.Text.RegularExpressions.Regex.Match(notesText,
+                                @"(?:launch(?:ing)?\s+using|use|argument)[^\-]*(-[\w=\s-]+?)(?:\.|,|\s+In-game|\s+Recommended|$)",
+                                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                            if (argMatch.Success)
+                                launchArgs = argMatch.Groups[1].Value.Trim();
+                        }
+                    }
+                }
+
+                result[name] = new LumaGenericGameEntry
+                {
+                    Name = name,
+                    Notes = notesText,
+                    EngineIniKeys = iniKeys,
+                    LaunchArgs = launchArgs,
+                    HdrSupported = hdrSupported,
+                    DlssFsrSupported = dlssFsrSupported,
+                    DlssFsrBlocked = dlssFsrBlocked,
+                    UeVersion = ueVersion,
+                };
+            }
+
+            CrashReporter.Log($"[LumaService.FetchGenericUeTableAsync] Parsed {result.Count} UE game entries");
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[LumaService.FetchGenericUeTableAsync] Failed — {ex.Message}");
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Parses a Notes cell from the UE wiki table.
+    /// Extracts plain text notes and expands any "▶ Modify Engine.ini" collapsible sections
+    /// into structured (Section, Key, Value) tuples.
+    /// </summary>
+    private static string? ParseNotesCell(HtmlNode cell, out List<(string Section, string Key, string Value)> iniKeys)
+    {
+        iniKeys = new List<(string, string, string)>();
+        var sb = new System.Text.StringBuilder();
+
+        // Walk child nodes — look for <details> elements (collapsible Engine.ini blocks)
+        // and plain text nodes
+        foreach (var node in cell.ChildNodes)
+        {
+            if (node.NodeType == HtmlNodeType.Text)
+            {
+                var t = HtmlEntity.DeEntitize(node.InnerText).Trim();
+                if (!string.IsNullOrEmpty(t))
+                {
+                    if (sb.Length > 0) sb.Append('\n');
+                    sb.Append(t);
+                }
+            }
+            else if (node.Name == "details")
+            {
+                // Collapsible section — could be "▶ Modify Engine.ini" or a generic notes block
+                // Walk child nodes properly to preserve <br> line breaks between <code> elements
+                var detailsSb = new System.Text.StringBuilder();
+                var summaryNode = node.SelectSingleNode("summary");
+                foreach (var child in node.ChildNodes)
+                {
+                    if (summaryNode != null && child == summaryNode) continue; // skip summary
+                    if (child.Name == "br")
+                        detailsSb.Append('\n');
+                    else if (child.NodeType == HtmlNodeType.Text)
+                    {
+                        var t = HtmlEntity.DeEntitize(child.InnerText).Trim();
+                        if (!string.IsNullOrEmpty(t)) detailsSb.Append(t);
+                    }
+                    else
+                    {
+                        var t = HtmlEntity.DeEntitize(child.InnerText ?? "").Trim();
+                        if (!string.IsNullOrEmpty(t)) detailsSb.Append(t);
+                    }
+                }
+                var innerText = detailsSb.ToString().Trim();
+
+                // Check if this is an Engine.ini block (contains [Section] headers or key=value)
+                bool isIniBlock = innerText.Contains('[') && innerText.Contains(']');
+
+                if (isIniBlock)
+                {
+                    // Parse [Section] + key=value lines
+                    string currentSection = "SystemSettings";
+                    foreach (var line in innerText.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                    {
+                        if (line.StartsWith('[') && line.EndsWith(']'))
+                        {
+                            currentSection = line[1..^1].Trim();
+                        }
+                        else if (line.Contains('='))
+                        {
+                            var eqIdx = line.IndexOf('=');
+                            var key = line[..eqIdx].Trim();
+                            var val = line[(eqIdx + 1)..].Trim();
+                            if (!string.IsNullOrEmpty(key))
+                                iniKeys.Add((currentSection, key, val));
+                        }
+                    }
+                }
+                else if (!string.IsNullOrEmpty(innerText))
+                {
+                    // Generic notes block — append as regular text
+                    if (sb.Length > 0) sb.Append('\n');
+                    sb.Append(innerText);
+                }
+            }
+            else if (node.Name == "br")
+            {
+                sb.Append('\n');
+            }
+            else
+            {
+                var t = HtmlEntity.DeEntitize(node.InnerText ?? "").Trim();
+                if (!string.IsNullOrEmpty(t))
+                {
+                    if (sb.Length > 0) sb.Append('\n');
+                    sb.Append(t);
+                }
+            }
+        }
+
+        var result = sb.ToString().Trim();
+        return string.IsNullOrEmpty(result) ? null : result;
+    }
+
+    /// <summary>
     /// Extracts the content section for a given anchor ID from the wiki page.
     /// Reads text until the next heading or the next game's anchor section is encountered.
     /// </summary>
@@ -302,7 +567,34 @@ public class LumaService : ILumaService
         var fileName = Path.GetFileName(new Uri(mod.DownloadUrl).LocalPath);
         var cachePath = Path.Combine(DownloadPaths.Luma, "luma_" + fileName);
 
+        // Check if cached file is still valid (compare Content-Length via HEAD request)
+        bool needsDownload = true;
+        if (File.Exists(cachePath))
+        {
+            try
+            {
+                var headReq = new HttpRequestMessage(HttpMethod.Head, mod.DownloadUrl);
+                var headResp = await _http.SendAsync(headReq);
+                if (headResp.IsSuccessStatusCode)
+                {
+                    var remoteSize = headResp.Content.Headers.ContentLength;
+                    var localSize = new FileInfo(cachePath).Length;
+                    if (remoteSize.HasValue && remoteSize.Value == localSize)
+                    {
+                        needsDownload = false;
+                        CrashReporter.Log($"[LumaService.InstallAsync] Cache hit for '{fileName}' ({localSize} bytes) — skipping download");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[LumaService.InstallAsync] HEAD check failed for '{mod.DownloadUrl}' — {ex.Message}, re-downloading");
+            }
+        }
+
         // Download
+        if (needsDownload)
+        {
         progress?.Report(("Downloading Luma mod...", 0));
         HttpResponseMessage response;
         try
@@ -337,6 +629,7 @@ public class LumaService : ILumaService
 
         if (File.Exists(cachePath)) File.Delete(cachePath);
         File.Move(tempPath, cachePath);
+        } // end if (needsDownload)
 
         // Extract zip to game folder, tracking all extracted file names
         progress?.Report(("Extracting Luma files...", 80));
@@ -375,6 +668,19 @@ public class LumaService : ILumaService
                 // Skip reshade.ini from the zip — RHI deploys its own version with user settings
                 if (entry.Name.Equals("reshade.ini", StringComparison.OrdinalIgnoreCase)
                     || entry.Name.Equals("ReShade.ini", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                // Skip ReShade DLLs — RHI installs its own staged ReShade (respecting channel)
+                if (entry.Name.Equals("dxgi.dll", StringComparison.OrdinalIgnoreCase)
+                    || entry.Name.Equals("d3d11.dll", StringComparison.OrdinalIgnoreCase)
+                    || entry.Name.Equals("d3d12.dll", StringComparison.OrdinalIgnoreCase)
+                    || entry.Name.Equals("d3d9.dll", StringComparison.OrdinalIgnoreCase)
+                    || entry.Name.Equals("d3d8.dll", StringComparison.OrdinalIgnoreCase)
+                    || entry.Name.Equals("opengl32.dll", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                // Skip nvngx_dlss.dll — RHI deploys its own newest version after install
+                if (entry.Name.Equals("nvngx_dlss.dll", StringComparison.OrdinalIgnoreCase))
                     continue;
 
                 // Route .addon files to the addon deploy path
@@ -478,6 +784,26 @@ public class LumaService : ILumaService
 
         foreach (var relPath in record.InstalledFiles)
         {
+            // Skip ReShade DLLs — RHI now manages ReShade independently for Luma games.
+            // Old records may have dxgi.dll etc. tracked from before this change.
+            var fileName = Path.GetFileName(relPath);
+            if (fileName.Equals("dxgi.dll", StringComparison.OrdinalIgnoreCase)
+                || fileName.Equals("d3d11.dll", StringComparison.OrdinalIgnoreCase)
+                || fileName.Equals("d3d12.dll", StringComparison.OrdinalIgnoreCase)
+                || fileName.Equals("d3d9.dll", StringComparison.OrdinalIgnoreCase)
+                || fileName.Equals("d3d8.dll", StringComparison.OrdinalIgnoreCase)
+                || fileName.Equals("opengl32.dll", StringComparison.OrdinalIgnoreCase))
+            {
+                CrashReporter.Log($"[LumaService.Uninstall] Skipping RHI-managed ReShade DLL '{relPath}'");
+                continue;
+            }
+            // Skip nvngx_dlss.dll — managed by RHI separately
+            if (fileName.Equals("nvngx_dlss.dll", StringComparison.OrdinalIgnoreCase))
+            {
+                CrashReporter.Log($"[LumaService.Uninstall] Skipping RHI-managed DLSS DLL '{relPath}'");
+                continue;
+            }
+
             var fullPath = Path.Combine(record.InstallPath, relPath);
             try
             {
@@ -750,6 +1076,19 @@ public class LumaService : ILumaService
                     || entry.Name.Equals("ReShade.ini", StringComparison.OrdinalIgnoreCase))
                     continue;
 
+                // Skip ReShade DLLs — RHI installs its own staged ReShade
+                if (entry.Name.Equals("dxgi.dll", StringComparison.OrdinalIgnoreCase)
+                    || entry.Name.Equals("d3d11.dll", StringComparison.OrdinalIgnoreCase)
+                    || entry.Name.Equals("d3d12.dll", StringComparison.OrdinalIgnoreCase)
+                    || entry.Name.Equals("d3d9.dll", StringComparison.OrdinalIgnoreCase)
+                    || entry.Name.Equals("d3d8.dll", StringComparison.OrdinalIgnoreCase)
+                    || entry.Name.Equals("opengl32.dll", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                // Skip nvngx_dlss.dll — RHI deploys its own newest version after install
+                if (entry.Name.Equals("nvngx_dlss.dll", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
                 // Skip non-game files
                 if (entry.Name.Equals("README.txt", StringComparison.OrdinalIgnoreCase)
                     || entry.Name.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)
@@ -851,7 +1190,7 @@ public class LumaService : ILumaService
                     var relativePath = Path.GetRelativePath(contentRoot, file);
                     var fileName = Path.GetFileName(file);
 
-                    // Skip reshade.ini, README, images, debug/optional folders
+                    // Skip reshade.ini, README, images, debug/optional folders, ReShade DLLs, and nvngx_dlss.dll
                     if (fileName.Equals("reshade.ini", StringComparison.OrdinalIgnoreCase)
                         || fileName.Equals("ReShade.ini", StringComparison.OrdinalIgnoreCase)
                         || fileName.Equals("README.txt", StringComparison.OrdinalIgnoreCase)
@@ -859,7 +1198,14 @@ public class LumaService : ILumaService
                         || fileName.EndsWith(".png", StringComparison.OrdinalIgnoreCase)
                         || relativePath.Contains("(Debug)", StringComparison.OrdinalIgnoreCase)
                         || relativePath.Contains("(Optional)", StringComparison.OrdinalIgnoreCase)
-                        || relativePath.Contains("(Alternatives)", StringComparison.OrdinalIgnoreCase))
+                        || relativePath.Contains("(Alternatives)", StringComparison.OrdinalIgnoreCase)
+                        || fileName.Equals("dxgi.dll", StringComparison.OrdinalIgnoreCase)
+                        || fileName.Equals("d3d11.dll", StringComparison.OrdinalIgnoreCase)
+                        || fileName.Equals("d3d12.dll", StringComparison.OrdinalIgnoreCase)
+                        || fileName.Equals("d3d9.dll", StringComparison.OrdinalIgnoreCase)
+                        || fileName.Equals("d3d8.dll", StringComparison.OrdinalIgnoreCase)
+                        || fileName.Equals("opengl32.dll", StringComparison.OrdinalIgnoreCase)
+                        || fileName.Equals("nvngx_dlss.dll", StringComparison.OrdinalIgnoreCase))
                         continue;
 
                     if (fileName.Equals("dxgi.dll", StringComparison.OrdinalIgnoreCase))

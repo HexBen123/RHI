@@ -403,6 +403,10 @@ public partial class MainViewModel
                 var dllName = Path.GetFileName(dllPath);
                 if (IsSystemOrRuntimeDll(dllName))
                     continue;
+                // Skip dxgi.dll — games may bundle their own DXGI wrapper (e.g. BLACKTAIL)
+                // which imports d3d11.dll internally but doesn't indicate the game's API.
+                if (dllName.Equals("dxgi.dll", StringComparison.OrdinalIgnoreCase))
+                    continue;
                 var result = GraphicsApiDetector.Detect(dllPath);
                 if (result != GraphicsApiType.Unknown && result != GraphicsApiType.OpenGL)
                     return result;
@@ -451,7 +455,16 @@ public partial class MainViewModel
             return GraphicsApiType.DirectX11;
 
         if (bestDetected != GraphicsApiType.Unknown)
+        {
+            // UE5+ games default to DX12. Never return DX11 for a UE5+ game
+            // unless the user or manifest explicitly overrides (checked at top).
+            if (bestDetected == GraphicsApiType.DirectX11
+                && engine == EngineType.Unreal
+                && gameName != null
+                && IsUe5OrHigher(gameName))
+                return GraphicsApiType.DirectX12;
             return bestDetected;
+        }
 
         // Last resort: infer from engine type (covers access-denied scenarios
         // like WindowsApps/Xbox Game Pass installs)
@@ -538,7 +551,34 @@ public partial class MainViewModel
                 ScanAllExesInDir(subPath, result);
         }
 
+        // UE5+ games default to DX12 — remove DX11 unless user/manifest overrides (checked above)
+        if (gameName != null && result.Contains(GraphicsApiType.DirectX11) && IsUe5OrHigher(gameName))
+            result.Remove(GraphicsApiType.DirectX11);
+
         return result;
+    }
+
+    /// <summary>
+    /// Returns true if the game is known to be running Unreal Engine 5 or higher,
+    /// based on the manifest engineHintOverrides or the auto-detected engine hint.
+    /// UE5 games default to DX12 and should never show DX11 unless explicitly overridden.
+    /// </summary>
+    private bool IsUe5OrHigher(string gameName)
+    {
+        string? hint = null;
+        _manifest?.EngineHintOverrides?.TryGetValue(gameName, out hint);
+        if (hint != null)
+            return System.Text.RegularExpressions.Regex.IsMatch(hint, @"Unreal Engine 5\.");
+        // Also check engine type cache — if the auto-detected UE version starts with 5
+        var rootKey = _allCards.FirstOrDefault(c =>
+            c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase))?.InstallPath;
+        if (rootKey != null)
+        {
+            var engineHint = GameDetectionService.DetectUeVersion(rootKey);
+            if (engineHint != null && engineHint.StartsWith("5.", StringComparison.Ordinal))
+                return true;
+        }
+        return false;
     }
 
     /// <summary>
