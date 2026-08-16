@@ -12,7 +12,8 @@ One app to manage HDR mods across your entire PC game library. RHI auto-detects 
 
 - **8-store detection** — Steam, GOG, Epic, EA App, Ubisoft Connect, Xbox/Game Pass, Battle.net, Rockstar. No manual setup.
 - **10 managed components** — ReShade, RenoDX, RenoDX Upgrade, ReLimiter, Display Commander, OptiScaler, RE Framework, Luma Framework, DXVK, DOF Fix. One-click install, update, and removal for each.
-- **46 shader packs** — Essential, Recommended, and Extra categories. Global or per-game selection.
+- **46 shader packs** — RHI Managed (built-in packs), Custom (your own shaders), or Off (no shader deployment). Global or per-game.
+- **Generic Luma for all DX11 UE games** — every DX11 Unreal Engine game in your library gets a Luma row. Game-specific Engine.ini tweaks and launch args are applied automatically on install.
 - **DLSS & Streamline management** — swap SR, Ray Reconstruction, and Frame Generation independently. Update or downgrade Streamline as a set. Per-game DLSS presets without NVIDIA Profile Inspector.
 - **Nvidia Profile Overrides** — VSync, Low Latency, Smooth Motion, Power Mode, ReBAR, Multi Frame Generation, DLSS render scale (33–100%). All per-game, written directly to NVIDIA driver profiles.
 - **Batch deploy** — update DLSS/Streamline versions and presets across multiple games at once.
@@ -51,9 +52,9 @@ One app to manage HDR mods across your entire PC game library. RHI auto-detects 
 | [RenoDX](https://github.com/clshortfuse/renodx) | HDR mod framework. Game-specific mods matched from the RenoDX wiki with generic Unreal/Unity/UE-Extended fallbacks. |
 | [ReLimiter](https://github.com/RankFTW/ReLimiter) | Frame pacing addon with configurable OSD hotkey and shared presets. |
 | [Display Commander](https://github.com/pmnoxx/display-commander) | Alternative frame rate limiter. Mutually exclusive with ReLimiter. |
-| [OptiScaler](https://github.com/optiscaler/OptiScaler) | Upscaler redirection (DLSS ↔ FSR ↔ XeSS). Auto-downloads DLSS DLLs, handles ReShade coexistence, includes OptiPatcher for AMD/Intel. |
+| [OptiScaler](https://github.com/optiscaler/OptiScaler) | Upscaler redirection (DLSS ↔ FSR ↔ XeSS) and frame generation on any GPU. Stable and Nightly channels. Per-game FG settings, presets, and DLSS SR/RR/Render Scale controls via the ⚙ cog. |
 | [RE Framework](https://github.com/praydog/REFramework-nightly) | Required for ReShade on RE Engine games (Monster Hunter Wilds, Resident Evil, DMC5, SF6, etc.). |
-| [Luma Framework](https://github.com/Filoppi/Luma-Framework) | DX11 HDR modding framework. Toggle per game — ReShade and RenoDX are swapped automatically. |
+| [Luma Framework](https://github.com/Filoppi/Luma-Framework) | HDR modding framework for DX11 games. Supported for named mods and all DX11 Unreal Engine games (generic). ReShade and DLSS managed by RHI on all Luma games. |
 | [DXVK](https://github.com/doitsujin/dxvk) | DirectX-to-Vulkan translation for DX8–DX10 games. Variants: Development, Stable, Lilium HDR (scRGB output). Per-game selection. |
 | [DOF Fix](https://github.com/RankFTW/rhi-repo/releases) | Fixes depth-of-field stepping/tiling artifacts in Unreal Engine 5.0–5.6 games. One-click install, participates in Update All. |
 | [RenoDX Upgrade](https://github.com/OopyDoopy/renodx) | Inverse tone mapping and resource upgrades for HDR in DX9+ games. Use with RenoFX shader for full HDR conversion. Not needed with RenoDX/Luma mods. |
@@ -114,7 +115,7 @@ One-click install for Unreal Engine 5.0–5.6 games that have depth-of-field ste
 
 ### OptiScaler
 
-Upscaler redirection with automatic DLSS DLL downloads, ReShade coexistence, INI configuration, and OptiPatcher for AMD/Intel GPUs.
+Upscaler redirection and frame generation with Stable and Nightly channels. The ⚙ cog provides per-game settings including FG Input/Output/Nvngx Override, HUD Fix, DLSS SR/RR presets, Render Scale, Streamline/DLSS Enabler deployment, and 4 user-configurable presets (Nightly). Engine.ini tweaks for Unreal Engine games.
 
 ### HDR Gaming Database
 

@@ -343,20 +343,34 @@ One-click install with game-specific builds. Version tracking and auto-update in
 
 [Luma Framework](https://github.com/Filoppi/Luma-Framework) is a DX11 HDR modding framework.
 
-### Luma Mode
+### Named Mods
 
-A toggle in the Components header switches between RenoDX mode and Luma mode. When enabled:
-- RenoDX and standard ReShade rows are hidden
-- The Install Luma button appears
-- ReLimiter and Display Commander remain available
+Game-specific Luma mods for supported titles, shown on the Luma row. Check the Info button for details on what each mod adds.
+
+### Generic Luma for Unreal Engine Games
+
+Every DX11 Unreal Engine game in your library shows a Luma row. RHI applies any game-specific Engine.ini tweaks or launch arguments listed on the Luma wiki automatically on install.
+
+- Games with both DX11 and DX12 APIs show the Luma row and get `-dx11` set automatically on install and removed on uninstall.
+- A TAA settings toggle in the Luma ⚙ cog applies wiki-recommended TAA Engine.ini keys where available.
+- UE5 games use DX12 by default and don't show a Luma row. Set the Graphics API override to DirectX11 in Game Overrides first if needed.
 
 ### Luma + RenoDX Coexistence
 
-Games in the manifest `lumaRenodxCompat` list can run both simultaneously. The RenoDX row stays visible in Luma mode for these games.
+Games in the manifest `lumaRenodxCompat` list can run both simultaneously. A one-time compatibility warning appears the first time you install both on a game.
+
+### ReShade and DLSS
+
+RHI manages both ReShade and DLSS on all Luma games. Uninstalling Luma does not remove ReShade or DLSS — all three are managed independently.
+
+### Luma ⚙ Cog
+
+- **TAA Settings** — On/Off toggle. Applies or removes standard TAA Engine.ini keys.
+- **Luma reshade.ini settings** — `EnableHDR` toggle for games that expose it.
 
 ### Drag-and-Drop Install
 
-Drag a Luma mod archive (zip/7z) onto the window. RHI detects it by the `Luma/d3dcompiler_47*.dll` marker inside. A game picker opens, and the mod is extracted with shader deployment and reshade.ini configuration.
+Drag a Luma mod archive (zip/7z) onto the window. RHI detects it by filename (contains "Luma", not "addon") or by the `d3dcompiler_47.dll` marker inside. A game picker opens, and the mod is extracted with shader deployment and reshade.ini configuration.
 
 ### Luma Updates
 
@@ -574,11 +588,15 @@ Use case: restore your per-game NVIDIA settings after a driver update wipes cust
 
 ## OptiScaler
 
-[OptiScaler](https://github.com/optiscaler/OptiScaler) is a 64-bit middleware that redirects upscaler calls between DLSS, FSR, and XeSS.
+[OptiScaler](https://github.com/optiscaler/OptiScaler) is a 64-bit middleware that redirects upscaler calls between DLSS, FSR, and XeSS, and adds/patches frame generation on any GPU.
+
+### Channels
+
+Switch between Stable and Nightly per game in the ⚙ cog. Update All keeps each game on its selected channel.
 
 ### Install
 
-One-click install deploys OptiScaler.dll (renamed to a proxy DLL), companion files, DLSS DLLs, and OptiPatcher (AMD/Intel only). A first-time warning explains its purpose.
+One-click install deploys OptiScaler.dll (renamed to a proxy DLL), companion files, DLSS DLLs, and OptiPatcher (AMD/Intel only). A first-time setup screen prompts for GPU type and DLSS input settings before the first install.
 
 ### ReShade Coexistence
 
@@ -586,7 +604,39 @@ When both are installed, ReShade is renamed to `ReShade64.dll`. OptiScaler loads
 
 ### DLL Naming
 
-OptiScaler.dll is renamed to: user DLL override → manifest override → `winmm.dll` (Vulkan) → `dxgi.dll` (default).
+OptiScaler.dll is renamed to: user DLL override → manifest override → `winmm.dll` (Vulkan) → `dxgi.dll` (default). Configurable per-game in Game Overrides → DLL Naming.
+
+### OptiScaler ⚙ Cog
+
+The cog provides per-game settings. All settings except OptiScaler Version are greyed out when OptiScaler is not installed.
+
+**Always available:**
+- **OptiScaler Version** — Stable or Nightly
+- **Framerate Limit** — VRR-optimal frame cap using Reflex
+
+**Nightly only — Frame Generation Settings:**
+- **Streamline/DLSS Enabler** — deploy Streamline and DLSS Enabler to the game folder (required for DLSS FG)
+- **Streamline Version** — pick which Streamline version to deploy per game
+- **FG Input** — Auto / OptiFG (Upscaler) / DLSSG via Streamline / DLSSG via Nvngx / FSR 3.1 FG / FSR 3.0 FG / XeFG
+- **HUD Fix** — enable hudless resource tracking for FG
+- **FG Output** — Auto / FSR FG / DLSSG / XeFG
+- **FG Nvngx Replacement** — None / Nukem's / Enabler / FSR 3/4 FG (shown when Output = DLSSG)
+
+**Nightly only — Additional Settings:**
+- **DLSS SR Preset** — Default / J / K / L / M
+- **DLSS RR Preset** — Default / D / E
+- **Render Scale** — Off + percentage presets (33% Ultra Perf to 100% DLAA)
+- **Disable Flip Metering** — fixes thick frametime graph with NukemFG
+
+**Nightly only — Engine.ini Settings (Unreal Engine games only):**
+- Dilated Motion Vectors, FSR Crash Fix, FSR-FG Swapchain, Upscaler Plugin
+
+**Presets (Nightly only):**
+4 user-configurable slots. Each has an editable name, a Save button (captures current cog settings), and an Apply button (loads preset onto any game). Presets are global — saved once, apply to any game. Stored at `%LocalAppData%\RHI\os_presets.json`.
+
+### Deploy OptiScaler.ini
+
+Copies your configured INI template (from `%LocalAppData%\RHI\inis\`) to the game folder, applying hotkey and plugin settings.
 
 ### OptiScaler Wiki
 
@@ -600,9 +650,19 @@ Latest DLSS SR, RR, and FG DLLs are staged automatically from the RHI DLSS manif
 
 ## Shader Packs
 
-RHI maintains 46 ReShade shader packs, deployed per-game from a shared staging folder.
+RHI maintains 46 ReShade shader packs. Shader deployment is controlled by the **Shader Management** setting in Settings → Shaders & Addons.
 
-### Categories
+### Global Shader Management Modes
+
+| Mode | Behaviour |
+|------|-----------|
+| RHI Managed | RHI deploys its built-in shader packs to all games (default) |
+| Custom | Uses your custom shader directories only |
+| Off | No shader deployment — RHI never touches the reshade-shaders folder |
+
+The first-launch setup window lets you choose your preferred mode on a fresh install.
+
+### Pack Categories
 
 - **Essential** — Lilium HDR Shaders (required for HDR tone mapping). Selected by default.
 - **Recommended** — Core packs: crosire reshade-shaders, PumboAutoHDR, smolbbsoop, MaxG2D Simple HDR, clshortfuse shaders, potatoFX.
@@ -833,7 +893,7 @@ The DXVK dropdown appears in Overrides for DX8, DX9, and DX10 games. Options:
 | Stable | Tagged releases |
 | Lilium HDR | EndlesslyFlowering fork with scRGB HDR output |
 
-Selecting any variant triggers the install flow. Selecting Off uninstalls.
+Selecting a variant saves the preference and shows an **Install DXVK** button — click it when ready. Switching variants while DXVK is already installed uninstalls the old version first. Selecting Off uninstalls.
 
 ### DX8/DX9 Games
 
