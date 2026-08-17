@@ -1280,6 +1280,104 @@ public sealed partial class MainWindow
             : UIFactory.Brush(ResourceKeys.ChipTextBrush);
     }
 
+    // ── Resolution Auto-Toggle handlers (dev-only) ────────────────────────────
+
+    private void ResAutoToggleCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
+        ViewModel.Settings.ResolutionAutoToggle = combo.SelectedIndex == 1;
+        ViewModel.SaveSettingsPublic();
+    }
+
+    private async void ResSelectMonitors_Click(object sender, RoutedEventArgs e)
+    {
+        var displays = HdrToggleService.GetAllDisplays();
+        if (displays.Count == 0) return;
+
+        var currentSelection = ViewModel.Settings.ResTargetDisplays;
+        var panel = new StackPanel { Spacing = 8 };
+        var checkBoxes = new List<(CheckBox cb, uint targetId)>();
+
+        foreach (var display in displays)
+        {
+            var cb = new CheckBox
+            {
+                Content = display.Name,
+                IsChecked = currentSelection.Contains(display.TargetId),
+                FontSize = 13,
+            };
+            checkBoxes.Add((cb, display.TargetId));
+            panel.Children.Add(cb);
+        }
+
+        panel.Children.Add(new TextBlock
+        {
+            Text = "Leave all unchecked to change resolution on the primary display only.",
+            FontSize = 11,
+            Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush),
+            Margin = new Thickness(0, 4, 0, 0),
+        });
+
+        var dialog = new ContentDialog
+        {
+            Title = "Select Resolution Monitors",
+            Content = panel,
+            PrimaryButtonText = "Save",
+            CloseButtonText = "Cancel",
+            XamlRoot = Content.XamlRoot,
+            RequestedTheme = ElementTheme.Dark,
+        };
+
+        var result = await DialogService.ShowSafeAsync(dialog);
+        if (result != ContentDialogResult.Primary) return;
+
+        var selected = checkBoxes
+            .Where(x => x.cb.IsChecked == true)
+            .Select(x => x.targetId)
+            .ToList();
+
+        ViewModel.Settings.ResTargetDisplays = selected;
+        ViewModel.SaveSettingsPublic();
+    }
+
+    private void ResolutionTargetCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is not ComboBox combo) return;
+        var key = (combo.SelectedItem as ResolutionToggleService.DisplayResolution)?.Key
+               ?? combo.SelectedItem as string;
+        if (string.IsNullOrEmpty(key)) return;
+        ViewModel.Settings.ResolutionTarget = key;
+        ViewModel.SaveSettingsPublic();
+    }
+
+    private void ResToggle_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button btn || btn.Tag is not GameCardViewModel card) return;
+
+        var overrides = _gameNameService.ResToggleOverrides;
+        var current = overrides.TryGetValue(card.GameName, out var v) ? v : null;
+
+        bool currentlyActive = current != null
+            ? string.Equals(current, "On", StringComparison.OrdinalIgnoreCase)
+            : ViewModel.Settings.ResolutionAutoToggle;
+
+        string newValue = currentlyActive ? "Off" : "On";
+        overrides[card.GameName] = newValue;
+        ViewModel.SaveSettingsPublic();
+
+        bool resActive = string.Equals(newValue, "On", StringComparison.OrdinalIgnoreCase);
+        DetailResToggleText.Text = "RES";
+        DetailResToggleBtn.Background = resActive
+            ? UIFactory.Brush(ResourceKeys.AccentPurpleBgBrush)
+            : UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush);
+        DetailResToggleBtn.BorderBrush = resActive
+            ? UIFactory.Brush(ResourceKeys.AccentPurpleBorderBrush)
+            : UIFactory.Brush(ResourceKeys.BorderSubtleBrush);
+        DetailResToggleText.Foreground = resActive
+            ? UIFactory.Brush(ResourceKeys.AccentPurpleBrush)
+            : UIFactory.Brush(ResourceKeys.ChipTextBrush);
+    }
+
     private async void BrowseScreenshotPath_Click(object sender, RoutedEventArgs e)
     {
         try

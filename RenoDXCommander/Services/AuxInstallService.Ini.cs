@@ -1592,4 +1592,46 @@ public partial class AuxInstallService
         catch { /* best-effort */ }
         return null;
     }
+
+    /// <summary>
+    /// Removes a key from the [Luma] section of the game's reshade.ini.
+    /// No-op if the file or key doesn't exist.
+    /// </summary>
+    public static void RemoveLumaReshadeIniValue(string gameDir, string key)
+    {
+        try
+        {
+            var iniPath = Path.Combine(gameDir, "reshade.ini");
+            if (!File.Exists(iniPath)) return;
+
+            var lines = File.ReadAllLines(iniPath).ToList();
+            bool inLumaSection = false;
+            int keyLineIndex = -1;
+
+            for (int i = 0; i < lines.Count; i++)
+            {
+                var trimmed = lines[i].Trim();
+                if (trimmed.StartsWith('['))
+                {
+                    inLumaSection = trimmed.Equals("[Luma]", StringComparison.OrdinalIgnoreCase);
+                    continue;
+                }
+                if (inLumaSection && trimmed.StartsWith(key + "=", StringComparison.OrdinalIgnoreCase))
+                {
+                    keyLineIndex = i;
+                    break;
+                }
+            }
+
+            if (keyLineIndex >= 0)
+            {
+                lines.RemoveAt(keyLineIndex);
+                File.WriteAllLines(iniPath, lines);
+            }
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[AuxInstallService.RemoveLumaReshadeIniValue] Failed for '{gameDir}' — {ex.Message}");
+        }
+    }
 }

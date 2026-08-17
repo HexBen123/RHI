@@ -154,6 +154,29 @@ public class SettingsHandler
         // Initialize HDR auto-toggle combo
         _window.HdrAutoToggleCombo.SelectedIndex = ViewModel.Settings.HdrAutoToggle ? 1 : 0;
 
+        // Initialize Resolution Control (dev-only)
+        if (DevUnlockService.IsUnlocked)
+        {
+            _window.ResolutionControlCard.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
+            _window.ResAutoToggleCombo.SelectedIndex = ViewModel.Settings.ResolutionAutoToggle ? 1 : 0;
+
+            // Populate resolution combo with supported modes
+            var resolutions = ResolutionToggleService.GetSupportedResolutions();
+            _window.ResolutionTargetCombo.ItemsSource = resolutions;
+            _window.ResolutionTargetCombo.DisplayMemberPath = "Label";
+
+            var savedKey = ViewModel.Settings.ResolutionTarget;
+            if (!string.IsNullOrEmpty(savedKey))
+            {
+                var match = resolutions.FirstOrDefault(r =>
+                    string.Equals(r.Key, savedKey, StringComparison.OrdinalIgnoreCase));
+                if (match != null)
+                    _window.ResolutionTargetCombo.SelectedItem = match;
+            }
+            if (_window.ResolutionTargetCombo.SelectedIndex < 0 && resolutions.Count > 0)
+                _window.ResolutionTargetCombo.SelectedIndex = 0;
+        }
+
         // Populate DLSS defaults summary
         _window.RefreshDlssDefaultsSummary();
 

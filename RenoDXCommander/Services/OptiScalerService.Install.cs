@@ -273,11 +273,12 @@ public partial class OptiScalerService
                 // Point OptiScaler to the staged DLSS DLL — deploy it directly to the game folder
                 // since OptiScaler's NVNGX_DLSS_Path INI override doesn't work reliably.
                 // The DLL must be physically present in the game directory.
+                // If the game ships its own copy, back it up first so we can restore it on uninstall.
                 var stagedDlssPath = GetStagedDlssPath();
                 if (stagedDlssPath != null)
                 {
                     var gameDlssPath = Path.Combine(card.InstallPath, DlssDllFileName);
-                    // DLSS DLLs are always RHI-managed — never game originals, never back them up
+                    BackupOriginalIfExists(gameDlssPath);
                     File.Copy(stagedDlssPath, gameDlssPath, overwrite: true);
                     CrashReporter.Log($"[OptiScalerService.InstallAsync] Deployed {DlssDllFileName} ({new FileInfo(gameDlssPath).Length} bytes) to game folder");
                 }
@@ -287,6 +288,7 @@ public partial class OptiScalerService
                 if (stagedDlssdPath != null)
                 {
                     var gameDlssdPath = Path.Combine(card.InstallPath, DlssdDllFileName);
+                    BackupOriginalIfExists(gameDlssdPath);
                     File.Copy(stagedDlssdPath, gameDlssdPath, overwrite: true);
                     CrashReporter.Log($"[OptiScalerService.InstallAsync] Deployed {DlssdDllFileName} ({new FileInfo(gameDlssdPath).Length} bytes) to game folder");
                 }
@@ -296,6 +298,7 @@ public partial class OptiScalerService
                 if (stagedDlssgPath != null)
                 {
                     var gameDlssgPath = Path.Combine(card.InstallPath, DlssgDllFileName);
+                    BackupOriginalIfExists(gameDlssgPath);
                     File.Copy(stagedDlssgPath, gameDlssgPath, overwrite: true);
                     CrashReporter.Log($"[OptiScalerService.InstallAsync] Deployed {DlssgDllFileName} ({new FileInfo(gameDlssgPath).Length} bytes) to game folder");
                 }

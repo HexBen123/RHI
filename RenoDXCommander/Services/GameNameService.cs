@@ -55,6 +55,9 @@ public class GameNameService : IGameNameService
     /// <summary>Per-game HDR auto-toggle overrides. Key = game name, Value = "On" or "Off". Absent = use global default.</summary>
     private Dictionary<string, string> _hdrToggleOverrides = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Per-game Resolution auto-toggle overrides. Key = game name, Value = "On" or "Off". Absent = use global default.</summary>
+    private Dictionary<string, string> _resToggleOverrides = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Per-game launch executable overrides. Key = game name, Value = absolute exe path.</summary>
     private Dictionary<string, string> _launchExeOverrides = new(StringComparer.OrdinalIgnoreCase);
 
@@ -144,6 +147,8 @@ public class GameNameService : IGameNameService
     public Dictionary<string, string> OsVariantOverrides => _osVariantOverrides;
     /// <summary>Per-game HDR auto-toggle overrides. "On" or "Off". Absent = use global.</summary>
     public Dictionary<string, string> HdrToggleOverrides => _hdrToggleOverrides;
+    /// <summary>Per-game Resolution auto-toggle overrides. "On" or "Off". Absent = use global.</summary>
+    public Dictionary<string, string> ResToggleOverrides => _resToggleOverrides;
     /// <summary>Per-game launch executable overrides. Key = game name, Value = absolute exe path.</summary>
     public Dictionary<string, string> LaunchExeOverrides => _launchExeOverrides;
     /// <summary>Per-game launch arguments. Key = game name, Value = arguments string.</summary>
@@ -434,6 +439,12 @@ public class GameNameService : IGameNameService
         foreach (var kv in hdrToggleOvDict)
             _hdrToggleOverrides[kv.Key] = kv.Value;
 
+        var resToggleOvDict = Load<Dictionary<string, string>>("ResToggleOverrides",
+            new(StringComparer.OrdinalIgnoreCase));
+        _resToggleOverrides = new(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in resToggleOvDict)
+            _resToggleOverrides[kv.Key] = kv.Value;
+
         _lumaTaaEnabled = new(StringComparer.OrdinalIgnoreCase);
         foreach (var g in Load<List<string>>("LumaTaaEnabled", new()))
             _lumaTaaEnabled.Add(g);
@@ -581,6 +592,7 @@ public class GameNameService : IGameNameService
                 s["LiliumPresetOverrides"] = JsonSerializer.Serialize(_liliumPresetOverrides);
                 s["OsVariantOverrides"] = JsonSerializer.Serialize(_osVariantOverrides);
                 s["HdrToggleOverrides"] = JsonSerializer.Serialize(_hdrToggleOverrides);
+                s["ResToggleOverrides"] = JsonSerializer.Serialize(_resToggleOverrides);
                 s["LaunchExeOverrides"] = JsonSerializer.Serialize(_launchExeOverrides);
                 s["LaunchArgsOverrides"] = JsonSerializer.Serialize(_launchArgsOverrides);
                 s["EngineVersionOverrides"] = JsonSerializer.Serialize(_engineVersionOverrides);
@@ -752,6 +764,7 @@ public class GameNameService : IGameNameService
         MigrateCompositeDict(_osVariantOverrides, oldName, newName);
         // These four are name-only (not per-store) — use name-only migration
         MigrateDict(_hdrToggleOverrides, oldName, newName);
+        MigrateDict(_resToggleOverrides, oldName, newName);
         MigrateDict(_launchExeOverrides, oldName, newName);
         MigrateDict(_launchArgsOverrides, oldName, newName);
         MigrateDict(_engineVersionOverrides, oldName, newName);

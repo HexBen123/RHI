@@ -267,7 +267,7 @@ public partial class DetailPanelBuilder
             ? Path.GetFileName(currentLaunchExe)
             : (_window.ViewModel.Manifest?.LaunchExeOverrides?.TryGetValue(ctx.CapturedName, out var manifestExe) == true && !string.IsNullOrEmpty(manifestExe)
                 ? Path.GetFileName(manifestExe)
-                : (!string.IsNullOrEmpty(card.InstallPath)
+                : (!string.IsNullOrEmpty(card.InstallPath) && Directory.Exists(card.InstallPath)
                     ? Directory.GetFiles(card.InstallPath, "*.exe", SearchOption.TopDirectoryOnly)
                         .Where(e => !_exeExclusions.Contains(Path.GetFileNameWithoutExtension(e)))
                         .OrderByDescending(e => new FileInfo(e).Length)

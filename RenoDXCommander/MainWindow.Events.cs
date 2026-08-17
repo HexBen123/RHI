@@ -193,21 +193,36 @@ public sealed partial class MainWindow
             cogGrid.Children.Add(hdrLabel);
 
             var hdrCombo = new ComboBox { FontSize = 11, MinWidth = 100, HorizontalAlignment = HorizontalAlignment.Stretch };
+            hdrCombo.Items.Add("Default");
             hdrCombo.Items.Add("Off");
             hdrCombo.Items.Add("On");
             ToolTipService.SetToolTip(hdrCombo,
-                "Controls EnableHDR in the [Luma] section of reshade.ini.\n" +
-                "Set to Off before first launch if you want to start without HDR enabled.");
+                "Controls EnableHDR and DisplayMode in the [Luma] section of reshade.ini.\n" +
+                "Default: leaves both keys as-is (Luma controls them).\n" +
+                "Off: sets EnableHDR=0 and DisplayMode=0.\n" +
+                "On: sets EnableHDR=1 and DisplayMode=1.");
 
             var currentHdr = AuxInstallService.GetLumaReshadeIniValue(card.InstallPath, "EnableHDR");
-            hdrCombo.SelectedIndex = currentHdr == "0" ? 0 : 1; // default On
+            // Default = key absent or never set by RHI; Off = "0"; On = "1"
+            hdrCombo.SelectedIndex = currentHdr == null ? 0 : currentHdr == "0" ? 1 : 2;
             bool hdrInitializing = true;
             hdrCombo.Loaded += (s2, e2) => hdrInitializing = false;
             hdrCombo.SelectionChanged += (s2, ev) =>
             {
                 if (hdrInitializing) return;
-                AuxInstallService.SetLumaReshadeIniValue(card.InstallPath, "EnableHDR", hdrCombo.SelectedIndex == 1 ? "1" : "0");
-                card.LumaActionMessage = hdrCombo.SelectedIndex == 1 ? "✅ HDR enabled in reshade.ini." : "✅ HDR disabled in reshade.ini.";
+                if (hdrCombo.SelectedIndex == 0) // Default — remove keys, let Luma manage them
+                {
+                    AuxInstallService.RemoveLumaReshadeIniValue(card.InstallPath, "EnableHDR");
+                    AuxInstallService.RemoveLumaReshadeIniValue(card.InstallPath, "DisplayMode");
+                    card.LumaActionMessage = "✅ HDR reset to Luma default.";
+                }
+                else
+                {
+                    bool hdrOn = hdrCombo.SelectedIndex == 2;
+                    AuxInstallService.SetLumaReshadeIniValue(card.InstallPath, "EnableHDR", hdrOn ? "1" : "0");
+                    AuxInstallService.SetLumaReshadeIniValue(card.InstallPath, "DisplayMode", hdrOn ? "1" : "0");
+                    card.LumaActionMessage = hdrOn ? "✅ HDR enabled in reshade.ini." : "✅ HDR disabled in reshade.ini.";
+                }
                 card.FadeMessage(m => card.LumaActionMessage = m, card.LumaActionMessage);
             };
             Grid.SetRow(hdrCombo, 0); Grid.SetColumn(hdrCombo, 1);

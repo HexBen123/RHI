@@ -101,6 +101,9 @@ public interface IGameNameService
     /// <summary>Per-game HDR auto-toggle overrides. "On" or "Off". Absent = use global.</summary>
     Dictionary<string, string> HdrToggleOverrides { get; }
 
+    /// <summary>Per-game Resolution auto-toggle overrides. "On" or "Off". Absent = use global.</summary>
+    Dictionary<string, string> ResToggleOverrides { get; }
+
     /// <summary>Per-game launch executable overrides. Key = game name, Value = absolute exe path.</summary>
     Dictionary<string, string> LaunchExeOverrides { get; }
 

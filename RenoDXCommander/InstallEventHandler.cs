@@ -301,6 +301,11 @@ public class InstallEventHandler
     public void UninstallOsButton_Click(object sender, RoutedEventArgs e)
     {
         if ((sender as FrameworkElement)?.Tag is not GameCardViewModel card) return;
+        UninstallOptiScaler(card);
+    }
+
+    public void UninstallOptiScaler(GameCardViewModel card)
+    {
         try
         {
             // ── Restore standard REFramework if pd-upscaler was swapped in ──

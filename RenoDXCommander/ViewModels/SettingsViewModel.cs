@@ -65,6 +65,11 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string _lastKnownNewestStreamline = "";
     [ObservableProperty] private bool _hdrAutoToggle;
     [ObservableProperty] private List<uint> _hdrTargetDisplays = new();
+    // ── Resolution Auto-Toggle (dev-only) ─────────────────────────────────────
+    [ObservableProperty] private bool _resolutionAutoToggle;
+    /// <summary>Target resolution key in "WxH@Hz" format. Empty = no override.</summary>
+    [ObservableProperty] private string _resolutionTarget = "";
+    [ObservableProperty] private List<uint> _resTargetDisplays = new();
     [ObservableProperty] private bool _dropHelperEnabled = true;
     [ObservableProperty] private bool _closeToTray;
     [ObservableProperty] private bool _recentGamesMenu;
@@ -272,6 +277,13 @@ public partial class SettingsViewModel : ObservableObject
             try { HdrTargetDisplays = System.Text.Json.JsonSerializer.Deserialize<List<uint>>(htdVal) ?? new(); }
             catch { HdrTargetDisplays = new(); }
         }
+        if (s.TryGetValue("ResolutionAutoToggle", out var ratVal)) ResolutionAutoToggle = ratVal == "true";
+        if (s.TryGetValue("ResolutionTarget", out var rtVal)) ResolutionTarget = rtVal ?? "";
+        if (s.TryGetValue("ResTargetDisplays", out var rtdVal))
+        {
+            try { ResTargetDisplays = System.Text.Json.JsonSerializer.Deserialize<List<uint>>(rtdVal) ?? new(); }
+            catch { ResTargetDisplays = new(); }
+        }
         if (s.TryGetValue("DropHelperEnabled", out var dheVal)) DropHelperEnabled = dheVal != "false"; // default true
         if (s.TryGetValue("CloseToTray", out var cttVal)) CloseToTray = cttVal == "true";
         if (s.TryGetValue("RecentGamesMenu", out var rgmVal)) RecentGamesMenu = rgmVal == "true";
@@ -359,6 +371,9 @@ public partial class SettingsViewModel : ObservableObject
         if (!string.IsNullOrEmpty(LastKnownNewestStreamline)) s["LastKnownNewestStreamline"] = LastKnownNewestStreamline;
         s["HdrAutoToggle"] = HdrAutoToggle ? "true" : "false";
         if (HdrTargetDisplays.Count > 0) s["HdrTargetDisplays"] = System.Text.Json.JsonSerializer.Serialize(HdrTargetDisplays);
+        s["ResolutionAutoToggle"] = ResolutionAutoToggle ? "true" : "false";
+        if (!string.IsNullOrEmpty(ResolutionTarget)) s["ResolutionTarget"] = ResolutionTarget;
+        if (ResTargetDisplays.Count > 0) s["ResTargetDisplays"] = System.Text.Json.JsonSerializer.Serialize(ResTargetDisplays);
         if (!DropHelperEnabled) s["DropHelperEnabled"] = "false";
         else s["DropHelperEnabled"] = "true";
         s["CloseToTray"] = CloseToTray ? "true" : "false";

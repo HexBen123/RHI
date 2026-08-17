@@ -836,12 +836,16 @@ public class LumaService : ILumaService
         }
         catch (Exception ex) { CrashReporter.Log($"[LumaService.Uninstall] Failed to remove Luma folder — {ex.Message}"); }
 
-        // Clean up empty reshade-shaders directory tree if it still exists
+        // Clean up empty subdirectories within reshade-shaders — but never the root itself,
+        // as it belongs to ReShade which may still be installed.
         var rsDir = Path.Combine(record.InstallPath, LiliumShaderService.GameReShadeShaders);
         try
         {
             if (Directory.Exists(rsDir))
-                CleanEmptyDirs(rsDir);
+            {
+                foreach (var sub in Directory.GetDirectories(rsDir))
+                    CleanEmptyDirs(sub);
+            }
         }
         catch (Exception ex) { CrashReporter.Log($"[LumaService.Uninstall] Failed to clean empty dirs in '{rsDir}' — {ex.Message}"); }
 

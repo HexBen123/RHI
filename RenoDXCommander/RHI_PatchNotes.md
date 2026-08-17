@@ -1,3 +1,23 @@
+## v2.3.5
+
+### Changes
+
+- **Luma HDR on First Boot** — the HDR setting in the Luma ⚙ cog now has three options: Default (lets Luma manage its own HDR state), Off (sets `EnableHDR=0` and `DisplayMode=0`), and On (sets both to 1). Previously only Off/On were available.
+- **Remove game confirmation** — removing a manually-added game now shows a confirmation dialog. If any RHI-managed components (ReShade, RenoDX, Luma, OptiScaler, DXVK, etc.) are installed, a checkbox lets you uninstall them from the game folder at the same time.
+
+### Bug Fixes
+
+- Fixed OptiScaler uninstall deleting a game's own `nvngx_dlss.dll` (and `nvngx_dlssd.dll` / `nvngx_dlssg.dll`) when the game shipped with DLSS in its root folder (e.g. Control). RHI now backs up the game's original DLSS files before deploying its own on install, and restores them on uninstall.
+- Fixed Luma uninstall deleting the `reshade-shaders` folder when ReShade was still installed. Empty subdirectories inside `reshade-shaders` are now cleaned up, but the root folder itself is never removed.
+- Fixed Luma HDR cog only writing `EnableHDR` — `DisplayMode` is now also written, which is required for HDR to fully enable or disable in Luma.
+- Fixed UI becoming unresponsive after removing a manually-added game and restarting. If the last selected game had a stale or deleted install path, selecting the card would throw a `DirectoryNotFoundException` on every interaction, locking up the interface.
+
+### Manifest Updates
+
+- Blacklisted Apple Devices, Apple TV, and iTunes (Microsoft Store / WindowsApps) — these will no longer appear in your game library.
+
+---
+
 ## v2.3.4
 
 ### New
@@ -78,6 +98,7 @@
 - Added ELDEN RING NIGHTREIGN install path override.
 - Removed Skyrim Creation Kit from the game library.
 - Added REANIMAL install warning (native HDR, no mod needed).
+- Blacklisted Apple Devices, Apple TV, and iTunes from appearing in the game library.
 - Added `componentUrls.dc` — allows the Display Commander download URL to be updated remotely.
 - Added Skyrim Creation Kit to the blacklist.
 - Various engine tags, API overrides, and game-specific notes added across multiple releases.

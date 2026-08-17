@@ -851,8 +851,9 @@ public partial class MainViewModel
                 _crashReporter.Log($"[InstallLumaAsync] DLSS deploy failed for '{card.GameName}' — {ex.Message}");
             }
 
-            // Write EnableHDR=1 to reshade.ini [Luma] section — default On, user can disable via cog
+            // Write EnableHDR=1 and DisplayMode=1 to reshade.ini [Luma] section — default On, user can disable via cog
             AuxInstallService.SetLumaReshadeIniValue(card.InstallPath, "EnableHDR", "1");
+            AuxInstallService.SetLumaReshadeIniValue(card.InstallPath, "DisplayMode", "1");
 
             // Now install RHI's own ReShade (respects user's channel — Stable/Nightly)
             // Luma's bundled ReShade DLL was excluded from the zip — RHI manages ReShade.

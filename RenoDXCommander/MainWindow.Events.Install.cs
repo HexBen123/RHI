@@ -639,6 +639,34 @@ public sealed partial class MainWindow
                 _crashReporter.Log($"[MainWindow.LaunchGame] HDR toggle: disabled for '{gameName}' (override='{hdrOverride}', global={ViewModel.Settings.HdrAutoToggle})");
             }
 
+            // ── Resolution Auto-Toggle (dev-only) ──
+            bool shouldToggleRes = false;
+            ResolutionToggleService.DisplayResolution? resolutionToRestore = null;
+            if (DevUnlockService.IsUnlocked)
+            {
+                var resOverride = _gameNameService.ResToggleOverrides
+                    .TryGetValue(gameName, out var rov) ? rov : null;
+                shouldToggleRes = resOverride != null
+                    ? string.Equals(resOverride, "On", StringComparison.OrdinalIgnoreCase)
+                    : ViewModel.Settings.ResolutionAutoToggle;
+
+                if (shouldToggleRes && !string.IsNullOrEmpty(ViewModel.Settings.ResolutionTarget))
+                {
+                    var targetRes = ResolutionToggleService.DisplayResolution.Parse(ViewModel.Settings.ResolutionTarget);
+                    if (targetRes != null)
+                    {
+                        resolutionToRestore = ResolutionToggleService.GetCurrentResolution();
+                        _crashReporter.Log($"[MainWindow.LaunchGame] Resolution toggle: switching to {targetRes.Label}, was {resolutionToRestore?.Label}");
+                        ResolutionToggleService.SetResolution(targetRes);
+                    }
+                }
+                else if (shouldToggleRes)
+                {
+                    _crashReporter.Log($"[MainWindow.LaunchGame] Resolution toggle: enabled but no target resolution set — skipping");
+                    shouldToggleRes = false;
+                }
+            }
+
             // 1. User override (absolute path)
             if (_gameNameService.LaunchExeOverrides.TryGetValue(gameName, out var userExe)
                 && !string.IsNullOrEmpty(userExe) && File.Exists(userExe))
@@ -649,7 +677,7 @@ public sealed partial class MainWindow
                     Arguments = launchArgs ?? "",
                     UseShellExecute = true,
                 });
-                MonitorProcessForHdr(proc, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.Source, card.InstallPath, hdrTargets);
+                MonitorProcessForHdr(proc, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.Source, card.InstallPath, hdrTargets, shouldToggleRes, resolutionToRestore);
                 return;
             }
 
@@ -701,7 +729,7 @@ public sealed partial class MainWindow
                     _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via Steam: {steamUri}");
                     System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(steamUri) { UseShellExecute = true });
                 }
-                MonitorProcessForHdr(null, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.Source, card.InstallPath, hdrTargets);
+                MonitorProcessForHdr(null, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.Source, card.InstallPath, hdrTargets, shouldToggleRes, resolutionToRestore);
                 return;
             }
 
@@ -711,7 +739,7 @@ public sealed partial class MainWindow
                 var epicUri = $"com.epicgames.launcher://apps/{card.DetectedGame.EpicAppName}?action=launch&silent=true";
                 _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via Epic protocol: {epicUri}");
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(epicUri) { UseShellExecute = true });
-                MonitorProcessForHdr(null, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.Source, card.InstallPath, hdrTargets);
+                MonitorProcessForHdr(null, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.Source, card.InstallPath, hdrTargets, shouldToggleRes, resolutionToRestore);
                 return;
             }
 
@@ -723,7 +751,7 @@ public sealed partial class MainWindow
                 var uri = $"shell:AppsFolder\\{card.DetectedGame.XboxAumid}";
                 _crashReporter.Log($"[MainWindow.LaunchGame] Launching '{gameName}' via Xbox AUMID: {card.DetectedGame.XboxAumid}");
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(uri) { UseShellExecute = true });
-                MonitorProcessForHdr(null, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.Source, card.InstallPath, hdrTargets);
+                MonitorProcessForHdr(null, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.Source, card.InstallPath, hdrTargets, shouldToggleRes, resolutionToRestore);
                 return;
             }
 
@@ -746,7 +774,7 @@ public sealed partial class MainWindow
                         Arguments = launchArgs ?? "",
                         UseShellExecute = true,
                     });
-                    MonitorProcessForHdr(proc, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.Source, card.InstallPath, hdrTargets);
+                    MonitorProcessForHdr(proc, shouldToggleHdr, hdrWasAlreadyOn, gameName, card.Source, card.InstallPath, hdrTargets, shouldToggleRes, resolutionToRestore);
                     return;
                 }
             }
@@ -777,7 +805,7 @@ public sealed partial class MainWindow
     /// Monitors a launched process and disables HDR when it exits (if we enabled it).
     /// For protocol launches (Steam/Epic URL) where proc is null, polls for the game exe by name.
     /// </summary>
-    private void MonitorProcessForHdr(System.Diagnostics.Process? proc, bool shouldToggle, bool wasAlreadyOn, string gameName, string? store, string? installPath = null, List<uint>? hdrTargets = null)
+    private void MonitorProcessForHdr(System.Diagnostics.Process? proc, bool shouldToggle, bool wasAlreadyOn, string gameName, string? store, string? installPath = null, List<uint>? hdrTargets = null, bool shouldToggleRes = false, ResolutionToggleService.DisplayResolution? resolutionToRestore = null)
     {
         // Find the card to set IsRunning — match both name and store for multi-store support
         var card = ViewModel.AllCards.FirstOrDefault(c =>
@@ -835,8 +863,10 @@ public sealed partial class MainWindow
                     }
 
                     if (shouldToggle) HdrToggleService.DisableHdr(hdrTargets);
+                    if (shouldToggleRes && resolutionToRestore != null) ResolutionToggleService.SetResolution(resolutionToRestore);
+                    else if (shouldToggleRes) ResolutionToggleService.RestoreResolution();
                     DispatcherQueue?.TryEnqueue(() => { if (card != null) card.IsRunning = false; });
-                    _crashReporter.Log($"[MainWindow.MonitorProcess] '{gameName}' exited{(shouldToggle ? " — HDR disabled" : "")}");
+                    _crashReporter.Log($"[MainWindow.MonitorProcess] '{gameName}' exited{(shouldToggle ? " — HDR disabled" : "")}{(shouldToggleRes ? " — resolution restored" : "")}");
                 }
                 catch (Exception ex)
                 {
@@ -889,8 +919,10 @@ public sealed partial class MainWindow
                     _crashReporter.Log($"[MainWindow.MonitorProcess] '{gameName}' — found process '{gameProc.ProcessName}' (PID {gameProc.Id}), waiting for exit...");
                     await gameProc.WaitForExitAsync();
                     if (shouldToggle) HdrToggleService.DisableHdr(hdrTargets);
+                    if (shouldToggleRes && resolutionToRestore != null) ResolutionToggleService.SetResolution(resolutionToRestore);
+                    else if (shouldToggleRes) ResolutionToggleService.RestoreResolution();
                     DispatcherQueue?.TryEnqueue(() => { if (card != null) card.IsRunning = false; });
-                    _crashReporter.Log($"[MainWindow.MonitorProcess] '{gameName}' exited{(shouldToggle ? " — HDR disabled" : "")}");
+                    _crashReporter.Log($"[MainWindow.MonitorProcess] '{gameName}' exited{(shouldToggle ? " — HDR disabled" : "")}{(shouldToggleRes ? " — resolution restored" : "")}");
                 }
                 catch (Exception ex)
                 {
@@ -973,14 +1005,110 @@ public sealed partial class MainWindow
         }
     }
 
-    internal void RemoveManualGame_Click(object sender, RoutedEventArgs e)
+    internal async void RemoveManualGame_Click(object sender, RoutedEventArgs e)
     {
         var card = GetCardFromSender(sender);
         if (card == null) return;
 
         if (card.IsManuallyAdded)
         {
-            // Manual game — remove it entirely
+            // Build a list of installed components to show in the dialog
+            var installed = new List<string>();
+            if (card.RsRecord != null || card.RsStatus == Models.GameStatus.Installed) installed.Add("ReShade");
+            if (card.InstalledRecord != null) installed.Add("RenoDX");
+            if (card.IsUlInstalled) installed.Add("ReLimiter");
+            if (card.IsDcInstalled) installed.Add("Display Commander");
+            if (card.LumaRecord != null) installed.Add("Luma");
+            if (card.IsRefInstalled) installed.Add("RE Framework");
+            if (card.IsOsInstalled) installed.Add("OptiScaler");
+            if (card.DxvkStatus == Models.GameStatus.Installed) installed.Add("DXVK");
+
+            ContentDialogResult result;
+            bool uninstallComponents = false;
+
+            if (installed.Count > 0)
+            {
+                var componentList = string.Join(", ", installed);
+                var panel = new StackPanel { Spacing = 8 };
+                panel.Children.Add(new TextBlock
+                {
+                    Text = $"Remove {card.GameName} from RHI?",
+                    FontSize = 13,
+                    FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                    Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush),
+                });
+                panel.Children.Add(new TextBlock
+                {
+                    Text = $"The following components are installed: {componentList}.",
+                    TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+                    FontSize = 12,
+                    Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+                });
+
+                var uninstallCheck = new CheckBox
+                {
+                    Content = "Also uninstall all RHI-managed components from game folder",
+                    FontSize = 12,
+                    IsChecked = false,
+                };
+                panel.Children.Add(uninstallCheck);
+
+                var dialog = new ContentDialog
+                {
+                    Title = "Remove Game",
+                    Content = panel,
+                    PrimaryButtonText = "Remove",
+                    CloseButtonText = "Cancel",
+                    XamlRoot = Content.XamlRoot,
+                    RequestedTheme = ElementTheme.Dark,
+                };
+
+                result = await DialogService.ShowSafeAsync(dialog);
+                uninstallComponents = uninstallCheck.IsChecked == true;
+            }
+            else
+            {
+                // No components installed — simple confirm
+                var dialog = new ContentDialog
+                {
+                    Title = "Remove Game",
+                    Content = new TextBlock
+                    {
+                        Text = $"Remove {card.GameName} from RHI?",
+                        FontSize = 12,
+                        TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+                    },
+                    PrimaryButtonText = "Remove",
+                    CloseButtonText = "Cancel",
+                    XamlRoot = Content.XamlRoot,
+                    RequestedTheme = ElementTheme.Dark,
+                };
+                result = await DialogService.ShowSafeAsync(dialog);
+            }
+
+            if (result != ContentDialogResult.Primary) return;
+
+            // Uninstall components if requested
+            if (uninstallComponents)
+            {
+                try
+                {
+                    if (card.LumaRecord != null) ViewModel.UninstallLuma(card);
+                    if (card.IsOsInstalled) _installEventHandler.UninstallOptiScaler(card);
+                    if (card.DxvkStatus == Models.GameStatus.Installed) ViewModel.UninstallDxvk(card);
+                    if (card.IsUlInstalled) ViewModel.UninstallUl(card);
+                    if (card.IsDcInstalled) ViewModel.UninstallDc(card);
+                    if (card.IsRefInstalled) ViewModel.UninstallREFramework(card);
+                    if (card.InstalledRecord != null) ViewModel.UninstallMod(card);
+                    if (card.RsRecord != null) ViewModel.UninstallReShade(card);
+                    _crashReporter.Log($"[RemoveManualGame] Uninstalled all components for '{card.GameName}'");
+                }
+                catch (Exception ex)
+                {
+                    _crashReporter.Log($"[RemoveManualGame] Component uninstall failed for '{card.GameName}' — {ex.Message}");
+                }
+            }
+
             ViewModel.RemoveManualGameCommand.Execute(card);
         }
         else

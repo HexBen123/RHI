@@ -259,6 +259,32 @@ public partial class DetailPanelBuilder
             ? UIFactory.Brush(ResourceKeys.AccentPurpleBrush)
             : UIFactory.Brush(ResourceKeys.ChipTextBrush);
 
+        // RES toggle button — dev-only, hidden unless unlock active
+        if (DevUnlockService.IsUnlocked)
+        {
+            _window.DetailResToggleBtn.Visibility = Visibility.Visible;
+            _window.DetailResToggleBtn.Tag = card;
+            var resOverride = _gameNameService.ResToggleOverrides
+                .TryGetValue(card.GameName, out var rov) ? rov : null;
+            bool resActive = resOverride != null
+                ? string.Equals(resOverride, "On", StringComparison.OrdinalIgnoreCase)
+                : _window.ViewModel.Settings.ResolutionAutoToggle;
+            _window.DetailResToggleText.Text = "RES";
+            _window.DetailResToggleBtn.Background = resActive
+                ? UIFactory.Brush(ResourceKeys.AccentPurpleBgBrush)
+                : UIFactory.Brush(ResourceKeys.SurfaceOverlayBrush);
+            _window.DetailResToggleBtn.BorderBrush = resActive
+                ? UIFactory.Brush(ResourceKeys.AccentPurpleBorderBrush)
+                : UIFactory.Brush(ResourceKeys.BorderSubtleBrush);
+            _window.DetailResToggleText.Foreground = resActive
+                ? UIFactory.Brush(ResourceKeys.AccentPurpleBrush)
+                : UIFactory.Brush(ResourceKeys.ChipTextBrush);
+        }
+        else
+        {
+            _window.DetailResToggleBtn.Visibility = Visibility.Collapsed;
+        }
+
         // Nexus Mods link button
         _window.DetailNexusModsBtn.Tag = card;
         _window.DetailNexusModsBtn.Visibility = card.HasNexusModsUrl ? Visibility.Visible : Visibility.Collapsed;
