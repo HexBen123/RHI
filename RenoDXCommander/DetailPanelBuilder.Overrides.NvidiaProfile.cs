@@ -163,10 +163,13 @@ public partial class DetailPanelBuilder
             // Disable for Streamline v1.x (not compatible with v2.x+ versions in manifest)
             bool slEnabled = hasStreamline && !(card.StreamlineInstalledVersion?.StartsWith("1.") == true);
             // Check if custom Streamline marker exists — override version to "Custom"
+            // Only show "Custom" if we can't read a real version from the DLL
+            var slVersionFromDll = card.StreamlineInstalledVersion;
             var slInstalledVersion = (hasStreamline && !string.IsNullOrEmpty(card.DlssDetection?.StreamlineFolder)
-                && DlssStreamlineService.IsCustomStreamlineActive(card.DlssDetection.StreamlineFolder))
+                && DlssStreamlineService.IsCustomStreamlineActive(card.DlssDetection.StreamlineFolder)
+                && (string.IsNullOrEmpty(slVersionFromDll) || slVersionFromDll == "Unknown"))
                 ? "Custom"
-                : card.StreamlineInstalledVersion;
+                : slVersionFromDll;
             var slCol = BuildDlssColumn("Streamline", slEnabled, dlssService.StreamlineVersions,
                 slInstalledVersion, null, 0,
                 async (version) =>

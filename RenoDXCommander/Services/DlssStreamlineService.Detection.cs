@@ -59,6 +59,26 @@ public partial class DlssStreamlineService
             }
         }
 
+        // If we have a real version from the files (not null/unknown), the custom marker is stale —
+        // clear it so the UI shows the actual version instead of "Custom"
+        if (result.StreamlineFolder != null
+            && !string.IsNullOrEmpty(result.StreamlineVersion)
+            && result.StreamlineVersion != "Unknown"
+            && IsCustomStreamlineActive(result.StreamlineFolder))
+        {
+            // Only clear if the custom folder DLLs are absent or don't match game folder
+            // (i.e. a real versioned install replaced the custom one)
+            var customCommon = Path.Combine(StreamlineCustomDir, "sl.common.dll");
+            var gameCommon = result.StreamlineInterposerPath != null
+                ? Path.Combine(result.StreamlineFolder, "sl.common.dll")
+                : null;
+            bool customStillActive = File.Exists(customCommon) && gameCommon != null
+                && File.Exists(gameCommon)
+                && new FileInfo(customCommon).Length == new FileInfo(gameCommon).Length;
+            if (!customStillActive)
+                RemoveCustomStreamlineMarker(result.StreamlineFolder);
+        }
+
         // Determine original/default versions (from .original backup if a swap was done, else current)
         if (result.DlssPath != null)
         {

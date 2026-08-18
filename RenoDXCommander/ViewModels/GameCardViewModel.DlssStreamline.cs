@@ -72,8 +72,45 @@ public partial class GameCardViewModel
             DlssdInstalledVersion = DlssStreamlineService.FormatVersion(service.GetFileVersion(DlssDetection.DlssdPath));
         if (DlssDetection.DlssgPath != null)
             DlssgInstalledVersion = DlssStreamlineService.FormatVersion(service.GetFileVersion(DlssDetection.DlssgPath));
-        if (DlssDetection.StreamlineInterposerPath != null)
-            StreamlineInstalledVersion = DlssStreamlineService.FormatVersion(service.GetFileVersion(DlssDetection.StreamlineInterposerPath));
+        if (DlssDetection.StreamlineInterposerPath != null || DlssDetection.StreamlineFolder != null)
+        {
+            var folder = DlssDetection.StreamlineFolder
+                ?? System.IO.Path.GetDirectoryName(DlssDetection.StreamlineInterposerPath);
+
+            string? versionFromPath = null;
+
+            if (folder != null && DlssStreamlineService.IsCustomStreamlineActive(folder))
+            {
+                // Custom swap active — prefer sl.common.dll since it's most reliably updated
+                // (custom folder may not include sl.interposer.dll)
+                var commonPath = System.IO.Path.Combine(folder, "sl.common.dll");
+                if (System.IO.File.Exists(commonPath))
+                {
+                    versionFromPath = DlssStreamlineService.FormatVersion(service.GetFileVersion(commonPath));
+                    DlssDetection.StreamlineInterposerPath = commonPath;
+                }
+            }
+
+            // Fallback: read from interposer path (normal versioned installs)
+            if (string.IsNullOrEmpty(versionFromPath) || versionFromPath == "Unknown")
+            {
+                if (DlssDetection.StreamlineInterposerPath != null)
+                    versionFromPath = DlssStreamlineService.FormatVersion(service.GetFileVersion(DlssDetection.StreamlineInterposerPath));
+            }
+
+            // Last resort: try sl.common.dll even without custom marker
+            if ((string.IsNullOrEmpty(versionFromPath) || versionFromPath == "Unknown") && folder != null)
+            {
+                var commonPath = System.IO.Path.Combine(folder, "sl.common.dll");
+                if (System.IO.File.Exists(commonPath))
+                {
+                    versionFromPath = DlssStreamlineService.FormatVersion(service.GetFileVersion(commonPath));
+                    DlssDetection.StreamlineInterposerPath = commonPath;
+                }
+            }
+
+            StreamlineInstalledVersion = versionFromPath;
+        }
 
         NotifyDlssStreamlineDependents();
     }
