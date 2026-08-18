@@ -52,8 +52,29 @@ public partial class GameCardViewModel
             ? DlssStreamlineService.FormatVersion(detection.DlssdVersion) : null;
         DlssgInstalledVersion = detection.DlssgVersion != null
             ? DlssStreamlineService.FormatVersion(detection.DlssgVersion) : null;
-        StreamlineInstalledVersion = detection.StreamlineVersion != null
-            ? DlssStreamlineService.FormatVersion(detection.StreamlineVersion) : null;
+
+        // Streamline: when custom marker is active, prefer sl.common.dll version
+        // (custom folder may only update sl.common.dll, leaving sl.interposer.dll at old version)
+        if (detection.StreamlineVersion != null && detection.StreamlineFolder != null
+            && DlssStreamlineService.IsCustomStreamlineActive(detection.StreamlineFolder))
+        {
+            var commonPath = Path.Combine(detection.StreamlineFolder, "sl.common.dll");
+            if (File.Exists(commonPath))
+            {
+                var info = System.Diagnostics.FileVersionInfo.GetVersionInfo(commonPath);
+                var commonVer = DlssStreamlineService.FormatVersion(
+                    $"{info.FileMajorPart}.{info.FileMinorPart}.{info.FileBuildPart}.{info.FilePrivatePart}");
+                StreamlineInstalledVersion = commonVer;
+                detection.StreamlineInterposerPath = commonPath; // update for future reads
+            }
+            else
+                StreamlineInstalledVersion = DlssStreamlineService.FormatVersion(detection.StreamlineVersion);
+        }
+        else
+        {
+            StreamlineInstalledVersion = detection.StreamlineVersion != null
+                ? DlssStreamlineService.FormatVersion(detection.StreamlineVersion) : null;
+        }
 
         NotifyDlssStreamlineDependents();
     }
