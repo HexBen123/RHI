@@ -9,6 +9,14 @@
 - Fixed DLSS version dropdown showing an incorrect version when a DLSS build not in the manifest is installed. The actual installed version is now shown correctly.
 - Fixed Streamline version not being detected when `sl.interposer.dll` is absent. RHI now falls back to `sl.common.dll` for version detection.
 
+### Manifest Updates
+
+- Fixed Engine.ini config path detection for The Sinking City 2 (uses `TSC2` as its AppData folder name).
+
+### Manifest Updates
+
+- Added Engine.ini path override for The Sinking City 2 (`TSC2` subfolder).
+
 ---
 
 ## v2.3.5
