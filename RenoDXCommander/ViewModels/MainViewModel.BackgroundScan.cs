@@ -280,6 +280,11 @@ public partial class MainViewModel
             await uwFixInitTask;
             await ultraPlusInitTask;
 
+            // On standard refresh, re-check games in the DLSS skip list.
+            // If a previously-skipped game now has DLSS (e.g. preloaded game released),
+            // it's removed from the skip cache so BuildCards will scan it normally.
+            _dlssStreamlineService.RecheckSkipList(allGames);
+
             // Build fresh cards
             _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Building cards for {allGames.Count} games...");
             var freshCards = await Task.Run(() => BuildCards(allGames, records, auxRecords, addonCache, _genericNotes));

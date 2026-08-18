@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Text.Json;
+using RenoDXCommander.Models;
 
 namespace RenoDXCommander.Services;
 
@@ -285,6 +286,48 @@ public partial class DlssStreamlineService : IDlssStreamlineService
         EnsureScanCacheLoaded();
         if (_scanSkipCache!.Remove(gameName))
             SaveScanCache();
+    }
+
+    /// <summary>
+    /// On standard refresh (background scan), re-scans games that are in the skip cache
+    /// (confirmed no DLSS after 3+ scans). If DLSS is now found (e.g. preloaded game
+    /// got its files on release day), removes the game from the skip cache so it flows
+    /// into the trusted path system on the next BuildCards pass.
+    /// Does NOT increment counts or change anything for games that still have no DLSS.
+    /// </summary>
+    public void RecheckSkipList(IReadOnlyList<DetectedGame> games)
+    {
+        EnsureScanCacheLoaded();
+        if (_scanSkipCache!.Count == 0) return;
+
+        var toRemove = new List<string>();
+        foreach (var game in games)
+        {
+            if (!ShouldSkipScan(game.Name)) continue;
+            if (string.IsNullOrEmpty(game.InstallPath) || !Directory.Exists(game.InstallPath)) continue;
+
+            try
+            {
+                var result = Detect(game.InstallPath);
+                if (result.HasAny)
+                {
+                    toRemove.Add(game.Name);
+                    CrashReporter.Log($"[DlssStreamlineService.RecheckSkipList] '{game.Name}' — DLSS now found, removing from skip cache");
+                }
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[DlssStreamlineService.RecheckSkipList] '{game.Name}' scan failed — {ex.Message}");
+            }
+        }
+
+        if (toRemove.Count > 0)
+        {
+            foreach (var name in toRemove)
+                _scanSkipCache!.Remove(name);
+            SaveScanCache();
+            CrashReporter.Log($"[DlssStreamlineService.RecheckSkipList] Removed {toRemove.Count} game(s) from skip cache");
+        }
     }
 
     /// <summary>

@@ -1,3 +1,4 @@
+using RenoDXCommander.Models;
 using RenoDXCommander.ViewModels;
 
 namespace RenoDXCommander.Services;
@@ -108,6 +109,11 @@ public interface IDlssStreamlineService
     /// Returns true if this game has been scanned 3+ times with no DLSS found.
     /// </summary>
     bool ShouldSkipScan(string gameName);
+
+    /// <summary>
+    /// Re-scans skip-listed games on standard refresh. Removes any that now have DLSS.
+    /// </summary>
+    void RecheckSkipList(IReadOnlyList<DetectedGame> games);
 
     /// <summary>
     /// Records that a scan found no DLSS for this game.

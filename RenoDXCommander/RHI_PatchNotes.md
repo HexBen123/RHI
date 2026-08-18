@@ -1,5 +1,9 @@
 ## v2.3.6-beta1
 
+### Changes
+
+- On standard refresh, RHI now re-checks games that were previously confirmed to have no DLSS. If DLSS files have since appeared (e.g. a preloaded game that received its content on release), the game is picked up automatically without needing a Full Refresh.
+
 ### Bug Fixes
 
 - Fixed DLSS version dropdown showing an incorrect version when a DLSS build not in the manifest is installed. The actual installed version is now shown correctly.
