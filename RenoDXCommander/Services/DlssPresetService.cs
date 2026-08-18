@@ -467,14 +467,25 @@ public partial class DlssPresetService
     /// </summary>
     public static void ApplyManifestPresets(RemoteManifest? manifest)
     {
-        if (manifest?.DlssPresets == null) return;
+        if (manifest?.DlssPresets == null && manifest?.DlssPresetsDev == null) return;
 
-        if (manifest.DlssPresets.Sr is { Count: > 0 } sr)
+        if (manifest?.DlssPresets?.Sr is { Count: > 0 } sr)
             SrPresets = MergePresets(SrPresets, sr);
-        if (manifest.DlssPresets.Rr is { Count: > 0 } rr)
+        if (manifest?.DlssPresets?.Rr is { Count: > 0 } rr)
             RrPresets = MergePresets(RrPresets, rr);
-        if (manifest.DlssPresets.Fg is { Count: > 0 } fg)
+        if (manifest?.DlssPresets?.Fg is { Count: > 0 } fg)
             FgPresets = MergePresets(FgPresets, fg);
+
+        // Dev-only presets — only merged when unlock.txt is present
+        if (DevUnlockService.IsUnlocked && manifest?.DlssPresetsDev != null)
+        {
+            if (manifest.DlssPresetsDev.Sr is { Count: > 0 } srDev)
+                SrPresets = MergePresets(SrPresets, srDev);
+            if (manifest.DlssPresetsDev.Rr is { Count: > 0 } rrDev)
+                RrPresets = MergePresets(RrPresets, rrDev);
+            if (manifest.DlssPresetsDev.Fg is { Count: > 0 } fgDev)
+                FgPresets = MergePresets(FgPresets, fgDev);
+        }
 
         CrashReporter.Log($"[DlssPresetService.ApplyManifestPresets] SR={SrPresets.Length}, RR={RrPresets.Length}, FG={FgPresets.Length}");
     }

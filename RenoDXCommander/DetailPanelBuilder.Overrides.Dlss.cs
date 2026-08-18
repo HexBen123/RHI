@@ -80,6 +80,7 @@ public partial class DetailPanelBuilder
             }
             else
             {
+                bool matched = false;
                 for (int i = 0; i < items.Count; i++)
                 {
                     var itemBase = items[i].Replace(" (Default)", "");
@@ -88,8 +89,18 @@ public partial class DetailPanelBuilder
                         || installedVersion.StartsWith(itemBase, StringComparison.OrdinalIgnoreCase))
                     {
                         selectedIndex = i;
+                        matched = true;
                         break;
                     }
+                }
+
+                // Installed version not in manifest list (e.g. early access / custom build)
+                // Insert it before "Custom" so it shows correctly rather than falling back to (Default)
+                if (!matched)
+                {
+                    var insertIdx = items.Count - 1; // before "Custom"
+                    items.Insert(insertIdx, installedVersion);
+                    selectedIndex = insertIdx;
                 }
             }
         }

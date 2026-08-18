@@ -407,6 +407,13 @@ public class RemoteManifest
     public ManifestDlssPresets? DlssPresets { get; set; }
 
     /// <summary>
+    /// Dev-only DLSS preset overrides — merged into the preset lists only when unlock.txt is present.
+    /// Same structure as dlssPresets. Invisible to regular users.
+    /// </summary>
+    [JsonPropertyName("dlssPresetsDev")]
+    public ManifestDlssPresets? DlssPresetsDev { get; set; }
+
+    /// <summary>
     /// URL for the RTX HDR info button when RTX HDR is enabled.
     /// Displayed as a clickable link in the RenoDX Info dialog.
     /// </summary>

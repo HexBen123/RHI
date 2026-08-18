@@ -64,14 +64,20 @@ public partial class DlssStreamlineService : IDlssStreamlineService
     private DlssManifestData? _manifest;
     private static readonly object _cacheSaveLock = new();
 
-    public IReadOnlyList<string> DlssVersions => _manifest?.Dlss?.Select(e => FormatVersion(e.Version)).ToList().AsReadOnly()
-        ?? (IReadOnlyList<string>)Array.Empty<string>();
-    public IReadOnlyList<string> DlssdVersions => _manifest?.Dlssd?.Select(e => FormatVersion(e.Version)).ToList().AsReadOnly()
-        ?? (IReadOnlyList<string>)Array.Empty<string>();
-    public IReadOnlyList<string> DlssgVersions => _manifest?.Dlssg?.Select(e => FormatVersion(e.Version)).ToList().AsReadOnly()
-        ?? (IReadOnlyList<string>)Array.Empty<string>();
-    public IReadOnlyList<string> StreamlineVersions => _manifest?.Streamline?.Select(e => FormatVersion(e.Version)).ToList().AsReadOnly()
-        ?? (IReadOnlyList<string>)Array.Empty<string>();
+    public IReadOnlyList<string> DlssVersions => BuildVersionList(_manifest?.Dlss, _manifest?.DlssDev);
+    public IReadOnlyList<string> DlssdVersions => BuildVersionList(_manifest?.Dlssd, _manifest?.DlssdDev);
+    public IReadOnlyList<string> DlssgVersions => BuildVersionList(_manifest?.Dlssg, _manifest?.DlssgDev);
+    public IReadOnlyList<string> StreamlineVersions => BuildVersionList(_manifest?.Streamline, _manifest?.StreamlineDev);
+
+    private static IReadOnlyList<string> BuildVersionList(
+        List<DlssManifestEntry>? regular,
+        List<DlssManifestEntry>? dev)
+    {
+        var entries = regular ?? new List<DlssManifestEntry>();
+        if (DevUnlockService.IsUnlocked && dev != null && dev.Count > 0)
+            entries = dev.Concat(entries).ToList(); // dev entries first (newest)
+        return entries.Select(e => FormatVersion(e.Version)).ToList().AsReadOnly();
+    }
 
     public DlssStreamlineService(HttpClient http, GitHubETagCache etagCache)
     {
@@ -401,11 +407,15 @@ public partial class DlssStreamlineService : IDlssStreamlineService
         if (entry.StreamlineFolder != null)
         {
             var interposerPath = Path.Combine(entry.StreamlineFolder, StreamlineIndicator);
-            if (File.Exists(interposerPath))
+            var commonPath = Path.Combine(entry.StreamlineFolder, "sl.common.dll");
+            var versionSourcePath = File.Exists(interposerPath) ? interposerPath
+                : File.Exists(commonPath) ? commonPath : null;
+
+            if (versionSourcePath != null)
             {
-                result.StreamlineInterposerPath = interposerPath;
+                result.StreamlineInterposerPath = versionSourcePath;
                 result.StreamlineFolder = entry.StreamlineFolder;
-                result.StreamlineVersion = GetFileVersion(interposerPath);
+                result.StreamlineVersion = GetFileVersion(versionSourcePath);
                 foreach (var slDll in KnownStreamlineDlls)
                     if (File.Exists(Path.Combine(entry.StreamlineFolder, slDll)))
                         result.StreamlineFiles.Add(slDll);
@@ -621,6 +631,15 @@ public class DlssManifestData
     public List<DlssManifestEntry>? Dlssd { get; set; }
     public List<DlssManifestEntry>? Dlssg { get; set; }
     public List<DlssManifestEntry>? Streamline { get; set; }
+
+    /// <summary>Dev-only DLSS SR versions (only shown when unlock.txt is present).</summary>
+    public List<DlssManifestEntry>? DlssDev { get; set; }
+    /// <summary>Dev-only DLSS RR versions (only shown when unlock.txt is present).</summary>
+    public List<DlssManifestEntry>? DlssdDev { get; set; }
+    /// <summary>Dev-only DLSS FG versions (only shown when unlock.txt is present).</summary>
+    public List<DlssManifestEntry>? DlssgDev { get; set; }
+    /// <summary>Dev-only Streamline versions (only shown when unlock.txt is present).</summary>
+    public List<DlssManifestEntry>? StreamlineDev { get; set; }
 }
 
 public class DlssManifestEntry

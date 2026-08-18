@@ -729,9 +729,14 @@ public partial class MainViewModel
                     StreamlineFolder = dlssCache.StreamlineFolder,
                     StreamlineFiles = dlssCache.StreamlineFiles ?? new(),
                 };
-                // Set the interposer path from the folder
+                // Set the interposer path from the folder — fall back to sl.common.dll if interposer absent (EA builds)
                 if (dlssCache.StreamlineFolder != null)
-                    detection.StreamlineInterposerPath = Path.Combine(dlssCache.StreamlineFolder, "sl.interposer.dll");
+                {
+                    var interposerPath = Path.Combine(dlssCache.StreamlineFolder, "sl.interposer.dll");
+                    var commonPath = Path.Combine(dlssCache.StreamlineFolder, "sl.common.dll");
+                    detection.StreamlineInterposerPath = File.Exists(interposerPath) ? interposerPath
+                        : File.Exists(commonPath) ? commonPath : null;
+                }
 
                 // Read current versions from the cached paths (fast File.Exists + FileVersionInfo)
                 if (detection.DlssPath != null && File.Exists(detection.DlssPath))

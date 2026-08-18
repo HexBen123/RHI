@@ -1,3 +1,17 @@
+## v2.3.6-beta1
+
+### Bug Fixes
+
+- Fixed DLSS version dropdown showing an incorrect version when a DLSS build not in the manifest is installed. The actual installed version is now shown correctly.
+- Fixed Streamline version not being detected when `sl.interposer.dll` is absent. RHI now falls back to `sl.common.dll` for version detection.
+
+### Manifest Updates
+
+- Added `dlssPresetsDev` — dev-only DLSS preset entries (SR, RR, FG) visible only when the developer unlock file is present.
+- Renamed dev RR preset entry from "F - CNN" to "F - TF2 (Dev)".
+
+---
+
 ## v2.3.5
 
 ### Changes
