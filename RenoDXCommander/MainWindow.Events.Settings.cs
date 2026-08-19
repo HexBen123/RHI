@@ -1172,6 +1172,14 @@ public sealed partial class MainWindow
         ViewModel.SaveSettingsPublic();
     }
 
+    private void RsVariableListUseTabsCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
+        // 0 = Tabs (true), 1 = Tree (false)
+        ViewModel.Settings.RsVariableListUseTabs = combo.SelectedIndex == 0;
+        ViewModel.SaveSettingsPublic();
+    }
+
     private void DropHelperCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;

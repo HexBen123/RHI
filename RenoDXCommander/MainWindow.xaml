@@ -1286,6 +1286,7 @@
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
                                 <!-- ── Left: Screenshots & Hotkeys ── -->
@@ -1298,7 +1299,7 @@
                                 </StackPanel>
 
                                 <!-- Divider -->
-                                <Border Grid.Row="0" Grid.RowSpan="4" Grid.Column="1" Width="1"
+                                <Border Grid.Row="0" Grid.RowSpan="5" Grid.Column="1" Width="1"
                                         Background="{StaticResource BorderDefaultBrush}"
                                         VerticalAlignment="Stretch" Margin="12,0,12,0"/>
 
@@ -1456,8 +1457,26 @@
                                             ToolTipService.ToolTip="Select which monitors to enable HDR on. Empty = primary display only."/>
                                 </Grid>
 
-                                <!-- Row 3: Apply buttons -->
-                                <Button Grid.Row="3" Grid.Column="0" x:Name="ApplyHotkeyBtn" x:FieldModifier="internal"
+                                <!-- Row 3 Left: Effect list style -->
+                                <Grid Grid.Row="3" Grid.Column="0" ColumnSpacing="8" VerticalAlignment="Center">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="Effect list style" FontSize="12"
+                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                               VerticalAlignment="Center"/>
+                                    <ComboBox Grid.Column="1" x:Name="RsVariableListUseTabsCombo" x:FieldModifier="internal"
+                                              FontSize="12" HorizontalAlignment="Stretch"
+                                              ToolTipService.ToolTip="Controls how shaders are displayed in the ReShade overlay. Tabs groups effect files into named tabs; Tree shows a collapsible hierarchy."
+                                              SelectionChanged="RsVariableListUseTabsCombo_SelectionChanged">
+                                        <ComboBoxItem Content="Tabs"/>
+                                        <ComboBoxItem Content="Tree"/>
+                                    </ComboBox>
+                                </Grid>
+
+                                <!-- Row 4: Apply buttons -->
+                                <Button Grid.Row="4" Grid.Column="0" x:Name="ApplyHotkeyBtn" x:FieldModifier="internal"
                                         Content="Apply to All Games"
                                         Click="ApplyScreenshotPath_Click"
                                         Background="{StaticResource AccentBlueBgBrush}"
@@ -1466,7 +1485,7 @@
                                         CornerRadius="8" Padding="12,7" FontSize="12"
                                         HorizontalAlignment="Stretch"/>
 
-                                <Button Grid.Row="3" Grid.Column="2" x:Name="ApplyScreenshotPathBtn"
+                                <Button Grid.Row="4" Grid.Column="2" x:Name="ApplyScreenshotPathBtn"
                                         Content="Apply to All Games"
                                         Click="ApplyPeakNitsToAll_Click"
                                         Background="{StaticResource AccentBlueBgBrush}"

@@ -1352,6 +1352,24 @@ public partial class AuxInstallService
     }
 
     /// <summary>
+    /// Writes or updates VariableListUseTabs in the [OVERLAY] section of the given reshade.ini file.
+    /// When true, the ReShade overlay groups effect files into tabs instead of a tree.
+    /// </summary>
+    public static void ApplyVariableListUseTabs(string iniFilePath, bool useTabs)
+    {
+        var ini = File.Exists(iniFilePath)
+            ? ParseIni(File.ReadAllLines(iniFilePath))
+            : new Dictionary<string, OrderedDict>(StringComparer.OrdinalIgnoreCase);
+
+        const string section = "OVERLAY";
+        if (!ini.ContainsKey(section))
+            ini[section] = new OrderedDict();
+
+        ini[section]["VariableListUseTabs"] = useTabs ? "1" : "0";
+        WriteIni(iniFilePath, ini);
+    }
+
+    /// <summary>
     /// Writes the osd_toggle_key value to the [FrameLimiter] section of a relimiter.ini file.
     /// Format: [Ctrl+][Alt+][Shift+]KeyName (e.g. "Ctrl+F12", "F12")
     /// </summary>

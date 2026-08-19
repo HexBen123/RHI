@@ -180,8 +180,9 @@ public partial class MainViewModel
             {
                 AuxInstallService.MergeRsVulkanIni(card.InstallPath, card.GameName, BuildScreenshotSavePath(card.GameName), _settingsViewModel.OverlayHotkey, _settingsViewModel.ScreenshotHotkey);
                 VulkanFootprintService.Create(card.InstallPath);
-                _shaderPackService.SyncGameFolder(card.InstallPath,
-                    ResolveShaderSelection(card.GameName, card.ShaderModeOverride, card.Source ?? ""));
+                var selVk1 = ResolveShaderSelection(card.GameName, card.ShaderModeOverride, card.Source ?? "");
+                var exclVk1 = selVk1?.ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id), StringComparer.OrdinalIgnoreCase);
+                _shaderPackService.SyncGameFolder(card.InstallPath, selVk1, exclVk1);
 
                 var vulkanVersion = AuxInstallService.ReadInstalledVersion(
                     VulkanLayerService.LayerDirectory, VulkanLayerService.LayerDllName);
@@ -248,8 +249,9 @@ public partial class MainViewModel
             VulkanFootprintService.Create(card.InstallPath);
 
             // 5c. Deploy shaders locally to the game folder
-            _shaderPackService.SyncGameFolder(card.InstallPath,
-                ResolveShaderSelection(card.GameName, card.ShaderModeOverride, card.Source ?? ""));
+            var selVk2 = ResolveShaderSelection(card.GameName, card.ShaderModeOverride, card.Source ?? "");
+            var exclVk2 = selVk2?.ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id), StringComparer.OrdinalIgnoreCase);
+            _shaderPackService.SyncGameFolder(card.InstallPath, selVk2, exclVk2);
 
             // 6. Mark warning as shown for this session
             _vulkanLayerWarningShownThisSession = true;
@@ -322,8 +324,9 @@ public partial class MainViewModel
             });
 
             // Deploy shaders to the game folder
-            _shaderPackService.SyncGameFolder(card.InstallPath,
-                ResolveShaderSelection(card.GameName, card.ShaderModeOverride, card.Source ?? ""));
+            var selGac = ResolveShaderSelection(card.GameName, card.ShaderModeOverride, card.Source ?? "");
+            var exclGac = selGac?.ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id), StringComparer.OrdinalIgnoreCase);
+            _shaderPackService.SyncGameFolder(card.InstallPath, selGac, exclGac);
 
             // Read version from the staged DLL in the game folder
             var version = AuxInstallService.ReadInstalledVersion(card.InstallPath, dllFileName);

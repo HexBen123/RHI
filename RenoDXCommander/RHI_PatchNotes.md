@@ -1,8 +1,16 @@
 ## v2.3.6-beta1
 
+### New
+
+- **Per-shader selection** — each shader pack in the shader picker can now be expanded to show its individual `.fx` files. Tick only the shaders you want rather than deploying the full pack. The pack checkbox shows a dash when a partial selection is active, and a tick when all files are included.
+- **Shader profiles** — save, load, rename, and delete named shader selections using the new Profiles panel on the right side of the shader picker. Profiles store both pack selection and per-file exclusions, and can be loaded in the per-game shader picker too.
+- **Export shader selection** — the Export button zips your currently selected shader files and copies the archive to your clipboard, ready to paste into Discord or use as a backup.
+
 ### Changes
 
 - On standard refresh, RHI now re-checks games that were previously confirmed to have no DLSS. If DLSS files have since appeared (e.g. a preloaded game that received its content on release), the game is picked up automatically without needing a Full Refresh.
+- The shader picker now has Expand All / Collapse All and Deselect All buttons for faster navigation.
+- Added "Effect list style" setting in Settings → Screenshots & Hotkeys. Defaults to Tabs, which groups shaders into named tabs in the ReShade overlay instead of a flat tree. Apply to All Games writes the setting to all managed reshade.ini files.
 
 ### Bug Fixes
 
@@ -10,6 +18,7 @@
 - Fixed Streamline version not being detected when `sl.interposer.dll` is absent. RHI now falls back to `sl.common.dll` for version detection.
 - Fixed Streamline restore failing after the in-game backup files were already consumed by a previous restore. RHI now keeps a compressed backup of the game's original Streamline DLLs in AppData as a fallback, so restore always works even after repeated attempts.
 - Fixed a race condition where concurrent shader pack updates could fail to save their version cache to `settings.json`, causing the same packs to re-download on every launch.
+- Fixed DLL naming override toggle incorrectly appearing as enabled for games where OptiScaler had previously been installed and uninstalled. This caused ReShade to install under the wrong filename (e.g. `ReShade64.dll` instead of `dxgi.dll`) on affected games, and the toggle would appear to switch on by itself when changing DLSS presets.
 
 ### Manifest Updates
 

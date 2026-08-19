@@ -40,7 +40,8 @@ public interface IShaderPackService
     /// </summary>
     bool IsPackCached(string packId);
 
-    void DeployToGameFolder(string gameDir, IEnumerable<string>? packIds = null);
+    void DeployToGameFolder(string gameDir, IEnumerable<string>? packIds = null,
+        Dictionary<string, HashSet<string>>? fileExclusions = null);
 
     void RemoveFromGameFolder(string gameDir);
 
@@ -48,9 +49,33 @@ public interface IShaderPackService
 
     void RestoreOriginalIfPresent(string gameDir);
 
-    void SyncGameFolder(string gameDir, IEnumerable<string>? selectedPackIds = null);
+    void SyncGameFolder(string gameDir, IEnumerable<string>? selectedPackIds = null,
+        Dictionary<string, HashSet<string>>? fileExclusions = null);
 
     void SyncShadersToAllLocations(
         IEnumerable<(string installPath, bool rsInstalled, string? shaderModeOverride)> locations,
         IEnumerable<string>? selectedPackIds = null);
+
+    // ── Per-file include dependency map ──────────────────────────────────────────
+
+    /// <summary>
+    /// Scans all .fx and .fxh files in the staging Shaders directory and builds a map of
+    /// filename → set of filenames it directly #includes (relative filename only, no path).
+    /// Result is cached in-memory after first call; cleared on pack update.
+    /// </summary>
+    Dictionary<string, HashSet<string>> BuildIncludeMap();
+
+    /// <summary>Clears the cached include map so it is rebuilt on the next call.</summary>
+    void ClearIncludeCache();
+
+    /// <summary>Returns all .fx filenames (leaf names) belonging to the given pack IDs, from the staging dir.</summary>
+    IReadOnlyList<string> GetPackShaderFiles(IEnumerable<string> packIds);
+
+    // ── Per-file exclusion storage ────────────────────────────────────────────────
+
+    /// <summary>Gets the set of shader filenames explicitly excluded by the user for this pack.</summary>
+    HashSet<string> GetExcludedFiles(string packId);
+
+    /// <summary>Saves the excluded files for a pack.</summary>
+    void SetExcludedFiles(string packId, IEnumerable<string> excluded);
 }

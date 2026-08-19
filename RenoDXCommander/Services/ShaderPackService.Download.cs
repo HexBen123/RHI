@@ -290,6 +290,7 @@ public partial class ShaderPackService
         }
 
         SaveStoredVersion(pack.Id, versionToken);
+        ClearIncludeCache();
         progress?.Report($"{pack.DisplayName} updated.");
         CrashReporter.Log($"[ShaderPackService.EnsurePackAsync] [{pack.Id}] Done. Version = {versionToken}");
         }
@@ -529,6 +530,60 @@ public partial class ShaderPackService
             File.WriteAllText(SettingsPath, JsonSerializer.Serialize(d, new JsonSerializerOptions { WriteIndented = true }));
         }
         catch (Exception ex) { CrashReporter.Log($"[ShaderPackService.SaveStoredVersion] Failed to save version for '{packId}' — {ex.Message}"); }
+        finally { _settingsLock.Release(); }
+    }
+}
+
+// Re-open the partial class to add exclusion storage (same file pattern)
+public partial class ShaderPackService
+{
+    // ── Per-file exclusion storage ────────────────────────────────────────────────
+
+    private static string ExcludedFilesKey(string packId) => $"excluded_{packId}";
+
+    /// <summary>Gets the set of shader filenames explicitly excluded by the user for this pack.</summary>
+    public HashSet<string> GetExcludedFiles(string packId)
+    {
+        _settingsLock.Wait();
+        try
+        {
+            if (!File.Exists(SettingsPath)) return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var d = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(SettingsPath));
+            if (d == null || !d.TryGetValue(ExcludedFilesKey(packId), out var json) || string.IsNullOrEmpty(json))
+                return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var list = JsonSerializer.Deserialize<List<string>>(json) ?? new();
+            return new HashSet<string>(list, StringComparer.OrdinalIgnoreCase);
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[ShaderPackService.GetExcludedFiles] Failed for '{packId}' — {ex.Message}");
+            return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        }
+        finally { _settingsLock.Release(); }
+    }
+
+    /// <summary>Saves the excluded files for a pack.</summary>
+    public void SetExcludedFiles(string packId, IEnumerable<string> excluded)
+    {
+        _settingsLock.Wait();
+        try
+        {
+            Dictionary<string, string> d = new();
+            if (File.Exists(SettingsPath))
+                d = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(SettingsPath)) ?? new();
+            var list = excluded.ToList();
+            if (list.Count > 0)
+                d[ExcludedFilesKey(packId)] = JsonSerializer.Serialize(list);
+            else
+                d.Remove(ExcludedFilesKey(packId));
+            Directory.CreateDirectory(Path.GetDirectoryName(SettingsPath)!);
+            File.WriteAllText(SettingsPath, JsonSerializer.Serialize(d, new JsonSerializerOptions { WriteIndented = true }));
+            CrashReporter.Log($"[ShaderPackService.SetExcludedFiles] Saved {list.Count} exclusion(s) for '{packId}'");
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[ShaderPackService.SetExcludedFiles] Failed for '{packId}' — {ex.Message}");
+        }
         finally { _settingsLock.Release(); }
     }
 }

@@ -50,7 +50,8 @@ public partial class ShaderPackService
     /// plus any transitive dependencies declared via <see cref="ShaderPack.Requires"/>.
     /// Used to deploy the user's chosen subset of shader packs.
     /// </summary>
-    private void DeployPacksIfAbsent(IEnumerable<string> packIds, string destShadersDir, string destTexturesDir)
+    private void DeployPacksIfAbsent(IEnumerable<string> packIds, string destShadersDir, string destTexturesDir,
+        Dictionary<string, HashSet<string>>? fileExclusions = null)
     {
         var expandedIds = ExpandDependencies(packIds);
         var shadersFiles = new List<string>();
@@ -65,10 +66,17 @@ public partial class ShaderPackService
                 if (d == null || !d.TryGetValue(FileListKey(pack.Id), out var json) || string.IsNullOrEmpty(json))
                     continue;
                 var files = JsonSerializer.Deserialize<List<string>>(json) ?? new();
+                // Build exclusion set for this pack (leaf filenames)
+                HashSet<string>? excluded = null;
+                fileExclusions?.TryGetValue(pack.Id, out excluded);
                 foreach (var rel in files)
                 {
                     if (rel.StartsWith("Shaders" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
-                        shadersFiles.Add(rel.Substring("Shaders".Length + 1));
+                    {
+                        var relSub = rel.Substring("Shaders".Length + 1);
+                        if (excluded != null && excluded.Contains(Path.GetFileName(relSub))) continue;
+                        shadersFiles.Add(relSub);
+                    }
                     else if (rel.StartsWith("Textures" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
                         texturesFiles.Add(rel.Substring("Textures".Length + 1));
                 }
@@ -90,9 +98,10 @@ public partial class ShaderPackService
     /// Deploys all known packs to the destination directories.
     /// Fallback used by <see cref="DeployToGameFolder"/> when no specific pack IDs are provided.
     /// </summary>
-    private void DeployAllPacksIfAbsent(string destShadersDir, string destTexturesDir)
+    private void DeployAllPacksIfAbsent(string destShadersDir, string destTexturesDir,
+        Dictionary<string, HashSet<string>>? fileExclusions = null)
     {
-        DeployPacksIfAbsent(_packs.Select(p => p.Id), destShadersDir, destTexturesDir);
+        DeployPacksIfAbsent(_packs.Select(p => p.Id), destShadersDir, destTexturesDir, fileExclusions);
     }
 
     /// <summary>
@@ -201,7 +210,8 @@ public partial class ShaderPackService
     /// to reshade-shaders-original before creating our managed folder.
     /// When <paramref name="packIds"/> is null, all packs are deployed (fallback for LumaService).
     /// </summary>
-    public void DeployToGameFolder(string gameDir, IEnumerable<string>? packIds = null)
+    public void DeployToGameFolder(string gameDir, IEnumerable<string>? packIds = null,
+        Dictionary<string, HashSet<string>>? fileExclusions = null)
     {
         var rsDir = Path.Combine(gameDir, GameReShadeShaders);
 
@@ -221,9 +231,9 @@ public partial class ShaderPackService
         }
 
         if (packIds != null)
-            DeployPacksIfAbsent(packIds, Path.Combine(rsDir, "Shaders"), Path.Combine(rsDir, "Textures"));
+            DeployPacksIfAbsent(packIds, Path.Combine(rsDir, "Shaders"), Path.Combine(rsDir, "Textures"), fileExclusions);
         else
-            DeployAllPacksIfAbsent(Path.Combine(rsDir, "Shaders"), Path.Combine(rsDir, "Textures"));
+            DeployAllPacksIfAbsent(Path.Combine(rsDir, "Shaders"), Path.Combine(rsDir, "Textures"), fileExclusions);
         WriteMarker(gameDir);
     }
 
@@ -313,7 +323,8 @@ public partial class ShaderPackService
     /// Custom shader sentinel → deploy from user-managed custom directories.
     /// Non-empty selection → prune unselected pack files and deploy selected packs.
     /// </summary>
-    public void SyncGameFolder(string gameDir, IEnumerable<string>? selectedPackIds = null)
+    public void SyncGameFolder(string gameDir, IEnumerable<string>? selectedPackIds = null,
+        Dictionary<string, HashSet<string>>? fileExclusions = null)
     {
         var rsShaders = Path.Combine(gameDir, GameReShadeShaders, "Shaders");
         var rsTextures = Path.Combine(gameDir, GameReShadeShaders, "Textures");
@@ -364,7 +375,7 @@ public partial class ShaderPackService
             // so custom shader files from a previous custom-mode deployment would
             // linger.  A clean remove + fresh deploy handles the transition cleanly.
             RemoveFromGameFolder(gameDir);
-            DeployPacksIfAbsent(selectedPackIds, rsShaders, rsTextures);
+            DeployPacksIfAbsent(selectedPackIds, rsShaders, rsTextures, fileExclusions);
             WriteMarker(gameDir);
         }
         else
@@ -385,7 +396,7 @@ public partial class ShaderPackService
                 { CrashReporter.Log($"[ShaderPackService.SyncGameFolder] Failed to rename existing reshade-shaders — {ex.Message}"); }
             }
 
-            DeployPacksIfAbsent(selectedPackIds, Path.Combine(rsDir, "Shaders"), Path.Combine(rsDir, "Textures"));
+            DeployPacksIfAbsent(selectedPackIds, Path.Combine(rsDir, "Shaders"), Path.Combine(rsDir, "Textures"), fileExclusions);
             WriteMarker(gameDir);
         }
     }

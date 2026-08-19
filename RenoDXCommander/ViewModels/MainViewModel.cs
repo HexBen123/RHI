@@ -334,7 +334,10 @@ public partial class MainViewModel : ObservableObject
 
                     if (rsInstalled)
                     {
-                        _shaderPackService.SyncGameFolder(card.InstallPath, effectiveSelection);
+                        var exclusions = effectiveSelection?
+                            .ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id),
+                                StringComparer.OrdinalIgnoreCase);
+                        _shaderPackService.SyncGameFolder(card.InstallPath, effectiveSelection, exclusions);
                     }
                 }
             }
@@ -369,7 +372,10 @@ public partial class MainViewModel : ObservableObject
 
                 if (rsInstalled)
                 {
-                    _shaderPackService.SyncGameFolder(card.InstallPath, effectiveSelection);
+                    var exclusions = effectiveSelection?
+                        .ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id),
+                            StringComparer.OrdinalIgnoreCase);
+                    _shaderPackService.SyncGameFolder(card.InstallPath, effectiveSelection, exclusions);
                 }
             }
             catch (Exception ex)

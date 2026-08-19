@@ -709,7 +709,10 @@ public class LumaService : ILumaService
         progress?.Report(("Deploying shaders...", 95));
         try
         {
-            _shaderPackService.SyncGameFolder(gameInstallPath, selectedShaderPacks);
+            var exclLuma1 = selectedShaderPacks?
+                .ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id),
+                    StringComparer.OrdinalIgnoreCase);
+            _shaderPackService.SyncGameFolder(gameInstallPath, selectedShaderPacks, exclLuma1);
 
             // Track deployed shader files for clean uninstall
             var rsDir = Path.Combine(gameInstallPath, ShaderPackService.GameReShadeShaders);
@@ -1252,7 +1255,10 @@ public class LumaService : ILumaService
         // ── 4. Deploy shaders ──
         try
         {
-            _shaderPackService.SyncGameFolder(gameInstallPath, selectedShaderPacks);
+            var exclLuma2 = selectedShaderPacks?
+                .ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id),
+                    StringComparer.OrdinalIgnoreCase);
+            _shaderPackService.SyncGameFolder(gameInstallPath, selectedShaderPacks, exclLuma2);
             var rsDir = Path.Combine(gameInstallPath, ShaderPackService.GameReShadeShaders);
             if (Directory.Exists(rsDir))
             {

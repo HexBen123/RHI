@@ -126,7 +126,10 @@ public partial class AuxInstallService
         // Always deploy shaders locally to the game folder.
         // Uses Sync (prune + deploy) so switching shader selections properly
         // removes files from the previous selection.
-        _shaderPackService.SyncGameFolder(installPath, selectedPackIds);
+        var exclAux = selectedPackIds?
+            .ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id),
+                StringComparer.OrdinalIgnoreCase);
+        _shaderPackService.SyncGameFolder(installPath, selectedPackIds, exclAux);
 
         var record = new AuxInstalledRecord
         {

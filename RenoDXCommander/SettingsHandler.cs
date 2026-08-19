@@ -53,6 +53,8 @@ public class SettingsHandler
         // Populate screenshot path and per-game combo
         _window.ScreenshotPathBox.Text = ViewModel.Settings.ScreenshotPath;
         _window.PerGameScreenshotCombo.SelectedIndex = ViewModel.Settings.PerGameScreenshotFolders ? 1 : 0;
+        // Effect list style combo (Tabs=0, Tree=1)
+        _window.RsVariableListUseTabsCombo.SelectedIndex = ViewModel.Settings.RsVariableListUseTabs ? 0 : 1;
         // Initialize peak nits display
         _window.PeakNitsBox.Text = ViewModel.Settings.PeakNits > 0 ? ViewModel.Settings.PeakNits.ToString() : "";
         // Initialize hotkey display from persisted value (Req 2.4, 3.2)
@@ -433,6 +435,7 @@ public class SettingsHandler
                     if (!AuxInstallService.IsRdr2(card.GameName))
                         AuxInstallService.ApplyOverlayHotkey(iniFile, _currentHotkeyString);
                     AuxInstallService.ApplyScreenshotHotkey(iniFile, _currentScreenshotHotkeyString);
+                    AuxInstallService.ApplyVariableListUseTabs(iniFile, ViewModel.Settings.RsVariableListUseTabs);
                 }
                 updatedCount++;
             }

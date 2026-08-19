@@ -81,7 +81,14 @@ public class DllOverrideService : IDllOverrideService
 
     // ── CRUD ──────────────────────────────────────────────────────────────────
 
-    public bool HasDllOverride(string gameName) => _dllOverrides.ContainsKey(gameName);
+    public bool HasDllOverride(string gameName)
+    {
+        if (!_dllOverrides.TryGetValue(gameName, out var cfg)) return false;
+        // An entry with all empty fields is a ghost left by SetOsDllOverride("") on uninstall — treat as no override
+        return !string.IsNullOrEmpty(cfg.ReShadeFileName)
+            || !string.IsNullOrEmpty(cfg.DcFileName)
+            || !string.IsNullOrEmpty(cfg.OsFileName);
+    }
 
     public DllOverrideConfig? GetDllOverride(string gameName)
         => _dllOverrides.TryGetValue(gameName, out var cfg) ? cfg : null;
@@ -601,9 +608,17 @@ public class DllOverrideService : IDllOverrideService
         if (existing != null)
         {
             existing.OsFileName = osFileName.Trim();
+            // If all fields are now empty, remove the ghost entry entirely
+            if (string.IsNullOrEmpty(existing.ReShadeFileName)
+                && string.IsNullOrEmpty(existing.DcFileName)
+                && string.IsNullOrEmpty(existing.OsFileName))
+            {
+                _dllOverrides.Remove(gameName);
+            }
         }
-        else
+        else if (!string.IsNullOrEmpty(osFileName))
         {
+            // Only create a new entry if there's actually something to store
             _dllOverrides[gameName] = new DllOverrideConfig
             {
                 OsFileName = osFileName.Trim(),

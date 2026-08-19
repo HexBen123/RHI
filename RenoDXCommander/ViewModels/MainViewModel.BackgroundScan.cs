@@ -386,7 +386,10 @@ public partial class MainViewModel
                         .Select(card =>
                         {
                             var effectiveSelection = ResolveShaderSelection(card.GameName, card.ShaderModeOverride, card.Source ?? "");
-                            return Task.Run(() => _shaderPackService.SyncGameFolder(card.InstallPath, effectiveSelection));
+                            var exclusions = effectiveSelection?
+                                .ToDictionary(id => id, id => _shaderPackService.GetExcludedFiles(id),
+                                    StringComparer.OrdinalIgnoreCase);
+                            return Task.Run(() => _shaderPackService.SyncGameFolder(card.InstallPath, effectiveSelection, exclusions));
                         });
                     await Task.WhenAll(syncTasks);
                 }
