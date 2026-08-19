@@ -8,10 +8,8 @@
 
 - Fixed DLSS version dropdown showing an incorrect version when a DLSS build not in the manifest is installed. The actual installed version is now shown correctly.
 - Fixed Streamline version not being detected when `sl.interposer.dll` is absent. RHI now falls back to `sl.common.dll` for version detection.
-
-### Manifest Updates
-
-- Fixed Engine.ini config path detection for The Sinking City 2 (uses `TSC2` as its AppData folder name).
+- Fixed Streamline restore failing after the in-game backup files were already consumed by a previous restore. RHI now keeps a compressed backup of the game's original Streamline DLLs in AppData as a fallback, so restore always works even after repeated attempts.
+- Fixed a race condition where concurrent shader pack updates could fail to save their version cache to `settings.json`, causing the same packs to re-download on every launch.
 
 ### Manifest Updates
 

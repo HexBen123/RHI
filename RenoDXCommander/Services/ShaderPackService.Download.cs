@@ -316,6 +316,7 @@ public partial class ShaderPackService
     private bool PackHasExtractedFiles(string packId, string cachePath)
     {
         if (!File.Exists(cachePath)) return false;
+        _settingsLock.Wait();
         try
         {
             if (!File.Exists(SettingsPath)) return false;
@@ -349,6 +350,7 @@ public partial class ShaderPackService
             return true;
         }
         catch (Exception ex) { CrashReporter.Log($"[ShaderPackService.PackHasExtractedFiles] Failed to check extracted files for '{packId}' — {ex.Message}"); return false; }
+        finally { _settingsLock.Release(); }
     }
 
     /// <summary>
@@ -412,11 +414,16 @@ public partial class ShaderPackService
             } // end else (archive recording)
 
             Dictionary<string, string> d = new();
-            if (File.Exists(SettingsPath))
-                d = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(SettingsPath)) ?? new();
-            d[FileListKey(packId)] = JsonSerializer.Serialize(files);
-            Directory.CreateDirectory(Path.GetDirectoryName(SettingsPath)!);
-            File.WriteAllText(SettingsPath, JsonSerializer.Serialize(d, new JsonSerializerOptions { WriteIndented = true }));
+            _settingsLock.Wait();
+            try
+            {
+                if (File.Exists(SettingsPath))
+                    d = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(SettingsPath)) ?? new();
+                d[FileListKey(packId)] = JsonSerializer.Serialize(files);
+                Directory.CreateDirectory(Path.GetDirectoryName(SettingsPath)!);
+                File.WriteAllText(SettingsPath, JsonSerializer.Serialize(d, new JsonSerializerOptions { WriteIndented = true }));
+            }
+            finally { _settingsLock.Release(); }
         }
         catch (Exception ex) { CrashReporter.Log($"[ShaderPackService.RecordExtractedFiles] Failed for '{packId}' — {ex.Message}"); }
     }
@@ -491,10 +498,14 @@ public partial class ShaderPackService
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "RHI", "settings.json");
 
+    /// <summary>Serializes all settings.json reads and writes to prevent concurrent access errors.</summary>
+    private static readonly SemaphoreSlim _settingsLock = new(1, 1);
+
     private string VersionKey(string packId) => $"ShaderPack_{packId}_Version";
 
     private string? LoadStoredVersion(string packId)
     {
+        _settingsLock.Wait();
         try
         {
             if (!File.Exists(SettingsPath)) return null;
@@ -502,10 +513,12 @@ public partial class ShaderPackService
             return d != null && d.TryGetValue(VersionKey(packId), out var v) ? v : null;
         }
         catch (Exception ex) { CrashReporter.Log($"[ShaderPackService.LoadStoredVersion] Failed to load stored version for '{packId}' — {ex.Message}"); return null; }
+        finally { _settingsLock.Release(); }
     }
 
     private void SaveStoredVersion(string packId, string version)
     {
+        _settingsLock.Wait();
         try
         {
             Dictionary<string, string> d = new();
@@ -516,5 +529,6 @@ public partial class ShaderPackService
             File.WriteAllText(SettingsPath, JsonSerializer.Serialize(d, new JsonSerializerOptions { WriteIndented = true }));
         }
         catch (Exception ex) { CrashReporter.Log($"[ShaderPackService.SaveStoredVersion] Failed to save version for '{packId}' — {ex.Message}"); }
+        finally { _settingsLock.Release(); }
     }
 }

@@ -48,6 +48,9 @@ public partial class DlssStreamlineService : IDlssStreamlineService
     private static readonly string StreamlineCustomDir = Path.Combine(BaseStagingDir, "Custom", "Streamline");
     private static readonly string CustomBaseDir = Path.Combine(BaseStagingDir, "Custom");
 
+    /// <summary>AppData backup root for game-original Streamline DLLs — one subfolder per game name.</summary>
+    internal static readonly string StreamlineBackupsDir = Path.Combine(BaseStagingDir, "StreamlineBackups");
+
     // ── Manifest URL ──────────────────────────────────────────────────────────
 
     private const string DlssManifestUrl =

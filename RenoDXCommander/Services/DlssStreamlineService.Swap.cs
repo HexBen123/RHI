@@ -117,14 +117,18 @@ public partial class DlssStreamlineService
         if (!File.Exists(Path.Combine(cachedDir, StreamlineIndicator)))
             await DownloadAndCacheStreamlineAsync(entry.Url, cachedDir).ConfigureAwait(false);
 
-        if (!File.Exists(Path.Combine(cachedDir, StreamlineIndicator)))
+        if (!File.Exists(Path.Combine(cachedDir, StreamlineIndicator)) &&
+            !File.Exists(Path.Combine(cachedDir, "sl.common.dll")))
         {
             CrashReporter.Log($"[DlssStreamlineService.SwapStreamlineAsync] Failed to cache Streamline {version}");
             return;
         }
 
+        // Before replacing, ensure game-original files are backed up to appdata
+        // This gives us a fallback if the in-game .original backups are lost
+        BackupStreamlineToAppData(gameFolder);
+
         // Only replace files that already exist in the game folder
-        // Use plain copy — no backup needed, these files are always RHI-managed
         int replaced = 0;
         foreach (var slDll in KnownStreamlineDlls)
         {
@@ -133,6 +137,11 @@ public partial class DlssStreamlineService
 
             if (File.Exists(gameDllPath) && File.Exists(cachedDllPath))
             {
+                // Also keep in-game .original for immediate restore
+                var backupPath = gameDllPath + BackupExtension;
+                if (!File.Exists(backupPath))
+                    File.Copy(gameDllPath, backupPath);
+
                 File.Copy(cachedDllPath, gameDllPath, overwrite: true);
                 replaced++;
             }
@@ -167,6 +176,9 @@ public partial class DlssStreamlineService
             return;
         }
 
+        // Back up original files to AppData before replacing
+        BackupStreamlineToAppData(gameFolder);
+
         int replaced = 0;
         foreach (var slDll in KnownStreamlineDlls)
         {
@@ -175,6 +187,11 @@ public partial class DlssStreamlineService
 
             if (File.Exists(gameDllPath) && File.Exists(customDllPath))
             {
+                // Also keep in-game .original for immediate restore
+                var backupPath = gameDllPath + BackupExtension;
+                if (!File.Exists(backupPath))
+                    File.Copy(gameDllPath, backupPath);
+
                 File.Copy(customDllPath, gameDllPath, overwrite: true);
                 replaced++;
             }
@@ -211,17 +228,19 @@ public partial class DlssStreamlineService
 
     public void RestoreStreamline(string gameFolder)
     {
+        int restored = 0;
         foreach (var slDll in KnownStreamlineDlls)
         {
             var dllPath = Path.Combine(gameFolder, slDll);
             var backupPath = dllPath + BackupExtension;
+
             if (File.Exists(backupPath))
             {
                 try
                 {
-                    if (File.Exists(dllPath))
-                        File.Delete(dllPath);
+                    if (File.Exists(dllPath)) File.Delete(dllPath);
                     File.Move(backupPath, dllPath);
+                    restored++;
                 }
                 catch (Exception ex)
                 {
@@ -230,10 +249,89 @@ public partial class DlssStreamlineService
             }
         }
 
+        // If in-game backups were missing (already consumed), fall back to appdata backup
+        if (restored == 0)
+        {
+            var appDataBackup = GetStreamlineAppDataBackupPath(gameFolder);
+            if (appDataBackup != null && File.Exists(appDataBackup))
+            {
+                try
+                {
+                    using var zip = System.IO.Compression.ZipFile.OpenRead(appDataBackup);
+                    foreach (var entry in zip.Entries)
+                    {
+                        var gameDllPath = Path.Combine(gameFolder, entry.Name);
+                        if (File.Exists(gameDllPath))
+                        {
+                            entry.ExtractToFile(gameDllPath, overwrite: true);
+                            restored++;
+                        }
+                    }
+                    if (restored > 0)
+                        CrashReporter.Log($"[DlssStreamlineService.RestoreStreamline] Restored {restored} Streamline DLLs from AppData backup zip for '{gameFolder}'");
+                }
+                catch (Exception ex)
+                {
+                    CrashReporter.Log($"[DlssStreamlineService.RestoreStreamline] AppData zip restore failed — {ex.Message}");
+                }
+            }
+        }
+
         CrashReporter.Log($"[DlssStreamlineService.RestoreStreamline] Restored Streamline in '{gameFolder}'");
 
         // Remove custom marker since we're reverting to originals
         RemoveCustomStreamlineMarker(gameFolder);
+    }
+
+    /// <summary>
+    /// Backs up the game's current Streamline DLLs to %LocalAppData%\RHI\StreamlineBackups\{hash}.zip
+    /// only if no backup already exists there (preserves the original, not a later swap).
+    /// </summary>
+    private static void BackupStreamlineToAppData(string gameFolder)
+    {
+        try
+        {
+            var backupZip = GetStreamlineAppDataBackupPath(gameFolder);
+            if (backupZip == null) return;
+
+            // Only create the backup once — don't overwrite with a later-swapped version
+            if (File.Exists(backupZip)) return;
+
+            Directory.CreateDirectory(Path.GetDirectoryName(backupZip)!);
+
+            int backed = 0;
+            using (var zip = System.IO.Compression.ZipFile.Open(backupZip, System.IO.Compression.ZipArchiveMode.Create))
+            {
+                foreach (var slDll in KnownStreamlineDlls)
+                {
+                    var src = Path.Combine(gameFolder, slDll);
+                    if (File.Exists(src))
+                    {
+                        zip.CreateEntryFromFile(src, slDll, System.IO.Compression.CompressionLevel.Fastest);
+                        backed++;
+                    }
+                }
+            }
+
+            if (backed == 0)
+                File.Delete(backupZip); // nothing to back up — remove empty zip
+            else
+                CrashReporter.Log($"[DlssStreamlineService] AppData backup created for '{gameFolder}' ({backed} files → {backupZip})");
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[DlssStreamlineService] AppData backup failed for '{gameFolder}' — {ex.Message}");
+        }
+    }
+
+    /// <summary>Returns the appdata backup zip path for a game folder, using an 8-char hash of the full path as key.</summary>
+    private static string? GetStreamlineAppDataBackupPath(string gameFolder)
+    {
+        if (string.IsNullOrEmpty(gameFolder)) return null;
+        var normalized = Path.GetFullPath(gameFolder).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar).ToLowerInvariant();
+        var hashBytes = System.Security.Cryptography.MD5.HashData(System.Text.Encoding.UTF8.GetBytes(normalized));
+        var hash = Convert.ToHexString(hashBytes)[..8];
+        return Path.Combine(StreamlineBackupsDir, hash + ".zip");
     }
 
     public void RestoreAll(DlssDetectionResult detection)
