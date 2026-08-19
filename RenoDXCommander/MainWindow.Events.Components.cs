@@ -600,7 +600,7 @@ public sealed partial class MainWindow
 
                         var combo = new ComboBox { FontSize = 11, MinWidth = 100, HorizontalAlignment = HorizontalAlignment.Stretch };
 
-                        if (isSetPath) { combo.Items.Add("HDR"); combo.Items.Add("SDR"); }
+                        if (isSetPath) { combo.Items.Add("HDR / Off"); combo.Items.Add("SDR / On"); }
                         else if (isDumpLut) { combo.Items.Add("Off"); combo.Items.Add("On"); }
                         else { combo.Items.Add("Off"); combo.Items.Add("Output size"); combo.Items.Add("Output ratio"); combo.Items.Add("Any size"); }
 

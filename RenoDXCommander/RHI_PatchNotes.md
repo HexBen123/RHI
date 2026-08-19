@@ -11,6 +11,7 @@
 - On standard refresh, RHI now re-checks games that were previously confirmed to have no DLSS. If DLSS files have since appeared (e.g. a preloaded game that received its content on release), the game is picked up automatically without needing a Full Refresh.
 - The shader picker now has Expand All / Collapse All and Deselect All buttons for faster navigation.
 - Added "Effect list style" setting in Settings → Screenshots & Hotkeys. Defaults to Tabs, which groups shaders into named tabs in the ReShade overlay instead of a flat tree. Apply to All Games writes the setting to all managed reshade.ini files.
+- The Upgrade Path option in the UE-Extended compatibility settings cog now shows "HDR / Off" and "SDR / On" instead of bare numbers, making the setting self-explanatory.
 
 ### Bug Fixes
 
@@ -19,11 +20,11 @@
 - Fixed Streamline restore failing after the in-game backup files were already consumed by a previous restore. RHI now keeps a compressed backup of the game's original Streamline DLLs in AppData as a fallback, so restore always works even after repeated attempts.
 - Fixed a race condition where concurrent shader pack updates could fail to save their version cache to `settings.json`, causing the same packs to re-download on every launch.
 - Fixed DLL naming override toggle incorrectly appearing as enabled for games where OptiScaler had previously been installed and uninstalled. This caused ReShade to install under the wrong filename (e.g. `ReShade64.dll` instead of `dxgi.dll`) on affected games, and the toggle would appear to switch on by itself when changing DLSS presets.
-- Fixed a startup freeze of 3–5 seconds introduced in v2.3.6-beta1. The freeze was caused by two issues: (1) shader pack version checks at startup serialized 100+ `settings.json` reads through a single lock — now uses an in-memory cache; (2) `RecheckSkipList` ran during the startup background scan while 50 parallel tasks saturated the thread pool, starving the scan thread — it now only runs on manual Refresh.
 
 ### Manifest Updates
 
 - Added Engine.ini path override for The Sinking City 2 (`TSC2` subfolder).
+- Fixed Engine.ini config path detection for Satisfactory (uses `FactoryGame` as its AppData folder name).
 
 ---
 
