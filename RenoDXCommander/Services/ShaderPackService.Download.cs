@@ -320,13 +320,10 @@ public partial class ShaderPackService
         _settingsLock.Wait();
         try
         {
-            if (!File.Exists(SettingsPath)) return false;
-            var d = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(SettingsPath));
-            if (d == null || !d.TryGetValue(FileListKey(packId), out var json) || string.IsNullOrEmpty(json))
-                return false; // no record → treat as missing
+            var d = ReadSettings();
+            if (!d.TryGetValue(FileListKey(packId), out var json) || string.IsNullOrEmpty(json))
+                return false;
 
-            // Fast path: if the cache zip hasn't changed since we last verified all files,
-            // skip the expensive per-file existence check.
             var currentTimestamp = File.GetLastWriteTimeUtc(cachePath).Ticks.ToString();
             if (d.TryGetValue(CacheTimestampKey(packId), out var storedTimestamp)
                 && storedTimestamp == currentTimestamp)
@@ -336,16 +333,13 @@ public partial class ShaderPackService
 
             var files = JsonSerializer.Deserialize<List<string>>(json) ?? new();
             if (files.Count == 0) return false;
-            // All recorded files must still exist
             if (!files.All(rel => File.Exists(Path.Combine(AuxInstallService.RsStagingDir, rel))))
                 return false;
 
-            // All files verified — store the cache zip timestamp so next check is instant
-            d[CacheTimestampKey(packId)] = currentTimestamp;
-            try
-            {
-                File.WriteAllText(SettingsPath, JsonSerializer.Serialize(d, new JsonSerializerOptions { WriteIndented = true }));
-            }
+            // All files verified — write timestamp to cache
+            var dCopy = new Dictionary<string, string>(d);
+            dCopy[CacheTimestampKey(packId)] = currentTimestamp;
+            try { WriteSettings(dCopy); }
             catch (Exception ex) { CrashReporter.Log($"[ShaderPackService.PackHasExtractedFiles] Failed to save cache timestamp for '{packId}' — {ex.Message}"); }
 
             return true;
@@ -418,11 +412,9 @@ public partial class ShaderPackService
             _settingsLock.Wait();
             try
             {
-                if (File.Exists(SettingsPath))
-                    d = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(SettingsPath)) ?? new();
+                d = new Dictionary<string, string>(ReadSettings());
                 d[FileListKey(packId)] = JsonSerializer.Serialize(files);
-                Directory.CreateDirectory(Path.GetDirectoryName(SettingsPath)!);
-                File.WriteAllText(SettingsPath, JsonSerializer.Serialize(d, new JsonSerializerOptions { WriteIndented = true }));
+                WriteSettings(d);
             }
             finally { _settingsLock.Release(); }
         }
@@ -502,6 +494,30 @@ public partial class ShaderPackService
     /// <summary>Serializes all settings.json reads and writes to prevent concurrent access errors.</summary>
     private static readonly SemaphoreSlim _settingsLock = new(1, 1);
 
+    /// <summary>In-memory cache of settings.json — loaded once on first read, invalidated on every write.</summary>
+    private static Dictionary<string, string>? _settingsCache;
+
+    /// <summary>Reads the settings dict — uses in-memory cache, only hits disk when cache is cold.</summary>
+    private static Dictionary<string, string> ReadSettings()
+    {
+        if (_settingsCache != null) return _settingsCache;
+        try
+        {
+            if (!File.Exists(SettingsPath)) return _settingsCache = new();
+            _settingsCache = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(SettingsPath)) ?? new();
+            return _settingsCache;
+        }
+        catch { return _settingsCache = new(); }
+    }
+
+    /// <summary>Writes the settings dict to disk and updates the in-memory cache.</summary>
+    private static void WriteSettings(Dictionary<string, string> d)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(SettingsPath)!);
+        File.WriteAllText(SettingsPath, JsonSerializer.Serialize(d, new JsonSerializerOptions { WriteIndented = true }));
+        _settingsCache = d; // update cache with written state
+    }
+
     private string VersionKey(string packId) => $"ShaderPack_{packId}_Version";
 
     private string? LoadStoredVersion(string packId)
@@ -509,9 +525,8 @@ public partial class ShaderPackService
         _settingsLock.Wait();
         try
         {
-            if (!File.Exists(SettingsPath)) return null;
-            var d = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(SettingsPath));
-            return d != null && d.TryGetValue(VersionKey(packId), out var v) ? v : null;
+            var d = ReadSettings();
+            return d.TryGetValue(VersionKey(packId), out var v) ? v : null;
         }
         catch (Exception ex) { CrashReporter.Log($"[ShaderPackService.LoadStoredVersion] Failed to load stored version for '{packId}' — {ex.Message}"); return null; }
         finally { _settingsLock.Release(); }
@@ -522,12 +537,9 @@ public partial class ShaderPackService
         _settingsLock.Wait();
         try
         {
-            Dictionary<string, string> d = new();
-            if (File.Exists(SettingsPath))
-                d = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(SettingsPath)) ?? new();
+            var d = new Dictionary<string, string>(ReadSettings());
             d[VersionKey(packId)] = version;
-            Directory.CreateDirectory(Path.GetDirectoryName(SettingsPath)!);
-            File.WriteAllText(SettingsPath, JsonSerializer.Serialize(d, new JsonSerializerOptions { WriteIndented = true }));
+            WriteSettings(d);
         }
         catch (Exception ex) { CrashReporter.Log($"[ShaderPackService.SaveStoredVersion] Failed to save version for '{packId}' — {ex.Message}"); }
         finally { _settingsLock.Release(); }
@@ -547,9 +559,8 @@ public partial class ShaderPackService
         _settingsLock.Wait();
         try
         {
-            if (!File.Exists(SettingsPath)) return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            var d = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(SettingsPath));
-            if (d == null || !d.TryGetValue(ExcludedFilesKey(packId), out var json) || string.IsNullOrEmpty(json))
+            var d = ReadSettings();
+            if (!d.TryGetValue(ExcludedFilesKey(packId), out var json) || string.IsNullOrEmpty(json))
                 return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var list = JsonSerializer.Deserialize<List<string>>(json) ?? new();
             return new HashSet<string>(list, StringComparer.OrdinalIgnoreCase);
@@ -562,22 +573,18 @@ public partial class ShaderPackService
         finally { _settingsLock.Release(); }
     }
 
-    /// <summary>Saves the excluded files for a pack.</summary>
     public void SetExcludedFiles(string packId, IEnumerable<string> excluded)
     {
         _settingsLock.Wait();
         try
         {
-            Dictionary<string, string> d = new();
-            if (File.Exists(SettingsPath))
-                d = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(SettingsPath)) ?? new();
+            var d = new Dictionary<string, string>(ReadSettings());
             var list = excluded.ToList();
             if (list.Count > 0)
                 d[ExcludedFilesKey(packId)] = JsonSerializer.Serialize(list);
             else
                 d.Remove(ExcludedFilesKey(packId));
-            Directory.CreateDirectory(Path.GetDirectoryName(SettingsPath)!);
-            File.WriteAllText(SettingsPath, JsonSerializer.Serialize(d, new JsonSerializerOptions { WriteIndented = true }));
+            WriteSettings(d);
             CrashReporter.Log($"[ShaderPackService.SetExcludedFiles] Saved {list.Count} exclusion(s) for '{packId}'");
         }
         catch (Exception ex)

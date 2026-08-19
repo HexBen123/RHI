@@ -258,7 +258,7 @@ public partial class MainViewModel
                 // Restore saved Digital Vibrance levels on startup
                 _ = Task.Run(() => { try { DigitalVibranceService.RestoreSavedLevels(Settings.DigitalVibranceSettings); } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.InitializeAsync] DVC restore failed — {ex.Message}"); } });
                 await LoadCacheAndBuildCardsAsync(savedLib!);
-                _ = RunBackgroundScanAndMergeAsync(savedLib!);
+                _ = RunBackgroundScanAndMergeAsync(savedLib!, isStartup: true);
                 return;
             }
 

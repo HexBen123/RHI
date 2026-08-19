@@ -449,7 +449,7 @@ public class SettingsHandler
         var dialog = new ContentDialog
         {
             Title = "Screenshots & Hotkeys",
-            Content = $"Screenshot path and ReShade hotkeys applied to {updatedCount} reshade.ini file{(updatedCount == 1 ? "" : "s")}.",
+            Content = $"Screenshot path, ReShade hotkeys, and effect list style applied to {updatedCount} reshade.ini file{(updatedCount == 1 ? "" : "s")}.",
             CloseButtonText = "OK",
             XamlRoot = _window.Content.XamlRoot,
             RequestedTheme = ElementTheme.Dark,

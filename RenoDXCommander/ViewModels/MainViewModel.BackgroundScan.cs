@@ -19,7 +19,7 @@ public partial class MainViewModel
     /// (identical to InitializeAsync) and merges fresh results into the
     /// already-displayed cached cards. Runs as fire-and-forget after Phase 1.
     /// </summary>
-    private async Task RunBackgroundScanAndMergeAsync(SavedGameLibrary savedLib)
+    private async Task RunBackgroundScanAndMergeAsync(SavedGameLibrary savedLib, bool isStartup = false)
     {
         IsBackgroundScanning = true;
         BackgroundScanStatusText = "Scanning for changes...";
@@ -270,20 +270,26 @@ public partial class MainViewModel
             if (_manifestBlacklist.Count > 0)
                 allGames = allGames.Where(g => !_manifestBlacklist.Contains(g.Name)).ToList();
 
+            _crashReporter.Log("[RunBackgroundScanAndMergeAsync] Loading install records...");
             var records    = _installer.LoadAll();
             var auxRecords = _auxInstaller.LoadAll();
+            _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Records loaded: {records.Count} mod, {auxRecords.Count} aux");
             var addonCache = savedLib.AddonScanCache ?? new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
 
             // Ensure Nexus Mods dictionary and PCGW AppID cache are ready before building cards
+            _crashReporter.Log("[RunBackgroundScanAndMergeAsync] Awaiting background init tasks...");
             await nexusInitTask;
             await pcgwCacheTask;
             await uwFixInitTask;
             await ultraPlusInitTask;
+            _crashReporter.Log("[RunBackgroundScanAndMergeAsync] Background init tasks complete");
 
             // On standard refresh, re-check games in the DLSS skip list.
             // If a previously-skipped game now has DLSS (e.g. preloaded game released),
             // it's removed from the skip cache so BuildCards will scan it normally.
-            _dlssStreamlineService.RecheckSkipList(allGames);
+            // Skip on startup — only run when the user explicitly triggers a refresh.
+            if (!isStartup)
+                _dlssStreamlineService.RecheckSkipList(allGames);
 
             // Build fresh cards
             _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Building cards for {allGames.Count} games...");

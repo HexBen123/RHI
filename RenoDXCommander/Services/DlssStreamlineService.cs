@@ -301,6 +301,7 @@ public partial class DlssStreamlineService : IDlssStreamlineService
     public void RecheckSkipList(IReadOnlyList<DetectedGame> games)
     {
         EnsureScanCacheLoaded();
+        CrashReporter.Log($"[DlssStreamlineService.RecheckSkipList] Starting recheck, skip cache has {_scanSkipCache!.Count} entries");
         if (_scanSkipCache!.Count == 0) return;
 
         var toRemove = new List<string>();
@@ -331,6 +332,7 @@ public partial class DlssStreamlineService : IDlssStreamlineService
             SaveScanCache();
             CrashReporter.Log($"[DlssStreamlineService.RecheckSkipList] Removed {toRemove.Count} game(s) from skip cache");
         }
+        CrashReporter.Log($"[DlssStreamlineService.RecheckSkipList] Done");
     }
 
     /// <summary>
