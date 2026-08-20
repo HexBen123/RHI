@@ -55,8 +55,8 @@ public sealed partial class MainWindow
         // Step 4: Choose Shaders
         panel.Children.Add(BuildFaqStep(4,
             "Choose Shaders (Optional)",
-            "Click the 'Shaders/Addons' button in the toolbar, then 'Global Shaders' to select shader packs. Lilium's HDR shader pack is selected by default. These apply to all games with ReShade installed.",
-            "Tip: Per-game shaders can be set using the Shaders button on each game's detail card (when ReShade is installed)."));
+            "Click the 'Shaders/Addons' button in the toolbar, then 'Global Shaders' to select shader packs. Lilium's HDR shader pack is selected by default. These apply to all games with ReShade installed.\n\nExpand any pack to pick individual shaders — the pack shows a dash when only some files are selected. Use the Profiles panel on the right to save, load, rename, and share named shader selections. Export a profile as a zip to share via Discord.",
+            "Tip: Per-game shaders can be set using the Shaders button on each game's detail card (when ReShade is installed).\nTip: Use Expand All / Collapse All to browse all packs at once. Deselect All clears the whole selection. Export copies a zip of your selected shaders to the clipboard — paste directly into Discord to share."));
 
         // Step 5: DOF Fix
         panel.Children.Add(BuildFaqStep(5,
