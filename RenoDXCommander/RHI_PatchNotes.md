@@ -27,6 +27,7 @@
 - Fixed Streamline being deployed at the wrong version when OptiScaler is installed on a game that never had Streamline. The version combo now correctly reflects and deploys the selected Streamline version.
 - Fixed `CrashReportClient.exe` being picked as the auto-detected launch executable for games that include it in their install folder.
 - Fixed NVIDIA Profile Overrides panel not appearing after installing OptiScaler on a game that previously had no DLSS. The DLSS skip cache was not cleared on install, so the next Refresh skipped detection entirely. RHI now removes the game from the skip cache immediately when OptiScaler installs.
+- Added upscaler type selector to the OptiScaler ⚙ cog. Choose which graphics API to configure (DX11/DX12/Vulkan) then pick the upscaler for that API. The right combo updates its options automatically based on the selected API.
 
 ### Manifest Updates
 

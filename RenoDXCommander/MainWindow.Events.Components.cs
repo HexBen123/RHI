@@ -2039,6 +2039,76 @@ public sealed partial class MainWindow
             }
         };
 
+        // ── Upscaler row (row 1): API selector | upscaler value ──────────────────
+        // Left combo: which API to configure. Right combo: upscaler for that API.
+        static string[] GetUpscalerOptions(string api) => api switch
+        {
+            "DX12"   => new[] { "Auto (Default)", "DLSS", "XeSS", "FSR 2.1", "FSR 2.2", "FSR 3.x / FFX" },
+            "Vulkan" => new[] { "Auto (Default)", "DLSS", "FSR 2.1", "FSR 2.2", "FSR 3.x / FFX", "XeSS", "FSR2.1 on DX12", "FSR3 on DX12" },
+            _        => new[] { "Auto (Default)", "DLSS", "FSR 2.2", "FSR 3.1", "XeSS (Arc only)", "XeSS on DX12", "FSR2.1 on DX12", "FSR2.2 on DX12", "FSR3 on DX12" }, // DX11
+        };
+        static string UpscalerOptionToIni(string api, string display) => api switch
+        {
+            "DX12"   => display switch { "DLSS" => "dlss", "XeSS" => "xess", "FSR 2.1" => "fsr21", "FSR 2.2" => "fsr22", "FSR 3.x / FFX" => "ffx", _ => "auto" },
+            "Vulkan" => display switch { "DLSS" => "dlss", "FSR 2.1" => "fsr21", "FSR 2.2" => "fsr22", "FSR 3.x / FFX" => "ffx", "XeSS" => "xess", "FSR2.1 on DX12" => "fsr21_12", "FSR3 on DX12" => "ffx_12", _ => "auto" },
+            _        => display switch { "DLSS" => "dlss", "FSR 2.2" => "fsr22", "FSR 3.1" => "fsr31", "XeSS (Arc only)" => "xess", "XeSS on DX12" => "xess_12", "FSR2.1 on DX12" => "fsr21_12", "FSR2.2 on DX12" => "fsr22_12", "FSR3 on DX12" => "ffx_12", _ => "auto" },
+        };
+        static string IniToUpscalerOption(string api, string ini) => api switch
+        {
+            "DX12"   => ini switch { "dlss" => "DLSS", "xess" => "XeSS", "fsr21" => "FSR 2.1", "fsr22" => "FSR 2.2", "ffx" => "FSR 3.x / FFX", _ => "Auto (Default)" },
+            "Vulkan" => ini switch { "dlss" => "DLSS", "fsr21" => "FSR 2.1", "fsr22" => "FSR 2.2", "ffx" => "FSR 3.x / FFX", "xess" => "XeSS", "fsr21_12" => "FSR2.1 on DX12", "ffx_12" => "FSR3 on DX12", _ => "Auto (Default)" },
+            _        => ini switch { "dlss" => "DLSS", "fsr22" => "FSR 2.2", "fsr31" => "FSR 3.1", "xess" => "XeSS (Arc only)", "xess_12" => "XeSS on DX12", "fsr21_12" => "FSR2.1 on DX12", "fsr22_12" => "FSR2.2 on DX12", "ffx_12" => "FSR3 on DX12", _ => "Auto (Default)" },
+        };
+        static string ApiToIniKey(string api) => api switch { "DX12" => "Dx12Upscaler", "Vulkan" => "VulkanUpscaler", _ => "Dx11Upscaler" };
+
+        // Read current upscaler values from OptiScaler.ini
+        string ReadUpscalerIni(string key)
+        {
+            if (string.IsNullOrEmpty(card.InstallPath)) return "auto";
+            var iniPath = Path.Combine(card.InstallPath, OptiScalerService.IniFileName);
+            if (!File.Exists(iniPath)) return "auto";
+            var line = File.ReadAllLines(iniPath).FirstOrDefault(l =>
+                l.TrimStart().StartsWith(key, StringComparison.OrdinalIgnoreCase) &&
+                l.Contains("=") && !l.TrimStart().StartsWith(";"));
+            if (line == null) return "auto";
+            return line.Split('=', 2)[1].Trim().ToLowerInvariant();
+        }
+
+        var apiCombo = new ComboBox { ItemsSource = new[] { "DX11", "DX12", "Vulkan" }, SelectedItem = "DX11", FontSize = 12, HorizontalAlignment = HorizontalAlignment.Stretch };
+        var apiUpscalerCombo = new ComboBox { FontSize = 12, HorizontalAlignment = HorizontalAlignment.Stretch };
+        ToolTipService.SetToolTip(apiCombo, "Select which graphics API's upscaler to configure.");
+        ToolTipService.SetToolTip(apiUpscalerCombo, "Upscaler for the selected API. 'Auto' lets OptiScaler choose based on your GPU.");
+
+        // Populate upscaler combo for initial API (DX11) and select current INI value
+        void RefreshUpscalerCombo(string api)
+        {
+            bool upscalerComboInitializing = true;
+            apiUpscalerCombo.ItemsSource = GetUpscalerOptions(api);
+            var currentIni = ReadUpscalerIni(ApiToIniKey(api));
+            apiUpscalerCombo.SelectedItem = IniToUpscalerOption(api, currentIni);
+            upscalerComboInitializing = false;
+            _ = upscalerComboInitializing; // suppress unused warning
+        }
+        RefreshUpscalerCombo("DX11");
+
+        bool apiComboInitializing = true;
+        AddRow(unifiedGrid, 1, "Upscaler API", apiCombo, "Upscaler", apiUpscalerCombo);
+        apiComboInitializing = false;
+
+        apiCombo.SelectionChanged += (s, ev) =>
+        {
+            if (apiComboInitializing) return;
+            RefreshUpscalerCombo(apiCombo.SelectedItem as string ?? "DX11");
+        };
+        apiUpscalerCombo.SelectionChanged += (s, ev) =>
+        {
+            if (apiComboInitializing) return;
+            if (apiUpscalerCombo.SelectedItem is not string sel || string.IsNullOrEmpty(card.InstallPath)) return;
+            var api = apiCombo.SelectedItem as string ?? "DX11";
+            var iniVal = UpscalerOptionToIni(api, sel);
+            OptiScalerService.SetOptiScalerIniValue(card.InstallPath, "Upscalers", ApiToIniKey(api), iniVal);
+        };
+
         content.Children.Add(unifiedGrid);
 
         ContentDialog? osCogDialog = null;
@@ -2087,13 +2157,13 @@ public sealed partial class MainWindow
             // Separator row between version and nightly settings (spans all 4 columns)
             unifiedGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             var versionSep = MakeSeparator();
-            Grid.SetRow(versionSep, 1); Grid.SetColumn(versionSep, 0); Grid.SetColumnSpan(versionSep, 4);
+            Grid.SetRow(versionSep, 2); Grid.SetColumn(versionSep, 0); Grid.SetColumnSpan(versionSep, 4);
             unifiedGrid.Children.Add(versionSep);
 
             // Section heading: Frame Generation Settings
             unifiedGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             var fgHeading = new TextBlock { Text = "Frame Generation Settings", FontSize = 13, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush), Margin = new Thickness(0, 2, 0, 0) };
-            Grid.SetRow(fgHeading, 2); Grid.SetColumn(fgHeading, 0); Grid.SetColumnSpan(fgHeading, 4);
+            Grid.SetRow(fgHeading, 3); Grid.SetColumn(fgHeading, 0); Grid.SetColumnSpan(fgHeading, 4);
             unifiedGrid.Children.Add(fgHeading);
 
             // All nightly rows go into the same unifiedGrid so columns align with the version row above
@@ -2113,7 +2183,7 @@ public sealed partial class MainWindow
             combinedCombo = new ComboBox { ItemsSource = new[] { "No", "Yes" }, SelectedItem = combinedOn ? "Yes" : "No" };
             ToolTipService.SetToolTip(combinedCombo, "Deploys Streamline and DLSS Enabler to the game's OptiScaler folder. Required for DLSS Frame Generation with OptiScaler.");
             var slVersionCombo = new ComboBox { ItemsSource = slVersions.Count > 0 ? (IEnumerable<string>)slVersions : new[] { slVersionDefault }, SelectedItem = slVersionDefault, IsEnabled = combinedOn };
-            AddRow(unifiedGrid, 3, "Streamline/DLSS Enabler", combinedCombo, "Streamline Version", slVersionCombo);
+            AddRow(unifiedGrid, 4, "Streamline/DLSS Enabler", combinedCombo, "Streamline Version", slVersionCombo);
 
             // Row 4: FG Input (left) | HUD Fix (right)
             fgInputCombo = new ComboBox { ItemsSource = new[] { "Auto (Default)", "OptiFG (Upscaler)", "DLSSG via Streamline", "DLSSG via Nvngx", "FSR 3.1 FG", "FSR 3.0 FG", "XeFG" }, SelectedItem = IniToFgInput(ViewModel.GetOsFgInput(card.GameName, card.Source ?? "")) };
@@ -2141,7 +2211,7 @@ public sealed partial class MainWindow
             hudFixCombo = new ComboBox { ItemsSource = new[] { "Default", "On", "Off" }, SelectedItem = hudFixSelected };
             ToolTipService.SetToolTip(hudFixCombo!, "HUD Fix: enables hudless resource tracking for Frame Generation. On = HUDFix=true in [OptiFG].");
 
-            AddRow(unifiedGrid, 4, "FG Input", fgInputCombo!, "HUD Fix", hudFixCombo!);
+            AddRow(unifiedGrid, 5, "FG Input", fgInputCombo!, "HUD Fix", hudFixCombo!);
 
             // Row 5: FG Output (left) | FG Nvngx Override (right)
             fgOutputCombo = new ComboBox { ItemsSource = new[] { "Auto (Default)", "FSR FG", "DLSSG", "XeFG" }, SelectedItem = IniToFgOutput(ViewModel.GetOsFgOutput(card.GameName, card.Source ?? "")) };
@@ -2151,7 +2221,7 @@ public sealed partial class MainWindow
             object? nvngxSelected = nvngxItems.FirstOrDefault(i => i is ComboBoxItem cb ? (cb.Content as string) == currentNvngxDisplay : (i as string) == currentNvngxDisplay) ?? nvngxItems[0];
             fgNvngxCombo = new ComboBox { ItemsSource = nvngxItems, SelectedItem = nvngxSelected };
             ToolTipService.SetToolTip(fgNvngxCombo!, "Only relevant when FG Output = DLSSG. Enabler requires Deploy Streamline + Deploy DLSS Enabler.");
-            AddRow(unifiedGrid, 5, "FG Output", fgOutputCombo!, "FG Nvngx Override", fgNvngxCombo!);
+            AddRow(unifiedGrid, 6, "FG Output", fgOutputCombo!, "FG Nvngx Override", fgNvngxCombo!);
 
             bool fgOutputIsDlssg = fgOutputCombo!.SelectedItem as string == "DLSSG";
             fgNvngxCombo!.Opacity = fgOutputIsDlssg ? 1.0 : 0.35;
