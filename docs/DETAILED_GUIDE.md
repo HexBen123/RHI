@@ -265,6 +265,10 @@ Vulkan games use a global implicit layer instead of a per-game DLL. See [Vulkan 
 
 Copies `reshade.ini` from the template folder to the game directory, preserving existing game-specific settings.
 
+### Keep ReShade.ini Updated
+
+A per-game toggle in the ReShade ⚙ cog. Set to **No** to prevent RHI from touching the game's `reshade.ini` automatically. When off, ReShade installs, updates, Apply to All Games (hotkeys, peak nits, effect list style), and the "Keep ReShade.ini Updated" resolver in Update All will all skip this game. Use this when you've made manual edits to a reshade.ini that you don't want overwritten.
+
 ### Foreign DLL Detection
 
 Before installing, RHI checks if an existing file belongs to another tool (DXVK, Special K, ENB) via binary signature scanning. A confirmation dialog appears before overwriting.
@@ -612,6 +616,7 @@ The cog provides per-game settings. All settings except OptiScaler Version are g
 
 **Always available:**
 - **OptiScaler Version** — Stable or Nightly
+- **Upscaler API / Upscaler** — pick which graphics API to configure (DX11, DX12, Vulkan) on the left, and the upscaler for that API on the right. Options update automatically based on the selected API. Written directly to `OptiScaler.ini`.
 - **Framerate Limit** — VRR-optimal frame cap using Reflex
 
 **Nightly only — Frame Generation Settings:**
@@ -667,6 +672,21 @@ The first-launch setup window lets you choose your preferred mode on a fresh ins
 - **Essential** — Lilium HDR Shaders (required for HDR tone mapping). Selected by default.
 - **Recommended** — Core packs: crosire reshade-shaders, PumboAutoHDR, smolbbsoop, MaxG2D Simple HDR, clshortfuse shaders, potatoFX.
 - **Extra** — Community packs covering colour grading, film emulation, CRT simulation, VR tools, screen-space effects, and more.
+
+### Per-File Selection
+
+Expand any pack row in the shader picker to see its individual `.fx` files. Tick only the shaders you want — the pack checkbox shows a dash when a partial selection is active. Use **Expand All / Collapse All** to quickly browse all packs, and **Deselect All** to start fresh.
+
+### Shader Profiles
+
+The Profiles panel on the right side of the global shader picker lets you save, load, rename, and delete named shader selections. Each profile stores both pack selection and per-file exclusions.
+
+- **Save** — overwrites the selected profile with the current selection, or creates a new profile if none is selected
+- **New** — creates a profile from the current selection and prompts for a name
+- **Export** — zips the currently selected shader files and copies the archive to your clipboard (paste into Discord to share)
+- **Import** — loads a profile archive exported by RHI; if the packs aren't cached locally, files are extracted from the archive automatically
+
+Profiles can also be loaded in the per-game shader picker (read-only — apply a profile then adjust as needed).
 
 ### Per-Game Shader Overrides
 

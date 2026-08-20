@@ -13,7 +13,7 @@ One app to manage HDR mods across your entire PC game library. RHI auto-detects 
 [list]
 [*][b]8-store detection[/b] — Steam, GOG, Epic, EA App, Ubisoft Connect, Xbox/Game Pass, Battle.net, Rockstar. No manual setup.
 [*][b]10 managed components[/b] — ReShade, RenoDX, RenoDX Upgrade, ReLimiter, Display Commander, OptiScaler, RE Framework, Luma Framework, DXVK, DOF Fix. One-click install, update, and removal for each.
-[*][b]46 shader packs[/b] — RHI Managed (built-in packs), Custom (your own shaders), or Off (no shader deployment). Global or per-game.
+[*][b]46 shader packs[/b] — RHI Managed (built-in packs), Custom (your own shaders), or Off (no shader deployment). Global or per-game. Per-file selection lets you tick only the individual shaders you want. Save, load, and share named shader profiles — export to a zip and paste into Discord.
 [*][b]Generic Luma for all DX11 UE games[/b] — every DX11 Unreal Engine game in your library gets a Luma row. Game-specific Engine.ini tweaks and launch args are applied automatically on install.
 [*][b]DLSS & Streamline management[/b] — swap SR, Ray Reconstruction, and Frame Generation independently. Update or downgrade Streamline as a set. Per-game DLSS presets without NVIDIA Profile Inspector.
 [*][b]Nvidia Profile Overrides[/b] — VSync, Low Latency, Smooth Motion, Power Mode, ReBAR, Multi Frame Generation, DLSS render scale (33–100%). All per-game, written directly to NVIDIA driver profiles.
@@ -108,11 +108,11 @@ Task Scheduler-based persistent elevation. Toggle Off/On in Settings. When enabl
 
 [size=4][b]Per-Game Overrides[/b][/size]
 
-DLL naming · Shader mode (Global/Custom/Select/Off) · Addon mode (Global/Select/Off) · Bitness · Graphics API · ReShade channel (Stable/Nightly/Custom/Legacy/No Addons) · DXVK variant · Launch exe + arguments · Update inclusion toggles · Wiki name mapping
+DLL naming · Shader mode (Global/Custom/Select/Off) · Addon mode (Global/Select/Off) · Bitness · Graphics API · ReShade channel (Stable/Nightly/Custom/Legacy/No Addons) · DXVK variant · Launch exe + arguments · Update inclusion toggles · Wiki name mapping · Keep ReShade.ini Updated
 
 [size=4][b]OptiScaler[/b][/size]
 
-Upscaler redirection and frame generation with Stable and Nightly channels. The ⚙ cog provides per-game settings: FG Input/Output/Nvngx Override, HUD Fix, DLSS SR/RR presets, Render Scale, Streamline/DLSS Enabler deployment, and 4 user-configurable presets (Nightly). Engine.ini tweaks for Unreal Engine games.
+Upscaler redirection and frame generation with Stable and Nightly channels. The ⚙ cog provides per-game settings: FG Input/Output/Nvngx Override, HUD Fix, DLSS SR/RR presets, Render Scale, Streamline/DLSS Enabler deployment, and 4 user-configurable presets (Nightly). Engine.ini tweaks for Unreal Engine games. A two-combo upscaler selector lets you pick the upscaler per API (DX11, DX12, Vulkan) without editing the INI manually.
 
 [size=4][b]HDR Gaming Database[/b][/size]
 
@@ -131,6 +131,7 @@ Quick links to ultrawide fixes (Lyall, RoseTheFlower, p1xel8ted) and Ultra+ mods
 [*][b]Pick a game[/b] from the sidebar. Search or use filter chips to narrow the list.
 [*][b]Click Install[/b] on the components you want — ReShade, RenoDX, a frame limiter.
 [*][b]Launch the game[/b], press [b]Home[/b] to open ReShade, go to [b]Add-ons[/b], and configure RenoDX.
+[*][b]Pick your shaders[/b] — click the [b]Shaders/Addons[/b] toolbar button and choose Global Shaders. Expand any pack to select individual .fx files, save the selection as a named profile, or export it to share.
 [/list]
 
 [line]

@@ -22,7 +22,7 @@
 
 - Fixed enabling the DLL naming override toggle corrupting OptiScaler and ReShade filenames when OptiScaler had renamed ReShade during install. RHI's in-memory record of ReShade's filename was stale, causing the wrong file to be renamed and the other to be deleted.
 - Fixed `dxgi.dll` missing from the ReShade filename dropdown when OptiScaler was using it. The name is now always shown — selecting it is blocked only if it would actually conflict with an installed component.
-- Fixed turning off DLL naming overrides leaving ReShade stuck at `ReShade64.dll` when OptiScaler occupied `dxgi.dll`. RHI now reverts OptiScaler's filename first, freeing `dxgi.dll` before ReShade tries to reclaim it.
+- Fixed turning off DLL naming overrides leaving ReShade stuck at `ReShade64.dll` when OptiScaler occupied `dxgi.dll`. RHI now reverts OptiScaler's filename first, freeing `dxgi.dll` before ReShade tries to reclaim it. When ReShade was at `dxgi.dll` and OptiScaler at a custom name, the revert now moves ReShade aside and restores both to their correct default names.
 - Fixed NVIDIA Profile Overrides panel not appearing after installing OptiScaler on a game that previously had no DLSS. RHI now clears the DLSS skip cache immediately on OptiScaler install so the next Refresh detects the new files correctly.
 - Fixed DLSS version dropdown showing an incorrect version when a DLSS build not in the manifest is installed. The actual installed version is now shown correctly.
 - Fixed Streamline version not being detected when `sl.interposer.dll` is absent. RHI now falls back to `sl.common.dll` for version detection.

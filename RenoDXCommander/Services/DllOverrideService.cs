@@ -257,6 +257,7 @@ public class DllOverrideService : IDllOverrideService
         var cfg = GetDllOverride(name);
         bool rsReverted = true;
         bool dcReverted = true;
+        CrashReporter.Log($"[DllOverrideService.DisableDllOverride] '{name}' — cfg.ReShadeFileName='{cfg?.ReShadeFileName}', RsRecord.InstalledAs='{card.RsRecord?.InstalledAs}', RsInstalledFile='{card.RsInstalledFile}'");
 
         if (cfg != null && !string.IsNullOrEmpty(card.InstallPath))
         {
