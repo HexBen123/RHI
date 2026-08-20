@@ -18,6 +18,7 @@ public class InstallEventHandler
     private readonly IOptiScalerService _optiScalerService;
     private readonly IREFrameworkService _reFrameworkService;
     private readonly IShaderPackService _shaderPackService;
+    private readonly IDlssStreamlineService _dlssStreamlineService;
 
     public InstallEventHandler(MainWindow window, Func<string?, Task<string?>> pickFolderAsync)
     {
@@ -26,6 +27,7 @@ public class InstallEventHandler
         _optiScalerService = App.Services.GetRequiredService<IOptiScalerService>();
         _reFrameworkService = App.Services.GetRequiredService<IREFrameworkService>();
         _shaderPackService = App.Services.GetRequiredService<IShaderPackService>();
+        _dlssStreamlineService = App.Services.GetRequiredService<IDlssStreamlineService>();
     }
 
     private MainViewModel ViewModel => _window.ViewModel;
@@ -261,12 +263,21 @@ public class InstallEventHandler
             card.NotifyAll();
             card.FadeMessage(m => card.OsActionMessage = m, card.OsActionMessage);
 
+            // Clear the DLSS skip cache for this game — OptiScaler just deployed nvngx_dlss.dll
+            // and/or Streamline, so the next Refresh must scan it rather than skipping it.
+            _dlssStreamlineService.RecordDlssFound(card.GameName);
+
             // ── Post-install: Deploy Streamline and DLSS Enabler if pre-enabled ──
             if (osVariant == "Nightly" && !string.IsNullOrEmpty(card.InstallPath))
             {
                 if (ViewModel.GetOsDeployStreamline(card.GameName, card.Source ?? ""))
                 {
-                    try { _optiScalerService.DeployStreamlineToGame(card.InstallPath); }
+                    try
+                    {
+                        // Deploy directly to the correct version — no swap needed, no .original backups
+                        var selectedSlVersion = ViewModel.GetOsStreamlineVersion(card.GameName, card.Source ?? "");
+                        _optiScalerService.DeployStreamlineToGame(card.InstallPath, selectedSlVersion);
+                    }
                     catch (Exception ex) { CrashReporter.Log($"[InstallEventHandler] Streamline post-install deploy failed — {ex.Message}"); }
                 }
                 if (ViewModel.GetOsDeployDlssEnabler(card.GameName, card.Source ?? ""))

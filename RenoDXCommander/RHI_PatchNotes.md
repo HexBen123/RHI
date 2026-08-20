@@ -5,6 +5,10 @@
 - **Per-shader selection** — each shader pack in the shader picker can now be expanded to show its individual `.fx` files. Tick only the shaders you want rather than deploying the full pack. The pack checkbox shows a dash when a partial selection is active, and a tick when all files are included.
 - **Shader profiles** — save, load, rename, and delete named shader selections using the new Profiles panel on the right side of the shader picker. Profiles store both pack selection and per-file exclusions, and can be loaded in the per-game shader picker too.
 - **Export shader selection** — the Export button zips your currently selected shader files and copies the archive to your clipboard, ready to paste into Discord or use as a backup.
+- **Import shader profile** — the Import button in the shader picker lets you load a profile archive exported by RHI. The profile is added to your profile list and, if you don't already have the shader packs cached, the files are extracted from the archive automatically.
+- **Keep ReShade.ini Updated** — new per-game option in the ReShade ⚙ cog. Set to No to prevent RHI from touching that game's reshade.ini automatically — Apply to All Games, ReShade installs, and updates will all skip it, preserving any manual edits you've made.
+- DOF Fix can now be installed without ReShade being managed by RHI. Unchecking ReShade in the Global Update Inclusion dialog unlocks the DOF Fix install button, consistent with how RenoDX, ReLimiter, and Display Commander already behave.
+- RHI will now go to work for you and do your taxes. You're welcome.
 
 ### Changes
 
@@ -20,13 +24,14 @@
 - Fixed Streamline restore failing after the in-game backup files were already consumed by a previous restore. RHI now keeps a compressed backup of the game's original Streamline DLLs in AppData as a fallback, so restore always works even after repeated attempts.
 - Fixed a race condition where concurrent shader pack updates could fail to save their version cache to `settings.json`, causing the same packs to re-download on every launch.
 - Fixed DLL naming override toggle incorrectly appearing as enabled for games where OptiScaler had previously been installed and uninstalled. This caused ReShade to install under the wrong filename (e.g. `ReShade64.dll` instead of `dxgi.dll`) on affected games, and the toggle would appear to switch on by itself when changing DLSS presets.
+- Fixed Streamline being deployed at the wrong version when OptiScaler is installed on a game that never had Streamline. The version combo now correctly reflects and deploys the selected Streamline version.
+- Fixed `CrashReportClient.exe` being picked as the auto-detected launch executable for games that include it in their install folder.
+- Fixed NVIDIA Profile Overrides panel not appearing after installing OptiScaler on a game that previously had no DLSS. The DLSS skip cache was not cleared on install, so the next Refresh skipped detection entirely. RHI now removes the game from the skip cache immediately when OptiScaler installs.
 
 ### Manifest Updates
 
-- Added Engine.ini path override for The Sinking City 2 (`TSC2` subfolder).
-- Added Engine.ini path override for Satisfactory (`FactoryGame` subfolder).
 - Fixed Engine.ini config path detection for Satisfactory (uses `FactoryGame` as its AppData folder name).
-- Fixed Ball x Pit detected as 32-bit — forced to 64-bit.
+- Fixed Ball x Pit incorrectly detected as 32-bit.
 
 ---
 
