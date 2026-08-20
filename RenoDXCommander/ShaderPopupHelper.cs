@@ -710,8 +710,7 @@ public static class ShaderPopupHelper
                 rebuildProfileList!();
             };
             profilePanel.Children.Add(saveBtn);
-
-            // New button
+            ToolTipService.SetToolTip(saveBtn, "Save the current shader selection into the highlighted profile. If no profile is selected, a new one is created automatically.");
             var newBtn = new Button
             {
                 Content  = "New",
@@ -732,8 +731,7 @@ public static class ShaderPopupHelper
                 newProfileBox.SelectAll();
             };
             profilePanel.Children.Add(newBtn);
-
-            // Inline new-profile TextBox
+            ToolTipService.SetToolTip(newBtn, "Create a new profile from the current shader selection. You'll be prompted to enter a name.");
             profilePanel.Children.Add(newProfileBox);
 
             // Confirm new profile on Enter or focus lost
@@ -837,6 +835,7 @@ public static class ShaderPopupHelper
                 }
             };
             profilePanel.Children.Add(exportBtn);
+            ToolTipService.SetToolTip(exportBtn, "Zip the currently selected shader files and copy the archive to your clipboard. Paste directly into Discord to share.");
             profilePanel.Children.Add(exportStatusLabel);
 
             // Import button

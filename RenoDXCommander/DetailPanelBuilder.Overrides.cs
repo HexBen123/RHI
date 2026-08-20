@@ -230,6 +230,7 @@ public partial class DetailPanelBuilder
             if (!dllOverrideToggle.IsOn) return;
             var osName = osNameBox.SelectedItem as string;
             if (string.IsNullOrWhiteSpace(osName)) return;
+            CrashReporter.Log($"[DetailPanelBuilder] OS DLL combo changed → '{osName}' for '{capturedName}' (OsInstalledFile='{card.OsInstalledFile}', RsInstalledFile='{card.RsInstalledFile}')");
 
             // Collision guard: block OS name if it matches the RS or DC installed/configured name
             // Use card directly (not a re-lookup by name) to avoid multi-store card mismatch
@@ -264,6 +265,7 @@ public partial class DetailPanelBuilder
                     {
                         if (System.IO.File.Exists(newPath)) System.IO.File.Delete(newPath);
                         System.IO.File.Move(oldPath, newPath);
+                        CrashReporter.Log($"[DetailPanelBuilder] Renamed OptiScaler DLL '{card.OsInstalledFile}' → '{osName}' for '{capturedName}'");
                         card.OsInstalledFile = osName;
 
                         // Update the tracking record
@@ -319,10 +321,10 @@ public partial class DetailPanelBuilder
                 var dcCurrentName = dllOverrideToggle.IsOn
                     ? (dcNameBox.SelectedItem as string ?? "").Trim()
                     : "";
-                var osCurrentName = _dllOverrideService.GetEffectiveOsName(gameName);
+                // Only exclude the DC name — OS name is allowed to appear in the RS list
+                // (the save handler blocks the rename if RS and OS would collide)
                 var filtered = DllOverrideConstants.CommonDllNames
-                    .Where(n => (string.IsNullOrEmpty(dcCurrentName) || !n.Equals(dcCurrentName, StringComparison.OrdinalIgnoreCase))
-                             && !n.Equals(osCurrentName, StringComparison.OrdinalIgnoreCase))
+                    .Where(n => string.IsNullOrEmpty(dcCurrentName) || !n.Equals(dcCurrentName, StringComparison.OrdinalIgnoreCase))
                     .ToArray();
                 var currentRs = rsNameBox.SelectedItem as string;
                 // Preserve custom RS name that isn't in the base list
@@ -433,11 +435,9 @@ public partial class DetailPanelBuilder
             }
             else
             {
-                // Turning unified override OFF — delegate to service for both RS and DC revert
-                var result = _window.ViewModel.DisableDllOverride(targetCard);
-
-                // Also revert OptiScaler DLL name if it was overridden and OS is installed
-                var osCfg = existingCfg?.OsFileName;
+                // Turning unified override OFF
+                // ── Step 1: Revert OptiScaler DLL FIRST so dxgi.dll is free before RS tries to reclaim it ──
+                var osCfg = _dllOverrideService.GetDllOverride(capturedName)?.OsFileName;
                 if (!string.IsNullOrEmpty(osCfg) && targetCard.IsOsInstalled
                     && !string.IsNullOrEmpty(targetCard.OsInstalledFile)
                     && !string.IsNullOrEmpty(targetCard.InstallPath))
@@ -460,8 +460,10 @@ public partial class DetailPanelBuilder
                     }
                     catch (Exception ex) { CrashReporter.Log($"[DetailPanelBuilder] Failed to revert OptiScaler DLL for '{capturedName}' — {ex.Message}"); }
                 }
-                // Clear the OS override from config too
                 _dllOverrideService.SetOsDllOverride(capturedName, "");
+
+                // ── Step 2: Revert RS and DC ──
+                var result = _window.ViewModel.DisableDllOverride(targetCard);
 
                 // Disable and clear both dropdowns
                 rsNameBox.SelectedIndex = -1;
@@ -775,6 +777,17 @@ public partial class DetailPanelBuilder
             var rsName = rsNameBox.SelectedItem as string;
             if (string.IsNullOrWhiteSpace(rsName)) return;
             var dcName = dllOverrideToggle.IsOn ? (dcNameBox.SelectedItem as string ?? "") : "";
+            CrashReporter.Log($"[DetailPanelBuilder] RS DLL combo changed → '{rsName}' for '{capturedName}'");
+
+            // Collision guard: block if RS name matches the installed OS name
+            var osInstalledName = !string.IsNullOrEmpty(card.OsInstalledFile)
+                ? card.OsInstalledFile
+                : existingCfg?.OsFileName;
+            if (!string.IsNullOrEmpty(osInstalledName) && rsName.Equals(osInstalledName, StringComparison.OrdinalIgnoreCase))
+            {
+                CrashReporter.Log($"[DetailPanelBuilder] Blocking RS DLL selection '{rsName}' — collides with OS name for '{capturedName}'.");
+                return;
+            }
 
             if (_window.ViewModel.HasDllOverride(capturedName))
                 _window.ViewModel.UpdateDllOverrideNames(targetCard, rsName, dcName);

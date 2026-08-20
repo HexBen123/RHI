@@ -1,4 +1,4 @@
-## v2.3.6-beta1
+## v2.3.6
 
 ### New
 
@@ -7,8 +7,9 @@
 - **Export shader selection** — the Export button zips your currently selected shader files and copies the archive to your clipboard, ready to paste into Discord or use as a backup.
 - **Import shader profile** — the Import button in the shader picker lets you load a profile archive exported by RHI. The profile is added to your profile list and, if you don't already have the shader packs cached, the files are extracted from the archive automatically.
 - **Keep ReShade.ini Updated** — new per-game option in the ReShade ⚙ cog. Set to No to prevent RHI from touching that game's reshade.ini automatically — Apply to All Games, ReShade installs, and updates will all skip it, preserving any manual edits you've made.
+- **OptiScaler upscaler selector** — the OptiScaler ⚙ cog now has a two-combo upscaler row. Pick the graphics API on the left (DX11, DX12, or Vulkan) and the upscaler on the right. Options update automatically based on the selected API and write directly to `OptiScaler.ini`.
 - DOF Fix can now be installed without ReShade being managed by RHI. Unchecking ReShade in the Global Update Inclusion dialog unlocks the DOF Fix install button, consistent with how RenoDX, ReLimiter, and Display Commander already behave.
-- RHI will now go to work for you and do your taxes. You're welcome.
+- RHI will now file your taxes, negotiate your mortgage, walk your dog, and attend your cousin's wedding on your behalf. Results may vary. RHI accepts no liability for family disputes arising from the wedding attendance feature.
 
 ### Changes
 
@@ -19,15 +20,17 @@
 
 ### Bug Fixes
 
+- Fixed enabling the DLL naming override toggle corrupting OptiScaler and ReShade filenames when OptiScaler had renamed ReShade during install. RHI's in-memory record of ReShade's filename was stale, causing the wrong file to be renamed and the other to be deleted.
+- Fixed `dxgi.dll` missing from the ReShade filename dropdown when OptiScaler was using it. The name is now always shown — selecting it is blocked only if it would actually conflict with an installed component.
+- Fixed turning off DLL naming overrides leaving ReShade stuck at `ReShade64.dll` when OptiScaler occupied `dxgi.dll`. RHI now reverts OptiScaler's filename first, freeing `dxgi.dll` before ReShade tries to reclaim it.
+- Fixed NVIDIA Profile Overrides panel not appearing after installing OptiScaler on a game that previously had no DLSS. RHI now clears the DLSS skip cache immediately on OptiScaler install so the next Refresh detects the new files correctly.
 - Fixed DLSS version dropdown showing an incorrect version when a DLSS build not in the manifest is installed. The actual installed version is now shown correctly.
 - Fixed Streamline version not being detected when `sl.interposer.dll` is absent. RHI now falls back to `sl.common.dll` for version detection.
 - Fixed Streamline restore failing after the in-game backup files were already consumed by a previous restore. RHI now keeps a compressed backup of the game's original Streamline DLLs in AppData as a fallback, so restore always works even after repeated attempts.
-- Fixed a race condition where concurrent shader pack updates could fail to save their version cache to `settings.json`, causing the same packs to re-download on every launch.
-- Fixed DLL naming override toggle incorrectly appearing as enabled for games where OptiScaler had previously been installed and uninstalled. This caused ReShade to install under the wrong filename (e.g. `ReShade64.dll` instead of `dxgi.dll`) on affected games, and the toggle would appear to switch on by itself when changing DLSS presets.
-- Fixed Streamline being deployed at the wrong version when OptiScaler is installed on a game that never had Streamline. The version combo now correctly reflects and deploys the selected Streamline version.
+- Fixed Streamline being deployed at the wrong version when OptiScaler is installed on a game that never had Streamline before.
+- Fixed a race condition where concurrent shader pack updates could fail to save their version cache, causing the same packs to re-download on every launch.
+- Fixed DLL naming override toggle incorrectly appearing as enabled for games where OptiScaler had previously been installed and uninstalled, causing ReShade to install under the wrong filename.
 - Fixed `CrashReportClient.exe` being picked as the auto-detected launch executable for games that include it in their install folder.
-- Fixed NVIDIA Profile Overrides panel not appearing after installing OptiScaler on a game that previously had no DLSS. The DLSS skip cache was not cleared on install, so the next Refresh skipped detection entirely. RHI now removes the game from the skip cache immediately when OptiScaler installs.
-- Added upscaler type selector to the OptiScaler ⚙ cog. Choose which graphics API to configure (DX11/DX12/Vulkan) then pick the upscaler for that API. The right combo updates its options automatically based on the selected API.
 
 ### Manifest Updates
 

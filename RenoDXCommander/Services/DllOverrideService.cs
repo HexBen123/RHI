@@ -128,6 +128,7 @@ public class DllOverrideService : IDllOverrideService
         {
             var oldPath = Path.Combine(card.InstallPath, card.RsRecord.InstalledAs);
             var newPath = Path.Combine(card.InstallPath, reshadeFileName);
+            CrashReporter.Log($"[DllOverrideService.EnableDllOverride] RS rename check: InstalledAs='{card.RsRecord.InstalledAs}', targetName='{reshadeFileName}', sameFile={oldPath.Equals(newPath, StringComparison.OrdinalIgnoreCase)}");
             try
             {
                 if (File.Exists(oldPath) && !oldPath.Equals(newPath, StringComparison.OrdinalIgnoreCase))
@@ -135,6 +136,7 @@ public class DllOverrideService : IDllOverrideService
                     // Delete target if it exists — use overwrite-safe pattern
                     if (File.Exists(newPath))
                     {
+                        CrashReporter.Log($"[DllOverrideService.EnableDllOverride] Target '{reshadeFileName}' exists — deleting before rename");
                         try { File.Delete(newPath); }
                         catch (Exception delEx)
                         {

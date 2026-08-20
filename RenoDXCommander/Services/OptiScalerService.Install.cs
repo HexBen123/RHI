@@ -146,6 +146,8 @@ public partial class OptiScalerService
 
                         // Update card RS state
                         card.RsInstalledFile = ReShadeCoexistName;
+                        if (card.RsRecord != null)
+                            card.RsRecord.InstalledAs = ReShadeCoexistName;
                     }
                     else if (!conflicts)
                     {
