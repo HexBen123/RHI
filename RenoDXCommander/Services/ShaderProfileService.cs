@@ -65,11 +65,13 @@ public static class ShaderProfileService
     /// <summary>
     /// Builds a zip of the staged .fx/.fxh/texture files for the given selection (respecting exclusions).
     /// Returns the path to the temp zip file.
+    /// When a profile is provided, it is serialized as shader_import.json and added to the zip.
     /// </summary>
     public static string BuildExportZip(
         List<string> selectedPackIds,
         Dictionary<string, HashSet<string>> fileExclusions,
-        IShaderPackService shaderPackService)
+        IShaderPackService shaderPackService,
+        ShaderProfile? profile = null)
     {
         var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
         var zipPath = Path.Combine(Path.GetTempPath(), $"RHI_Shaders_{timestamp}.zip");
@@ -135,6 +137,15 @@ public static class ShaderProfileService
 
             ZipFile.CreateFromDirectory(tempDir, zipPath);
             CrashReporter.Log($"[ShaderProfileService.BuildExportZip] Created zip: {zipPath}");
+
+            // Add shader_import.json to the existing zip
+            if (profile != null)
+            {
+                using var archive = ZipFile.Open(zipPath, ZipArchiveMode.Update);
+                var entry = archive.CreateEntry("shader_import.json");
+                using var writer = new StreamWriter(entry.Open());
+                writer.Write(JsonSerializer.Serialize(profile, JsonOptions));
+            }
         }
         finally
         {
@@ -142,5 +153,127 @@ public static class ShaderProfileService
         }
 
         return zipPath;
+    }
+
+    /// <summary>
+    /// Imports a shader profile from a zip archive created by BuildExportZip.
+    /// Returns (profile, packIdsWithExtractedFiles) on success, or null on failure.
+    /// packIdsWithExtractedFiles is the set of pack IDs whose files were extracted from the zip.
+    /// </summary>
+    public static (ShaderProfile profile, HashSet<string> extractedPackIds)? ImportFromZip(
+        string zipPath,
+        IShaderPackService shaderPackService)
+    {
+        try
+        {
+            using var zip = ZipFile.OpenRead(zipPath);
+
+            // 1. Find and deserialize the profile entry
+            var profileEntry = zip.GetEntry("shader_import.json");
+            if (profileEntry == null)
+            {
+                CrashReporter.Log($"[ShaderProfileService.ImportFromZip] Not a valid RHI shader profile archive: {zipPath}");
+                return null;
+            }
+
+            ShaderProfile? profile;
+            try
+            {
+                using var reader = new StreamReader(profileEntry.Open());
+                var json = reader.ReadToEnd();
+                profile = JsonSerializer.Deserialize<ShaderProfile>(json, JsonOptions);
+            }
+            catch (Exception ex)
+            {
+                CrashReporter.Log($"[ShaderProfileService.ImportFromZip] Failed to deserialize profile: {ex.Message}");
+                return null;
+            }
+
+            if (profile == null)
+            {
+                CrashReporter.Log($"[ShaderProfileService.ImportFromZip] Profile is null or corrupt");
+                return null;
+            }
+
+            var shadersDir  = ShaderPackService.ShadersDir;
+            var texturesDir = ShaderPackService.TexturesDir;
+            Directory.CreateDirectory(shadersDir);
+            Directory.CreateDirectory(texturesDir);
+
+            var extractedPackIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            // 2. Extract files for each selected pack not already cached
+            foreach (var packId in profile.SelectedPacks)
+            {
+                if (shaderPackService.IsPackCached(packId))
+                    continue; // already have it
+
+                var packShadersPrefix   = $"Shaders/{packId}/";
+                var packTexturesPrefix  = $"Textures/{packId}/";
+
+                bool extractedAny = false;
+                foreach (var entry in zip.Entries)
+                {
+                    var entryName = entry.FullName.Replace('\\', '/');
+
+                    string? destRoot = null;
+                    string? relPath  = null;
+
+                    if (entryName.StartsWith(packShadersPrefix, StringComparison.OrdinalIgnoreCase))
+                    {
+                        destRoot = Path.Combine(shadersDir, packId);
+                        relPath  = entryName.Substring(packShadersPrefix.Length);
+                    }
+                    else if (entryName.StartsWith(packTexturesPrefix, StringComparison.OrdinalIgnoreCase))
+                    {
+                        destRoot = Path.Combine(texturesDir, packId);
+                        relPath  = entryName.Substring(packTexturesPrefix.Length);
+                    }
+
+                    if (destRoot == null || string.IsNullOrEmpty(relPath) || entry.Name == "")
+                        continue;
+
+                    var destPath = Path.Combine(destRoot, relPath.Replace('/', Path.DirectorySeparatorChar));
+                    Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
+                    using var src  = entry.Open();
+                    using var dest = File.Create(destPath);
+                    src.CopyTo(dest);
+                    extractedAny = true;
+                }
+
+                if (extractedAny)
+                {
+                    shaderPackService.RecordExtractedFilesFromDir(packId);
+                    extractedPackIds.Add(packId);
+                }
+            }
+
+            // 3. Extract root-level .fxh files from Shaders/ (e.g. ReShade.fxh)
+            foreach (var entry in zip.Entries)
+            {
+                var entryName = entry.FullName.Replace('\\', '/');
+                // Must be directly under Shaders/ with no subdirectory
+                if (!entryName.StartsWith("Shaders/", StringComparison.OrdinalIgnoreCase)) continue;
+                var rel = entryName.Substring("Shaders/".Length);
+                if (rel.Contains('/')) continue; // skip pack subfolders
+                if (!rel.EndsWith(".fxh", StringComparison.OrdinalIgnoreCase)) continue;
+
+                var destPath = Path.Combine(shadersDir, rel);
+                using var src  = entry.Open();
+                using var dest = File.Create(destPath);
+                src.CopyTo(dest);
+            }
+
+            // 4. Invalidate include cache
+            shaderPackService.ClearIncludeCache();
+
+            CrashReporter.Log($"[ShaderProfileService.ImportFromZip] Imported profile '{profile.Name}', extracted {extractedPackIds.Count} pack(s)");
+            return (profile, extractedPackIds);
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[ShaderProfileService.ImportFromZip] Failed: {ex.Message}");
+            return null;
+        }
     }
 }

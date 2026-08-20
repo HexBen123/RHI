@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -803,7 +804,10 @@ public static class ShaderPopupHelper
                             exclDict[id] = excl;
                     }
 
-                    var zipPath = ShaderProfileService.BuildExportZip(packIds, exclDict, shaderPackService);
+                    var zipPath = ShaderProfileService.BuildExportZip(packIds, exclDict, shaderPackService,
+                        activeProfileIdx >= 0 && activeProfileIdx < profiles.Count
+                            ? profiles[activeProfileIdx]
+                            : new ShaderProfile { Name = "Exported Profile", SelectedPacks = packIds, FileExclusions = exclDict.ToDictionary(k => k.Key, k => k.Value.ToList()) });
                     var storageFile = await Windows.Storage.StorageFile.GetFileFromPathAsync(zipPath);
                     var dp = new Windows.ApplicationModel.DataTransfer.DataPackage();
                     dp.SetStorageItems(new[] { storageFile });
@@ -834,6 +838,107 @@ public static class ShaderPopupHelper
             };
             profilePanel.Children.Add(exportBtn);
             profilePanel.Children.Add(exportStatusLabel);
+
+            // Import button
+            var importBtn = new Button
+            {
+                Content  = "Import",
+                FontSize = 12,
+                Padding  = new Thickness(8, 4, 8, 4),
+                Margin   = new Thickness(0, 2, 0, 0),
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+            };
+            ToolTipService.SetToolTip(importBtn, "Import a shader profile from a .zip archive exported by RHI.");
+
+            var importStatusLabel = new TextBlock
+            {
+                Text       = "",
+                FontSize   = 11,
+                Foreground = Brush(ResourceKeys.AccentGreenBrush),
+                Visibility = Visibility.Collapsed,
+                Margin     = new Thickness(0, 2, 0, 0),
+            };
+
+            importBtn.Click += async (s, ev) =>
+            {
+                try
+                {
+                    // Win32 file picker — filter to zip files
+                    // Get hwnd via WinRT interop from the XamlRoot
+                    var hwnd = Microsoft.UI.Win32Interop.GetWindowFromWindowId(
+                        xamlRoot.ContentIslandEnvironment.AppWindowId);
+                    string? zipPath = await Task.Run(() =>
+                    {
+                        var ofn = new NativeInterop.OpenFileName();
+                        ofn.structSize = System.Runtime.InteropServices.Marshal.SizeOf(ofn);
+                        ofn.hwndOwner  = hwnd;
+                        ofn.filter     = "ZIP Archives (*.zip)\0*.zip\0All Files (*.*)\0*.*\0";
+                        ofn.file       = new string(new char[260]);
+                        ofn.maxFile    = ofn.file.Length;
+                        ofn.title      = "Import Shader Profile";
+                        ofn.flags      = 0x00080000 | 0x00001000; // OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST
+                        return NativeInterop.GetOpenFileName(ref ofn) ? ofn.file.TrimEnd('\0') : null;
+                    });
+                    if (string.IsNullOrEmpty(zipPath)) return;
+
+                    importBtn.IsEnabled = false;
+                    importStatusLabel.Text       = "Importing...";
+                    importStatusLabel.Foreground = Brush(ResourceKeys.AccentGreenBrush);
+                    importStatusLabel.Visibility = Visibility.Visible;
+
+                    var result = await Task.Run(() => ShaderProfileService.ImportFromZip(zipPath, shaderPackService));
+
+                    if (result == null)
+                    {
+                        importStatusLabel.Text       = "Invalid archive — not an RHI shader profile.";
+                        importStatusLabel.Foreground = Brush(ResourceKeys.AccentRedBrush);
+                        importStatusLabel.Visibility = Visibility.Visible;
+                    }
+                    else
+                    {
+                        var (importedProfile, extractedPackIds) = result.Value;
+
+                        // Deduplicate name
+                        var importName = importedProfile.Name;
+                        int suffix = 1;
+                        while (profiles.Any(p => p.Name.Equals(importName, StringComparison.OrdinalIgnoreCase)))
+                            importName = $"{importedProfile.Name} ({suffix++})";
+                        importedProfile.Name = importName;
+
+                        profiles.Add(importedProfile);
+                        activeProfileIdx = profiles.Count - 1;
+                        ShaderProfileService.Save(profiles);
+                        rebuildProfileList!();
+                        ApplyProfileToPanel(importedProfile);
+
+                        var msg = extractedPackIds.Count > 0
+                            ? $"Imported — {extractedPackIds.Count} pack(s) extracted from archive."
+                            : "Imported.";
+                        importStatusLabel.Text       = msg;
+                        importStatusLabel.Foreground = Brush(ResourceKeys.AccentGreenBrush);
+                        importStatusLabel.Visibility = Visibility.Visible;
+                        CrashReporter.Log($"[ShaderPopupHelper.ShowAsync] Imported profile '{importedProfile.Name}', extracted packs: [{string.Join(", ", extractedPackIds)}]");
+                    }
+
+                    // Clear status after 4 seconds
+                    var timer = new Microsoft.UI.Xaml.DispatcherTimer { Interval = TimeSpan.FromSeconds(4) };
+                    timer.Tick += (_, _) =>
+                    {
+                        timer.Stop();
+                        importStatusLabel.Visibility = Visibility.Collapsed;
+                        importBtn.IsEnabled = true;
+                    };
+                    timer.Start();
+                }
+                catch (Exception ex)
+                {
+                    CrashReporter.Log($"[ShaderPopupHelper.ShowAsync] Import failed: {ex.Message}");
+                    importBtn.IsEnabled = true;
+                }
+            };
+
+            profilePanel.Children.Add(importBtn);
+            profilePanel.Children.Add(importStatusLabel);
         }
 
         // ── Two-column layout grid ─────────────────────────────────────────────

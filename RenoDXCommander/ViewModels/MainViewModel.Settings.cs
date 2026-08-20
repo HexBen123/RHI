@@ -250,6 +250,34 @@ public partial class MainViewModel
         SaveNameMappings();
     }
 
+    // ── Keep ReShade.ini Updated ──────────────────────────────────────────────
+
+    /// <summary>Returns true if RHI should automatically re-merge reshade.ini for this game (default).</summary>
+    public bool GetKeepRsIniUpdated(string gameName, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        // Absent = Yes (keep updated). Present = No (locked).
+        return !_gameNameService.RsIniLockedGames.Contains(key)
+            && !_gameNameService.RsIniLockedGames.Contains(gameName);
+    }
+
+    /// <summary>Sets whether RHI should automatically re-merge reshade.ini for this game.</summary>
+    public void SetKeepRsIniUpdated(string gameName, bool value, string store = "")
+    {
+        var key = GameKey.From(gameName, store).ToKey();
+        if (!value) // No = locked = add to set
+        {
+            _gameNameService.RsIniLockedGames.Add(key);
+        }
+        else // Yes = keep updated = remove from set
+        {
+            _gameNameService.RsIniLockedGames.Remove(key);
+            _gameNameService.RsIniLockedGames.Remove(gameName); // clear any legacy key
+        }
+        CrashReporter.Log($"[MainViewModel.SetKeepRsIniUpdated] {gameName}|{store} = {(value ? "Yes" : "No")}");
+        SaveNameMappings();
+    }
+
     // ── Deploy DLSS Enabler ───────────────────────────────────────────────────
 
     /// <summary>Returns whether Deploy DLSS Enabler is enabled for a game.</summary>

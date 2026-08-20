@@ -74,6 +74,9 @@ public interface IGameNameService
     /// <summary>Games configured to use normal (non-addon) ReShade.</summary>
     HashSet<string> NormalReShadeGames { get; }
 
+    /// <summary>Games where reshade.ini auto-update is locked. Composite-keyed "GameName|Store".</summary>
+    HashSet<string> RsIniLockedGames { get; }
+
     /// <summary>Per-game install folder overrides.</summary>
     Dictionary<string, string> FolderOverrides { get; }
 

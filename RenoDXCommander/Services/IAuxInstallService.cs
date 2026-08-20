@@ -20,7 +20,8 @@ public interface IAuxInstallService
         string? overlayHotkey = null,
         string? screenshotHotkey = null,
         string? channel = null,
-        string? store = null);
+        string? store = null,
+        bool mergeIni = true);
 
     Task<bool> CheckForUpdateAsync(AuxInstalledRecord record);
 

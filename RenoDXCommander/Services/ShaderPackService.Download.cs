@@ -593,4 +593,43 @@ public partial class ShaderPackService
         }
         finally { _settingsLock.Release(); }
     }
+
+    /// <summary>
+    /// Scans the pack's staging subfolder and records all found files in settings.json.
+    /// Used after importing shader files from an archive.
+    /// </summary>
+    public void RecordExtractedFilesFromDir(string packId)
+    {
+        var packShadersDir = Path.Combine(ShadersDir, packId);
+        var packTexturesDir = Path.Combine(TexturesDir, packId);
+        var files = new List<string>();
+
+        if (Directory.Exists(packShadersDir))
+        {
+            foreach (var file in Directory.EnumerateFiles(packShadersDir, "*", SearchOption.AllDirectories))
+            {
+                var rel = Path.GetRelativePath(packShadersDir, file);
+                files.Add(Path.Combine("Shaders", packId, rel));
+            }
+        }
+        if (Directory.Exists(packTexturesDir))
+        {
+            foreach (var file in Directory.EnumerateFiles(packTexturesDir, "*", SearchOption.AllDirectories))
+            {
+                var rel = Path.GetRelativePath(packTexturesDir, file);
+                files.Add(Path.Combine("Textures", packId, rel));
+            }
+        }
+
+        _settingsLock.Wait();
+        try
+        {
+            var d = new Dictionary<string, string>(ReadSettings());
+            d[FileListKey(packId)] = JsonSerializer.Serialize(files);
+            // No version token — leave any existing version as-is
+            WriteSettings(d);
+            CrashReporter.Log($"[ShaderPackService.RecordExtractedFilesFromDir] Recorded {files.Count} file(s) for pack '{packId}'");
+        }
+        finally { _settingsLock.Release(); }
+    }
 }

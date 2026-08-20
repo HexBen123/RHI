@@ -137,11 +137,8 @@ public partial class DlssStreamlineService
 
             if (File.Exists(gameDllPath) && File.Exists(cachedDllPath))
             {
-                // Also keep in-game .original for immediate restore
-                var backupPath = gameDllPath + BackupExtension;
-                if (!File.Exists(backupPath))
-                    File.Copy(gameDllPath, backupPath);
-
+                // Plain overwrite — no .original backups. Streamline in OptiScaler\Streamline\ is
+                // always RHI-managed, never a game original. AppData zip backup covers restore.
                 File.Copy(cachedDllPath, gameDllPath, overwrite: true);
                 replaced++;
             }
@@ -187,11 +184,7 @@ public partial class DlssStreamlineService
 
             if (File.Exists(gameDllPath) && File.Exists(customDllPath))
             {
-                // Also keep in-game .original for immediate restore
-                var backupPath = gameDllPath + BackupExtension;
-                if (!File.Exists(backupPath))
-                    File.Copy(gameDllPath, backupPath);
-
+                // Plain overwrite — no .original backups. AppData zip backup covers restore.
                 File.Copy(customDllPath, gameDllPath, overwrite: true);
                 replaced++;
             }

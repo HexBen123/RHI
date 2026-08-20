@@ -760,7 +760,7 @@ public sealed partial class MainWindow
             {
                 var exes = Directory.GetFiles(card.InstallPath, "*.exe", SearchOption.TopDirectoryOnly);
                 var excludeNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-                    { "unins000", "UnityCrashHandler64", "UnityCrashHandler32", "CrashReporter", "launcher" };
+                    { "unins000", "UnityCrashHandler64", "UnityCrashHandler32", "CrashReporter", "CrashReportClient", "launcher" };
                 var gameExe = exes
                     .Where(e => !excludeNames.Contains(Path.GetFileNameWithoutExtension(e)))
                     .OrderByDescending(e => new FileInfo(e).Length)

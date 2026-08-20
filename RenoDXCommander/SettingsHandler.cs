@@ -422,6 +422,9 @@ public class SettingsHandler
 
             if (iniFiles.Count == 0) continue;
 
+            // Skip games where the user has locked reshade.ini updates
+            if (!ViewModel.GetKeepRsIniUpdated(card.GameName, card.Source ?? "")) continue;
+
             try
             {
                 var savePath = perGame
@@ -506,6 +509,9 @@ public class SettingsHandler
                 .ToList();
 
             if (iniFiles.Count == 0) continue;
+
+            // Skip games where reshade.ini updates are locked
+            if (!ViewModel.GetKeepRsIniUpdated(card.GameName, card.Source ?? "")) continue;
 
             try
             {

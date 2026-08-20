@@ -13,10 +13,12 @@ public partial class OptiScalerService
         "RHI", "Streamline");
 
     /// <summary>
-    /// Copies all files from the RHI Streamline staging folder to
-    /// &lt;installPath&gt;\OptiScaler\Streamline\.
+    /// Copies all files from the specified Streamline version subfolder to
+    /// &lt;installPath&gt;\OptiScaler\Streamline\. If version is null or not found,
+    /// falls back to the first available subfolder.
+    /// Always uses plain File.Copy — no .original backups since these are RHI-managed files.
     /// </summary>
-    public void DeployStreamlineToGame(string installPath)
+    public void DeployStreamlineToGame(string installPath, string? version = null)
     {
         if (string.IsNullOrEmpty(installPath)) return;
 
@@ -27,16 +29,23 @@ public partial class OptiScalerService
             return;
         }
 
-        // Streamline files live in a version subfolder (e.g. Streamline\2.12.0\)
-        // Find the first subdirectory that contains .dll files
-        var sourceDir = sourceRootDir;
-        var subDirs = Directory.GetDirectories(sourceRootDir);
-        if (subDirs.Length > 0)
+        // Resolve the version subfolder to deploy from
+        string? sourceDir = null;
+        if (!string.IsNullOrEmpty(version))
         {
-            // Use the subfolder if it contains DLLs (version folder pattern)
-            var candidate = subDirs[0];
-            if (Directory.GetFiles(candidate, "*.dll").Length > 0)
-                sourceDir = candidate;
+            var versionDir = Path.Combine(sourceRootDir, version);
+            if (Directory.Exists(versionDir) && Directory.GetFiles(versionDir, "*.dll").Length > 0)
+                sourceDir = versionDir;
+        }
+
+        // Fallback: pick the subfolder with the highest version number
+        if (sourceDir == null)
+        {
+            var subDirs = Directory.GetDirectories(sourceRootDir)
+                .Where(d => Directory.GetFiles(d, "*.dll").Length > 0)
+                .OrderByDescending(d => Version.TryParse(Path.GetFileName(d), out var v) ? v : new Version(0, 0))
+                .FirstOrDefault();
+            sourceDir = subDirs ?? sourceRootDir;
         }
 
         var destDir = Path.Combine(installPath, "OptiScaler", "Streamline");
@@ -48,6 +57,7 @@ public partial class OptiScalerService
         {
             try
             {
+                // Plain File.Copy — no .original backups. These are RHI-managed files, not game originals.
                 File.Copy(file, Path.Combine(destDir, Path.GetFileName(file)), overwrite: true);
                 copied++;
             }
@@ -57,7 +67,7 @@ public partial class OptiScalerService
             }
         }
 
-        CrashReporter.Log($"[OptiScalerService.DeployStreamlineToGame] Deployed {copied} Streamline file(s) to {installPath}");
+        CrashReporter.Log($"[OptiScalerService.DeployStreamlineToGame] Deployed {copied} Streamline file(s) from '{Path.GetFileName(sourceDir)}' to {installPath}");
     }
 
     /// <summary>

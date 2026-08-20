@@ -78,4 +78,10 @@ public interface IShaderPackService
 
     /// <summary>Saves the excluded files for a pack.</summary>
     void SetExcludedFiles(string packId, IEnumerable<string> excluded);
+
+    /// <summary>
+    /// Scans the pack's staging subfolder and records all found files in settings.json.
+    /// Used after importing shader files from an archive.
+    /// </summary>
+    void RecordExtractedFilesFromDir(string packId);
 }

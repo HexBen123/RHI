@@ -390,6 +390,7 @@ public static class GameReportEncoder
             ["updateExcludedDC"] = vm.IsUpdateAllExcludedDc(gameName, card.Source ?? ""),
             ["updateExcludedOS"] = vm.IsUpdateAllExcludedOs(gameName, card.Source ?? ""),
             ["launchExe"] = gns.LaunchExeOverrides.TryGetValue(gameName, out var launchOv) ? launchOv : "",
+            ["keepRsIniUpdated"] = vm.GetKeepRsIniUpdated(gameName, card.Source ?? ""),
         };
 
         // Addons

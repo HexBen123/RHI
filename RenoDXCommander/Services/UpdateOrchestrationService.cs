@@ -152,7 +152,8 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
         Action notifyUpdateState,
         Func<string, string, string?, IEnumerable<string>?>? shaderResolver = null,
         Func<string, ManifestDllNames?>? manifestDllResolver = null,
-        Func<string, string?, string>? channelResolver = null)
+        Func<string, string?, string>? channelResolver = null,
+        Func<string, string, bool>? keepRsIniUpdatedResolver = null)
     {
         // ── DX proxy games (per-game DLL) ─────────────────────────────────────
         var targets = UpdateAllEligible(allCards)
@@ -211,7 +212,8 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                     progress:       progress,
                     useNormalReShade: card.UseNormalReShade,
                     channel: effectiveChannel,
-                    store: card.Source).ConfigureAwait(false);
+                    store: card.Source,
+                    mergeIni: keepRsIniUpdatedResolver == null || keepRsIniUpdatedResolver(card.GameName, card.Source ?? "")).ConfigureAwait(false);
                 dispatcherQueue?.TryEnqueue(() =>
                 {
                     card.RsRecord           = record;
@@ -365,7 +367,8 @@ public class UpdateOrchestrationService : IUpdateOrchestrationService
                 vCard.RsActionMessage = "Updating Vulkan ReShade...";
                 try
                 {
-                    AuxInstallService.MergeRsVulkanIni(vCard.InstallPath, vCard.GameName);
+                    if (keepRsIniUpdatedResolver == null || keepRsIniUpdatedResolver(vCard.GameName, vCard.Source ?? ""))
+                        AuxInstallService.MergeRsVulkanIni(vCard.InstallPath, vCard.GameName);
 
                     var vulkanVersion = AuxInstallService.ReadInstalledVersion(
                         VulkanLayerService.LayerDirectory, VulkanLayerService.LayerDllName);

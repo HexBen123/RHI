@@ -21,7 +21,8 @@ public partial class AuxInstallService
         string? overlayHotkey = null,
         string? screenshotHotkey = null,
         string? channel = null,
-        string? store = null)
+        string? store = null,
+        bool mergeIni = true)
     {
         Directory.CreateDirectory(DownloadPaths.Misc);
 
@@ -116,8 +117,8 @@ public partial class AuxInstallService
         progress?.Report(("Installing ReShade...", 80));
         File.Copy(rsStagedPath, destPath, overwrite: true);
 
-        // Deploy reshade.ini alongside the DLL.
-        if (File.Exists(RsIniPath))
+        // Deploy reshade.ini alongside the DLL (skip if caller has locked ini updates for this game).
+        if (mergeIni && File.Exists(RsIniPath))
             MergeRsIni(installPath, screenshotSavePath, overlayHotkey, screenshotHotkey, gameName);
 
         progress?.Report(("ReShade installed!", 100));

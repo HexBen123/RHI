@@ -348,6 +348,44 @@ public sealed partial class MainWindow
 
         content.Children.Add(screenshotKeyGrid);
 
+        // ── Keep ReShade.ini Updated ──────────────────────────────────────────
+        content.Children.Add(new Border
+        {
+            Height = 1, Margin = new Thickness(0, 8, 0, 8),
+            Background = UIFactory.Brush(ResourceKeys.BorderSubtleBrush),
+        });
+
+        var keepUpdatedLabel = new TextBlock
+        {
+            Text = "Keep ReShade.ini Updated",
+            FontSize = 12,
+            Foreground = UIFactory.Brush(ResourceKeys.TextSecondaryBrush),
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 0, 4),
+        };
+        content.Children.Add(keepUpdatedLabel);
+
+        var keepUpdatedCombo = new ComboBox
+        {
+            FontSize = 12,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+        ToolTipService.SetToolTip(keepUpdatedCombo, "When No, RHI will not automatically update this game's reshade.ini on ReShade install, update, or Apply to All Games.");
+        keepUpdatedCombo.Items.Add("Yes");
+        keepUpdatedCombo.Items.Add("No");
+
+        bool keepUpdatedInitializing = true;
+        var capturedKeepGameName = card.GameName;
+        var capturedKeepSource = card.Source ?? "";
+        keepUpdatedCombo.SelectedIndex = ViewModel.GetKeepRsIniUpdated(capturedKeepGameName, capturedKeepSource) ? 0 : 1;
+        keepUpdatedCombo.SelectionChanged += (s, ev) =>
+        {
+            if (keepUpdatedInitializing) return;
+            ViewModel.SetKeepRsIniUpdated(capturedKeepGameName, keepUpdatedCombo.SelectedIndex == 0, capturedKeepSource);
+        };
+        keepUpdatedInitializing = false;
+        content.Children.Add(keepUpdatedCombo);
+
         var dialog = new ContentDialog
         {
             Title = "ReShade Settings",

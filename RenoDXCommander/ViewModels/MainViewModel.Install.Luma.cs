@@ -141,7 +141,8 @@ public partial class MainViewModel
                 overlayHotkey: _settingsViewModel.OverlayHotkey,
                 screenshotHotkey: _settingsViewModel.ScreenshotHotkey,
                 channel: card.UseNormalReShade ? null : ResolveReShadeChannel(card.GameName, card.Source ?? ""),
-                store: card.Source);
+                store: card.Source,
+                mergeIni: GetKeepRsIniUpdated(card.GameName, card.Source ?? ""));
 
             DispatcherQueue?.TryEnqueue(() =>
             {

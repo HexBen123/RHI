@@ -775,7 +775,8 @@ public partial class MainViewModel
             },
             shaderResolver: (gameName, store, shaderModeOverride) => ResolveShaderSelection(gameName, shaderModeOverride, store),
             manifestDllResolver: GetManifestDllNames,
-            channelResolver: (gameName, store) => ResolveReShadeChannel(gameName, store ?? ""));
+            channelResolver: (gameName, store) => ResolveReShadeChannel(gameName, store ?? ""),
+            keepRsIniUpdatedResolver: (gameName, store) => GetKeepRsIniUpdated(gameName, store));
     }
 
     public async Task UpdateAllUlAsync()

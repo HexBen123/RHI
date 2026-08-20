@@ -357,7 +357,7 @@ public partial class MainViewModel
                     foreach (var card in _allCards.Where(c => c.IsOsInstalled && !string.IsNullOrEmpty(c.InstallPath)
                         && GetOsDeployStreamline(c.GameName, c.Source ?? "")))
                     {
-                        try { _optiScalerService.DeployStreamlineToGame(card.InstallPath!); }
+                        try { _optiScalerService.DeployStreamlineToGame(card.InstallPath!, GetOsStreamlineVersion(card.GameName, card.Source ?? "")); }
                         catch (Exception ex) { _crashReporter.Log($"[StreamlineRedeploy] Failed for '{card.GameName}' — {ex.Message}"); }
                     }
                 }

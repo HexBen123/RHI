@@ -330,7 +330,7 @@ public partial class DetailPanelBuilder
         _window.DetailDofFixRow.Visibility = card.DofFixRowVisibility;
         if (card.DofFixRowVisibility == Visibility.Visible)
         {
-            bool dofGreyed = !card.IsRsInstalled;
+            bool dofGreyed = !card.IsRsInstalled && !card.ExcludeFromUpdateAllReShade;
             _window.DetailDofFixStatus.Text = card.DofFixStatusText;
             _window.DetailDofFixStatus.Foreground = UIFactory.GetBrush(card.DofFixStatusColor);
             _window.DetailDofFixStatus.TextDecorations = card.IsDofFixInstalled

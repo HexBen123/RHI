@@ -174,7 +174,7 @@ public interface IOptiScalerService
     /// Copies all Streamline DLLs from the RHI Streamline staging folder to
     /// <paramref name="installPath"/>\OptiScaler\Streamline\.
     /// </summary>
-    void DeployStreamlineToGame(string installPath);
+    void DeployStreamlineToGame(string installPath, string? version = null);
 
     /// <summary>
     /// Removes the OptiScaler\Streamline\ subfolder from the given game install path.
