@@ -24,7 +24,9 @@
 ### Manifest Updates
 
 - Added Engine.ini path override for The Sinking City 2 (`TSC2` subfolder).
+- Added Engine.ini path override for Satisfactory (`FactoryGame` subfolder).
 - Fixed Engine.ini config path detection for Satisfactory (uses `FactoryGame` as its AppData folder name).
+- Fixed Ball x Pit detected as 32-bit — forced to 64-bit.
 
 ---
 
