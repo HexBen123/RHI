@@ -1245,12 +1245,10 @@
         "name": "E - CNN",
         "value": 5
       }
-    ]
-  },
-  "dlssPresetsDev": {
+    ],
     "rr": [
       {
-        "name": "F - TF2 (Dev)",
+        "name": "F - TF2",
         "value": 6
       }
     ]

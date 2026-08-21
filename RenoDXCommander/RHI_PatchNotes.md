@@ -3,6 +3,7 @@
 ### Manifest Updates
 
 - Fixed S.T.A.L.K.E.R. 2: Heart of Chornobyl incorrectly detected as DX11. Forced to DX12.
+- Added DLSS RR preset F (value 6) to the Ray Reconstruction dropdown.
 
 ---
 
