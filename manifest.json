@@ -1197,7 +1197,6 @@
   "ultraPlusUrlOverrides": {
     "CODE VEIN II": "https://theultraplace.com/games/codevein2/"
   },
-  "steamAppIdOverrides": {},
   "optiScalerWikiNames": {
     "Alone in the Dark": "Alone in the Dark (2024)",
     "CODE VEIN II": "Code Vein 2",
@@ -1246,15 +1245,14 @@
         "name": "E - CNN",
         "value": 5
       }
-    ],
-    "rr": [],
-    "fg": []
+    ]
   },
   "dlssPresetsDev": {
     "sr": [
       {
         "name": "Dev SR Preset",
-        "value": 99
+        "value": 99,
+        "disabled": true
       }
     ],
     "rr": [
@@ -1266,7 +1264,8 @@
     "fg": [
       {
         "name": "Dev FG Preset",
-        "value": 99
+        "value": 99,
+        "disabled": true
       }
     ]
   },
