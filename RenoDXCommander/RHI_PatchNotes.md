@@ -1,3 +1,11 @@
+## v2.3.7-beta1
+
+### Manifest Updates
+
+- Fixed S.T.A.L.K.E.R. 2: Heart of Chornobyl incorrectly detected as DX11. Forced to DX12.
+
+---
+
 ## v2.3.6
 
 ### New
