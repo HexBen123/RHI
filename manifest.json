@@ -1248,24 +1248,10 @@
     ]
   },
   "dlssPresetsDev": {
-    "sr": [
-      {
-        "name": "Dev SR Preset",
-        "value": 99,
-        "disabled": true
-      }
-    ],
     "rr": [
       {
         "name": "F - TF2 (Dev)",
         "value": 6
-      }
-    ],
-    "fg": [
-      {
-        "name": "Dev FG Preset",
-        "value": 99,
-        "disabled": true
       }
     ]
   },
