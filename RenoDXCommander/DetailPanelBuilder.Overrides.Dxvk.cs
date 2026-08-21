@@ -100,7 +100,9 @@ public partial class DetailPanelBuilder
 
                 if (selected == "Off")
                 {
-                    if (targetCard.DxvkEnabled)
+                    if (targetCard.DxvkEnabled
+                        || targetCard.DxvkStatus == GameStatus.Installed
+                        || targetCard.DxvkStatus == GameStatus.UpdateAvailable)
                     {
                         await _window.ViewModel.HandleDxvkToggleAsync(targetCard, false, _window.Content.XamlRoot);
                         _window.ViewModel.SetDxvkVariantOverride(capturedName, null, targetCard.Source);

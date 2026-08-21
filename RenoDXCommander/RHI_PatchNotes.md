@@ -1,5 +1,9 @@
 ## v2.3.7-beta1
 
+### Bug Fixes
+
+- Fixed DXVK showing a perpetual update badge even when set to Off. The "Off" selection only uninstalled when `DxvkEnabled` was true — if the card had a tracking record but `DxvkEnabled` was false, the uninstall was skipped and the files stayed behind, causing phantom updates every session.
+
 ### Manifest Updates
 
 - Fixed S.T.A.L.K.E.R. 2: Heart of Chornobyl incorrectly detected as DX11. Forced to DX12.
