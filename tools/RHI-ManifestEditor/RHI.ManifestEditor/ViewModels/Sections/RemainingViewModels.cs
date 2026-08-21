@@ -121,7 +121,10 @@ public partial class NvidiaSectionViewModel : SectionViewModelBase
     public ObservableCollection<DlssPresetItem> DlssSrPresets { get; }
     public ObservableCollection<DlssPresetItem> DlssRrPresets { get; }
     public ObservableCollection<DlssPresetItem> DlssFgPresets { get; }
-    public string RtxHdrInfoUrl { get; set; }
+    public ObservableCollection<DlssPresetItem> DlssSrPresetsDev { get; }
+    public ObservableCollection<DlssPresetItem> DlssRrPresetsDev { get; }
+    public ObservableCollection<DlssPresetItem> DlssFgPresetsDev { get; }
+    [ObservableProperty] private string _rtxHdrInfoUrl;
 
     public NvidiaSectionViewModel(RemoteManifest manifest, MainViewModel main) : base(manifest, main)
     {
@@ -130,7 +133,10 @@ public partial class NvidiaSectionViewModel : SectionViewModelBase
         DlssSrPresets = new(manifest.DlssPresets?.Sr?.Select(e => new DlssPresetItem(e)) ?? Enumerable.Empty<DlssPresetItem>());
         DlssRrPresets = new(manifest.DlssPresets?.Rr?.Select(e => new DlssPresetItem(e)) ?? Enumerable.Empty<DlssPresetItem>());
         DlssFgPresets = new(manifest.DlssPresets?.Fg?.Select(e => new DlssPresetItem(e)) ?? Enumerable.Empty<DlssPresetItem>());
-        RtxHdrInfoUrl = manifest.RtxHdrInfoUrl ?? "";
+        DlssSrPresetsDev = new(manifest.DlssPresetsDev?.Sr?.Select(e => new DlssPresetItem(e)) ?? Enumerable.Empty<DlssPresetItem>());
+        DlssRrPresetsDev = new(manifest.DlssPresetsDev?.Rr?.Select(e => new DlssPresetItem(e)) ?? Enumerable.Empty<DlssPresetItem>());
+        DlssFgPresetsDev = new(manifest.DlssPresetsDev?.Fg?.Select(e => new DlssPresetItem(e)) ?? Enumerable.Empty<DlssPresetItem>());
+        _rtxHdrInfoUrl = manifest.RtxHdrInfoUrl ?? "";
     }
 
     [RelayCommand] public void AddProfileOverride() { ProfileNameOverrides.Add(new KeyValueItem()); Dirty(); }
@@ -143,6 +149,14 @@ public partial class NvidiaSectionViewModel : SectionViewModelBase
     [RelayCommand] public void RemoveRrPreset(DlssPresetItem item) { DlssRrPresets.Remove(item); Dirty(); }
     [RelayCommand] public void AddFgPreset() { DlssFgPresets.Add(new DlssPresetItem()); Dirty(); }
     [RelayCommand] public void RemoveFgPreset(DlssPresetItem item) { DlssFgPresets.Remove(item); Dirty(); }
+    [RelayCommand] public void AddSrPresetDev() { DlssSrPresetsDev.Add(new DlssPresetItem()); Dirty(); }
+    [RelayCommand] public void RemoveSrPresetDev(DlssPresetItem item) { DlssSrPresetsDev.Remove(item); Dirty(); }
+    [RelayCommand] public void AddRrPresetDev() { DlssRrPresetsDev.Add(new DlssPresetItem()); Dirty(); }
+    [RelayCommand] public void RemoveRrPresetDev(DlssPresetItem item) { DlssRrPresetsDev.Remove(item); Dirty(); }
+    [RelayCommand] public void AddFgPresetDev() { DlssFgPresetsDev.Add(new DlssPresetItem()); Dirty(); }
+    [RelayCommand] public void RemoveFgPresetDev(DlssPresetItem item) { DlssFgPresetsDev.Remove(item); Dirty(); }
+
+    partial void OnRtxHdrInfoUrlChanged(string value) => Dirty();
 
     public override void Commit()
     {
@@ -153,15 +167,16 @@ public partial class NvidiaSectionViewModel : SectionViewModelBase
         var sr = DlssSrPresets.Where(i => !string.IsNullOrWhiteSpace(i.Name)).Select(i => i.ToEntry()).ToList();
         var rr = DlssRrPresets.Where(i => !string.IsNullOrWhiteSpace(i.Name)).Select(i => i.ToEntry()).ToList();
         var fg = DlssFgPresets.Where(i => !string.IsNullOrWhiteSpace(i.Name)).Select(i => i.ToEntry()).ToList();
-        if (sr.Count > 0 || rr.Count > 0 || fg.Count > 0)
-            _manifest.DlssPresets = new ManifestDlssPresets
-            {
-                Sr = sr.Count > 0 ? sr : null,
-                Rr = rr.Count > 0 ? rr : null,
-                Fg = fg.Count > 0 ? fg : null,
-            };
-        else
-            _manifest.DlssPresets = null;
+        _manifest.DlssPresets = (sr.Count > 0 || rr.Count > 0 || fg.Count > 0)
+            ? new ManifestDlssPresets { Sr = sr.Count > 0 ? sr : null, Rr = rr.Count > 0 ? rr : null, Fg = fg.Count > 0 ? fg : null }
+            : null;
+
+        var srDev = DlssSrPresetsDev.Where(i => !string.IsNullOrWhiteSpace(i.Name)).Select(i => i.ToEntry()).ToList();
+        var rrDev = DlssRrPresetsDev.Where(i => !string.IsNullOrWhiteSpace(i.Name)).Select(i => i.ToEntry()).ToList();
+        var fgDev = DlssFgPresetsDev.Where(i => !string.IsNullOrWhiteSpace(i.Name)).Select(i => i.ToEntry()).ToList();
+        _manifest.DlssPresetsDev = (srDev.Count > 0 || rrDev.Count > 0 || fgDev.Count > 0)
+            ? new ManifestDlssPresets { Sr = srDev.Count > 0 ? srDev : null, Rr = rrDev.Count > 0 ? rrDev : null, Fg = fgDev.Count > 0 ? fgDev : null }
+            : null;
     }
 }
 

@@ -82,6 +82,110 @@
                 </StackPanel>
             </Expander>
 
+            <!-- lumaNameOverrides -->
+            <Expander HorizontalAlignment="Stretch">
+                <Expander.Header>
+                    <TextBlock Text="lumaNameOverrides — detected name → Luma wiki name" FontWeight="SemiBold"/>
+                </Expander.Header>
+                <StackPanel Spacing="4" Padding="0,8,0,0">
+                    <TextBlock FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="Key = detected folder name. Value = exact name on the Luma Framework wiki."/>
+                    <ListView x:Name="LumaNameOverridesView" MaxHeight="300" SelectionMode="None">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0" Text="{Binding Key, Mode=TwoWay}" PlaceholderText="detected name" FontSize="12"/>
+                                    <TextBox Grid.Column="1" Text="{Binding Value, Mode=TwoWay}" PlaceholderText="Luma wiki name" FontSize="12"/>
+                                    <Button Grid.Column="2" Content="✕" Tag="{Binding}" Click="RemoveLumaNameOverride_Click" Padding="8,4"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                    <Button Content="+ Add" Click="AddLumaNameOverride_Click"/>
+                </StackPanel>
+            </Expander>
+
+            <!-- steamAppIdOverrides -->
+            <Expander HorizontalAlignment="Stretch">
+                <Expander.Header>
+                    <TextBlock Text="steamAppIdOverrides — force Steam AppID for PCGW / profile lookup" FontWeight="SemiBold"/>
+                </Expander.Header>
+                <StackPanel Spacing="4" Padding="0,8,0,0">
+                    <TextBlock FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="Key = detected game name. Value = numeric Steam App ID. Used when the Steam store search returns the wrong app."/>
+                    <ListView x:Name="SteamAppIdView" MaxHeight="300" SelectionMode="None">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="140"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0" Text="{Binding Key, Mode=TwoWay}" PlaceholderText="game name" FontSize="12"/>
+                                    <TextBox Grid.Column="1" Text="{Binding Value, Mode=TwoWay}" PlaceholderText="App ID (number)" FontSize="12"/>
+                                    <Button Grid.Column="2" Content="✕" Tag="{Binding}" Click="RemoveSteamAppId_Click" Padding="8,4"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                    <Button Content="+ Add" Click="AddSteamAppId_Click"/>
+                </StackPanel>
+            </Expander>
+
+            <!-- emulatorGames -->
+            <Expander HorizontalAlignment="Stretch">
+                <Expander.Header>
+                    <TextBlock Text="emulatorGames — emulator entries with addon lists" FontWeight="SemiBold"/>
+                </Expander.Header>
+                <StackPanel Spacing="4" Padding="0,8,0,0">
+                    <TextBlock FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="Key = emulator name (e.g. Ryubing). addons = wiki game names for display/lookup. addonUrls = name → direct download URL (overrides wiki)."/>
+                    <ListView x:Name="EmulatorGamesView" MaxHeight="600" SelectionMode="None">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Expander Margin="0,4,0,0" HorizontalAlignment="Stretch">
+                                    <Expander.Header>
+                                        <TextBox Text="{Binding EmulatorName, Mode=TwoWay}" PlaceholderText="emulator name (e.g. Ryubing)" FontSize="12" MinWidth="260"/>
+                                    </Expander.Header>
+                                    <StackPanel Spacing="10" Padding="8">
+                                        <TextBlock Text="addons — wiki game names (for display and wiki lookup):" FontSize="12" FontWeight="SemiBold"/>
+                                        <ListView ItemsSource="{Binding Addons}" MaxHeight="200" SelectionMode="None">
+                                            <ListView.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid ColumnSpacing="8" Margin="0,2,0,2">
+                                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                                        <TextBox Grid.Column="0" Text="{Binding Value, Mode=TwoWay}" PlaceholderText="wiki game name" FontSize="12"/>
+                                                        <Button Grid.Column="1" Content="✕" Tag="{Binding}" Click="RemoveEmulatorAddon_Click" Padding="8,4"/>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ListView.ItemTemplate>
+                                        </ListView>
+                                        <Button Content="+ Add addon" Tag="{Binding}" Click="AddEmulatorAddon_Click"/>
+
+                                        <TextBlock Text="addonUrls — game name → direct download URL (overrides wiki):" FontSize="12" FontWeight="SemiBold" Margin="0,6,0,0"/>
+                                        <ListView ItemsSource="{Binding AddonUrls}" MaxHeight="200" SelectionMode="None">
+                                            <ListView.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid ColumnSpacing="8" Margin="0,2,0,2">
+                                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                                        <TextBox Grid.Column="0" Text="{Binding Key, Mode=TwoWay}" PlaceholderText="game name" FontSize="12"/>
+                                                        <TextBox Grid.Column="1" Text="{Binding Value, Mode=TwoWay}" PlaceholderText="https://..." FontSize="12"/>
+                                                        <Button Grid.Column="2" Content="✕" Tag="{Binding}" Click="RemoveEmulatorAddonUrl_Click" Padding="8,4"/>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ListView.ItemTemplate>
+                                        </ListView>
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <Button Content="+ Add URL" Tag="{Binding}" Click="AddEmulatorAddonUrl_Click"/>
+                                            <Button Content="Remove emulator" Tag="{Binding}" Click="RemoveEmulatorGame_Click" Foreground="OrangeRed"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Expander>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                    <Button Content="+ Add emulator" Click="AddEmulatorGame_Click"/>
+                </StackPanel>
+            </Expander>
+
             <!-- installPathOverrides -->
             <Expander HorizontalAlignment="Stretch">
                 <Expander.Header>

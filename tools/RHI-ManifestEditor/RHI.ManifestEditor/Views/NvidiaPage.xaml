@@ -5,7 +5,20 @@
         <TextBlock Text="NVIDIA Profile &amp; DLSS" FontSize="20" FontWeight="SemiBold"/>
         <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
             Text="profileNameOverrides redirects a game to the correct NVIDIA driver profile. profileExeExclusions prevents false profile matches."/>
+
+        <!-- rtxHdrInfoUrl -->
         <Expander IsExpanded="True" HorizontalAlignment="Stretch">
+            <Expander.Header><TextBlock Text="rtxHdrInfoUrl — global info link for the RTX HDR info button" FontWeight="SemiBold"/></Expander.Header>
+            <StackPanel Spacing="6" Padding="0,8,0,0">
+                <TextBlock FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="URL opened when the user clicks the info button in the RTX HDR Configure dialog. Falls back to a hardcoded Reddit post if empty."/>
+                <TextBox x:Name="RtxHdrInfoUrlBox" PlaceholderText="https://..." FontSize="12"
+                         TextChanged="RtxHdrInfoUrl_TextChanged"/>
+            </StackPanel>
+        </Expander>
+
+        <!-- profileNameOverrides -->
+        <Expander HorizontalAlignment="Stretch">
             <Expander.Header><TextBlock Text="profileNameOverrides — RHI name → NVIDIA driver profile name" FontWeight="SemiBold"/></Expander.Header>
             <StackPanel Spacing="4" Padding="0,8,0,0">
                 <ListView x:Name="ProfileNamesView" MaxHeight="200" SelectionMode="None">
@@ -20,6 +33,8 @@
                 <Button Content="+ Add" Click="AddProfileName_Click"/>
             </StackPanel>
         </Expander>
+
+        <!-- profileExeExclusions -->
         <Expander HorizontalAlignment="Stretch">
             <Expander.Header><TextBlock Text="profileExeExclusions — exe names to skip in profile matching" FontWeight="SemiBold"/></Expander.Header>
             <StackPanel Spacing="4" Padding="0,8,0,0">
@@ -36,6 +51,8 @@
                 <Button Content="+ Add" Click="AddExeExclusion_Click"/>
             </StackPanel>
         </Expander>
+
+        <!-- dlssPresets -->
         <Expander HorizontalAlignment="Stretch">
             <Expander.Header><TextBlock Text="dlssPresets — add new DLSS preset options (SR/RR/FG)" FontWeight="SemiBold"/></Expander.Header>
             <StackPanel Spacing="12" Padding="0,8,0,0">
@@ -83,6 +100,57 @@
                     </DataTemplate></ListView.ItemTemplate>
                 </ListView>
                 <Button Content="+ Add FG preset" Click="AddFgPreset_Click"/>
+            </StackPanel>
+        </Expander>
+
+        <!-- dlssPresetsDev -->
+        <Expander HorizontalAlignment="Stretch">
+            <Expander.Header><TextBlock Text="dlssPresetsDev — dev-only DLSS preset options (SR/RR/FG)" FontWeight="SemiBold"/></Expander.Header>
+            <StackPanel Spacing="12" Padding="0,8,0,0">
+                <TextBlock FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="Only visible when unlock.txt is present in %LocalAppData%\RHI\. Same structure as dlssPresets — entries prepended to the top of each dropdown."/>
+
+                <TextBlock Text="SR (Super Resolution)" FontSize="12" FontWeight="SemiBold"/>
+                <ListView x:Name="SrPresetsDevView" MaxHeight="160" SelectionMode="None">
+                    <ListView.ItemTemplate><DataTemplate>
+                        <Grid ColumnSpacing="8" Margin="0,2,0,2">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="80"/><ColumnDefinition Width="80"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Text="{Binding Name, Mode=TwoWay}" PlaceholderText="name" FontSize="12"/>
+                            <TextBox Grid.Column="1" Text="{Binding Value, Mode=TwoWay}" PlaceholderText="value" FontSize="12"/>
+                            <CheckBox Grid.Column="2" Content="disabled" IsChecked="{Binding Disabled, Mode=TwoWay}" FontSize="11"/>
+                            <Button Grid.Column="3" Content="✕" Tag="{Binding}" Click="RemoveSrPresetDev_Click" Padding="8,4"/>
+                        </Grid>
+                    </DataTemplate></ListView.ItemTemplate>
+                </ListView>
+                <Button Content="+ Add SR dev preset" Click="AddSrPresetDev_Click"/>
+
+                <TextBlock Text="RR (Ray Reconstruction)" FontSize="12" FontWeight="SemiBold" Margin="0,8,0,0"/>
+                <ListView x:Name="RrPresetsDevView" MaxHeight="160" SelectionMode="None">
+                    <ListView.ItemTemplate><DataTemplate>
+                        <Grid ColumnSpacing="8" Margin="0,2,0,2">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="80"/><ColumnDefinition Width="80"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Text="{Binding Name, Mode=TwoWay}" PlaceholderText="name" FontSize="12"/>
+                            <TextBox Grid.Column="1" Text="{Binding Value, Mode=TwoWay}" PlaceholderText="value" FontSize="12"/>
+                            <CheckBox Grid.Column="2" Content="disabled" IsChecked="{Binding Disabled, Mode=TwoWay}" FontSize="11"/>
+                            <Button Grid.Column="3" Content="✕" Tag="{Binding}" Click="RemoveRrPresetDev_Click" Padding="8,4"/>
+                        </Grid>
+                    </DataTemplate></ListView.ItemTemplate>
+                </ListView>
+                <Button Content="+ Add RR dev preset" Click="AddRrPresetDev_Click"/>
+
+                <TextBlock Text="FG (Frame Generation)" FontSize="12" FontWeight="SemiBold" Margin="0,8,0,0"/>
+                <ListView x:Name="FgPresetsDevView" MaxHeight="160" SelectionMode="None">
+                    <ListView.ItemTemplate><DataTemplate>
+                        <Grid ColumnSpacing="8" Margin="0,2,0,2">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="80"/><ColumnDefinition Width="80"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Text="{Binding Name, Mode=TwoWay}" PlaceholderText="name" FontSize="12"/>
+                            <TextBox Grid.Column="1" Text="{Binding Value, Mode=TwoWay}" PlaceholderText="value" FontSize="12"/>
+                            <CheckBox Grid.Column="2" Content="disabled" IsChecked="{Binding Disabled, Mode=TwoWay}" FontSize="11"/>
+                            <Button Grid.Column="3" Content="✕" Tag="{Binding}" Click="RemoveFgPresetDev_Click" Padding="8,4"/>
+                        </Grid>
+                    </DataTemplate></ListView.ItemTemplate>
+                </ListView>
+                <Button Content="+ Add FG dev preset" Click="AddFgPresetDev_Click"/>
             </StackPanel>
         </Expander>
     </StackPanel></ScrollViewer>

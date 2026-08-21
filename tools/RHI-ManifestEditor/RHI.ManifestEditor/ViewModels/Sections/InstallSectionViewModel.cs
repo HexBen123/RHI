@@ -56,10 +56,53 @@ public partial class DllOverrideItem : ObservableObject
     public DllOverrideItem() { _gameName = ""; _reshade = ""; _dc = ""; }
 }
 
+/// <summary>A single entry in forceExternalOnly — game name + url + optional label.</summary>
+public partial class ForceExternalItem : ObservableObject
+{
+    [ObservableProperty] private string _key;
+    [ObservableProperty] private string _url;
+    [ObservableProperty] private string _label;
+
+    public ForceExternalItem(string key, ForceExternalEntry e)
+    {
+        _key = key;
+        _url = e.Url ?? "";
+        _label = e.Label ?? "";
+    }
+    public ForceExternalItem() { _key = ""; _url = ""; _label = ""; }
+}
+
+/// <summary>A single game's renodxIniOverrides entry — game name + dict of ini key→value pairs.</summary>
+public partial class RenodxIniGameItem : ObservableObject
+{
+    [ObservableProperty] private string _gameName;
+    public ObservableCollection<KeyValueItem> Entries { get; }
+
+    private readonly MainViewModel _main;
+
+    public RenodxIniGameItem(string name, Dictionary<string, string> d, MainViewModel main)
+    {
+        _gameName = name;
+        _main = main;
+        Entries = new(d.Select(kv => new KeyValueItem(kv.Key, kv.Value)));
+        Entries.CollectionChanged += (_, _) => _main.MarkDirty();
+    }
+    public RenodxIniGameItem(MainViewModel main)
+    {
+        _gameName = "";
+        _main = main;
+        Entries = new();
+        Entries.CollectionChanged += (_, _) => _main.MarkDirty();
+    }
+
+    [RelayCommand] public void AddEntry() { Entries.Add(new KeyValueItem()); _main.MarkDirty(); }
+    [RelayCommand] public void RemoveEntry(KeyValueItem item) { Entries.Remove(item); _main.MarkDirty(); }
+}
+
 public partial class InstallSectionViewModel : SectionViewModelBase
 {
     public ObservableCollection<InstallWarningItem> InstallWarnings { get; }
-    public ObservableCollection<KeyValueItem> ForceExternalOnly { get; }
+    public ObservableCollection<ForceExternalItem> ForceExternalOnly { get; }
     public ObservableCollection<KeyValueItem> SnapshotOverrides { get; }
     public ObservableCollection<DllOverrideItem> DllNameOverrides { get; }
     public ObservableCollection<KeyValueItem> OptiScalerDllOverrides { get; }
@@ -67,6 +110,7 @@ public partial class InstallSectionViewModel : SectionViewModelBase
     public ObservableCollection<KeyValueItem> LaunchExeOverrides { get; }
     public ObservableCollection<KeyValueItem> LegacyReShadeVersions { get; }
     public ObservableCollection<StringItem> LegacyReShadeAvailable { get; }
+    public ObservableCollection<RenodxIniGameItem> RenodxIniOverrides { get; }
 
     public InstallSectionViewModel(RemoteManifest manifest, MainViewModel main) : base(manifest, main)
     {
@@ -74,7 +118,7 @@ public partial class InstallSectionViewModel : SectionViewModelBase
             .Where(kv => !kv.Key.StartsWith("_"))
             .Select(kv => new InstallWarningItem(kv.Key, kv.Value)) ?? Enumerable.Empty<InstallWarningItem>());
         ForceExternalOnly = new(manifest.ForceExternalOnly?
-            .Select(kv => new KeyValueItem(kv.Key, $"{kv.Value.Url}|{kv.Value.Label}")) ?? Enumerable.Empty<KeyValueItem>());
+            .Select(kv => new ForceExternalItem(kv.Key, kv.Value)) ?? Enumerable.Empty<ForceExternalItem>());
         SnapshotOverrides = ToKvObservable(manifest.SnapshotOverrides);
         DllNameOverrides = new(manifest.DllNameOverrides?
             .Select(kv => new DllOverrideItem(kv.Key, kv.Value)) ?? Enumerable.Empty<DllOverrideItem>());
@@ -83,6 +127,10 @@ public partial class InstallSectionViewModel : SectionViewModelBase
         LaunchExeOverrides = ToKvObservable(manifest.LaunchExeOverrides);
         LegacyReShadeVersions = ToKvObservable(manifest.LegacyReShadeVersions);
         LegacyReShadeAvailable = ToObservable(manifest.LegacyReShadeAvailable);
+        RenodxIniOverrides = new(manifest.RenodxIniOverrides?
+            .Where(kv => !kv.Key.StartsWith("_"))
+            .Select(kv => new RenodxIniGameItem(kv.Key, kv.Value, main)) ?? Enumerable.Empty<RenodxIniGameItem>());
+        RenodxIniOverrides.CollectionChanged += (_, _) => Dirty();
     }
 
     [RelayCommand] public void AddInstallWarning() { InstallWarnings.Add(new InstallWarningItem()); Dirty(); }
@@ -95,12 +143,27 @@ public partial class InstallSectionViewModel : SectionViewModelBase
     [RelayCommand] public void RemoveLaunchExeOverride(KeyValueItem item) { LaunchExeOverrides.Remove(item); Dirty(); }
     [RelayCommand] public void AddLegacyVersion() { LegacyReShadeVersions.Add(new KeyValueItem()); Dirty(); }
     [RelayCommand] public void RemoveLegacyVersion(KeyValueItem item) { LegacyReShadeVersions.Remove(item); Dirty(); }
+    [RelayCommand] public void AddLegacyAvailable() { LegacyReShadeAvailable.Add(new StringItem("")); Dirty(); }
+    [RelayCommand] public void RemoveLegacyAvailable(StringItem item) { LegacyReShadeAvailable.Remove(item); Dirty(); }
+    [RelayCommand] public void AddForceExternal() { ForceExternalOnly.Add(new ForceExternalItem()); Dirty(); }
+    [RelayCommand] public void RemoveForceExternal(ForceExternalItem item) { ForceExternalOnly.Remove(item); Dirty(); }
+    [RelayCommand] public void AddGacSymlink() { GacSymlinkGames.Add(new KeyValueItem()); Dirty(); }
+    [RelayCommand] public void RemoveGacSymlink(KeyValueItem item) { GacSymlinkGames.Remove(item); Dirty(); }
+    [RelayCommand] public void AddOptiScalerDll() { OptiScalerDllOverrides.Add(new KeyValueItem()); Dirty(); }
+    [RelayCommand] public void RemoveOptiScalerDll(KeyValueItem item) { OptiScalerDllOverrides.Remove(item); Dirty(); }
+    [RelayCommand] public void AddRenodxIniGame() { RenodxIniOverrides.Add(new RenodxIniGameItem(_main)); Dirty(); }
+    [RelayCommand] public void RemoveRenodxIniGame(RenodxIniGameItem item) { RenodxIniOverrides.Remove(item); Dirty(); }
 
     public override void Commit()
     {
         _manifest.InstallWarnings = InstallWarnings.Count > 0
             ? InstallWarnings.Where(i => !string.IsNullOrWhiteSpace(i.GameName))
                 .ToDictionary(i => i.GameName, i => i.ToDict())
+            : null;
+        _manifest.ForceExternalOnly = ForceExternalOnly.Count > 0
+            ? ForceExternalOnly
+                .Where(i => !string.IsNullOrWhiteSpace(i.Key))
+                .ToDictionary(i => i.Key, i => new ForceExternalEntry { Url = i.Url, Label = string.IsNullOrWhiteSpace(i.Label) ? null : i.Label })
             : null;
         _manifest.SnapshotOverrides = FromKvObservable(SnapshotOverrides);
         _manifest.DllNameOverrides = DllNameOverrides.Count > 0
@@ -110,15 +173,14 @@ public partial class InstallSectionViewModel : SectionViewModelBase
         _manifest.GacSymlinkGames = FromKvObservable(GacSymlinkGames);
         _manifest.LaunchExeOverrides = FromKvObservable(LaunchExeOverrides);
         _manifest.LegacyReShadeVersions = FromKvObservable(LegacyReShadeVersions);
-        _manifest.OptiScalerDllOverrides = FromKvObservable(OptiScalerDllOverrides);
         _manifest.LegacyReShadeAvailable = FromObservable(LegacyReShadeAvailable).Count > 0 ? FromObservable(LegacyReShadeAvailable) : null;
-        _manifest.ForceExternalOnly = ForceExternalOnly.Count > 0
-            ? ForceExternalOnly
-                .Where(i => !string.IsNullOrWhiteSpace(i.Key))
-                .ToDictionary(i => i.Key, i => {
-                    var parts = i.Value.Split('|', 2);
-                    return new ForceExternalEntry { Url = parts[0], Label = parts.Length > 1 ? parts[1] : null };
-                })
+        _manifest.OptiScalerDllOverrides = FromKvObservable(OptiScalerDllOverrides);
+        _manifest.RenodxIniOverrides = RenodxIniOverrides.Count > 0
+            ? RenodxIniOverrides
+                .Where(g => !string.IsNullOrWhiteSpace(g.GameName))
+                .ToDictionary(g => g.GameName, g => g.Entries
+                    .Where(e => !string.IsNullOrWhiteSpace(e.Key))
+                    .ToDictionary(e => e.Key, e => e.Value))
             : null;
     }
 }

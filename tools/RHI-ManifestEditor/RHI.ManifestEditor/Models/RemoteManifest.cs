@@ -184,6 +184,9 @@ public class RemoteManifest
     [JsonPropertyName("dlssPresets")]
     public ManifestDlssPresets? DlssPresets { get; set; }
 
+    [JsonPropertyName("dlssPresetsDev")]
+    public ManifestDlssPresets? DlssPresetsDev { get; set; }
+
     // ── DOF Fix ───────────────────────────────────────────────────────────────
     [JsonPropertyName("dofFixForceGames")]
     public List<string>? DofFixForceGames { get; set; }
