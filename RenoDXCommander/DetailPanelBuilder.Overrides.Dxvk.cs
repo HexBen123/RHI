@@ -158,6 +158,18 @@ public partial class DetailPanelBuilder
             });
             dxvkColumn.Children.Add(dxvkModeCombo);
             dxvkComboInitializing = false;
+
+            // If combo shows "Off" but DXVK is still physically installed (stale state from
+            // a previous Off selection that failed to uninstall), trigger uninstall now.
+            // Only fires when there's no per-game variant override — meaning the user already
+            // chose Off but the uninstall didn't complete. Don't fire when the global variant
+            // is active (override is null because user is using the global setting).
+            if (defaultDxvkSelection == "Off"
+                && !card.DxvkEnabled
+                && (card.DxvkStatus == GameStatus.Installed || card.DxvkStatus == GameStatus.UpdateAvailable))
+            {
+                _ = _window.ViewModel.HandleDxvkToggleAsync(card, false, _window.Content.XamlRoot);
+            }
             Grid.SetColumn(dxvkColumn, 0);
             dxvkRowGrid.Children.Add(dxvkColumn);
 

@@ -1,12 +1,13 @@
-## v2.3.7-beta1
+## v2.3.7
 
 ### Bug Fixes
 
-- Fixed DXVK showing a perpetual update badge even when set to Off. The "Off" selection only uninstalled when `DxvkEnabled` was true — if the card had a tracking record but `DxvkEnabled` was false, the uninstall was skipped and the files stayed behind, causing phantom updates every session.
+- Fixed DXVK showing a perpetual update badge even when set to Off. Selecting a game card now automatically cleans up leftover DXVK files if the variant is set to Off.
 
 ### Manifest Updates
 
 - Fixed S.T.A.L.K.E.R. 2: Heart of Chornobyl incorrectly detected as DX11. Forced to DX12.
+- Fixed Crimson Desert incorrectly detected as DX11. Forced to DX12.
 - Added DLSS RR preset F (value 6) to the Ray Reconstruction dropdown.
 
 ---
