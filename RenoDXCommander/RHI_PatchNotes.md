@@ -4,6 +4,11 @@
 
 - Fixed "Configure RTX HDR" button not being clickable on games without a RenoDX mod. Also fixed the button not updating after enabling RTX HDR in the cog dialog.
 
+### Manifest Updates
+
+- Fixed Terminator: Resistance Engine.ini being written to the wrong config folder. Now correctly targets WindowsNoEditor.
+- Fixed Crimson Desert incorrectly detected as DX11. Forced to DX12.
+
 ---
 
 ## v2.3.7

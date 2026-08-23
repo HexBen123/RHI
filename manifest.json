@@ -515,6 +515,8 @@
     "Satisfactory": "FactoryGame",
     "Shin Megami Tensei V: Vengeance": "SMT5V",
     "System Shock": "%USERPROFILE%\\Saved Games\\Nightdive Studios\\SystemShock\\Saved\\Config\\WindowsNoEditor",
+    "Terminator: Resistance": "%LOCALAPPDATA%\\Terminator\\Saved\\Config\\WindowsNoEditor",
+    "Terminator\u2122: Resistance": "%LOCALAPPDATA%\\Terminator\\Saved\\Config\\WindowsNoEditor",
     "The Sinking City 2": "TSC2"
   },
   "graphicsApiOverrides": {
