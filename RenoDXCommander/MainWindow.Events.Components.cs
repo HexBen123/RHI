@@ -1098,6 +1098,7 @@ public sealed partial class MainWindow
             card.NotifyAll();
             ViewModel.SaveSettingsPublic();
             _detailPanelBuilder?.UpdateDetailComponentRows(card);
+            PopulateDetailPanel(card);
         };
 
         var rtxHdrRow = new StackPanel { Orientation = Microsoft.UI.Xaml.Controls.Orientation.Horizontal, Spacing = 12 };
