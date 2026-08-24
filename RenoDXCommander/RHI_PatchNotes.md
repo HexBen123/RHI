@@ -7,6 +7,7 @@
 ### Manifest Updates
 
 - Fixed Terminator: Resistance Engine.ini being written to the wrong config folder. Now correctly targets WindowsNoEditor.
+- Fixed Hades II on Game Pass using the wrong install path. Now supports both Steam (Ship) and Xbox (Content) subfolders.
 - Fixed Crimson Desert incorrectly detected as DX11. Forced to DX12.
 
 ---
