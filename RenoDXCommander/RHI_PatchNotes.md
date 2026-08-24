@@ -8,6 +8,7 @@
 
 - Fixed Terminator: Resistance Engine.ini being written to the wrong config folder. Now correctly targets WindowsNoEditor.
 - Fixed Hades II on Game Pass using the wrong install path.
+- Fixed Resident Evil 4 and Resident Evil Requiem incorrectly detected as DX11. Forced to DX12.
 - Fixed Crimson Desert incorrectly detected as DX11. Forced to DX12.
 
 ---
