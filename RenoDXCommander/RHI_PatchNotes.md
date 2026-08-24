@@ -1,3 +1,11 @@
+## v2.4.0
+
+### Manifest Updates
+
+- Added VHOLUME — UE-Extended support with SDR→HDR upgrade.
+
+---
+
 ## v2.3.9
 
 ### Bug Fixes
