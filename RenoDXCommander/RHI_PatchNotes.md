@@ -3,6 +3,7 @@
 ### Bug Fixes
 
 - Fixed "Configure RTX HDR" button not being clickable on games without a RenoDX mod. Also fixed the button not updating after enabling RTX HDR in the cog dialog.
+- Fixed Game Pass games with exe files directly in the Content folder (e.g. Hades II) being detected at the wrong path.
 
 ### Manifest Updates
 
