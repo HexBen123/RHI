@@ -264,6 +264,9 @@ public class DlssEnablerService
             using var doc = JsonDocument.Parse(json);
 
             // Find the latest release with the DLSS-Enabler- tag prefix
+            // Collect all matching DLSS-Enabler releases, then pick the highest version
+            var candidates = new List<(string version, string downloadUrl, Version parsed)>();
+
             foreach (var release in doc.RootElement.EnumerateArray())
             {
                 if (!release.TryGetProperty("tag_name", out var tagEl)) continue;
@@ -292,17 +295,23 @@ public class DlssEnablerService
                     }
                 }
 
-                if (string.IsNullOrEmpty(downloadUrl))
-                {
-                    _crashReporter.Log($"[DlssEnablerService] No zip or version.dll asset found for tag {tag}");
-                    return (null, null);
-                }
+                if (string.IsNullOrEmpty(downloadUrl)) continue;
 
-                return (version, downloadUrl);
+                if (Version.TryParse(version, out var parsed))
+                    candidates.Add((version, downloadUrl!, parsed));
+                else
+                    candidates.Add((version, downloadUrl!, new Version(0, 0)));
             }
 
-            _crashReporter.Log("[DlssEnablerService] No release found with DLSS-Enabler- tag");
-            return (null, null);
+            if (candidates.Count == 0)
+            {
+                _crashReporter.Log("[DlssEnablerService] No release found with DLSS-Enabler- tag");
+                return (null, null);
+            }
+
+            // Pick the release with the highest version number
+            var best = candidates.OrderByDescending(c => c.parsed).First();
+            return (best.version, best.downloadUrl);
         }
         catch (Exception ex)
         {
