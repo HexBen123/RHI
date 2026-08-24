@@ -863,7 +863,7 @@ public partial class MainViewModel
             // Apply per-game [renodx] INI overrides from manifest
             if (_manifest?.RenodxIniOverrides != null
                 && _manifest.RenodxIniOverrides.TryGetValue(card.GameName, out var iniOverrides))
-                AuxInstallService.ApplyRenodxIniOverrides(card.InstallPath, iniOverrides);
+                AuxInstallService.ApplyRenodxIniOverrides(card.InstallPath, iniOverrides, forceOverwrite: true);
 
             // Deploy Engine.ini HDR settings for UE-Extended games
             // Priority: ueExtendedCompatibility entry > UE4 detection > default (deploy for UE5)

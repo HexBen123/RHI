@@ -1,5 +1,9 @@
 ## v2.4.0
 
+### Bug Fixes
+
+- Fixed manifest `renodxIniOverrides` keys being ignored on fresh install when the key already existed from a prior install step. Manifest overrides now always apply on install. Updates preserve user-edited values.
+
 ### Manifest Updates
 
 - Added VHOLUME — UE-Extended support with SDR→HDR upgrade.
