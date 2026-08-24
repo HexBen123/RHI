@@ -456,7 +456,7 @@ public partial class MainViewModel
                 {
                     var trimmed = candidate.Trim();
                     var overridePath = Path.GetFullPath(Path.Combine(game.InstallPath, trimmed));
-                    if (trimmed == ".." || Directory.Exists(overridePath))
+                    if (trimmed.StartsWith("..") || Directory.Exists(overridePath))
                     {
                         resolvedOverride = overridePath;
                         break;
