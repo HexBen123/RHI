@@ -454,8 +454,9 @@ public partial class MainViewModel
                 string? resolvedOverride = null;
                 foreach (var candidate in candidates)
                 {
-                    var overridePath = Path.GetFullPath(Path.Combine(game.InstallPath, candidate.Trim()));
-                    if (Directory.Exists(overridePath))
+                    var trimmed = candidate.Trim();
+                    var overridePath = Path.GetFullPath(Path.Combine(game.InstallPath, trimmed));
+                    if (trimmed == ".." || Directory.Exists(overridePath))
                     {
                         resolvedOverride = overridePath;
                         break;

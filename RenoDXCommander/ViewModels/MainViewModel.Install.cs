@@ -408,8 +408,9 @@ public partial class MainViewModel
             var candidates = manualSubPath.Split('|');
             foreach (var candidate in candidates)
             {
-                var overridePath = Path.GetFullPath(Path.Combine(game.InstallPath, candidate.Trim()));
-                if (Directory.Exists(overridePath))
+                var trimmed = candidate.Trim();
+                var overridePath = Path.GetFullPath(Path.Combine(game.InstallPath, trimmed));
+                if (trimmed == ".." || Directory.Exists(overridePath))
                 {
                     installPath = overridePath;
                     break;

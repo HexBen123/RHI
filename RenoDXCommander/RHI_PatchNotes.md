@@ -1,15 +1,22 @@
-## v2.3.8
+## v2.3.9
 
 ### Bug Fixes
 
-- Fixed "Configure RTX HDR" button not being clickable on games without a RenoDX mod. Also fixed the button not updating after enabling RTX HDR in the cog dialog.
 - Fixed Game Pass games with exe files directly in the Content folder (e.g. Hades II) being detected at the wrong path.
 
 ### Manifest Updates
 
 - Fixed Terminator: Resistance Engine.ini being written to the wrong config folder. Now correctly targets WindowsNoEditor.
-- Fixed Hades II on Game Pass using the wrong install path. Now supports both Steam (Ship) and Xbox (Content) subfolders.
+- Fixed Hades II on Game Pass using the wrong install path.
 - Fixed Crimson Desert incorrectly detected as DX11. Forced to DX12.
+
+---
+
+## v2.3.8
+
+### Bug Fixes
+
+- Fixed "Configure RTX HDR" button not being clickable on games without a RenoDX mod. Also fixed the button not updating after enabling RTX HDR in the cog dialog.
 
 ---
 
