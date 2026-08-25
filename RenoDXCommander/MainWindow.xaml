@@ -1243,10 +1243,11 @@
                                         Background="{StaticResource BorderDefaultBrush}"
                                         VerticalAlignment="Stretch" Margin="12,0,12,0"/>
 
-                                <!-- Right: Check For Updates -->
+                                <!-- Right: Check For Updates + Automatic Updates -->
                                 <Grid Grid.Column="2" RowSpacing="8">
                                     <Grid.RowDefinitions>
-                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
                                     <StackPanel Grid.Row="0" Spacing="8">
@@ -1254,14 +1255,29 @@
                                                    Foreground="{StaticResource TextPrimaryBrush}"/>
                                         <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
                                                    Text="Fetches the latest manifest data and checks all components for available updates. Bypasses the 4-hour cooldown."/>
+                                        <Button x:Name="CheckForUpdatesBtn" Content="Check For Updates"
+                                                Click="CheckForUpdatesButton_Click"
+                                                Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
+                                                BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                                CornerRadius="8" Padding="12,7" FontSize="12"
+                                                HorizontalAlignment="Stretch"
+                                                ToolTipService.ToolTip="Check all components and the app for available updates"/>
                                     </StackPanel>
-                                    <Button Grid.Row="1" x:Name="CheckForUpdatesBtn" Content="Check For Updates"
-                                            Click="CheckForUpdatesButton_Click"
-                                            Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
-                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
-                                            CornerRadius="8" Padding="12,7" FontSize="12"
-                                            HorizontalAlignment="Stretch"
-                                            ToolTipService.ToolTip="Check all components and the app for available updates"/>
+
+                                    <!-- Automatic Updates -->
+                                    <StackPanel Grid.Row="1" Spacing="8" Margin="0,4,0,0">
+                                        <TextBlock Text="Automatic Updates" FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                                   Text="When enabled, RHI silently installs component updates in the background after each update check. Games that are running when an update is detected will be retried automatically once they close. Does not apply to app updates."/>
+                                        <ComboBox x:Name="AutoUpdateComponentsCombo" x:FieldModifier="internal"
+                                                  FontSize="12" HorizontalAlignment="Stretch"
+                                                  ToolTipService.ToolTip="Automatically install ReShade, RenoDX, ReLimiter, DC, OptiScaler, RE Framework, Luma, DXVK and DOF Fix updates silently in the background"
+                                                  SelectionChanged="AutoUpdateComponentsCombo_SelectionChanged">
+                                            <ComboBoxItem Content="No"/>
+                                            <ComboBoxItem Content="Yes"/>
+                                        </ComboBox>
+                                    </StackPanel>
                                 </Grid>
                             </Grid>
                             </StackPanel>

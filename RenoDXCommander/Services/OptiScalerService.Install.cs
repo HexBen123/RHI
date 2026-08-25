@@ -959,6 +959,8 @@ public partial class OptiScalerService
             if (record != null)
             {
                 record.InstalledAt = DateTime.UtcNow;
+                // Persist the variant so future reads (BuildCards, UpdateAsync) stay correct
+                record.OsVariant = isNightly ? "Nightly" : null;
                 _auxInstaller.SaveAuxRecord(record);
                 CrashReporter.Log($"[OptiScalerService.UpdateAsync] Updated tracking record for {card.GameName}");
             }

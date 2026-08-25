@@ -325,6 +325,10 @@ public partial class MainViewModel
                 try { await RunDlssAutoUpdateAsync(); }
                 catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] DLSS auto-update failed — {ex.Message}"); }
 
+                // Silent component auto-update (runs after update check flags pending updates)
+                try { _autoUpdateService.TriggerAsync(); }
+                catch (Exception ex) { _crashReporter.Log($"[RunBackgroundScanAndMergeAsync] Component auto-update trigger failed — {ex.Message}"); }
+
                 // Start periodic update check timer (fires every 4h while app is running)
                 StartPeriodicUpdateCheckTimer();
             });

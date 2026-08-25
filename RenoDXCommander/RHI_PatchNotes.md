@@ -1,3 +1,15 @@
+## v2.4.2
+
+### New
+
+- **Automatic Updates** — new setting in Settings → Check For Updates. When enabled, RHI silently installs component updates in the background after each update check (startup and every 4 hours). Covers ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, RE Framework, Luma, DXVK, and DOF Fix. Respects all per-game and global update exclusions. Games that are running when an update is ready are retried automatically once they close. Does not apply to app updates.
+
+### Bug Fixes
+
+- Fixed OptiScaler showing the stable version number after updating a game that uses the Nightly variant. The tracking record now correctly persists the variant on update, so the version display stays accurate across restarts.
+
+---
+
 ## v2.4.1
 
 ### Bug Fixes

@@ -59,6 +59,10 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _peakNitsEnabled = true;
     [ObservableProperty] private HashSet<int> _peakNitsPresets = new() { 1, 2, 3 };
 
+    // ── Component Auto-Update ────────────────────────────────────────────────
+    /// <summary>When true, silently installs component updates in the background after an update check.</summary>
+    [ObservableProperty] private bool _autoUpdateComponents;
+
     // ── DLSS/Streamline Auto-Update ───────────────────────────────────────────
     [ObservableProperty] private bool _autoUpdateDlss;
     [ObservableProperty] private bool _autoUpdateStreamline;
@@ -271,6 +275,7 @@ public partial class SettingsViewModel : ObservableObject
             try { PeakNitsPresets = System.Text.Json.JsonSerializer.Deserialize<HashSet<int>>(pnpVal) ?? new() { 1, 2, 3 }; }
             catch { PeakNitsPresets = new() { 1, 2, 3 }; }
         }
+        if (s.TryGetValue("AutoUpdateComponents", out var aucVal)) AutoUpdateComponents = aucVal == "true";
         if (s.TryGetValue("AutoUpdateDlss", out var audVal)) AutoUpdateDlss = audVal == "true";
         if (s.TryGetValue("AutoUpdateStreamline", out var ausVal)) AutoUpdateStreamline = ausVal == "true";
         if (s.TryGetValue("LastKnownNewestDlss", out var lkndVal)) LastKnownNewestDlss = lkndVal ?? "";
@@ -370,6 +375,7 @@ public partial class SettingsViewModel : ObservableObject
             s["PeakNitsPresets"] = System.Text.Json.JsonSerializer.Serialize(PeakNitsPresets);
         else
             s.Remove("PeakNitsPresets"); // All 3 checked = default — remove stale non-default value
+        if (AutoUpdateComponents) s["AutoUpdateComponents"] = "true";
         if (AutoUpdateDlss) s["AutoUpdateDlss"] = "true";
         if (AutoUpdateStreamline) s["AutoUpdateStreamline"] = "true";
         if (!string.IsNullOrEmpty(LastKnownNewestDlss)) s["LastKnownNewestDlss"] = LastKnownNewestDlss;

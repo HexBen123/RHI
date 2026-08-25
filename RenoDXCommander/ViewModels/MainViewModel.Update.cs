@@ -112,6 +112,10 @@ public partial class MainViewModel
                         _crashReporter.Log($"[MainViewModel] Periodic custom ReShade redeploy — {redeployed} game(s) updated");
                 }
                 catch (Exception ex) { _crashReporter.Log($"[MainViewModel] Custom ReShade hash check failed — {ex.Message}"); }
+
+                // Silent component auto-update (runs after update check flags pending updates)
+                try { _autoUpdateService.TriggerAsync(); }
+                catch (Exception ex) { _crashReporter.Log($"[MainViewModel] Periodic component auto-update trigger failed — {ex.Message}"); }
             }
             catch (Exception ex)
             {

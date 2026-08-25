@@ -153,6 +153,9 @@ public class SettingsHandler
         _window.AutoUpdateDlssCombo.SelectedIndex = ViewModel.Settings.AutoUpdateDlss ? 1 : 0;
         _window.AutoUpdateStreamlineCombo.SelectedIndex = ViewModel.Settings.AutoUpdateStreamline ? 1 : 0;
 
+        // Initialize component auto-update combo
+        _window.AutoUpdateComponentsCombo.SelectedIndex = ViewModel.Settings.AutoUpdateComponents ? 1 : 0;
+
         // Initialize HDR auto-toggle combo
         _window.HdrAutoToggleCombo.SelectedIndex = ViewModel.Settings.HdrAutoToggle ? 1 : 0;
 

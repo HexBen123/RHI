@@ -43,6 +43,7 @@ public partial class MainViewModel : ObservableObject
     private readonly IDlssStreamlineService _dlssStreamlineService;
     private readonly DlssPresetService _dlssPresetService;
     private readonly DofFixService _dofFixService;
+    private readonly AutoUpdateService _autoUpdateService;
     private readonly CustomReShadeHashService _customReShadeHashService;
     private readonly SeenWikiModsService _seenWikiModsService;
     private readonly SeenUltraPlusModsService _seenUltraPlusModsService;
@@ -600,6 +601,8 @@ public partial class MainViewModel : ObservableObject
         _dlssStreamlineService = dlssStreamlineService;
         _dlssPresetService = dlssPresetService;
         _dofFixService = App.Services.GetRequiredService<DofFixService>();
+        _autoUpdateService = App.Services.GetRequiredService<AutoUpdateService>();
+        _autoUpdateService.SetViewModel(this);
         _customReShadeHashService = App.Services.GetRequiredService<CustomReShadeHashService>();
         _seenWikiModsService = seenWikiModsService;
         _seenUltraPlusModsService = seenUltraPlusModsService;

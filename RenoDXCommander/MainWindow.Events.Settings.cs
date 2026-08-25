@@ -1106,6 +1106,13 @@ public sealed partial class MainWindow
         ViewModel.SaveSettingsPublic();
     }
 
+    private void AutoUpdateComponentsCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
+        ViewModel.Settings.AutoUpdateComponents = combo.SelectedIndex == 1;
+        ViewModel.SaveSettingsPublic();
+    }
+
     private void HdrAutoToggleCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (sender is not ComboBox combo || combo.SelectedIndex < 0) return;
