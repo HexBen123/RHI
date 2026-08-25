@@ -275,7 +275,9 @@ public class DofFixService : IDofFixService
             var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             using var doc = JsonDocument.Parse(json);
 
-            // Find the latest release with the ue-dof-fix- tag prefix
+            // Collect all matching releases, then pick the highest version
+            var candidates = new List<(string version, string? downloadUrl, string? body, Version parsed)>();
+
             foreach (var release in doc.RootElement.EnumerateArray())
             {
                 if (!release.TryGetProperty("tag_name", out var tagEl)) continue;
@@ -307,11 +309,18 @@ public class DofFixService : IDofFixService
                 else if (downloadUrl == null)
                     downloadUrl = $"{DefaultDownloadBaseUrl}/{tag}/{AddonFileName}";
 
-                return (version, downloadUrl, body);
+                Version.TryParse(version, out var parsed);
+                candidates.Add((version, downloadUrl, body, parsed ?? new Version(0, 0)));
             }
 
-            _crashReporter.Log("[DofFixService] No release found with ue-dof-fix- tag");
-            return (null, null, null);
+            if (candidates.Count == 0)
+            {
+                _crashReporter.Log("[DofFixService] No release found with ue-dof-fix- tag");
+                return (null, null, null);
+            }
+
+            var best = candidates.OrderByDescending(c => c.parsed).First();
+            return (best.version, best.downloadUrl, best.body);
         }
         catch (Exception ex)
         {

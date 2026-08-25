@@ -1,9 +1,16 @@
+## v2.4.1
+
+### Bug Fixes
+
+- Fixed DLSS Enabler and DOF Fix not auto-updating when a newer version exists but was released with an older date. Now picks the highest version number rather than the most recently created release.
+
+---
+
 ## v2.4.0
 
 ### Bug Fixes
 
 - Fixed manifest `renodxIniOverrides` keys being ignored on fresh install when the key already existed from a prior install step. Manifest overrides now always apply on install. Updates preserve user-edited values.
-- Fixed DLSS Enabler not auto-updating when a newer version exists but was released with an older date. Now picks the highest version number rather than the most recently created release.
 
 ### Manifest Updates
 
