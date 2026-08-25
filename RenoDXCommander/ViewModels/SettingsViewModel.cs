@@ -401,7 +401,9 @@ public partial class SettingsViewModel : ObservableObject
         if (DefaultRrPreset != 0) s["DefaultRrPreset"] = DefaultRrPreset.ToString();
         if (DefaultFgPreset != 0) s["DefaultFgPreset"] = DefaultFgPreset.ToString();
         if (DefaultSrRenderScale != 0) s["DefaultSrRenderScale"] = DefaultSrRenderScale.ToString();
+        else s.Remove("DefaultSrRenderScale");
         if (DefaultRrRenderScale != 0) s["DefaultRrRenderScale"] = DefaultRrRenderScale.ToString();
+        else s.Remove("DefaultRrRenderScale");
 
         // Digital Vibrance per-display settings
         if (DigitalVibranceSettings.Count > 0)

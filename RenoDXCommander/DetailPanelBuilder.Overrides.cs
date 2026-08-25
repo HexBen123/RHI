@@ -634,13 +634,27 @@ public partial class DetailPanelBuilder
         topRightColumn.Children.Add(dllOverrideToggle);
 
         // 3 DLL name boxes side by side, hidden when toggle is off
-        var dllBoxesGrid = new Grid { ColumnSpacing = 8, Visibility = isDllOverride ? Visibility.Visible : Visibility.Collapsed };
+        var dllBoxesGrid = new Grid { ColumnSpacing = 8, RowSpacing = 4, Visibility = isDllOverride ? Visibility.Visible : Visibility.Collapsed };
         dllBoxesGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         dllBoxesGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         dllBoxesGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        Grid.SetColumn(rsNameBox, 0);
-        Grid.SetColumn(dcNameBox, 1);
-        Grid.SetColumn(osNameBox, 2);
+        dllBoxesGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        dllBoxesGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+        // Label row
+        var rsLabel = new TextBlock { Text = "ReShade", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush) };
+        var dcLabel = new TextBlock { Text = "Display Commander", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush) };
+        var osLabel = new TextBlock { Text = "OptiScaler", FontSize = 11, Foreground = UIFactory.Brush(ResourceKeys.InlineDescriptionBrush) };
+        Grid.SetColumn(rsLabel, 0); Grid.SetRow(rsLabel, 0);
+        Grid.SetColumn(dcLabel, 1); Grid.SetRow(dcLabel, 0);
+        Grid.SetColumn(osLabel, 2); Grid.SetRow(osLabel, 0);
+        dllBoxesGrid.Children.Add(rsLabel);
+        dllBoxesGrid.Children.Add(dcLabel);
+        dllBoxesGrid.Children.Add(osLabel);
+
+        Grid.SetColumn(rsNameBox, 0); Grid.SetRow(rsNameBox, 1);
+        Grid.SetColumn(dcNameBox, 1); Grid.SetRow(dcNameBox, 1);
+        Grid.SetColumn(osNameBox, 2); Grid.SetRow(osNameBox, 1);
         dllBoxesGrid.Children.Add(rsNameBox);
         dllBoxesGrid.Children.Add(dcNameBox);
         dllBoxesGrid.Children.Add(osNameBox);

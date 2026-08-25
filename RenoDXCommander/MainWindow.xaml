@@ -176,6 +176,7 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBox x:Name="SearchBox" Grid.Column="0"
                                          PlaceholderText="Filter games..."
@@ -197,6 +198,18 @@
                                         FontSize="14" FontWeight="Bold"
                                         VerticalAlignment="Center"
                                         ToolTipService.ToolTip="Save current search as a custom filter"/>
+                                <Button x:Name="AddGameBtn" Grid.Column="2"
+                                        Content="+"
+                                        Click="AddGameButton_Click"
+                                        Background="{StaticResource AccentGreenBgBrush}"
+                                        Foreground="{StaticResource AccentGreenBrush}"
+                                        BorderBrush="{StaticResource AccentGreenBorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="8" Padding="8,6"
+                                        MinWidth="0" MinHeight="0"
+                                        FontSize="14" FontWeight="Bold"
+                                        VerticalAlignment="Center"
+                                        ToolTipService.ToolTip="Manually add a game"/>
                             </Grid>
                         </Border>
 
@@ -1208,7 +1221,7 @@
                         <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
                                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
                             <StackPanel Spacing="12">
-                            <TextBlock Text="Game Library" FontSize="15" FontWeight="Bold"
+                            <TextBlock Text="Component Updates" FontSize="15" FontWeight="Bold"
                                        Foreground="{StaticResource TextPrimaryBrush}"/>
                             <Grid ColumnSpacing="0" RowSpacing="8">
                                 <Grid.ColumnDefinitions>
@@ -1217,37 +1230,10 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
-                                <!-- Left: Add Game -->
+                                <!-- Left: Check For Updates -->
                                 <Grid Grid.Column="0" RowSpacing="8">
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="*"/>
-                                        <RowDefinition Height="Auto"/>
-                                    </Grid.RowDefinitions>
-                                    <StackPanel Grid.Row="0" Spacing="8">
-                                        <TextBlock Text="Add Game" FontSize="13" FontWeight="SemiBold"
-                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
-                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                                   Text="Manually add a game that wasn't automatically detected. Select the game's exe and you'll be asked to name it."/>
-                                    </StackPanel>
-                                    <Button Grid.Row="1" x:Name="AddGameBtn" Content="Add Game"
-                                            Click="AddGameButton_Click"
-                                            Background="{StaticResource AccentGreenBgBrush}" Foreground="{StaticResource AccentGreenBrush}"
-                                            BorderBrush="{StaticResource AccentGreenBorderBrush}" BorderThickness="1"
-                                            CornerRadius="8" Padding="12,7" FontSize="12"
-                                            HorizontalAlignment="Stretch"
-                                            ToolTipService.ToolTip="Manually add a game folder"/>
-                                </Grid>
-
-                                <!-- Divider -->
-                                <Border Grid.Column="1" Width="1"
-                                        Background="{StaticResource BorderDefaultBrush}"
-                                        VerticalAlignment="Stretch" Margin="12,0,12,0"/>
-
-                                <!-- Right: Check For Updates + Automatic Updates -->
-                                <Grid Grid.Column="2" RowSpacing="8">
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
                                     <StackPanel Grid.Row="0" Spacing="8">
@@ -1255,30 +1241,35 @@
                                                    Foreground="{StaticResource TextPrimaryBrush}"/>
                                         <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
                                                    Text="Fetches the latest manifest data and checks all components for available updates. Bypasses the 4-hour cooldown."/>
-                                        <Button x:Name="CheckForUpdatesBtn" Content="Check For Updates"
-                                                Click="CheckForUpdatesButton_Click"
-                                                Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
-                                                BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
-                                                CornerRadius="8" Padding="12,7" FontSize="12"
-                                                HorizontalAlignment="Stretch"
-                                                ToolTipService.ToolTip="Check all components and the app for available updates"/>
                                     </StackPanel>
-
-                                    <!-- Automatic Updates -->
-                                    <StackPanel Grid.Row="1" Spacing="8" Margin="0,4,0,0">
-                                        <TextBlock Text="Automatic Updates" FontSize="13" FontWeight="SemiBold"
-                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
-                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
-                                                   Text="When enabled, RHI silently installs component updates in the background after each update check. Games that are running when an update is detected will be retried automatically once they close. Does not apply to app updates."/>
-                                        <ComboBox x:Name="AutoUpdateComponentsCombo" x:FieldModifier="internal"
-                                                  FontSize="12" HorizontalAlignment="Stretch"
-                                                  ToolTipService.ToolTip="Automatically install ReShade, RenoDX, ReLimiter, DC, OptiScaler, RE Framework, Luma, DXVK and DOF Fix updates silently in the background"
-                                                  SelectionChanged="AutoUpdateComponentsCombo_SelectionChanged">
-                                            <ComboBoxItem Content="No"/>
-                                            <ComboBoxItem Content="Yes"/>
-                                        </ComboBox>
-                                    </StackPanel>
+                                    <Button Grid.Row="1" x:Name="CheckForUpdatesBtn" Content="Check For Updates"
+                                            Click="CheckForUpdatesButton_Click"
+                                            Background="{StaticResource AccentBlueBgBrush}" Foreground="{StaticResource AccentBlueBrush}"
+                                            BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8" Padding="12,7" FontSize="12"
+                                            HorizontalAlignment="Stretch"
+                                            ToolTipService.ToolTip="Check all components and the app for available updates"/>
                                 </Grid>
+
+                                <!-- Divider -->
+                                <Border Grid.Column="1" Width="1"
+                                        Background="{StaticResource BorderDefaultBrush}"
+                                        VerticalAlignment="Stretch" Margin="12,0,12,0"/>
+
+                                <!-- Right: Automatic Updates -->
+                                <StackPanel Grid.Column="2" Spacing="8">
+                                    <TextBlock Text="Automatic Updates" FontSize="13" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                                    <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                               Text="When enabled, RHI silently installs component updates in the background after each update check. Games that are running when an update is detected will be retried automatically once they close. Does not apply to app updates."/>
+                                    <ComboBox x:Name="AutoUpdateComponentsCombo" x:FieldModifier="internal"
+                                              FontSize="12" HorizontalAlignment="Stretch"
+                                              ToolTipService.ToolTip="Automatically install ReShade, RenoDX, ReLimiter, DC, OptiScaler, RE Framework, Luma, DXVK and DOF Fix updates silently in the background"
+                                              SelectionChanged="AutoUpdateComponentsCombo_SelectionChanged">
+                                        <ComboBoxItem Content="No"/>
+                                        <ComboBoxItem Content="Yes"/>
+                                    </ComboBox>
+                                </StackPanel>
                             </Grid>
                             </StackPanel>
                         </Border>
@@ -1447,8 +1438,17 @@
                                     </ComboBox>
                                 </Grid>
 
-                                <!-- Row 2 Right: HDR Auto-Toggle + Select Monitors -->
-                                <Grid Grid.Row="2" Grid.Column="2" ColumnSpacing="6" VerticalAlignment="Center">
+                                <!-- Row 2 Right: Apply to All Games (nits) -->
+                                <Button Grid.Row="2" Grid.Column="2" x:Name="ApplyScreenshotPathBtn"
+                                        Content="Apply to All Games"
+                                        Click="ApplyPeakNitsToAll_Click"
+                                        Background="{StaticResource AccentBlueBgBrush}"
+                                        Foreground="{StaticResource AccentBlueBrush}"
+                                        BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
+                                        CornerRadius="8" Padding="12,7" FontSize="12"
+                                        HorizontalAlignment="Stretch"/>
+                                <!-- Row 4 Right: HDR Auto-Toggle + Select Monitors -->
+                                <Grid Grid.Row="4" Grid.Column="2" ColumnSpacing="6" VerticalAlignment="Center">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
@@ -1495,15 +1495,6 @@
                                 <Button Grid.Row="4" Grid.Column="0" x:Name="ApplyHotkeyBtn" x:FieldModifier="internal"
                                         Content="Apply to All Games"
                                         Click="ApplyScreenshotPath_Click"
-                                        Background="{StaticResource AccentBlueBgBrush}"
-                                        Foreground="{StaticResource AccentBlueBrush}"
-                                        BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
-                                        CornerRadius="8" Padding="12,7" FontSize="12"
-                                        HorizontalAlignment="Stretch"/>
-
-                                <Button Grid.Row="4" Grid.Column="2" x:Name="ApplyScreenshotPathBtn"
-                                        Content="Apply to All Games"
-                                        Click="ApplyPeakNitsToAll_Click"
                                         Background="{StaticResource AccentBlueBgBrush}"
                                         Foreground="{StaticResource AccentBlueBrush}"
                                         BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"

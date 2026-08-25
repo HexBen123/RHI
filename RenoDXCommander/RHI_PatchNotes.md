@@ -4,9 +4,17 @@
 
 - **Automatic Updates** — new setting in Settings → Check For Updates. When enabled, RHI silently installs component updates in the background after each update check (startup and every 4 hours). Covers ReShade, RenoDX, ReLimiter, Display Commander, OptiScaler, RE Framework, Luma, DXVK, and DOF Fix. Respects all per-game and global update exclusions. Games that are running when an update is ready are retried automatically once they close. Does not apply to app updates.
 
+### Changes
+
+- Add Game button moved from Settings to the sidebar, next to the Filter games search box.
+- Settings "Game Library" card renamed to "Component Updates" and reorganised — Check For Updates on the left, Automatic Updates on the right.
+- Peak Nits "Apply to All Games" button moved directly below the nits input, above HDR Auto-Toggle.
+
 ### Bug Fixes
 
 - Fixed OptiScaler showing the stable version number after updating a game that uses the Nightly variant. The tracking record now correctly persists the variant on update, so the version display stays accurate across restarts.
+- Fixed DLSS Defaults render scale resetting to 75% Quality+ on restart after being set to Off. The Off value is now correctly cleared from settings so it persists properly.
+- Added ReShade, Display Commander, and OptiScaler labels above the DLL naming override dropdowns in the overrides panel.
 
 ---
 
