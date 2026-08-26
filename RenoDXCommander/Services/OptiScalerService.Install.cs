@@ -194,7 +194,11 @@ public partial class OptiScalerService
                 if (fileName.Equals(IniFileName, StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                // All OptiScaler root files are RHI-managed — never back them up
+                // Back up any game-original file at this path before overwriting.
+                // Games like Stalker 2 and The First Berserker ship companion DLLs
+                // (e.g. amd_fidelityfx_*.dll) that OptiScaler replaces — these must
+                // be restored on uninstall so the game still works without OptiScaler.
+                BackupOriginalIfExists(destPath);
                 File.Copy(stagingFile, destPath, overwrite: true);
                 CrashReporter.Log($"[OptiScalerService.InstallAsync] Deployed {fileName}" +
                     (fileName.Equals("OptiScaler.dll", StringComparison.OrdinalIgnoreCase) ? $" as {effectiveDllName}" : ""));
