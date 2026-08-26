@@ -6,7 +6,7 @@
 
 ### Maintenance
 
-- Nexus Mods direct download integration (dev preview). Connect a Nexus API key in Settings to enable one-click install and update for Nexus-hosted mods. Free users get one-click downloads via the Nexus browser flow (nxm:// protocol). Gated behind unlock.txt while in testing.
+- Internal groundwork for RenoDX Nexus Mods integration.
 
 ### Manifest Updates
 

@@ -701,6 +701,31 @@ public sealed partial class MainWindow
         // (e.g. forced to Discord by ApplyCardOverrides). Use it directly so a
         // NexusUrl on the underlying mod can't override the intended destination.
         var url = card.IsExternalOnly ? card.ExternalUrl : (card.NexusUrl ?? card.DiscordUrl ?? card.ExternalUrl);
+
+        // For Nexus URLs, resolve the latest file ID and open directly to the download page
+        // URL format: nexusmods.com/{domain}/mods/{id}?tab=files&file_id={fileId}&nmm=1
+        // This skips the mod page and files tab, landing directly on the "Slow download" button.
+        if (!string.IsNullOrEmpty(url) && url.Contains("nexusmods.com", StringComparison.OrdinalIgnoreCase)
+            && DevUnlockService.IsUnlocked)
+        {
+            var parsed = NexusUpdateService.ParseNexusUrl(url);
+            if (parsed.HasValue)
+            {
+                try
+                {
+                    var nexusDl = App.Services.GetRequiredService<NexusDownloadService>();
+                    var latestFile = await nexusDl.GetLatestMainFileAsync(parsed.Value.Domain, parsed.Value.ModId).ConfigureAwait(false);
+                    if (latestFile != null)
+                        url = $"https://www.nexusmods.com/{parsed.Value.Domain}/mods/{parsed.Value.ModId}?tab=files&file_id={latestFile.FileId}&nmm=1";
+                }
+                catch { /* fall through to base URL */ }
+            }
+        }
+        else if (!string.IsNullOrEmpty(url) && url.Contains("nexusmods.com", StringComparison.OrdinalIgnoreCase)
+            && !url.Contains("?tab=", StringComparison.OrdinalIgnoreCase))
+        {
+            url = url.TrimEnd('/') + "?tab=files";
+        }
         if (!string.IsNullOrEmpty(url))
             await Windows.System.Launcher.LaunchUriAsync(new Uri(url));
 
