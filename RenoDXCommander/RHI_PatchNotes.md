@@ -14,6 +14,7 @@
 ### Bug Fixes
 
 - Fixed PCGamingWiki links not opening. The links now resolve correctly following a server change on PCGamingWiki's end. The resolution method is now manifest-driven, so if PCGamingWiki make further changes in the future this can be fixed remotely without an app update.
+- Fixed Streamline version not displaying correctly for builds that don't include `sl.interposer.dll`. RHI now picks the highest versioned Streamline DLL available as the version source.
 - Fixed OptiScaler showing the stable version number after updating a Nightly install.
 - Fixed DLSS Defaults render scale reverting to 75% Quality+ on restart after being set to Off.
 - Fixed the setup window cutting off — both buttons are now fully visible at all display scales.

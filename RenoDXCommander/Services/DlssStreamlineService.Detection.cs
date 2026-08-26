@@ -49,13 +49,12 @@ public partial class DlssStreamlineService
             result.StreamlineVersion = GetFileVersion(result.StreamlineInterposerPath);
         else if (result.StreamlineFolder != null)
         {
-            // No sl.interposer.dll (e.g. early access builds) — fall back to sl.common.dll for version
-            var commonPath = Path.Combine(result.StreamlineFolder, "sl.common.dll");
-            if (File.Exists(commonPath))
+            // No sl.interposer.dll — find the highest-versioned sl.*.dll as version source
+            var bestPath = GetHighestVersionedSlDll(result.StreamlineFolder);
+            if (bestPath != null)
             {
-                result.StreamlineVersion = GetFileVersion(commonPath);
-                // Use sl.common.dll as the version source path so the column shows correctly
-                result.StreamlineInterposerPath = commonPath;
+                result.StreamlineVersion = GetFileVersion(bestPath);
+                result.StreamlineInterposerPath = bestPath;
             }
         }
 

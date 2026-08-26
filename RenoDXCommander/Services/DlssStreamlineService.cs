@@ -219,6 +219,30 @@ public partial class DlssStreamlineService : IDlssStreamlineService
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Returns the path of the sl.*.dll with the highest file version in the given folder,
+    /// excluding sl.interposer.dll (which may be absent in some Streamline builds).
+    /// Used as the version source when sl.interposer.dll is not present.
+    /// </summary>
+    private string? GetHighestVersionedSlDll(string folder)
+    {
+        string? bestPath = null;
+        Version? bestVersion = null;
+        foreach (var dll in KnownStreamlineDlls)
+        {
+            if (string.Equals(dll, StreamlineIndicator, StringComparison.OrdinalIgnoreCase)) continue;
+            var path = Path.Combine(folder, dll);
+            if (!File.Exists(path)) continue;
+            var vStr = GetFileVersion(path);
+            if (vStr != null && Version.TryParse(vStr, out var v) && (bestVersion == null || v > bestVersion))
+            {
+                bestVersion = v;
+                bestPath = path;
+            }
+        }
+        return bestPath;
+    }
+
     public string? GetFileVersion(string dllPath)
     {
         try
@@ -455,9 +479,8 @@ public partial class DlssStreamlineService : IDlssStreamlineService
         if (entry.StreamlineFolder != null)
         {
             var interposerPath = Path.Combine(entry.StreamlineFolder, StreamlineIndicator);
-            var commonPath = Path.Combine(entry.StreamlineFolder, "sl.common.dll");
             var versionSourcePath = File.Exists(interposerPath) ? interposerPath
-                : File.Exists(commonPath) ? commonPath : null;
+                : GetHighestVersionedSlDll(entry.StreamlineFolder);
 
             if (versionSourcePath != null)
             {
