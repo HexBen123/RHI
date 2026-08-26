@@ -162,6 +162,12 @@ public class RemoteManifest
     [JsonPropertyName("pcgwUrlOverrides")]
     public Dictionary<string, string>? PcgwUrlOverrides { get; set; }
 
+    [JsonPropertyName("pcgwUseAppId")]
+    public bool PcgwUseAppId { get; set; }
+
+    [JsonPropertyName("pcgwUrlCacheVersion")]
+    public int PcgwUrlCacheVersion { get; set; }
+
     [JsonPropertyName("uwFixUrlOverrides")]
     public Dictionary<string, string>? UwFixUrlOverrides { get; set; }
 
