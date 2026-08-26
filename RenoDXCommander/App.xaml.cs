@@ -114,6 +114,7 @@ public partial class App : Application
         services.AddSingleton<SeenWikiModsService>();
         services.AddSingleton<SeenUltraPlusModsService>();
         services.AddSingleton<SeenLumaModsService>();
+        services.AddSingleton<NexusDownloadService>();
         // Lazy<IDlssStreamlineService> breaks the circular dependency between OptiScalerService ↔ DlssStreamlineService
         services.AddSingleton<Lazy<IDlssStreamlineService>>(sp => new Lazy<IDlssStreamlineService>(() => sp.GetRequiredService<IDlssStreamlineService>()));
 
@@ -145,6 +146,19 @@ public partial class App : Application
                 addonArg = cmdArgs[1];
         }
 
+        // Handle --nxm argument (from nxm:// protocol handler, dev-unlocked only)
+        string? nxmArg = null;
+        if (DevUnlockService.IsUnlocked)
+        {
+            // Protocol handler sends: RHI.exe --nxm "nxm://..."
+            var nxmIdx = Array.IndexOf(cmdArgs, "--nxm");
+            if (nxmIdx >= 0 && nxmIdx < cmdArgs.Length - 1)
+                nxmArg = cmdArgs[nxmIdx + 1];
+            // Some OS protocol registrations pass the URL as the only extra arg directly
+            else if (cmdArgs.Length > 1 && cmdArgs[1].StartsWith("nxm://", StringComparison.OrdinalIgnoreCase))
+                nxmArg = cmdArgs[1];
+        }
+
         // Handle --launch argument (from jump list or command line)
         var launchIdx = Array.IndexOf(cmdArgs, "--launch");
         string? launchGameArg = null;
@@ -171,6 +185,8 @@ public partial class App : Application
             // Another instance is running — forward the file or launch command and exit
             if (launchGameArg != null)
                 SingleInstanceService.SendToRunningInstance($"--launch:{launchGameArg}");
+            else if (nxmArg != null)
+                SingleInstanceService.SendToRunningInstance($"nxm:{nxmArg}");
             else if (addonArg != null)
                 SingleInstanceService.SendToRunningInstance(addonArg);
             else
@@ -255,6 +271,8 @@ public partial class App : Application
                     SingleInstanceService.FileReceived += OnFileReceived;
                     if (addonArg != null && _window is MainWindow mwAddon)
                         mwAddon.HandleAddonFile(addonArg);
+                    if (nxmArg != null && _window is MainWindow mwNxm)
+                        mwNxm.DispatcherQueue.TryEnqueue(() => mwNxm.HandleNxmUrl(nxmArg));
                     setupWindow.Close();
                 }
                 catch (Exception ex)
@@ -289,6 +307,13 @@ public partial class App : Application
             if (_window is MainWindow mw)
                 mw.HandleAddonFile(addonArg);
         }
+
+        // Handle NXM protocol URL passed on first launch (dev-unlocked only)
+        if (nxmArg != null && _window is MainWindow mwNxmFirst)
+        {
+            CrashReporter.Log($"[App.OnLaunched] NXM URL passed via command line: {nxmArg}");
+            mwNxmFirst.DispatcherQueue.TryEnqueue(() => mwNxmFirst.HandleNxmUrl(nxmArg));
+        }
     }
 
     private void OnFileReceived(string path)
@@ -310,6 +335,13 @@ public partial class App : Application
                         c.GameName.Equals(gameName, StringComparison.OrdinalIgnoreCase));
                     if (card != null) mw.LaunchGame(card);
                 });
+            return;
+        }
+        // NXM protocol URL forwarded from a second instance (dev-unlocked only)
+        if (path.StartsWith("nxm:", StringComparison.OrdinalIgnoreCase))
+        {
+            if (_window is MainWindow mwNxm)
+                mwNxm.DispatcherQueue.TryEnqueue(() => mwNxm.HandleNxmUrl(path));
             return;
         }
         if (_window is MainWindow mw2)

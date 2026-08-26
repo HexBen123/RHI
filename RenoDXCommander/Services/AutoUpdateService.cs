@@ -3,6 +3,7 @@
 // Respects all per-game ExcludeFromUpdateAll* flags via the existing UpdateAll* methods.
 // Games that are currently running are queued for retry; a timer polls every 60 seconds.
 
+using Microsoft.Extensions.DependencyInjection;
 using RenoDXCommander.ViewModels;
 
 namespace RenoDXCommander.Services;
@@ -276,6 +277,33 @@ public class AutoUpdateService
         // If anything was deferred, start the retry watcher.
         if (!_retryQueue.IsEmpty)
             EnsureRetryTimerRunning();
+
+        // ── Nexus Mods (dev-unlocked, premium only) ──────────────────────────
+        if (DevUnlockService.IsUnlocked)
+        {
+            var nexusDl = _viewModel.AllCards.Count > 0
+                ? App.Services.GetRequiredService<NexusDownloadService>()
+                : null;
+
+            if (nexusDl?.IsApiKeyConfigured == true && nexusDl.IsPremium)
+            {
+                var nexusCards = cards.Where(c =>
+                    c.Status == Models.GameStatus.UpdateAvailable
+                    && !c.IsHidden
+                    && !c.ExcludeFromUpdateAllRenoDx
+                    && c.IsExternalOnly
+                    && !string.IsNullOrEmpty(c.NexusUrl)
+                    && !string.IsNullOrEmpty(c.InstallPath)).ToList();
+
+                foreach (var card in nexusCards)
+                {
+                    if (card.IsRunning) { EnqueueRetry(card, "Nexus"); continue; }
+                    await TryUpdateOneAsync("Nexus", card,
+                        () => _viewModel.UpdateNexusModAsync(card));
+                    await Pause();
+                }
+            }
+        }
     }
 
     // ── Per-card update wrapper ───────────────────────────────────────────────────
@@ -397,6 +425,7 @@ public class AutoUpdateService
         "DXVK"       => _viewModel!.UpdateAllDxvkAsync(),
         "Luma"       => _viewModel!.UpdateAllLumaAsync(),
         "DofFix"     => _viewModel!.UpdateAllDofFixAsync(),
+        "Nexus"      => _viewModel!.UpdateNexusModAsync(entry.Card),
         _            => Task.CompletedTask,
     };
 

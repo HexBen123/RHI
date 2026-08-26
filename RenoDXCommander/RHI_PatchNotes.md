@@ -4,6 +4,10 @@
 
 - Fixed OptiScaler uninstall deleting AMD FidelityFX DLLs and other companion files that the game shipped. RHI now backs up any existing file before overwriting it on install, and restores it on uninstall.
 
+### Maintenance
+
+- Nexus Mods direct download integration (dev preview). Connect a Nexus API key in Settings to enable one-click install and update for Nexus-hosted mods. Free users get one-click downloads via the Nexus browser flow (nxm:// protocol). Gated behind unlock.txt while in testing.
+
 ### Manifest Updates
 
 - Added reeShaders by LVutner to the shader pack library — lightweight sharpening (TinySharpen), clarity, and chromatic aberration shaders.

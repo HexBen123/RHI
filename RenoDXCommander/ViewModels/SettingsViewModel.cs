@@ -81,6 +81,11 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _startWithWindows;
     [ObservableProperty] private List<string> _recentLaunches = new();
 
+    // ── Nexus Mods integration (dev-unlocked only) ────────────────────────────
+    [ObservableProperty] private string _nexusApiKey = "";
+    [ObservableProperty] private bool _nexusIsPremium;
+    [ObservableProperty] private string _nexusUsername = "";
+
     // ── Digital Vibrance ──────────────────────────────────────────────────────
     /// <summary>Per-display DVC values. Key = display index (string), Value = 0-100.</summary>
     public Dictionary<string, int> DigitalVibranceSettings { get; set; } = new();
@@ -302,6 +307,10 @@ public partial class SettingsViewModel : ObservableObject
             try { RecentLaunches = System.Text.Json.JsonSerializer.Deserialize<List<string>>(rlVal) ?? new(); }
             catch { RecentLaunches = new(); }
         }
+        // Nexus Mods (dev-unlocked only — stored but never logged)
+        if (s.TryGetValue("NexusApiKey",    out var nakVal)) NexusApiKey    = nakVal ?? "";
+        if (s.TryGetValue("NexusIsPremium", out var nipVal)) NexusIsPremium = nipVal == "true";
+        if (s.TryGetValue("NexusUsername",  out var nunVal)) NexusUsername  = nunVal ?? "";
 
         // DLSS/Streamline defaults
         if (s.TryGetValue("DefaultDlssVersion", out var ddv)) DefaultDlssVersion = ddv ?? "";
@@ -391,6 +400,10 @@ public partial class SettingsViewModel : ObservableObject
         s["RecentGamesMenu"] = RecentGamesMenu ? "true" : "false";
         s["StartWithWindows"] = StartWithWindows ? "true" : "false";
         if (RecentLaunches.Count > 0) s["RecentLaunches"] = System.Text.Json.JsonSerializer.Serialize(RecentLaunches);
+        // Nexus Mods — key stored as-is (local settings.json, not transmitted anywhere)
+        if (!string.IsNullOrEmpty(NexusApiKey))    s["NexusApiKey"]    = NexusApiKey;
+        if (NexusIsPremium)                        s["NexusIsPremium"] = "true";
+        if (!string.IsNullOrEmpty(NexusUsername))  s["NexusUsername"]  = NexusUsername;
 
         // DLSS/Streamline defaults
         if (!string.IsNullOrEmpty(DefaultDlssVersion)) s["DefaultDlssVersion"] = DefaultDlssVersion;

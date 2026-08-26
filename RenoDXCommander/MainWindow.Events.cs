@@ -684,6 +684,19 @@ public sealed partial class MainWindow
     {
         var card = GetCardFromSender(sender);
         if (card == null) return;
+
+        // ── Nexus direct download intercept (dev-unlocked, premium only) ──────
+        if (DevUnlockService.IsUnlocked && card.NexusUrl != null)
+        {
+            var nexusDl = App.Services.GetRequiredService<NexusDownloadService>();
+            if (nexusDl.IsApiKeyConfigured && nexusDl.IsPremium)
+            {
+                await ViewModel.InstallNexusModAsync(card);
+                return;
+            }
+        }
+
+        // ── Default: open browser ─────────────────────────────────────────────
         // When IsExternalOnly the ExternalUrl has already been resolved correctly
         // (e.g. forced to Discord by ApplyCardOverrides). Use it directly so a
         // NexusUrl on the underlying mod can't override the intended destination.
@@ -715,6 +728,17 @@ public sealed partial class MainWindow
         if (card?.PcgwUrl != null)
             await Windows.System.Launcher.LaunchUriAsync(new Uri(card.PcgwUrl));
     }
+
+    // ── Nexus Mods button forwarders (XAML routes clicks to MainWindow) ──────────
+
+    private void NexusConnectBtn_Click(object sender, RoutedEventArgs e)
+        => _settingsHandler.NexusConnectBtn_Click(sender, e);
+
+    private void NexusDisconnectBtn_Click(object sender, RoutedEventArgs e)
+        => _settingsHandler.NexusDisconnectBtn_Click(sender, e);
+
+    private void NxmRegisterBtn_Click(object sender, RoutedEventArgs e)
+        => _settingsHandler.NxmRegisterBtn_Click(sender, e);
 
     private async void NexusModsLink_Click(object sender, RoutedEventArgs e)
     {

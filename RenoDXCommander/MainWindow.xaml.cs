@@ -420,6 +420,50 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    /// <summary>
+    /// Handles an incoming nxm:// URL forwarded from a second instance or from the command line.
+    /// Parses the NXM link and dispatches to the ViewModel's HandleNxmLinkAsync.
+    /// Dev-unlocked only — no-op for regular users.
+    /// </summary>
+    internal void HandleNxmUrl(string nxmUrl)
+    {
+        if (!DevUnlockService.IsUnlocked) return;
+
+        // Strip the "nxm:" pipe-forwarding prefix if present — the pipe listener prepends it
+        // to distinguish NXM messages from addon file paths, but the parser expects a raw nxm:// URL.
+        if (nxmUrl.StartsWith("nxm:nxm://", StringComparison.OrdinalIgnoreCase))
+            nxmUrl = nxmUrl.Substring("nxm:".Length);
+
+        var link = NxmProtocolHandler.Parse(nxmUrl);
+        if (link == null)
+        {
+            _crashReporter.Log($"[MainWindow.HandleNxmUrl] Failed to parse NXM URL: {nxmUrl}");
+            return;
+        }
+
+        _crashReporter.Log($"[MainWindow.HandleNxmUrl] Routing NXM: {link.Domain}/mods/{link.ModId}/files/{link.FileId}");
+
+        // Wait for initialization to complete before processing — same pattern as HandleAddonFile
+        _ = Task.Run(async () =>
+        {
+            while (ViewModel.IsLoading)
+                await Task.Delay(200);
+
+            DispatcherQueue?.TryEnqueue(async () =>
+            {
+                try
+                {
+                    NativeInterop.SetForegroundWindow(WinRT.Interop.WindowNative.GetWindowHandle(this));
+                    await ViewModel.HandleNxmLinkAsync(link);
+                }
+                catch (Exception ex)
+                {
+                    _crashReporter.Log($"[MainWindow.HandleNxmUrl] HandleNxmLinkAsync failed — {ex.Message}");
+                }
+            });
+        });
+    }
+
     internal async void HandleArchiveFile(string filePath)
     {
         try

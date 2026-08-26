@@ -32,4 +32,10 @@ public class InstalledModRecord
     /// Set to false when user disables via the RenoDX cog dialog.
     /// </summary>
     public bool EngineIniLut { get; set; } = true;
+
+    /// <summary>
+    /// Nexus Mods file_id that was installed, for accurate update detection.
+    /// Null for mods installed before Nexus integration or via drag-drop.
+    /// </summary>
+    public int? NexusFileId { get; set; }
 }

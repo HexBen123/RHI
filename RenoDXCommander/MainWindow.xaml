@@ -1585,6 +1585,118 @@
                         </Border>
 
                         <!-- ══════════════════════════════════════════════════════════
+                             CARD 2c: NEXUS MODS (dev-only — hidden by DevUnlockService)
+                             ══════════════════════════════════════════════════════════ -->
+                        <Border x:Name="NexusModsCard" x:FieldModifier="internal"
+                                Visibility="Collapsed"
+                                Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"
+                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                            <StackPanel Spacing="12">
+                                <TextBlock Text="Nexus Mods" FontSize="15" FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+
+                                <Grid ColumnSpacing="0" RowSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="25"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Left description -->
+                                    <StackPanel Grid.Row="0" Grid.Column="0" Spacing="4">
+                                        <TextBlock Text="API Key" FontSize="14" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="11"
+                                                   Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                                   Text="Paste your Nexus Mods personal API key. Premium users get one-click downloads and silent auto-updates. Free users get one-click browser downloads."/>
+                                    </StackPanel>
+
+                                    <!-- Divider -->
+                                    <Border Grid.Row="0" Grid.RowSpan="3" Grid.Column="1" Width="1"
+                                            Background="{StaticResource BorderDefaultBrush}"
+                                            VerticalAlignment="Stretch" Margin="12,0,12,0"/>
+
+                                    <!-- Right: connection status + NXM toggle -->
+                                    <StackPanel Grid.Row="0" Grid.Column="2" Spacing="4">
+                                        <TextBlock Text="NXM Protocol Handler" FontSize="14" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="11"
+                                                   Foreground="{StaticResource InlineDescriptionBrush}" LineHeight="18"
+                                                   Text="Register RHI as the nxm:// handler so Nexus &quot;Mod Manager Download&quot; buttons open directly in RHI."/>
+                                    </StackPanel>
+
+                                    <!-- Row 1 Left: API key input + Connect/Disconnect buttons -->
+                                    <StackPanel Grid.Row="1" Grid.Column="0" Spacing="6">
+                                        <Grid ColumnSpacing="6">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <PasswordBox x:Name="NexusApiKeyBox" x:FieldModifier="internal"
+                                                         Grid.Column="0"
+                                                         PlaceholderText="Paste API key here..."
+                                                         FontSize="12" VerticalAlignment="Center"
+                                                         PasswordRevealMode="Peek"/>
+                                            <Button x:Name="NexusConnectBtn" x:FieldModifier="internal"
+                                                    Grid.Column="1"
+                                                    Content="Connect"
+                                                    Click="NexusConnectBtn_Click"
+                                                    Background="{StaticResource AccentGreenBrush}"
+                                                    Foreground="White"
+                                                    BorderThickness="0"
+                                                    CornerRadius="6" Padding="12,6" MinWidth="0"
+                                                    FontSize="12" VerticalAlignment="Center"/>
+                                        </Grid>
+                                        <TextBlock x:Name="NexusStatusText" x:FieldModifier="internal"
+                                                   FontSize="11" TextWrapping="Wrap"
+                                                   Foreground="{StaticResource TextTertiaryBrush}"
+                                                   Text="Not connected"/>
+                                    </StackPanel>
+
+                                    <!-- Row 1 Right: NXM handler register/unregister -->
+                                    <StackPanel Grid.Row="1" Grid.Column="2" Spacing="6">
+                                        <Grid ColumnSpacing="6">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock x:Name="NxmStatusText" x:FieldModifier="internal"
+                                                       Grid.Column="0"
+                                                       FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center"
+                                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                                       Text="Not registered"/>
+                                            <Button x:Name="NxmRegisterBtn" x:FieldModifier="internal"
+                                                    Grid.Column="1"
+                                                    Content="Register"
+                                                    Click="NxmRegisterBtn_Click"
+                                                    Background="{StaticResource SurfaceOverlayBrush}"
+                                                    Foreground="{StaticResource ChipTextBrush}"
+                                                    BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                                    CornerRadius="6" Padding="12,6" MinWidth="0"
+                                                    FontSize="12" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </StackPanel>
+
+                                    <!-- Row 2: Disconnect row (shown only when connected) -->
+                                    <StackPanel Grid.Row="2" Grid.Column="0" Spacing="4" x:Name="NexusDisconnectRow" x:FieldModifier="internal" Visibility="Collapsed">
+                                        <Button Content="Disconnect"
+                                                Click="NexusDisconnectBtn_Click"
+                                                Background="Transparent"
+                                                Foreground="{StaticResource AccentRedBrush}"
+                                                BorderBrush="{StaticResource AccentRedBrush}" BorderThickness="1"
+                                                CornerRadius="6" Padding="12,4" MinWidth="0"
+                                                FontSize="11" HorizontalAlignment="Left"/>
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ══════════════════════════════════════════════════════════
                              CARD 3: DLSS & STREAMLINE
                              ══════════════════════════════════════════════════════════ -->
                         <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="10" Padding="20,16"

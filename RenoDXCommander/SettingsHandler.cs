@@ -296,6 +296,13 @@ public class SettingsHandler
         _window.CloseToTrayCombo.SelectedIndex = ViewModel.Settings.CloseToTray ? 1 : 0;
         _window.RecentGamesCombo.SelectedIndex = ViewModel.Settings.RecentGamesMenu ? 1 : 0;
         _window.StartWithWindowsCombo.SelectedIndex = ViewModel.Settings.StartWithWindows ? 1 : 0;
+
+        // Initialize Nexus Mods card (dev-only)
+        if (DevUnlockService.IsUnlocked)
+        {
+            _window.NexusModsCard.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
+            RefreshNexusStatus();
+        }
     }
 
     /// <summary>
@@ -1847,5 +1854,146 @@ public class SettingsHandler
         if (proc != null && proc.ExitCode != 0)
             throw new IOException($"Elevated copy exited with code {proc.ExitCode}");
     }
+
+    // ── Nexus Mods (dev-only) ──────────────────────────────────────────────────
+
+    /// <summary>
+    /// Refreshes the Nexus status text and button states based on current settings.
+    /// Called on settings page open and after connect/disconnect.
+    /// </summary>
+    public void RefreshNexusStatus()
+    {
+        var key      = ViewModel.Settings.NexusApiKey;
+        var username = ViewModel.Settings.NexusUsername;
+        var isPremium = ViewModel.Settings.NexusIsPremium;
+
+        bool connected = !string.IsNullOrEmpty(key) && !string.IsNullOrEmpty(username);
+
+        if (connected)
+        {
+            var tier = isPremium ? "Premium" : "Free";
+            _window.NexusStatusText.Text = $"Connected as {username} ({tier})";
+            _window.NexusStatusText.Foreground = UIFactory.Brush(
+                isPremium ? ResourceKeys.AccentGreenBrush : ResourceKeys.TextSecondaryBrush);
+            _window.NexusDisconnectRow.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
+            _window.NexusConnectBtn.Content = "Re-connect";
+        }
+        else
+        {
+            _window.NexusStatusText.Text = "Not connected";
+            _window.NexusStatusText.Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush);
+            _window.NexusDisconnectRow.Visibility = Microsoft.UI.Xaml.Visibility.Collapsed;
+            _window.NexusConnectBtn.Content = "Connect";
+        }
+
+        // NXM handler status
+        bool nxmRegistered = NxmProtocolHandler.IsRegistered();
+        _window.NxmStatusText.Text = nxmRegistered ? "RHI is the active nxm:// handler" : "Not registered";
+        _window.NxmStatusText.Foreground = UIFactory.Brush(
+            nxmRegistered ? ResourceKeys.AccentGreenBrush : ResourceKeys.TextSecondaryBrush);
+        _window.NxmRegisterBtn.Content = nxmRegistered ? "Unregister" : "Register";
+    }
+
+    public async void NexusConnectBtn_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
+    {
+        var key = _window.NexusApiKeyBox.Password?.Trim() ?? "";
+        if (string.IsNullOrEmpty(key))
+        {
+            await DialogService.ShowSafeAsync(new ContentDialog
+            {
+                Title = "Nexus Mods",
+                Content = "Please paste your API key first. You can find it at nexusmods.com → Settings → API Keys.",
+                CloseButtonText = "OK",
+                XamlRoot = _window.Content.XamlRoot,
+                RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark,
+            });
+            return;
+        }
+
+        _window.NexusConnectBtn.IsEnabled = false;
+        _window.NexusStatusText.Text = "Validating...";
+        _window.NexusStatusText.Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush);
+
+        var nexusDl = App.Services.GetRequiredService<NexusDownloadService>();
+        var info = await nexusDl.ValidateApiKeyAsync(key);
+
+        _window.NexusConnectBtn.IsEnabled = true;
+
+        if (info == null)
+        {
+            _window.NexusStatusText.Text = "Invalid API key or network error.";
+            _window.NexusStatusText.Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush);
+            return;
+        }
+
+        // Persist — never log the key value
+        ViewModel.Settings.NexusApiKey    = key;
+        ViewModel.Settings.NexusIsPremium = info.IsPremium;
+        ViewModel.Settings.NexusUsername  = info.Name;
+        ViewModel.SaveSettingsPublic();
+
+        RefreshNexusStatus();
+        CrashReporter.Log($"[SettingsHandler.NexusConnectBtn_Click] Connected as {info.Name} (Premium={info.IsPremium})");
+    }
+
+    public void NexusDisconnectBtn_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
+    {
+        ViewModel.Settings.NexusApiKey    = "";
+        ViewModel.Settings.NexusIsPremium = false;
+        ViewModel.Settings.NexusUsername  = "";
+        ViewModel.SaveSettingsPublic();
+        _window.NexusApiKeyBox.Password = "";
+        RefreshNexusStatus();
+        CrashReporter.Log("[SettingsHandler.NexusDisconnectBtn_Click] Disconnected from Nexus Mods");
+    }
+
+    public async void NxmRegisterBtn_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
+    {
+        bool currentlyRegistered = NxmProtocolHandler.IsRegistered();
+
+        if (currentlyRegistered)
+        {
+            NxmProtocolHandler.UnregisterProtocolHandler();
+            CrashReporter.Log("[SettingsHandler.NxmRegisterBtn_Click] Unregistered nxm:// handler");
+        }
+        else
+        {
+            // Warn if another app already owns the handler
+            if (NxmProtocolHandler.AnyHandlerRegistered())
+            {
+                var result = await DialogService.ShowSafeAsync(new ContentDialog
+                {
+                    Title = "NXM Protocol Handler",
+                    Content = "Another application (e.g. Vortex or MO2) is already registered as the nxm:// handler. Registering RHI will replace it. Continue?",
+                    PrimaryButtonText = "Register RHI",
+                    CloseButtonText = "Cancel",
+                    XamlRoot = _window.Content.XamlRoot,
+                    RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark,
+                });
+                if (result != ContentDialogResult.Primary) return;
+            }
+
+            try
+            {
+                NxmProtocolHandler.RegisterProtocolHandler();
+                CrashReporter.Log("[SettingsHandler.NxmRegisterBtn_Click] Registered nxm:// handler");
+            }
+            catch (Exception ex)
+            {
+                await DialogService.ShowSafeAsync(new ContentDialog
+                {
+                    Title = "NXM Registration Failed",
+                    Content = $"Could not register the nxm:// handler: {ex.Message}",
+                    CloseButtonText = "OK",
+                    XamlRoot = _window.Content.XamlRoot,
+                    RequestedTheme = Microsoft.UI.Xaml.ElementTheme.Dark,
+                });
+                return;
+            }
+        }
+
+        RefreshNexusStatus();
+    }
+
 
 }

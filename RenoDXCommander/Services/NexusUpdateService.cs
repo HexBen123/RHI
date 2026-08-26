@@ -355,4 +355,11 @@ public class NexusBaseline
 
     [JsonPropertyName("hasUpdate")]
     public bool HasUpdate { get; set; }
+
+    /// <summary>
+    /// The Nexus file_id that was most recently installed.
+    /// Populated after a direct Nexus download; null for mods installed via drag-drop or browser.
+    /// </summary>
+    [JsonPropertyName("fileId")]
+    public int? FileId { get; set; }
 }
