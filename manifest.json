@@ -1178,6 +1178,8 @@
     "Kingdoms of Amalur: Reckoning\u2122": "https://www.nexusmods.com/games/kingdomsofamalurreckoning",
     "Reckoning": "https://www.nexusmods.com/games/kingdomsofamalurreckoning"
   },
+  "pcgwUseAppId": false,
+  "pcgwUrlCacheVersion": 1,
   "pcgwUrlOverrides": {
     "AFOP": "https://www.pcgamingwiki.com/wiki/Avatar:_Frontiers_of_Pandora",
     "Alan Wake 2": "https://www.pcgamingwiki.com/wiki/Alan_Wake_2",
@@ -1196,7 +1198,7 @@
     "Stellar Blade\u2122": "https://www.pcgamingwiki.com/wiki/Stellar_Blade",
     "DOOM \u002B DOOM II": "https://www.pcgamingwiki.com/wiki/Doom_%2B_Doom_II",
     "DOOM (DOS)": "https://www.pcgamingwiki.com/wiki/Doom_(1993)#The_Ultimate_Doom",
-    "Dark Souls II Scholar of the First Sin": "https://www.pcgamingwiki.com/wiki/Dark_Souls_II:_Scholar_of_the_First_Sin"
+    "DARK SOULS\u2122 II: Scholar of the First Sin": "https://www.pcgamingwiki.com/wiki/Dark_Souls_II:_Scholar_of_the_First_Sin"
   },
   "uwFixUrlOverrides": {
     "Beast of Reincarnation": "https://www.nexusmods.com/beastofreincarnation/mods/15",

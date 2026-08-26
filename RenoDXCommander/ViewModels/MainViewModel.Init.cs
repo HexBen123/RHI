@@ -485,6 +485,7 @@ public partial class MainViewModel
 
             // Apply remote manifest data before building cards (local user overrides take priority)
             ApplyManifest(_manifest);
+            _pcgwService.CheckManifestCacheVersion(_manifest);
 
             // Apply manifest-driven legacy ReShade version overrides
             // (only if user hasn't already set their own override for that game)

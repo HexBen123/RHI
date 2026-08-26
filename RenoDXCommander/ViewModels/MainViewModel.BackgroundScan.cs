@@ -248,6 +248,7 @@ public partial class MainViewModel
 
             // Apply remote manifest data
             ApplyManifest(_manifest);
+            _pcgwService.CheckManifestCacheVersion(_manifest);
 
             // Apply manifest-driven legacy ReShade version overrides
             if (_manifest?.LegacyReShadeVersions != null)

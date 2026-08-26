@@ -32,6 +32,7 @@ public partial class MainViewModel
                         _manifest = freshManifest;
                         AuxInstallService.GlobalManifest = _manifest;
                         ApplyManifest(_manifest);
+                        _pcgwService.CheckManifestCacheVersion(_manifest);
                         _crashReporter.Log("[MainViewModel] Periodic manifest refresh complete");
                     }
                 }

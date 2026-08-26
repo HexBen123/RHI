@@ -34,4 +34,10 @@ public interface IPcgwService
     /// Called on Full Refresh.
     /// </summary>
     void ClearNegativeCache();
+
+    /// <summary>
+    /// Checks the manifest-supplied cache version and wipes the URL cache if the manifest
+    /// requests a higher version. Call after each manifest fetch.
+    /// </summary>
+    void CheckManifestCacheVersion(RenoDXCommander.Models.RemoteManifest? manifest);
 }

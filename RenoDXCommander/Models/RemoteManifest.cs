@@ -190,6 +190,21 @@ public class RemoteManifest
     public Dictionary<string, string>? PcgwUrlOverrides { get; set; }
 
     /// <summary>
+    /// When true, PCGW links resolve via the appid.php redirect instead of OpenSearch.
+    /// Flip to true in the manifest once PCGamingWiki's appid.php endpoint is restored.
+    /// </summary>
+    [JsonPropertyName("pcgwUseAppId")]
+    public bool PcgwUseAppId { get; set; }
+
+    /// <summary>
+    /// Cache version for PCGW URL resolution. When bumped in the manifest, all clients
+    /// wipe their local pcgw_url_cache.json on next launch and re-resolve from scratch.
+    /// Increment this alongside pcgwUseAppId changes to force a clean re-resolve.
+    /// </summary>
+    [JsonPropertyName("pcgwUrlCacheVersion")]
+    public int PcgwUrlCacheVersion { get; set; }
+
+    /// <summary>
     /// Per-game ultrawide fix URL overrides. Highest priority in the UW Fix resolution chain.
     /// Key = game name, Value = URL to the ultrawide fix page.
     /// </summary>

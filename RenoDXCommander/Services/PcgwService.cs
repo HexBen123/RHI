@@ -17,10 +17,22 @@ public class PcgwService : IPcgwService
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "RHI", "steam_appid_cache.json");
 
+    private static readonly string UrlCachePath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "RHI", "pcgw_url_cache.json");
+
+    /// <summary>Marker file — if absent on first 2.4.2 launch, wipes the stale URL cache built with broken appid.php URLs.</summary>
+    private static readonly string UrlCacheMarkerPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "RHI", "pcgw_cache_v2.txt");
+
     private static readonly JsonSerializerOptions s_writeOptions = new() { WriteIndented = true };
 
     /// <summary>Normalized game name → Steam AppID.</summary>
     private Dictionary<string, int> _appIdCache = new(StringComparer.Ordinal);
+
+    /// <summary>Normalized game name → resolved PCGW wiki URL.</summary>
+    private System.Collections.Concurrent.ConcurrentDictionary<string, string> _urlCache = new(StringComparer.Ordinal);
 
     /// <summary>Debounce timer — resets on every <see cref="SaveCacheAsync"/> call.</summary>
     private Timer? _saveDebounceTimer;
@@ -77,6 +89,38 @@ public class PcgwService : IPcgwService
             CrashReporter.Log($"[PcgwService.LoadCacheAsync] Cache load failed — {ex.Message}");
             _appIdCache = new Dictionary<string, int>(StringComparer.Ordinal);
         }
+
+        // Versioned migration: wipe URL cache if it was built with an older resolution method.
+        // Version 1 = OpenSearch (appid.php was broken). Version 2 = back to appid.php (when restored).
+        // The required version can also be driven remotely via manifest.PcgwUrlCacheVersion.
+        const int UrlCacheVersion = 1;
+        int existingVersion = 0;
+        if (File.Exists(UrlCacheMarkerPath))
+            int.TryParse(File.ReadAllText(UrlCacheMarkerPath).Trim(), out existingVersion);
+
+        if (existingVersion < UrlCacheVersion)
+        {
+            try
+            {
+                if (File.Exists(UrlCachePath)) File.Delete(UrlCachePath);
+                File.WriteAllText(UrlCacheMarkerPath, UrlCacheVersion.ToString());
+                CrashReporter.Log($"[PcgwService.LoadCacheAsync] URL cache wiped (version {existingVersion} → {UrlCacheVersion})");
+            }
+            catch { /* non-critical */ }
+        }
+
+        // Load URL cache (wiki URLs resolved via OpenSearch)
+        try
+        {
+            if (File.Exists(UrlCachePath))
+            {
+                var urlJson = await File.ReadAllTextAsync(UrlCachePath).ConfigureAwait(false);
+                var loadedUrls = JsonSerializer.Deserialize<Dictionary<string, string>>(urlJson);
+                if (loadedUrls != null)
+                    _urlCache = new System.Collections.Concurrent.ConcurrentDictionary<string, string>(loadedUrls, StringComparer.Ordinal);
+            }
+        }
+        catch { /* non-critical — start with empty URL cache */ }
     }
 
     public async Task<string?> ResolveUrlAsync(string gameName, int? steamAppId, string installPath, RemoteManifest? manifest)
@@ -89,37 +133,60 @@ public class PcgwService : IPcgwService
             return overrideUrl;
         }
 
-        // 2. Check for cached negative result — avoids HTTP calls every session for non-Steam/non-PCGW games.
         var normalized = _gameDetection.NormalizeName(gameName);
+
+        // 2. Cached wiki URL — avoids HTTP calls every session.
+        if (!string.IsNullOrEmpty(normalized) && _urlCache.TryGetValue(normalized, out var cachedUrl))
+            return cachedUrl;
+
+        // 3. Check for cached negative result — avoids HTTP calls for non-PCGW games.
         if (!string.IsNullOrEmpty(normalized) && _appIdCache.TryGetValue(normalized, out var cachedId) && cachedId == -1)
             return null;
 
-        // 3. Resolve Steam AppID via the priority chain (passing our cache).
+        // 4. Resolve Steam AppID via the priority chain (passing our cache).
         var appId = await _steamAppIdResolver.ResolveAsync(
             gameName, steamAppId, installPath, manifest, _appIdCache).ConfigureAwait(false);
 
         if (appId.HasValue)
         {
-            // Persist to cache.
             if (!string.IsNullOrEmpty(normalized))
             {
                 _appIdCache[normalized] = appId.Value;
                 await SaveCacheAsync().ConfigureAwait(false);
             }
 
-            // Use OpenSearch to get the actual wiki page URL — appid.php now returns 500 errors.
+            // Use appid.php when the manifest flag is on (endpoint restored), otherwise OpenSearch.
+            if (manifest?.PcgwUseAppId == true)
+                return BuildAppIdUrl(appId.Value);
+
+            // appid.php currently unreliable — use OpenSearch for the actual wiki URL.
             var wikiUrl = await OpenSearchFallbackAsync(gameName).ConfigureAwait(false);
-            return wikiUrl ?? BuildAppIdUrl(appId.Value); // fall back to appid.php if OpenSearch fails
+
+            if (!string.IsNullOrEmpty(normalized) && wikiUrl != null)
+            {
+                _urlCache[normalized] = wikiUrl;
+                SaveUrlCacheToDisk();
+            }
+
+            return wikiUrl;
         }
 
-        // 4. OpenSearch fallback (no AppID resolved).
+        // 5. OpenSearch fallback (no AppID resolved).
         var result = await OpenSearchFallbackAsync(gameName).ConfigureAwait(false);
 
-        // Cache negative result so we don't retry HTTP calls next session.
-        if (result == null && !string.IsNullOrEmpty(normalized))
+        if (!string.IsNullOrEmpty(normalized))
         {
-            _appIdCache[normalized] = -1;
-            await SaveCacheAsync().ConfigureAwait(false);
+            if (result != null)
+            {
+                _urlCache[normalized] = result;
+                SaveUrlCacheToDisk();
+            }
+            else
+            {
+                // Cache negative result so we don't retry HTTP calls next session.
+                _appIdCache[normalized] = -1;
+                await SaveCacheAsync().ConfigureAwait(false);
+            }
         }
 
         return result;
@@ -158,9 +225,7 @@ public class PcgwService : IPcgwService
 
             if (!response.IsSuccessStatusCode)
             {
-                CrashReporter.Log($"[PcgwService.OpenSearchFallback] OpenSearch returned {(int)response.StatusCode} — disabling PCGW for this session");
-                _pcgwDown = true;
-                try { _pcgwCts.Cancel(); } catch { }
+                CrashReporter.Log($"[PcgwService.OpenSearchFallback] OpenSearch returned {(int)response.StatusCode} for '{gameName}'");
                 return null;
             }
 
@@ -268,6 +333,60 @@ public class PcgwService : IPcgwService
         catch (Exception ex)
         {
             CrashReporter.Log($"[PcgwService.SaveCacheAsync] Cache write failed — {ex.Message}");
+        }
+    }
+
+    private Timer? _urlSaveDebounceTimer;
+
+    private void SaveUrlCacheToDisk()
+    {
+        lock (_saveLock)
+        {
+            if (_urlSaveDebounceTimer != null)
+                _urlSaveDebounceTimer.Change(500, Timeout.Infinite);
+            else
+                _urlSaveDebounceTimer = new Timer(_ => WriteUrlCacheToDisk(), null, 500, Timeout.Infinite);
+        }
+    }
+
+    /// <summary>
+    /// Called after the manifest is fetched. If the manifest requests a higher cache version
+    /// than what's stored locally, wipes the URL cache so links re-resolve on next BuildCards.
+    /// This allows a remote manifest change to force a clean re-resolve without a new app build.
+    /// </summary>
+    public void CheckManifestCacheVersion(RemoteManifest? manifest)
+    {
+        if (manifest == null || manifest.PcgwUrlCacheVersion <= 0) return;
+
+        int existingVersion = 0;
+        if (File.Exists(UrlCacheMarkerPath))
+            int.TryParse(File.ReadAllText(UrlCacheMarkerPath).Trim(), out existingVersion);
+
+        if (manifest.PcgwUrlCacheVersion > existingVersion)
+        {
+            try
+            {
+                _urlCache.Clear();
+                if (File.Exists(UrlCachePath)) File.Delete(UrlCachePath);
+                File.WriteAllText(UrlCacheMarkerPath, manifest.PcgwUrlCacheVersion.ToString());
+                CrashReporter.Log($"[PcgwService] URL cache wiped via manifest (version {existingVersion} → {manifest.PcgwUrlCacheVersion})");
+            }
+            catch { /* non-critical */ }
+        }
+    }
+
+    private void WriteUrlCacheToDisk()
+    {
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(UrlCachePath)!);
+            var snapshot = new Dictionary<string, string>(_urlCache, StringComparer.Ordinal);
+            var json = JsonSerializer.Serialize(snapshot, s_writeOptions);
+            FileHelper.WriteAllTextWithRetry(UrlCachePath, json, "PcgwService.SaveUrlCache");
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Log($"[PcgwService.SaveUrlCache] Write failed — {ex.Message}");
         }
     }
 }
