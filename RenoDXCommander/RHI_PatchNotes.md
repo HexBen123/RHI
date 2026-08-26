@@ -12,8 +12,10 @@
 
 ### Bug Fixes
 
+- Fixed PCGW links not opening — PCGamingWiki's `appid.php` redirect endpoint is now behind a Cloudflare challenge. Links now resolve to the actual wiki page URL via the Cargo API instead.
 - Fixed OptiScaler showing the stable version number after updating a game that uses the Nightly variant. The tracking record now correctly persists the variant on update, so the version display stays accurate across restarts.
 - Fixed DLSS Defaults render scale resetting to 75% Quality+ on restart after being set to Off. The Off value is now correctly cleared from settings so it persists properly.
+- Fixed setup window cutting off at the bottom — both buttons now visible at all display scales.
 - Added ReShade, Display Commander, and OptiScaler labels above the DLL naming override dropdowns in the overrides panel.
 
 ---

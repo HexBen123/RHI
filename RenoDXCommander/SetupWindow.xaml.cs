@@ -33,7 +33,7 @@ public sealed partial class SetupWindow : Window
         var hwndForDpi = WindowNative.GetWindowHandle(this);
         uint dpi = NativeInterop.GetDpiForWindow(hwndForDpi);
         double dpiScale = dpi / 96.0;
-        int logicalW = 600, logicalH = 530;
+        int logicalW = 600, logicalH = 620;
         AppWindow.Resize(new Windows.Graphics.SizeInt32(
             (int)(logicalW * dpiScale),
             (int)(logicalH * dpiScale)));
@@ -171,7 +171,14 @@ public sealed partial class SetupWindow : Window
         buttonPanel.Children.Add(selfBtn);
         root.Children.Add(buttonPanel);
 
-        RootContent.Content = root;
+        var scroll = new ScrollViewer
+        {
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            Content = root,
+        };
+
+        RootContent.Content = scroll;
     }
 
     private void Complete(bool manageReShade)

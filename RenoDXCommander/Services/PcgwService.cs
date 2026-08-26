@@ -79,7 +79,6 @@ public class PcgwService : IPcgwService
         }
     }
 
-    /// <inheritdoc />
     public async Task<string?> ResolveUrlAsync(string gameName, int? steamAppId, string installPath, RemoteManifest? manifest)
     {
         // 1. Manifest pcgwUrlOverrides (highest priority).
@@ -108,7 +107,9 @@ public class PcgwService : IPcgwService
                 await SaveCacheAsync().ConfigureAwait(false);
             }
 
-            return BuildAppIdUrl(appId.Value);
+            // Use OpenSearch to get the actual wiki page URL — appid.php now returns 500 errors.
+            var wikiUrl = await OpenSearchFallbackAsync(gameName).ConfigureAwait(false);
+            return wikiUrl ?? BuildAppIdUrl(appId.Value); // fall back to appid.php if OpenSearch fails
         }
 
         // 4. OpenSearch fallback (no AppID resolved).
