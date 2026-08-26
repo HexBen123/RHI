@@ -1,1 +1,1 @@
-Hi all, some big improvements and additions in newest version. Any issues don't hesitate to contact me on Discord.
+Hi to all the new users. If you ever have any issues you can contact me on Discord. Thank you all for your continued support.
