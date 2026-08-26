@@ -1278,6 +1278,13 @@
     "dc": "https://api.github.com/repos/pmnoxx/display-commander/releases/tags/latest"
   },
   "shaderPacks": {
+    "reeShaders": {
+      "displayName": "reeShaders by LVutner",
+      "kind": "DirectUrl",
+      "url": "https://github.com/LVutner/reeShaders/archive/refs/heads/main.zip",
+      "description": "Lightweight sharpening (TinySharpen), clarity, and chromatic aberration shaders",
+      "category": "Extra"
+    },
     "CrosireLegacy": {
       "requires": [
         "CrosireMaster"
