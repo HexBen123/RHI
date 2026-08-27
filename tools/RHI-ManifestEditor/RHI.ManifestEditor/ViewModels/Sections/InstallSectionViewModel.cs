@@ -111,6 +111,7 @@ public partial class InstallSectionViewModel : SectionViewModelBase
     public ObservableCollection<KeyValueItem> LegacyReShadeVersions { get; }
     public ObservableCollection<StringItem> LegacyReShadeAvailable { get; }
     public ObservableCollection<RenodxIniGameItem> RenodxIniOverrides { get; }
+    public ObservableCollection<RenodxExtraSettingItem> RenodxExtraSettings { get; }
 
     public InstallSectionViewModel(RemoteManifest manifest, MainViewModel main) : base(manifest, main)
     {
@@ -131,6 +132,9 @@ public partial class InstallSectionViewModel : SectionViewModelBase
             .Where(kv => !kv.Key.StartsWith("_"))
             .Select(kv => new RenodxIniGameItem(kv.Key, kv.Value, main)) ?? Enumerable.Empty<RenodxIniGameItem>());
         RenodxIniOverrides.CollectionChanged += (_, _) => Dirty();
+        RenodxExtraSettings = new(manifest.RenodxExtraSettings?
+            .Select(s => new RenodxExtraSettingItem(s, main)) ?? Enumerable.Empty<RenodxExtraSettingItem>());
+        RenodxExtraSettings.CollectionChanged += (_, _) => Dirty();
     }
 
     [RelayCommand] public void AddInstallWarning() { InstallWarnings.Add(new InstallWarningItem()); Dirty(); }
@@ -153,6 +157,8 @@ public partial class InstallSectionViewModel : SectionViewModelBase
     [RelayCommand] public void RemoveOptiScalerDll(KeyValueItem item) { OptiScalerDllOverrides.Remove(item); Dirty(); }
     [RelayCommand] public void AddRenodxIniGame() { RenodxIniOverrides.Add(new RenodxIniGameItem(_main)); Dirty(); }
     [RelayCommand] public void RemoveRenodxIniGame(RenodxIniGameItem item) { RenodxIniOverrides.Remove(item); Dirty(); }
+    [RelayCommand] public void AddRenodxExtra() { RenodxExtraSettings.Add(new RenodxExtraSettingItem(_main)); Dirty(); }
+    [RelayCommand] public void RemoveRenodxExtra(RenodxExtraSettingItem item) { RenodxExtraSettings.Remove(item); Dirty(); }
 
     public override void Commit()
     {
@@ -181,6 +187,9 @@ public partial class InstallSectionViewModel : SectionViewModelBase
                 .ToDictionary(g => g.GameName, g => g.Entries
                     .Where(e => !string.IsNullOrWhiteSpace(e.Key))
                     .ToDictionary(e => e.Key, e => e.Value))
+            : null;
+        _manifest.RenodxExtraSettings = RenodxExtraSettings.Count > 0
+            ? RenodxExtraSettings.Where(i => !string.IsNullOrWhiteSpace(i.Key)).Select(i => i.ToEntry()).ToList()
             : null;
     }
 }

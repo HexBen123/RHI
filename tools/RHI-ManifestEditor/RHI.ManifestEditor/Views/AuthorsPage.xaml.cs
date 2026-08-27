@@ -7,12 +7,21 @@ namespace RHI.ManifestEditor.Views;
 public sealed partial class AuthorsPage : Page
 {
     private AuthorsSectionViewModel? _vm;
+    private bool _pcgwInitializing;
+
     public AuthorsPage() => InitializeComponent();
 
     protected override void OnNavigatedTo(NavigationEventArgs e)
     {
         if (e.Parameter is not MainViewModel main || main.Authors == null) return;
         _vm = main.Authors;
+
+        _pcgwInitializing = true;
+        PcgwUseAppIdToggle.IsOn = _vm.PcgwUseAppId;
+        PcgwUrlCacheVersionBox.Text = _vm.PcgwUrlCacheVersion;
+        _pcgwInitializing = false;
+
+        AuthorDisplayNamesView.ItemsSource = _vm.AuthorDisplayNames;
         DonationView.ItemsSource = _vm.DonationUrls;
         AuthorOverridesView.ItemsSource = _vm.AuthorOverrides;
         NexusView.ItemsSource = _vm.NexusUrlOverrides;
@@ -21,6 +30,22 @@ public sealed partial class AuthorsPage : Page
         UltraPlusView.ItemsSource = _vm.UltraPlusUrlOverrides;
         OptiScalerWikiView.ItemsSource = _vm.OptiScalerWikiNames;
     }
+
+    private void PcgwUseAppId_Toggled(object s, Microsoft.UI.Xaml.RoutedEventArgs e)
+    {
+        if (_pcgwInitializing || _vm == null) return;
+        _vm.PcgwUseAppId = PcgwUseAppIdToggle.IsOn;
+    }
+
+    private void PcgwUrlCacheVersion_TextChanged(object s, TextChangedEventArgs e)
+    {
+        if (_pcgwInitializing || _vm == null) return;
+        _vm.PcgwUrlCacheVersion = PcgwUrlCacheVersionBox.Text;
+    }
+
+    private void AddAuthorDisplayName_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e) => _vm?.AddAuthorDisplayCommand.Execute(null);
+    private void RemoveAuthorDisplayName_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e)
+    { if (((Button)s).Tag is KeyValueItem i) _vm?.RemoveAuthorDisplayCommand.Execute(i); }
 
     private void AddDonation_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e) => _vm?.AddDonationCommand.Execute(null);
     private void RemoveDonation_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e)

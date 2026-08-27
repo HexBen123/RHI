@@ -65,6 +65,9 @@ public partial class AuthorsSectionViewModel : SectionViewModelBase
     public ObservableCollection<KeyValueItem> UltraPlusUrlOverrides { get; }
     public ObservableCollection<KeyValueItem> OptiScalerWikiNames { get; }
 
+    [ObservableProperty] private bool _pcgwUseAppId;
+    [ObservableProperty] private string _pcgwUrlCacheVersion = "";
+
     public AuthorsSectionViewModel(RemoteManifest manifest, MainViewModel main) : base(manifest, main)
     {
         AuthorDisplayNames  = ToKvObservable(manifest.AuthorDisplayNames);
@@ -75,6 +78,8 @@ public partial class AuthorsSectionViewModel : SectionViewModelBase
         UwFixUrlOverrides   = ToKvObservable(manifest.UwFixUrlOverrides);
         UltraPlusUrlOverrides = ToKvObservable(manifest.UltraPlusUrlOverrides);
         OptiScalerWikiNames = ToKvObservable(manifest.OptiScalerWikiNames);
+        _pcgwUseAppId = manifest.PcgwUseAppId == true;
+        _pcgwUrlCacheVersion = manifest.PcgwUrlCacheVersion?.ToString() ?? "";
     }
 
     [RelayCommand] public void AddAuthorDisplay() { AuthorDisplayNames.Add(new KeyValueItem()); Dirty(); }
@@ -90,6 +95,9 @@ public partial class AuthorsSectionViewModel : SectionViewModelBase
     [RelayCommand] public void AddOptiScalerWiki() { OptiScalerWikiNames.Add(new KeyValueItem()); Dirty(); }
     [RelayCommand] public void RemoveOptiScalerWiki(KeyValueItem item) { OptiScalerWikiNames.Remove(item); Dirty(); }
 
+    partial void OnPcgwUseAppIdChanged(bool value) => Dirty();
+    partial void OnPcgwUrlCacheVersionChanged(string value) => Dirty();
+
     public override void Commit()
     {
         _manifest.AuthorDisplayNames  = FromKvObservable(AuthorDisplayNames);
@@ -100,6 +108,8 @@ public partial class AuthorsSectionViewModel : SectionViewModelBase
         _manifest.UwFixUrlOverrides   = FromKvObservable(UwFixUrlOverrides);
         _manifest.UltraPlusUrlOverrides = FromKvObservable(UltraPlusUrlOverrides);
         _manifest.OptiScalerWikiNames = FromKvObservable(OptiScalerWikiNames);
+        _manifest.PcgwUseAppId = PcgwUseAppId ? true : null;
+        _manifest.PcgwUrlCacheVersion = int.TryParse(PcgwUrlCacheVersion, out var v) ? v : null;
     }
 }
 
@@ -121,10 +131,15 @@ public partial class NvidiaSectionViewModel : SectionViewModelBase
     public ObservableCollection<DlssPresetItem> DlssSrPresets { get; }
     public ObservableCollection<DlssPresetItem> DlssRrPresets { get; }
     public ObservableCollection<DlssPresetItem> DlssFgPresets { get; }
+    public ObservableCollection<DlssPresetItem> DlssNrPresets { get; }
     public ObservableCollection<DlssPresetItem> DlssSrPresetsDev { get; }
     public ObservableCollection<DlssPresetItem> DlssRrPresetsDev { get; }
     public ObservableCollection<DlssPresetItem> DlssFgPresetsDev { get; }
+    public ObservableCollection<DlssPresetItem> DlssNrPresetsDev { get; }
     [ObservableProperty] private string _rtxHdrInfoUrl;
+    [ObservableProperty] private bool _featureFlagDlssNr;
+    [ObservableProperty] private bool _featureFlagNexusMods;
+    [ObservableProperty] private bool _featureFlagResolutionControl;
 
     public NvidiaSectionViewModel(RemoteManifest manifest, MainViewModel main) : base(manifest, main)
     {
@@ -133,10 +148,15 @@ public partial class NvidiaSectionViewModel : SectionViewModelBase
         DlssSrPresets = new(manifest.DlssPresets?.Sr?.Select(e => new DlssPresetItem(e)) ?? Enumerable.Empty<DlssPresetItem>());
         DlssRrPresets = new(manifest.DlssPresets?.Rr?.Select(e => new DlssPresetItem(e)) ?? Enumerable.Empty<DlssPresetItem>());
         DlssFgPresets = new(manifest.DlssPresets?.Fg?.Select(e => new DlssPresetItem(e)) ?? Enumerable.Empty<DlssPresetItem>());
+        DlssNrPresets = new(manifest.DlssPresets?.Nr?.Select(e => new DlssPresetItem(e)) ?? Enumerable.Empty<DlssPresetItem>());
         DlssSrPresetsDev = new(manifest.DlssPresetsDev?.Sr?.Select(e => new DlssPresetItem(e)) ?? Enumerable.Empty<DlssPresetItem>());
         DlssRrPresetsDev = new(manifest.DlssPresetsDev?.Rr?.Select(e => new DlssPresetItem(e)) ?? Enumerable.Empty<DlssPresetItem>());
         DlssFgPresetsDev = new(manifest.DlssPresetsDev?.Fg?.Select(e => new DlssPresetItem(e)) ?? Enumerable.Empty<DlssPresetItem>());
+        DlssNrPresetsDev = new(manifest.DlssPresetsDev?.Nr?.Select(e => new DlssPresetItem(e)) ?? Enumerable.Empty<DlssPresetItem>());
         _rtxHdrInfoUrl = manifest.RtxHdrInfoUrl ?? "";
+        _featureFlagDlssNr = manifest.FeatureFlags?.DlssNr == true;
+        _featureFlagNexusMods = manifest.FeatureFlags?.NexusMods == true;
+        _featureFlagResolutionControl = manifest.FeatureFlags?.ResolutionControl == true;
     }
 
     [RelayCommand] public void AddProfileOverride() { ProfileNameOverrides.Add(new KeyValueItem()); Dirty(); }
@@ -149,14 +169,21 @@ public partial class NvidiaSectionViewModel : SectionViewModelBase
     [RelayCommand] public void RemoveRrPreset(DlssPresetItem item) { DlssRrPresets.Remove(item); Dirty(); }
     [RelayCommand] public void AddFgPreset() { DlssFgPresets.Add(new DlssPresetItem()); Dirty(); }
     [RelayCommand] public void RemoveFgPreset(DlssPresetItem item) { DlssFgPresets.Remove(item); Dirty(); }
+    [RelayCommand] public void AddNrPreset() { DlssNrPresets.Add(new DlssPresetItem()); Dirty(); }
+    [RelayCommand] public void RemoveNrPreset(DlssPresetItem item) { DlssNrPresets.Remove(item); Dirty(); }
     [RelayCommand] public void AddSrPresetDev() { DlssSrPresetsDev.Add(new DlssPresetItem()); Dirty(); }
     [RelayCommand] public void RemoveSrPresetDev(DlssPresetItem item) { DlssSrPresetsDev.Remove(item); Dirty(); }
     [RelayCommand] public void AddRrPresetDev() { DlssRrPresetsDev.Add(new DlssPresetItem()); Dirty(); }
     [RelayCommand] public void RemoveRrPresetDev(DlssPresetItem item) { DlssRrPresetsDev.Remove(item); Dirty(); }
     [RelayCommand] public void AddFgPresetDev() { DlssFgPresetsDev.Add(new DlssPresetItem()); Dirty(); }
     [RelayCommand] public void RemoveFgPresetDev(DlssPresetItem item) { DlssFgPresetsDev.Remove(item); Dirty(); }
+    [RelayCommand] public void AddNrPresetDev() { DlssNrPresetsDev.Add(new DlssPresetItem()); Dirty(); }
+    [RelayCommand] public void RemoveNrPresetDev(DlssPresetItem item) { DlssNrPresetsDev.Remove(item); Dirty(); }
 
     partial void OnRtxHdrInfoUrlChanged(string value) => Dirty();
+    partial void OnFeatureFlagDlssNrChanged(bool value) => Dirty();
+    partial void OnFeatureFlagNexusModsChanged(bool value) => Dirty();
+    partial void OnFeatureFlagResolutionControlChanged(bool value) => Dirty();
 
     public override void Commit()
     {
@@ -167,20 +194,90 @@ public partial class NvidiaSectionViewModel : SectionViewModelBase
         var sr = DlssSrPresets.Where(i => !string.IsNullOrWhiteSpace(i.Name)).Select(i => i.ToEntry()).ToList();
         var rr = DlssRrPresets.Where(i => !string.IsNullOrWhiteSpace(i.Name)).Select(i => i.ToEntry()).ToList();
         var fg = DlssFgPresets.Where(i => !string.IsNullOrWhiteSpace(i.Name)).Select(i => i.ToEntry()).ToList();
-        _manifest.DlssPresets = (sr.Count > 0 || rr.Count > 0 || fg.Count > 0)
-            ? new ManifestDlssPresets { Sr = sr.Count > 0 ? sr : null, Rr = rr.Count > 0 ? rr : null, Fg = fg.Count > 0 ? fg : null }
+        var nr = DlssNrPresets.Where(i => !string.IsNullOrWhiteSpace(i.Name)).Select(i => i.ToEntry()).ToList();
+        _manifest.DlssPresets = (sr.Count > 0 || rr.Count > 0 || fg.Count > 0 || nr.Count > 0)
+            ? new ManifestDlssPresets { Sr = sr.Count > 0 ? sr : null, Rr = rr.Count > 0 ? rr : null, Fg = fg.Count > 0 ? fg : null, Nr = nr.Count > 0 ? nr : null }
             : null;
 
         var srDev = DlssSrPresetsDev.Where(i => !string.IsNullOrWhiteSpace(i.Name)).Select(i => i.ToEntry()).ToList();
         var rrDev = DlssRrPresetsDev.Where(i => !string.IsNullOrWhiteSpace(i.Name)).Select(i => i.ToEntry()).ToList();
         var fgDev = DlssFgPresetsDev.Where(i => !string.IsNullOrWhiteSpace(i.Name)).Select(i => i.ToEntry()).ToList();
-        _manifest.DlssPresetsDev = (srDev.Count > 0 || rrDev.Count > 0 || fgDev.Count > 0)
-            ? new ManifestDlssPresets { Sr = srDev.Count > 0 ? srDev : null, Rr = rrDev.Count > 0 ? rrDev : null, Fg = fgDev.Count > 0 ? fgDev : null }
+        var nrDev = DlssNrPresetsDev.Where(i => !string.IsNullOrWhiteSpace(i.Name)).Select(i => i.ToEntry()).ToList();
+        _manifest.DlssPresetsDev = (srDev.Count > 0 || rrDev.Count > 0 || fgDev.Count > 0 || nrDev.Count > 0)
+            ? new ManifestDlssPresets { Sr = srDev.Count > 0 ? srDev : null, Rr = rrDev.Count > 0 ? rrDev : null, Fg = fgDev.Count > 0 ? fgDev : null, Nr = nrDev.Count > 0 ? nrDev : null }
+            : null;
+
+        _manifest.FeatureFlags = (FeatureFlagDlssNr || FeatureFlagNexusMods || FeatureFlagResolutionControl)
+            ? new ManifestFeatureFlags
+            {
+                DlssNr = FeatureFlagDlssNr ? true : null,
+                NexusMods = FeatureFlagNexusMods ? true : null,
+                ResolutionControl = FeatureFlagResolutionControl ? true : null
+            }
             : null;
     }
 }
 
-// ── DOF Fix ───────────────────────────────────────────────────────────────────
+// ── RenoDX Extra Setting item ─────────────────────────────────────────────────
+public partial class RenodxExtraSettingItem : ObservableObject
+{
+    [ObservableProperty] private string _key;
+    [ObservableProperty] private string _label;
+    [ObservableProperty] private string _default;
+    [ObservableProperty] private string _optionsRaw;
+
+    private readonly MainViewModel _main;
+
+    public RenodxExtraSettingItem(RenodxExtraSetting s, MainViewModel main)
+    {
+        _main = main;
+        _key = s.Key;
+        _label = s.Label ?? "";
+        _default = s.Default;
+        _optionsRaw = s.Options != null
+            ? string.Join(", ", s.Options.Select(o => $"{o.Value}={o.Name}"))
+            : "";
+    }
+
+    public RenodxExtraSettingItem(MainViewModel main)
+    {
+        _main = main;
+        _key = "";
+        _label = "";
+        _default = "0";
+        _optionsRaw = "";
+    }
+
+    partial void OnKeyChanged(string value) => _main.MarkDirty();
+    partial void OnLabelChanged(string value) => _main.MarkDirty();
+    partial void OnDefaultChanged(string value) => _main.MarkDirty();
+    partial void OnOptionsRawChanged(string value) => _main.MarkDirty();
+
+    public RenodxExtraSetting ToEntry()
+    {
+        List<RenodxExtraOption>? opts = null;
+        if (!string.IsNullOrWhiteSpace(OptionsRaw))
+        {
+            opts = OptionsRaw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(part =>
+                {
+                    var eq = part.IndexOf('=');
+                    return eq > 0
+                        ? new RenodxExtraOption { Value = part[..eq].Trim(), Name = part[(eq + 1)..].Trim() }
+                        : new RenodxExtraOption { Value = part.Trim(), Name = part.Trim() };
+                }).ToList();
+        }
+        return new RenodxExtraSetting
+        {
+            Key = Key,
+            Label = string.IsNullOrWhiteSpace(Label) ? null : Label,
+            Default = Default,
+            Options = opts?.Count > 0 ? opts : null
+        };
+    }
+}
+
+
 public partial class DofFixSectionViewModel : SectionViewModelBase
 {
     public ObservableCollection<StringItem> DofFixForceGames { get; }

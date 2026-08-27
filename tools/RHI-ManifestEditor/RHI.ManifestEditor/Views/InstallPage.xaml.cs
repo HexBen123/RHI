@@ -23,6 +23,7 @@ public sealed partial class InstallPage : Page
         GacSymlinkView.ItemsSource = _vm.GacSymlinkGames;
         OptiScalerDllView.ItemsSource = _vm.OptiScalerDllOverrides;
         RenodxIniView.ItemsSource = _vm.RenodxIniOverrides;
+        RenodxExtraSettingsView.ItemsSource = _vm.RenodxExtraSettings;
     }
 
     private void AddInstallWarning_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e) => _vm?.AddInstallWarningCommand.Execute(null);
@@ -73,4 +74,8 @@ public sealed partial class InstallPage : Page
         foreach (var game in _vm.RenodxIniOverrides)
             if (game.Entries.Contains(entry)) { game.RemoveEntryCommand.Execute(entry); break; }
     }
+
+    private void AddRenodxExtra_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e) => _vm?.AddRenodxExtraCommand.Execute(null);
+    private void RemoveRenodxExtra_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e)
+    { if (((Button)s).Tag is RenodxExtraSettingItem i) _vm?.RemoveRenodxExtraCommand.Execute(i); }
 }

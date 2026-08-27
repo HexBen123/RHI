@@ -6,7 +6,43 @@
         <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
             Text="Donation links, author display names, and URL overrides for Nexus/PCGW/UW Fix/Ultra+. All URL override keys use the detected game name."/>
 
+        <!-- pcgw settings -->
         <Expander IsExpanded="True" HorizontalAlignment="Stretch">
+            <Expander.Header><TextBlock Text="PCGamingWiki settings — URL resolution method and cache control" FontWeight="SemiBold"/></Expander.Header>
+            <StackPanel Spacing="8" Padding="0,8,0,0">
+                <TextBlock FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="pcgwUseAppId: when true, use appid.php endpoint (broken Aug 2026, may be restored). When false, use OpenSearch API. Bump pcgwUrlCacheVersion to force all clients to wipe their URL cache."/>
+                <StackPanel Orientation="Horizontal" Spacing="16">
+                    <ToggleSwitch x:Name="PcgwUseAppIdToggle" Header="pcgwUseAppId" Toggled="PcgwUseAppId_Toggled" MinWidth="0"/>
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="pcgwUrlCacheVersion" FontSize="12"/>
+                        <TextBox x:Name="PcgwUrlCacheVersionBox" PlaceholderText="0" FontSize="12" Width="80"
+                                 TextChanged="PcgwUrlCacheVersion_TextChanged"/>
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+        </Expander>
+
+        <!-- authorDisplayNames -->
+        <Expander HorizontalAlignment="Stretch">
+            <Expander.Header><TextBlock Text="authorDisplayNames — wiki author handle → display name" FontWeight="SemiBold"/></Expander.Header>
+            <StackPanel Spacing="4" Padding="0,8,0,0">
+                <TextBlock FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="Key = wiki author handle (e.g. PotatoOfDoom1337). Value = display name shown in RHI (e.g. PotatoOfDoom)."/>
+                <ListView x:Name="AuthorDisplayNamesView" MaxHeight="200" SelectionMode="None">
+                    <ListView.ItemTemplate><DataTemplate>
+                        <Grid ColumnSpacing="8" Margin="0,2,0,2"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Text="{Binding Key, Mode=TwoWay}" PlaceholderText="wiki handle" FontSize="12"/>
+                            <TextBox Grid.Column="1" Text="{Binding Value, Mode=TwoWay}" PlaceholderText="display name" FontSize="12"/>
+                            <Button Grid.Column="2" Content="✕" Tag="{Binding}" Click="RemoveAuthorDisplayName_Click" Padding="8,4"/>
+                        </Grid>
+                    </DataTemplate></ListView.ItemTemplate>
+                </ListView>
+                <Button Content="+ Add" Click="AddAuthorDisplayName_Click"/>
+            </StackPanel>
+        </Expander>
+
+        <Expander HorizontalAlignment="Stretch">
             <Expander.Header><TextBlock Text="donationUrls — Ko-fi/donation links by author display name" FontWeight="SemiBold"/></Expander.Header>
             <StackPanel Spacing="4" Padding="0,8,0,0">
                 <ListView x:Name="DonationView" MaxHeight="200" SelectionMode="None">

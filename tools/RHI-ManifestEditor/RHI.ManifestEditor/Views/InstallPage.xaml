@@ -274,6 +274,30 @@
                     <Button Content="+ Add game" Click="AddRenodxIniGame_Click"/>
                 </StackPanel>
             </Expander>
+
+            <!-- renodxExtraSettings -->
+            <Expander HorizontalAlignment="Stretch">
+                <Expander.Header><TextBlock Text="renodxExtraSettings — global per-game sliders/options in the RenoDX cog" FontWeight="SemiBold"/></Expander.Header>
+                <StackPanel Spacing="4" Padding="0,8,0,0">
+                    <TextBlock FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="Each entry adds a control in the RenoDX cog dialog. key = ini key. label = display label (optional). default = default value. options = comma-separated value=name pairs (e.g. 0=Off, 1=On) — leave empty for a numeric text entry."/>
+                    <ListView x:Name="RenodxExtraSettingsView" MaxHeight="320" SelectionMode="None">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnSpacing="8" Margin="0,2,0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="140"/><ColumnDefinition Width="*"/><ColumnDefinition Width="80"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0" Text="{Binding Key, Mode=TwoWay}" PlaceholderText="ini key" FontSize="12"/>
+                                    <TextBox Grid.Column="1" Text="{Binding Label, Mode=TwoWay}" PlaceholderText="display label" FontSize="12"/>
+                                    <TextBox Grid.Column="2" Text="{Binding Default, Mode=TwoWay}" PlaceholderText="default" FontSize="12"/>
+                                    <TextBox Grid.Column="3" Text="{Binding OptionsRaw, Mode=TwoWay}" PlaceholderText="0=Off, 1=On" FontSize="12"/>
+                                    <Button Grid.Column="4" Content="✕" Tag="{Binding}" Click="RemoveRenodxExtra_Click" Padding="8,4"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                    <Button Content="+ Add" Click="AddRenodxExtra_Click"/>
+                </StackPanel>
+            </Expander>
         </StackPanel>
     </ScrollViewer>
 </Page>

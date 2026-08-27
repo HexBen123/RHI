@@ -65,7 +65,27 @@ public class ManifestFileService
             }
             else if (modelNode.TryGetPropertyValue(key, out var modelVal))
             {
-                output[key] = modelVal?.DeepClone();
+                // For object-typed values, merge modelNode with originalRaw to preserve
+                // any nested keys the typed model doesn't capture (e.g. nr in dlssPresets).
+                if (modelVal is JsonObject modelObj && kv.Value is JsonObject rawObj)
+                {
+                    var merged = rawObj.DeepClone()!.AsObject();
+                    foreach (var mkv in modelObj)
+                    {
+                        merged[mkv.Key] = mkv.Value?.DeepClone();
+                    }
+                    output[key] = merged;
+                }
+                else
+                {
+                    output[key] = modelVal?.DeepClone();
+                }
+            }
+            else
+            {
+                // Key is in originalRaw but not in the typed model — preserve it as-is
+                // so the editor never silently drops fields it doesn't understand.
+                output[key] = kv.Value?.DeepClone();
             }
         }
 
