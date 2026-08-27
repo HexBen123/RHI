@@ -9,7 +9,7 @@
   "blacklistPrefixes": [
     "Battle.net."
   ],
-  "_comment_game_detection": "=== GAME DETECTION ===
+  "_comment_game_detection": "=== GAME DETECTION ===\nGames to hide from RHI entirely, split into sub-cards, or redirect to a different install subfolder.\nName mappings tell RHI which wiki/Luma mod name to look up for a given detected folder name.",
   "blacklist": [
     "1Password",
     "2008 Movie Batman",
