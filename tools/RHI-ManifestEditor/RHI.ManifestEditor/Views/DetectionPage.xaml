@@ -35,6 +35,33 @@
                 </StackPanel>
             </Expander>
 
+            <!-- blacklistPrefixes -->
+            <Expander HorizontalAlignment="Stretch">
+                <Expander.Header>
+                    <TextBlock Text="blacklistPrefixes — hide all entries whose name starts with a prefix" FontWeight="SemiBold"/>
+                </Expander.Header>
+                <StackPanel Spacing="4" Padding="0,8,0,0">
+                    <TextBlock FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="Prefix-based blacklist. e.g. 'Battle.net.' hides all Battle.net.* entries without needing individual blacklist entries."/>
+                    <ListView x:Name="BlacklistPrefixesView" MaxHeight="220" SelectionMode="None">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0" Text="{Binding Value, Mode=TwoWay}" FontSize="12"/>
+                                    <Button Grid.Column="1" Content="✕" Tag="{Binding}"
+                                            Click="RemoveBlacklistPrefix_Click" Padding="8,4"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                    <Button Content="+ Add" Click="AddBlacklistPrefix_Click"/>
+                </StackPanel>
+            </Expander>
+
             <!-- wikiUnlinks -->
             <Expander HorizontalAlignment="Stretch">
                 <Expander.Header>

@@ -42,6 +42,14 @@ public class RemoteManifest
     [JsonPropertyName("blacklist")]
     public List<string>? Blacklist { get; set; }
 
+    /// <summary>
+    /// Prefix-based blacklist. Any game whose name starts with one of these strings
+    /// (case-insensitive) is excluded. Avoids needing individual entries for things like
+    /// "Battle.net.12345", "Battle.net.67890", etc. — just add "Battle.net." here.
+    /// </summary>
+    [JsonPropertyName("blacklistPrefixes")]
+    public List<string>? BlacklistPrefixes { get; set; }
+
     [JsonPropertyName("thirtyTwoBitGames")]
     public List<string>? ThirtyTwoBitGames { get; set; }
 

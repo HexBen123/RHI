@@ -246,6 +246,14 @@ public partial class DlssStreamlineService : IDlssStreamlineService
         return bestPath;
     }
 
+    /// <summary>Returns true if <paramref name="a"/> is a higher version than <paramref name="b"/>.</summary>
+    private static bool IsHigherVersion(string? a, string? b)
+    {
+        if (a == null) return false;
+        if (b == null) return true;
+        return Version.TryParse(a, out var va) && Version.TryParse(b, out var vb) && va > vb;
+    }
+
     public string? GetFileVersion(string dllPath)
     {
         try

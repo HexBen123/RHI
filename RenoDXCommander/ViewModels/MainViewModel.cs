@@ -443,6 +443,7 @@ public partial class MainViewModel : ObservableObject
     private HashSet<string> _manifestNoUeExtendedGames = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>Per-game UE-Extended compat config — takes priority over nativeHdrGames and ueExtendedGames.</summary>
     private Dictionary<string, UeExtendedCompatEntry> _manifestUeExtendedCompat = new(StringComparer.OrdinalIgnoreCase);    private HashSet<string> _manifestBlacklist = new(StringComparer.OrdinalIgnoreCase);
+    private List<string> _manifestBlacklistPrefixes = new();
     private HashSet<string> _manifest32BitGames = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _manifest64BitGames = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, string> _manifestEngineOverrides = new(StringComparer.OrdinalIgnoreCase);

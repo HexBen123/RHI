@@ -789,6 +789,7 @@ public partial class MainViewModel
             _manifestNativeHdrGames,
             _manifestNoUeExtendedGames,
             _manifestBlacklist,
+            _manifestBlacklistPrefixes,
             _manifest32BitGames,
             _manifest64BitGames,
             _manifestEngineOverrides,

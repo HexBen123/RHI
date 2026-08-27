@@ -510,8 +510,9 @@ public partial class MainViewModel
             ApplyManifestStatusOverrides();
 
             // Remove manifest-blacklisted entries entirely (non-game apps, etc.)
-            if (_manifestBlacklist.Count > 0)
-                allGames = allGames.Where(g => !_manifestBlacklist.Contains(g.Name)).ToList();
+            if (_manifestBlacklist.Count > 0 || _manifestBlacklistPrefixes.Count > 0)
+                allGames = allGames.Where(g => !_manifestBlacklist.Contains(g.Name)
+                    && !_manifestBlacklistPrefixes.Any(p => g.Name.StartsWith(p, StringComparison.OrdinalIgnoreCase))).ToList();
 
             var records    = _installer.LoadAll();
             var auxRecords = _auxInstaller.LoadAll();

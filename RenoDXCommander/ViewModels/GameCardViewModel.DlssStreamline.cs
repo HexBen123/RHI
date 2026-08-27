@@ -126,6 +126,26 @@ public partial class GameCardViewModel
                     versionFromPath = DlssStreamlineService.FormatVersion(service.GetFileVersion(DlssDetection.StreamlineInterposerPath));
             }
 
+            // If the interposer is older than another DLL in the same folder
+            // (e.g. 2.12.128 interposer in a 2.12.129 release), use the highest-versioned DLL.
+            if (!string.IsNullOrEmpty(versionFromPath) && versionFromPath != "Unknown" && folder != null)
+            {
+                foreach (var knownDll in DlssStreamlineService.KnownStreamlineDlls)
+                {
+                    if (string.Equals(knownDll, "sl.interposer.dll", StringComparison.OrdinalIgnoreCase)) continue;
+                    var candidatePath = System.IO.Path.Combine(folder, knownDll);
+                    if (!System.IO.File.Exists(candidatePath)) continue;
+                    var candidateVersion = DlssStreamlineService.FormatVersion(service.GetFileVersion(candidatePath));
+                    if (!string.IsNullOrEmpty(candidateVersion) && candidateVersion != "Unknown"
+                        && System.Version.TryParse(candidateVersion, out var cv)
+                        && System.Version.TryParse(versionFromPath, out var iv) && cv > iv)
+                    {
+                        versionFromPath = candidateVersion;
+                        DlssDetection.StreamlineInterposerPath = candidatePath;
+                    }
+                }
+            }
+
             // Last resort: try sl.common.dll even without custom marker
             if ((string.IsNullOrEmpty(versionFromPath) || versionFromPath == "Unknown") && folder != null)
             {

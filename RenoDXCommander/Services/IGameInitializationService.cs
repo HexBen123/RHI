@@ -27,6 +27,7 @@ public interface IGameInitializationService
         HashSet<string> manifestNativeHdrGames,
         HashSet<string> manifestNoUeExtendedGames,
         HashSet<string> manifestBlacklist,
+        List<string> manifestBlacklistPrefixes,
         HashSet<string> manifest32BitGames,
         HashSet<string> manifest64BitGames,
         Dictionary<string, string> manifestEngineOverrides,

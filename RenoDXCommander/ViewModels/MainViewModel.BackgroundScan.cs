@@ -269,8 +269,9 @@ public partial class MainViewModel
             ApplyManifestStatusOverrides();
 
             // Remove manifest-blacklisted entries
-            if (_manifestBlacklist.Count > 0)
-                allGames = allGames.Where(g => !_manifestBlacklist.Contains(g.Name)).ToList();
+            if (_manifestBlacklist.Count > 0 || _manifestBlacklistPrefixes.Count > 0)
+                allGames = allGames.Where(g => !_manifestBlacklist.Contains(g.Name)
+                    && !_manifestBlacklistPrefixes.Any(p => g.Name.StartsWith(p, StringComparison.OrdinalIgnoreCase))).ToList();
 
             _crashReporter.Log("[RunBackgroundScanAndMergeAsync] Loading install records...");
             var records    = _installer.LoadAll();

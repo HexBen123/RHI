@@ -152,6 +152,7 @@ public class GameInitializationService : IGameInitializationService
         HashSet<string> manifestNativeHdrGames,
         HashSet<string> manifestNoUeExtendedGames,
         HashSet<string> manifestBlacklist,
+        List<string> manifestBlacklistPrefixes,
         HashSet<string> manifest32BitGames,
         HashSet<string> manifest64BitGames,
         Dictionary<string, string> manifestEngineOverrides,
@@ -220,6 +221,11 @@ public class GameInitializationService : IGameInitializationService
         if (manifest.Blacklist != null)
             foreach (var game in manifest.Blacklist)
                 manifestBlacklist.Add(game);
+
+        manifestBlacklistPrefixes.Clear();
+        if (manifest.BlacklistPrefixes != null)
+            foreach (var prefix in manifest.BlacklistPrefixes)
+                manifestBlacklistPrefixes.Add(prefix);
 
         if (manifest.InstallPathOverrides != null)
             foreach (var (key, value) in manifest.InstallPathOverrides)

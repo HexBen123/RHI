@@ -52,6 +52,7 @@ public partial class EmulatorGameItem : ObservableObject
 public partial class DetectionSectionViewModel : SectionViewModelBase
 {
     public ObservableCollection<StringItem> Blacklist { get; }
+    public ObservableCollection<StringItem> BlacklistPrefixes { get; }
     public ObservableCollection<StringItem> WikiUnlinks { get; }
     public ObservableCollection<KeyValueItem> WikiNameOverrides { get; }
     public ObservableCollection<KeyValueItem> LumaNameOverrides { get; }
@@ -63,6 +64,7 @@ public partial class DetectionSectionViewModel : SectionViewModelBase
     public DetectionSectionViewModel(RemoteManifest manifest, MainViewModel main) : base(manifest, main)
     {
         Blacklist = ToObservable(manifest.Blacklist);
+        BlacklistPrefixes = ToObservable(manifest.BlacklistPrefixes);
         WikiUnlinks = ToObservable(manifest.WikiUnlinks);
         WikiNameOverrides = ToKvObservable(manifest.WikiNameOverrides);
         LumaNameOverrides = ToKvObservable(manifest.LumaNameOverrides);
@@ -73,7 +75,7 @@ public partial class DetectionSectionViewModel : SectionViewModelBase
             .Select(kv => new KeyValueItem(kv.Key, kv.Value.ToString())) ?? Enumerable.Empty<KeyValueItem>());
         EmulatorGames = new(manifest.EmulatorGames?
             .Select(kv => new EmulatorGameItem(kv.Key, kv.Value, main)) ?? Enumerable.Empty<EmulatorGameItem>());
-        Subscribe(Blacklist); Subscribe(WikiUnlinks);
+        Subscribe(Blacklist); Subscribe(BlacklistPrefixes); Subscribe(WikiUnlinks);
         Subscribe(WikiNameOverrides); Subscribe(LumaNameOverrides); Subscribe(InstallPathOverrides);
         Subscribe(SteamAppIdOverrides);
         SplitGames.CollectionChanged += (_, _) => Dirty();
@@ -85,6 +87,8 @@ public partial class DetectionSectionViewModel : SectionViewModelBase
 
     [RelayCommand] public void AddBlacklist() { Blacklist.Add(new StringItem("")); Dirty(); }
     [RelayCommand] public void RemoveBlacklist(StringItem item) { Blacklist.Remove(item); Dirty(); }
+    [RelayCommand] public void AddBlacklistPrefix() { BlacklistPrefixes.Add(new StringItem("")); Dirty(); }
+    [RelayCommand] public void RemoveBlacklistPrefix(StringItem item) { BlacklistPrefixes.Remove(item); Dirty(); }
     [RelayCommand] public void AddWikiUnlink() { WikiUnlinks.Add(new StringItem("")); Dirty(); }
     [RelayCommand] public void RemoveWikiUnlink(StringItem item) { WikiUnlinks.Remove(item); Dirty(); }
     [RelayCommand] public void AddWikiNameOverride() { WikiNameOverrides.Add(new KeyValueItem()); Dirty(); }
@@ -106,6 +110,7 @@ public partial class DetectionSectionViewModel : SectionViewModelBase
     public override void Commit()
     {
         _manifest.Blacklist = FromObservable(Blacklist).Count > 0 ? FromObservable(Blacklist) : null;
+        _manifest.BlacklistPrefixes = FromObservable(BlacklistPrefixes).Count > 0 ? FromObservable(BlacklistPrefixes) : null;
         _manifest.WikiUnlinks = FromObservable(WikiUnlinks).Count > 0 ? FromObservable(WikiUnlinks) : null;
         _manifest.WikiNameOverrides = FromKvObservable(WikiNameOverrides);
         _manifest.LumaNameOverrides = FromKvObservable(LumaNameOverrides);

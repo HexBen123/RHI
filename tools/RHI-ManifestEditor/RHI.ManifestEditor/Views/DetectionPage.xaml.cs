@@ -15,6 +15,7 @@ public sealed partial class DetectionPage : Page
         if (e.Parameter is not MainViewModel main || main.Detection == null) return;
         _vm = main.Detection;
         BlacklistView.ItemsSource = _vm.Blacklist;
+        BlacklistPrefixesView.ItemsSource = _vm.BlacklistPrefixes;
         WikiUnlinksView.ItemsSource = _vm.WikiUnlinks;
         WikiNameOverridesView.ItemsSource = _vm.WikiNameOverrides;
         LumaNameOverridesView.ItemsSource = _vm.LumaNameOverrides;
@@ -27,6 +28,10 @@ public sealed partial class DetectionPage : Page
     private void AddBlacklist_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e) => _vm?.AddBlacklistCommand.Execute(null);
     private void RemoveBlacklist_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e)
     { if (((Button)s).Tag is StringItem item) _vm?.RemoveBlacklistCommand.Execute(item); }
+
+    private void AddBlacklistPrefix_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e) => _vm?.AddBlacklistPrefixCommand.Execute(null);
+    private void RemoveBlacklistPrefix_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e)
+    { if (((Button)s).Tag is StringItem item) _vm?.RemoveBlacklistPrefixCommand.Execute(item); }
 
     private void AddWikiUnlink_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e) => _vm?.AddWikiUnlinkCommand.Execute(null);
     private void RemoveWikiUnlink_Click(object s, Microsoft.UI.Xaml.RoutedEventArgs e)

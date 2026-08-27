@@ -11,6 +11,9 @@ public class RemoteManifest
     [JsonPropertyName("blacklist")]
     public List<string>? Blacklist { get; set; }
 
+    [JsonPropertyName("blacklistPrefixes")]
+    public List<string>? BlacklistPrefixes { get; set; }
+
     [JsonPropertyName("wikiUnlinks")]
     public List<string>? WikiUnlinks { get; set; }
 
