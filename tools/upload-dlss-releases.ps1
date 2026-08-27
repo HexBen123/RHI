@@ -22,6 +22,11 @@ foreach ($file in $files) {
         $tag = "dlssd-$version"
         $title = "DLSS RR $version"
     }
+    elseif ($name -match "^nvngx_dlssnr_(.+)$") {
+        $version = $Matches[1]
+        $tag = "dlssnr-$version"
+        $title = "DLSS NR $version"
+    }
     elseif ($name -match "^nvngx_dlssg_(.+)$") {
         $version = $Matches[1]
         $tag = "dlssg-$version"

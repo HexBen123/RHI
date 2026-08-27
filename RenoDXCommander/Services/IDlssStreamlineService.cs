@@ -25,6 +25,9 @@ public interface IDlssStreamlineService
     /// <summary>Available DLSS FG versions from the manifest (newest first).</summary>
     IReadOnlyList<string> DlssgVersions { get; }
 
+    /// <summary>Available DLSS NR versions from the manifest (newest first).</summary>
+    IReadOnlyList<string> DlssnrVersions { get; }
+
     /// <summary>Available Streamline versions from the manifest (newest first).</summary>
     IReadOnlyList<string> StreamlineVersions { get; }
 
@@ -53,6 +56,11 @@ public interface IDlssStreamlineService
     /// Swaps the DLSS FG DLL to the specified version.
     /// </summary>
     Task SwapDlssgAsync(string dllPath, string version);
+
+    /// <summary>
+    /// Swaps the DLSS NR DLL to the specified version.
+    /// </summary>
+    Task SwapDlssnrAsync(string dllPath, string version);
 
     /// <summary>
     /// Swaps Streamline DLLs to the specified version.
@@ -156,6 +164,11 @@ public interface IDlssStreamlineService
     /// Returns the cached path for the newest DLSS FG DLL, downloading if needed.
     /// </summary>
     Task<string?> EnsureNewestDlssgCachedAsync();
+
+    /// <summary>
+    /// Returns the cached path for the newest DLSS NR DLL, downloading if needed.
+    /// </summary>
+    Task<string?> EnsureNewestDlssnrCachedAsync();
 }
 
 /// <summary>
@@ -171,6 +184,9 @@ public class DlssDetectionResult
 
     /// <summary>Full path to nvngx_dlssg.dll, or null if not found.</summary>
     public string? DlssgPath { get; set; }
+
+    /// <summary>Full path to nvngx_dlssnr.dll, or null if not found.</summary>
+    public string? DlssnrPath { get; set; }
 
     /// <summary>Full path to sl.interposer.dll, or null if not found.</summary>
     public string? StreamlineInterposerPath { get; set; }
@@ -190,6 +206,9 @@ public class DlssDetectionResult
     /// <summary>Installed DLSS FG version, or null.</summary>
     public string? DlssgVersion { get; set; }
 
+    /// <summary>Installed DLSS NR version, or null.</summary>
+    public string? DlssnrVersion { get; set; }
+
     /// <summary>Installed Streamline version (from sl.interposer.dll), or null.</summary>
     public string? StreamlineVersion { get; set; }
 
@@ -202,14 +221,18 @@ public class DlssDetectionResult
     /// <summary>Original/default DLSS FG version. Cached for UI display.</summary>
     public string? OriginalDlssgVersion { get; set; }
 
+    /// <summary>Original/default DLSS NR version. Cached for UI display.</summary>
+    public string? OriginalDlssnrVersion { get; set; }
+
     /// <summary>Original/default Streamline version. Cached for UI display.</summary>
     public string? OriginalStreamlineVersion { get; set; }
 
     /// <summary>True if any DLSS or Streamline DLL was found.</summary>
-    public bool HasAny => DlssPath != null || DlssdPath != null || DlssgPath != null || StreamlineInterposerPath != null;
+    public bool HasAny => DlssPath != null || DlssdPath != null || DlssgPath != null || DlssnrPath != null || StreamlineInterposerPath != null;
 
     // ── Internal fallbacks (OptiScaler directory copies, used only if no deeper game copy found) ──
     internal string? _optiScalerDlssPath;
     internal string? _optiScalerDlssdPath;
     internal string? _optiScalerDlssgPath;
+    internal string? _optiScalerDlssnrPath;
 }

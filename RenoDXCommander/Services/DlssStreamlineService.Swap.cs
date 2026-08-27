@@ -12,6 +12,8 @@ public partial class DlssStreamlineService
         FindEntry(_manifest?.Dlssd, _manifest?.DlssdDev, version);
     private DlssManifestEntry? FindDlssgEntry(string version) =>
         FindEntry(_manifest?.Dlssg, _manifest?.DlssgDev, version);
+    private DlssManifestEntry? FindDlssnrEntry(string version) =>
+        FindEntry(_manifest?.Dlssnr, _manifest?.DlssnrDev, version);
     private DlssManifestEntry? FindStreamlineEntry(string version) =>
         FindEntry(_manifest?.Streamline, _manifest?.StreamlineDev, version);
 
@@ -100,6 +102,31 @@ public partial class DlssStreamlineService
 
         BackupAndReplace(dllPath, cachedDll);
         CrashReporter.Log($"[DlssStreamlineService.SwapDlssgAsync] Swapped '{dllPath}' to {version}");
+    }
+
+    public async Task SwapDlssnrAsync(string dllPath, string version)
+    {
+        var entry = FindDlssnrEntry(version);
+        if (entry == null)
+        {
+            CrashReporter.Log($"[DlssStreamlineService.SwapDlssnrAsync] Version '{version}' not found in manifest");
+            return;
+        }
+
+        var cachedDir = Path.Combine(DlssnrCacheDir, version);
+        var cachedDll = Path.Combine(cachedDir, DlssnrDllName);
+
+        if (!File.Exists(cachedDll))
+            await DownloadAndCacheAsync(entry.Url, cachedDir, DlssnrDllName).ConfigureAwait(false);
+
+        if (!File.Exists(cachedDll))
+        {
+            CrashReporter.Log($"[DlssStreamlineService.SwapDlssnrAsync] Failed to cache DLSS-NR {version}");
+            return;
+        }
+
+        BackupAndReplace(dllPath, cachedDll);
+        CrashReporter.Log($"[DlssStreamlineService.SwapDlssnrAsync] Swapped '{dllPath}' to {version}");
     }
 
     public async Task SwapStreamlineAsync(string gameFolder, string version)
@@ -332,6 +359,7 @@ public partial class DlssStreamlineService
         if (detection.DlssPath != null) Restore(detection.DlssPath);
         if (detection.DlssdPath != null) Restore(detection.DlssdPath);
         if (detection.DlssgPath != null) Restore(detection.DlssgPath);
+        if (detection.DlssnrPath != null) Restore(detection.DlssnrPath);
         if (detection.StreamlineFolder != null) RestoreStreamline(detection.StreamlineFolder);
     }
 

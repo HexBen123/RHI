@@ -148,7 +148,7 @@ public partial class App : Application
 
         // Handle --nxm argument (from nxm:// protocol handler, dev-unlocked only)
         string? nxmArg = null;
-        if (DevUnlockService.IsUnlocked)
+        if (FeatureFlags.NexusMods)
         {
             // Protocol handler sends: RHI.exe --nxm "nxm://..."
             var nxmIdx = Array.IndexOf(cmdArgs, "--nxm");

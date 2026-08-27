@@ -427,7 +427,7 @@ public sealed partial class MainWindow : Window
     /// </summary>
     internal void HandleNxmUrl(string nxmUrl)
     {
-        if (!DevUnlockService.IsUnlocked) return;
+        if (!FeatureFlags.NexusMods) return;
 
         // Strip the "nxm:" pipe-forwarding prefix if present — the pipe listener prepends it
         // to distinguish NXM messages from addon file paths, but the parser expects a raw nxm:// URL.

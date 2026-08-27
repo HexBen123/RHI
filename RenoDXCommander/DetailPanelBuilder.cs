@@ -259,8 +259,8 @@ public partial class DetailPanelBuilder
             ? UIFactory.Brush(ResourceKeys.AccentPurpleBrush)
             : UIFactory.Brush(ResourceKeys.ChipTextBrush);
 
-        // RES toggle button — dev-only, hidden unless unlock active
-        if (DevUnlockService.IsUnlocked)
+        // RES toggle button — hidden unless feature enabled
+        if (FeatureFlags.ResolutionControl)
         {
             _window.DetailResToggleBtn.Visibility = Visibility.Visible;
             _window.DetailResToggleBtn.Tag = card;

@@ -160,7 +160,7 @@ public class SettingsHandler
         _window.HdrAutoToggleCombo.SelectedIndex = ViewModel.Settings.HdrAutoToggle ? 1 : 0;
 
         // Initialize Resolution Control (dev-only)
-        if (DevUnlockService.IsUnlocked)
+        if (FeatureFlags.ResolutionControl)
         {
             _window.ResolutionControlCard.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
             _window.ResAutoToggleCombo.SelectedIndex = ViewModel.Settings.ResolutionAutoToggle ? 1 : 0;
@@ -298,7 +298,7 @@ public class SettingsHandler
         _window.StartWithWindowsCombo.SelectedIndex = ViewModel.Settings.StartWithWindows ? 1 : 0;
 
         // Initialize Nexus Mods card (dev-only)
-        if (DevUnlockService.IsUnlocked)
+        if (FeatureFlags.NexusMods)
         {
             _window.NexusModsCard.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
             RefreshNexusStatus();

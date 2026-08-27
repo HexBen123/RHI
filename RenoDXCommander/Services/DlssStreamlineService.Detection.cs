@@ -37,6 +37,8 @@ public partial class DlssStreamlineService
             result.DlssdPath = result._optiScalerDlssdPath;
         if (result.DlssgPath == null && result._optiScalerDlssgPath != null)
             result.DlssgPath = result._optiScalerDlssgPath;
+        if (result.DlssnrPath == null && result._optiScalerDlssnrPath != null)
+            result.DlssnrPath = result._optiScalerDlssnrPath;
 
         // Read versions for found DLLs
         if (result.DlssPath != null)
@@ -45,6 +47,8 @@ public partial class DlssStreamlineService
             result.DlssdVersion = GetFileVersion(result.DlssdPath);
         if (result.DlssgPath != null)
             result.DlssgVersion = GetFileVersion(result.DlssgPath);
+        if (result.DlssnrPath != null)
+            result.DlssnrVersion = GetFileVersion(result.DlssnrPath);
         if (result.StreamlineInterposerPath != null)
             result.StreamlineVersion = GetFileVersion(result.StreamlineInterposerPath);
         else if (result.StreamlineFolder != null)
@@ -93,6 +97,11 @@ public partial class DlssStreamlineService
         {
             var backup = result.DlssgPath + ".original";
             result.OriginalDlssgVersion = File.Exists(backup) ? GetFileVersion(backup) : result.DlssgVersion;
+        }
+        if (result.DlssnrPath != null)
+        {
+            var backup = result.DlssnrPath + ".original";
+            result.OriginalDlssnrVersion = File.Exists(backup) ? GetFileVersion(backup) : result.DlssnrVersion;
         }
         if (result.StreamlineInterposerPath != null)
         {
@@ -248,6 +257,13 @@ public partial class DlssStreamlineService
                         result.DlssgPath = file;
                     else if (hasOptiScalerIni && result.DlssgPath == null)
                         result._optiScalerDlssgPath = file;
+                }
+                else if (string.Equals(fileName, DlssnrDllName, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (!hasOptiScalerIni && result.DlssnrPath == null)
+                        result.DlssnrPath = file;
+                    else if (hasOptiScalerIni && result.DlssnrPath == null)
+                        result._optiScalerDlssnrPath = file;
                 }
                 else if (string.Equals(fileName, StreamlineIndicator, StringComparison.OrdinalIgnoreCase))
                 {

@@ -87,6 +87,34 @@ public static class DlssDefaultsDialog
         // Divider
         grid.Children.Add(MakeDivider(5));
 
+        // ── NR Column (dev-only) ──
+        ComboBox? nrVersionCombo = null;
+        ComboBox? nrPresetCombo = null;
+        if (FeatureFlags.DlssNr)
+        {
+            // Expand grid to 9 columns: SR, div, RR, div, FG, div, NR, div, SL
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+            var nrCol = new StackPanel { Spacing = 4 };
+            nrCol.Children.Add(new TextBlock { Text = "Neural Rendering", FontSize = 11, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) });
+
+            nrCol.Children.Add(new TextBlock { Text = "Version", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Microsoft.UI.Xaml.Thickness(0, 2, 0, 0) });
+            nrVersionCombo = BuildCombo(dlssService.DlssnrVersions, settings.DefaultDlssnrVersion);
+            nrCol.Children.Add(nrVersionCombo);
+
+            nrCol.Children.Add(new TextBlock { Text = "Preset", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Microsoft.UI.Xaml.Thickness(0, 2, 0, 0) });
+            nrPresetCombo = BuildPresetComboBox(DlssPresetService.NrPresets, settings.DefaultNrPreset);
+            nrCol.Children.Add(nrPresetCombo);
+
+            Grid.SetColumn(nrCol, 6);
+            grid.Children.Add(nrCol);
+
+            grid.Children.Add(MakeDivider(7));
+        }
+
+        int slGridCol = FeatureFlags.DlssNr ? 8 : 6;
+
         // ── SL Column ──
         var slCol = new StackPanel { Spacing = 4 };
         slCol.Children.Add(new TextBlock { Text = "Streamline", FontSize = 11, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = UIFactory.Brush(ResourceKeys.TextPrimaryBrush) });
@@ -95,7 +123,7 @@ public static class DlssDefaultsDialog
         var slVersionCombo = BuildCombo(dlssService.StreamlineVersions, settings.DefaultStreamlineVersion);
         slCol.Children.Add(slVersionCombo);
 
-        Grid.SetColumn(slCol, 6);
+        Grid.SetColumn(slCol, slGridCol);
         grid.Children.Add(slCol);
 
         var dialog = new ContentDialog
@@ -121,6 +149,11 @@ public static class DlssDefaultsDialog
         settings.DefaultSrPreset = GetSelectedPreset(srPresetCombo, DlssPresetService.SrPresets);
         settings.DefaultRrPreset = GetSelectedPreset(rrPresetCombo, DlssPresetService.RrPresets);
         settings.DefaultFgPreset = GetSelectedPreset(fgPresetCombo, DlssPresetService.FgPresets);
+        if (FeatureFlags.DlssNr)
+        {
+            settings.DefaultDlssnrVersion = nrVersionCombo != null ? GetSelectedVersion(nrVersionCombo) : "";
+            settings.DefaultNrPreset = nrPresetCombo != null ? GetSelectedPreset(nrPresetCombo, DlssPresetService.NrPresets) : 0u;
+        }
         settings.DefaultSrRenderScale = GetSelectedRenderScale(srScaleCombo);
         settings.DefaultRrRenderScale = GetSelectedRenderScale(rrScaleCombo);
 

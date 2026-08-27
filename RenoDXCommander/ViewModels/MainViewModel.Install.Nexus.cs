@@ -18,7 +18,7 @@ public partial class MainViewModel
     /// </summary>
     public async Task InstallNexusModAsync(GameCardViewModel card)
     {
-        if (!DevUnlockService.IsUnlocked) return;
+        if (!FeatureFlags.NexusMods) return;
 
         var nexusDl = App.Services.GetRequiredService<NexusDownloadService>();
         if (!nexusDl.IsApiKeyConfigured || !nexusDl.IsPremium) return;
@@ -60,7 +60,7 @@ public partial class MainViewModel
     /// </summary>
     public async Task HandleNxmLinkAsync(NxmLink link)
     {
-        if (!DevUnlockService.IsUnlocked) return;
+        if (!FeatureFlags.NexusMods) return;
 
         _crashReporter.Log($"[MainViewModel.HandleNxmLinkAsync] NXM: {link.Domain}/mods/{link.ModId}/files/{link.FileId}");
 
@@ -143,7 +143,7 @@ public partial class MainViewModel
     /// </summary>
     public async Task UpdateNexusModAsync(GameCardViewModel card)
     {
-        if (!DevUnlockService.IsUnlocked) return;
+        if (!FeatureFlags.NexusMods) return;
         var nexusDl = App.Services.GetRequiredService<NexusDownloadService>();
         if (!nexusDl.IsApiKeyConfigured || !nexusDl.IsPremium) return;
 

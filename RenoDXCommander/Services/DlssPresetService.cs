@@ -301,6 +301,8 @@ public partial class DlssPresetService
     private const uint DLSS_SR_LATEST_DLL_ID = 0x10E41E01;
     private const uint DLSS_RR_LATEST_DLL_ID = 0x10E41E02;
     private const uint DLSS_FG_LATEST_DLL_ID = 0x10E41E03;
+    private const uint NGX_DLSS_NR_OVERRIDE_RENDER_PRESET_SELECTION_ID = 0x10E41DF8;
+    private const uint DLSS_NR_LATEST_DLL_ID = 0x10E41E04;
 
     // Multi Frame Generation (MFG) settings
     private const uint MFG_MODE_OVERRIDE_ID = 0x10308298;       // Off=0, Fixed=2, Dynamic=4
@@ -336,6 +338,13 @@ public partial class DlssPresetService
         ("A", 0x00000001),
         ("B", 0x00000002),
         ("NVIDIA Recommended", 0x00FFFFFE),
+    ];
+
+    /// <summary>Neural Rendering (DLSS NR) presets. A–O are dev-only; merged via dlssPresetsDev.nr in manifest.</summary>
+    public static (string Name, uint Value)[] NrPresets =
+    [
+        ("Default", 0x00000000),
+        ("NVIDIA Recommended", 0x00FFFFFF),
     ];
 
     /// <summary>Named render scale options for SR and RR. "Custom" is handled separately via a TextBox.</summary>
@@ -475,6 +484,8 @@ public partial class DlssPresetService
             RrPresets = MergePresets(RrPresets, rr);
         if (manifest?.DlssPresets?.Fg is { Count: > 0 } fg)
             FgPresets = MergePresets(FgPresets, fg);
+        if (manifest?.DlssPresets?.Nr is { Count: > 0 } nr)
+            NrPresets = MergePresets(NrPresets, nr);
 
         // Dev-only presets — only merged when unlock.txt is present
         if (DevUnlockService.IsUnlocked && manifest?.DlssPresetsDev != null)
@@ -485,9 +496,11 @@ public partial class DlssPresetService
                 RrPresets = MergePresets(RrPresets, rrDev);
             if (manifest.DlssPresetsDev.Fg is { Count: > 0 } fgDev)
                 FgPresets = MergePresets(FgPresets, fgDev);
+            if (manifest.DlssPresetsDev.Nr is { Count: > 0 } nrDev)
+                NrPresets = MergePresets(NrPresets, nrDev);
         }
 
-        CrashReporter.Log($"[DlssPresetService.ApplyManifestPresets] SR={SrPresets.Length}, RR={RrPresets.Length}, FG={FgPresets.Length}");
+        CrashReporter.Log($"[DlssPresetService.ApplyManifestPresets] SR={SrPresets.Length}, RR={RrPresets.Length}, FG={FgPresets.Length}, NR={NrPresets.Length}");
     }
 
     /// <summary>
@@ -566,6 +579,9 @@ public partial class DlssPresetService
     public uint GetFgPreset(string gameName, string installPath)
         => GetPreset(gameName, installPath, NGX_DLSS_FG_OVERRIDE_RENDER_PRESET_SELECTION_ID);
 
+    public uint GetNrPreset(string gameName, string installPath)
+        => GetPreset(gameName, installPath, NGX_DLSS_NR_OVERRIDE_RENDER_PRESET_SELECTION_ID);
+
     // ── DLSS Latest DLL driver override detection ─────────────────────────────
 
     /// <summary>Returns true if the NVIDIA driver is overriding the game's DLSS SR DLL with its own latest version.</summary>
@@ -579,6 +595,10 @@ public partial class DlssPresetService
     /// <summary>Returns true if the NVIDIA driver is overriding the game's DLSS FG DLL.</summary>
     public bool IsFgDriverOverrideActive(string gameName, string installPath)
         => GetPreset(gameName, installPath, DLSS_FG_LATEST_DLL_ID) == 1;
+
+    /// <summary>Returns true if the NVIDIA driver is overriding the game's DLSS NR DLL.</summary>
+    public bool IsNrDriverOverrideActive(string gameName, string installPath)
+        => GetPreset(gameName, installPath, DLSS_NR_LATEST_DLL_ID) == 1;
 
     // ── Set presets ───────────────────────────────────────────────────────────
 
@@ -621,6 +641,16 @@ public partial class DlssPresetService
             return true;
         }
         return SetPreset(gameName, installPath, NGX_DLSS_FG_OVERRIDE_RENDER_PRESET_SELECTION_ID, preset);
+    }
+
+    public bool SetNrPreset(string gameName, string installPath, uint preset)
+    {
+        if (preset == 0x00000000u)
+        {
+            DeletePreset(gameName, installPath, NGX_DLSS_NR_OVERRIDE_RENDER_PRESET_SELECTION_ID);
+            return true;
+        }
+        return SetPreset(gameName, installPath, NGX_DLSS_NR_OVERRIDE_RENDER_PRESET_SELECTION_ID, preset);
     }
 
     // ── Multi Frame Generation (MFG) ─────────────────────────────────────────

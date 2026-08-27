@@ -347,6 +347,15 @@ public class RemoteManifest
     [JsonPropertyName("renodxExtraSettings")]
     public List<RenodxExtraSetting>? RenodxExtraSettings { get; set; }
 
+    // ── Feature Flags ─────────────────────────────────────────────────────────
+    /// <summary>
+    /// Manifest-driven feature flags. When a flag is true, the feature is visible
+    /// to all users regardless of unlock.txt. This allows releasing dev-gated features
+    /// remotely without an app update.
+    /// </summary>
+    [JsonPropertyName("featureFlags")]
+    public ManifestFeatureFlags? FeatureFlags { get; set; }
+
     /// <summary>
     /// List of legacy ReShade versions available in the per-game version picker.
     /// Managed server-side — when a new stable releases, the old version is added here.
@@ -562,6 +571,9 @@ public class ManifestDlssPresets
 
     [JsonPropertyName("fg")]
     public List<ManifestPresetEntry>? Fg { get; set; }
+
+    [JsonPropertyName("nr")]
+    public List<ManifestPresetEntry>? Nr { get; set; }
 }
 
 public class ManifestPresetEntry
@@ -626,4 +638,24 @@ public class UeExtendedCompatEntry
     /// </summary>
     [JsonPropertyName("lut")]
     public bool? Lut { get; set; }
+}
+
+/// <summary>
+/// Manifest-driven feature flags. Each flag enables a feature for all users when true,
+/// regardless of whether unlock.txt is present. When false or absent, the feature is
+/// only visible to users with unlock.txt (dev preview mode).
+/// </summary>
+public class ManifestFeatureFlags
+{
+    /// <summary>DLSS Neural Rendering column and preset support.</summary>
+    [JsonPropertyName("dlssNr")]
+    public bool? DlssNr { get; set; }
+
+    /// <summary>Nexus Mods direct download / NXM protocol integration.</summary>
+    [JsonPropertyName("nexusMods")]
+    public bool? NexusMods { get; set; }
+
+    /// <summary>Resolution auto-toggle feature (Settings card + per-game toggle).</summary>
+    [JsonPropertyName("resolutionControl")]
+    public bool? ResolutionControl { get; set; }
 }

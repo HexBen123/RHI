@@ -642,7 +642,7 @@ public sealed partial class MainWindow
             // ── Resolution Auto-Toggle (dev-only) ──
             bool shouldToggleRes = false;
             ResolutionToggleService.DisplayResolution? resolutionToRestore = null;
-            if (DevUnlockService.IsUnlocked)
+            if (FeatureFlags.ResolutionControl)
             {
                 var resOverride = _gameNameService.ResToggleOverrides
                     .TryGetValue(gameName, out var rov) ? rov : null;

@@ -62,6 +62,7 @@ public class DlssPathCache
     public string? DlssPath { get; set; }
     public string? DlssdPath { get; set; }
     public string? DlssgPath { get; set; }
+    public string? DlssnrPath { get; set; }
     public string? StreamlineFolder { get; set; }
     public List<string>? StreamlineFiles { get; set; }
 
@@ -69,5 +70,6 @@ public class DlssPathCache
     public string? OriginalDlssVersion { get; set; }
     public string? OriginalDlssdVersion { get; set; }
     public string? OriginalDlssgVersion { get; set; }
+    public string? OriginalDlssnrVersion { get; set; }
     public string? OriginalStreamlineVersion { get; set; }
 }

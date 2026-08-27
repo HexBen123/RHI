@@ -279,7 +279,7 @@ public class AutoUpdateService
             EnsureRetryTimerRunning();
 
         // ── Nexus Mods (dev-unlocked, premium only) ──────────────────────────
-        if (DevUnlockService.IsUnlocked)
+        if (FeatureFlags.NexusMods)
         {
             var nexusDl = _viewModel.AllCards.Count > 0
                 ? App.Services.GetRequiredService<NexusDownloadService>()

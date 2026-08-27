@@ -1345,6 +1345,14 @@ public partial class MainViewModel
                         await _dlssStreamlineService.SwapDlssgAsync(card.DlssDetection.DlssgPath, newestDlss);
                         card.DlssgInstalledVersion = _dlssStreamlineService.GetFileVersion(card.DlssDetection.DlssgPath);
                     }
+                    // NR (dev-only)
+                    if (FeatureFlags.DlssNr
+                        && card.DlssDetection.DlssnrPath != null
+                        && string.Equals(card.DlssnrInstalledVersion, previousDlss, StringComparison.OrdinalIgnoreCase))
+                    {
+                        await _dlssStreamlineService.SwapDlssnrAsync(card.DlssDetection.DlssnrPath, newestDlss);
+                        card.DlssnrInstalledVersion = _dlssStreamlineService.GetFileVersion(card.DlssDetection.DlssnrPath);
+                    }
                 }
                 catch (Exception ex)
                 {

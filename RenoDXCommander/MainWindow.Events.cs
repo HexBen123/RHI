@@ -686,7 +686,7 @@ public sealed partial class MainWindow
         if (card == null) return;
 
         // ── Nexus direct download intercept (dev-unlocked, premium only) ──────
-        if (DevUnlockService.IsUnlocked && card.NexusUrl != null)
+        if (FeatureFlags.NexusMods && card.NexusUrl != null)
         {
             var nexusDl = App.Services.GetRequiredService<NexusDownloadService>();
             if (nexusDl.IsApiKeyConfigured && nexusDl.IsPremium)
@@ -706,7 +706,7 @@ public sealed partial class MainWindow
         // URL format: nexusmods.com/{domain}/mods/{id}?tab=files&file_id={fileId}&nmm=1
         // This skips the mod page and files tab, landing directly on the "Slow download" button.
         if (!string.IsNullOrEmpty(url) && url.Contains("nexusmods.com", StringComparison.OrdinalIgnoreCase)
-            && DevUnlockService.IsUnlocked)
+            && FeatureFlags.NexusMods)
         {
             var parsed = NexusUpdateService.ParseNexusUrl(url);
             if (parsed.HasValue)

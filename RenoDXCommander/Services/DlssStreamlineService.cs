@@ -16,6 +16,7 @@ public partial class DlssStreamlineService : IDlssStreamlineService
     private const string DlssDllName = "nvngx_dlss.dll";
     private const string DlssdDllName = "nvngx_dlssd.dll";
     private const string DlssgDllName = "nvngx_dlssg.dll";
+    private const string DlssnrDllName = "nvngx_dlssnr.dll";
     private const string StreamlineIndicator = "sl.interposer.dll";
     private const string BackupExtension = ".original";
 
@@ -43,6 +44,7 @@ public partial class DlssStreamlineService : IDlssStreamlineService
     private static readonly string DlssCacheDir = Path.Combine(BaseStagingDir, "DLSS");
     private static readonly string DlssdCacheDir = Path.Combine(BaseStagingDir, "DLSS-D");
     private static readonly string DlssgCacheDir = Path.Combine(BaseStagingDir, "DLSS-G");
+    private static readonly string DlssnrCacheDir = Path.Combine(BaseStagingDir, "DLSS-NR");
     private static readonly string StreamlineCacheDir = Path.Combine(BaseStagingDir, "Streamline");
     private static readonly string DlssCustomDir = Path.Combine(BaseStagingDir, "Custom", "DLSS");
     private static readonly string StreamlineCustomDir = Path.Combine(BaseStagingDir, "Custom", "Streamline");
@@ -71,6 +73,7 @@ public partial class DlssStreamlineService : IDlssStreamlineService
     public IReadOnlyList<string> DlssVersions => BuildVersionList(_manifest?.Dlss, _manifest?.DlssDev);
     public IReadOnlyList<string> DlssdVersions => BuildVersionList(_manifest?.Dlssd, _manifest?.DlssdDev);
     public IReadOnlyList<string> DlssgVersions => BuildVersionList(_manifest?.Dlssg, _manifest?.DlssgDev);
+    public IReadOnlyList<string> DlssnrVersions => BuildVersionList(_manifest?.Dlssnr, _manifest?.DlssnrDev);
     public IReadOnlyList<string> StreamlineVersions => BuildVersionList(_manifest?.Streamline, _manifest?.StreamlineDev);
 
     private static IReadOnlyList<string> BuildVersionList(
@@ -365,6 +368,11 @@ public partial class DlssStreamlineService : IDlssStreamlineService
     /// Called on Full Refresh to detect newly added DLLs (e.g. game update adds RR/FG).
     /// Also clears the scan skip cache so reinstalled games are re-scanned.
     /// </summary>
+    // ── Trusted path cache version ────────────────────────────────────────────
+    // Bump this when new DLL types are added to detection (e.g. DlssnrPath).
+    // Causes a one-time full rescan on the next Full Refresh for all existing entries.
+    private const int CurrentTrustedCacheVersion = 1; // bumped for DlssnrPath addition
+
     public void ClearScanCaches()
     {
         // Clear the scan skip cache entirely — reinstalled games may now have DLSS
@@ -376,12 +384,14 @@ public partial class DlssStreamlineService : IDlssStreamlineService
             SaveScanCache();
         }
 
-        // Invalidate trusted entries with null paths (partial detection — new DLLs may have appeared)
-        // Entries with all paths populated stay trusted (validated at read time via PathsAreWithin)
+        // Invalidate trusted entries that are:
+        // - Partial (any required path is null) — new DLLs may have appeared
+        // - Outdated (cache version < current) — new DLL types were added since entry was created
         EnsureTrustedCacheLoaded();
         var toRemove = _trustedPathCache!
             .Where(kvp => kvp.Value.DlssPath == null || kvp.Value.DlssdPath == null
-                       || kvp.Value.DlssgPath == null || kvp.Value.StreamlineFolder == null)
+                       || kvp.Value.DlssgPath == null || kvp.Value.StreamlineFolder == null
+                       || kvp.Value.CacheVersion < CurrentTrustedCacheVersion)
             .Select(kvp => kvp.Key)
             .ToList();
 
@@ -390,7 +400,7 @@ public partial class DlssStreamlineService : IDlssStreamlineService
             foreach (var key in toRemove)
                 _trustedPathCache!.Remove(key);
             SaveTrustedCache();
-            CrashReporter.Log($"[DlssStreamlineService.ClearScanCaches] Invalidated {toRemove.Count} partial trusted entries for re-scan");
+            CrashReporter.Log($"[DlssStreamlineService.ClearScanCaches] Invalidated {toRemove.Count} partial/outdated trusted entries for re-scan");
         }
     }
 
@@ -476,6 +486,11 @@ public partial class DlssStreamlineService : IDlssStreamlineService
             if (File.Exists(entry.DlssgPath)) { result.DlssgPath = entry.DlssgPath; result.DlssgVersion = GetFileVersion(entry.DlssgPath); anyValid = true; }
             else { InvalidateTrustedPath(gameName); return null; }
         }
+        if (entry.DlssnrPath != null)
+        {
+            if (File.Exists(entry.DlssnrPath)) { result.DlssnrPath = entry.DlssnrPath; result.DlssnrVersion = GetFileVersion(entry.DlssnrPath); anyValid = true; }
+            else { InvalidateTrustedPath(gameName); return null; }
+        }
         if (entry.StreamlineFolder != null)
         {
             var interposerPath = Path.Combine(entry.StreamlineFolder, StreamlineIndicator);
@@ -499,6 +514,7 @@ public partial class DlssStreamlineService : IDlssStreamlineService
         result.OriginalDlssVersion = entry.OriginalDlssVersion;
         result.OriginalDlssdVersion = entry.OriginalDlssdVersion;
         result.OriginalDlssgVersion = entry.OriginalDlssgVersion;
+        result.OriginalDlssnrVersion = entry.OriginalDlssnrVersion;
         result.OriginalStreamlineVersion = entry.OriginalStreamlineVersion;
 
         // One-time backfill: if original versions aren't cached yet, read them now
@@ -524,6 +540,13 @@ public partial class DlssStreamlineService : IDlssStreamlineService
             entry.OriginalDlssgVersion = result.OriginalDlssgVersion;
             needsSave = true;
         }
+        if (result.DlssnrPath != null && entry.OriginalDlssnrVersion == null)
+        {
+            var backup = result.DlssnrPath + ".original";
+            result.OriginalDlssnrVersion = File.Exists(backup) ? GetFileVersion(backup) : result.DlssnrVersion;
+            entry.OriginalDlssnrVersion = result.OriginalDlssnrVersion;
+            needsSave = true;
+        }
         if (result.StreamlineInterposerPath != null && entry.OriginalStreamlineVersion == null)
         {
             var backup = result.StreamlineInterposerPath + ".original";
@@ -547,18 +570,23 @@ public partial class DlssStreamlineService : IDlssStreamlineService
             if (string.Equals(existing.DlssPath, detection.DlssPath, StringComparison.OrdinalIgnoreCase)
                 && string.Equals(existing.DlssdPath, detection.DlssdPath, StringComparison.OrdinalIgnoreCase)
                 && string.Equals(existing.DlssgPath, detection.DlssgPath, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(existing.DlssnrPath, detection.DlssnrPath, StringComparison.OrdinalIgnoreCase)
                 && string.Equals(existing.StreamlineFolder, detection.StreamlineFolder, StringComparison.OrdinalIgnoreCase))
                 existing.ConfirmCount++;
             else
             {
                 existing.DlssPath = detection.DlssPath; existing.DlssdPath = detection.DlssdPath;
-                existing.DlssgPath = detection.DlssgPath; existing.StreamlineFolder = detection.StreamlineFolder;
+                existing.DlssgPath = detection.DlssgPath; existing.DlssnrPath = detection.DlssnrPath;
+                existing.StreamlineFolder = detection.StreamlineFolder;
                 existing.ConfirmCount = 1;
             }
+            // Always keep CacheVersion current so future version bumps don't force unnecessary rescans
+            existing.CacheVersion = CurrentTrustedCacheVersion;
             // Update original versions (keep existing if already set, overwrite if detection has them)
             existing.OriginalDlssVersion ??= detection.OriginalDlssVersion;
             existing.OriginalDlssdVersion ??= detection.OriginalDlssdVersion;
             existing.OriginalDlssgVersion ??= detection.OriginalDlssgVersion;
+            existing.OriginalDlssnrVersion ??= detection.OriginalDlssnrVersion;
             existing.OriginalStreamlineVersion ??= detection.OriginalStreamlineVersion;
         }
         else
@@ -566,11 +594,14 @@ public partial class DlssStreamlineService : IDlssStreamlineService
             _trustedPathCache[gameName] = new TrustedPathEntry
             {
                 DlssPath = detection.DlssPath, DlssdPath = detection.DlssdPath,
-                DlssgPath = detection.DlssgPath, StreamlineFolder = detection.StreamlineFolder,
+                DlssgPath = detection.DlssgPath, DlssnrPath = detection.DlssnrPath,
+                StreamlineFolder = detection.StreamlineFolder,
                 ConfirmCount = 1,
+                CacheVersion = CurrentTrustedCacheVersion,
                 OriginalDlssVersion = detection.OriginalDlssVersion,
                 OriginalDlssdVersion = detection.OriginalDlssdVersion,
                 OriginalDlssgVersion = detection.OriginalDlssgVersion,
+                OriginalDlssnrVersion = detection.OriginalDlssnrVersion,
                 OriginalStreamlineVersion = detection.OriginalStreamlineVersion,
             };
         }
@@ -586,6 +617,7 @@ public partial class DlssStreamlineService : IDlssStreamlineService
         var dlssPath = entry.DlssPath?.Replace('/', '\\');
         var dlssdPath = entry.DlssdPath?.Replace('/', '\\');
         var dlssgPath = entry.DlssgPath?.Replace('/', '\\');
+        var dlssnrPath = entry.DlssnrPath?.Replace('/', '\\');
         var streamlineFolder = entry.StreamlineFolder?.Replace('/', '\\');
 
         if (dlssPath != null && !dlssPath.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase))
@@ -593,6 +625,8 @@ public partial class DlssStreamlineService : IDlssStreamlineService
         if (dlssdPath != null && !dlssdPath.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase))
             return false;
         if (dlssgPath != null && !dlssgPath.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase))
+            return false;
+        if (dlssnrPath != null && !dlssnrPath.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase))
             return false;
         if (streamlineFolder != null
             && !streamlineFolder.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase)
@@ -692,6 +726,24 @@ public partial class DlssStreamlineService : IDlssStreamlineService
         await DownloadAndCacheAsync(newest.Url, cachedDir, DlssgDllName).ConfigureAwait(false);
         return File.Exists(cachedDll) ? cachedDll : null;
     }
+
+    /// <summary>
+    /// Returns the cached path for the newest DLSS NR DLL, downloading if needed.
+    /// </summary>
+    public async Task<string?> EnsureNewestDlssnrCachedAsync()
+    {
+        var newest = _manifest?.Dlssnr?.FirstOrDefault();
+        if (newest == null) return null;
+
+        var cachedDir = Path.Combine(DlssnrCacheDir, newest.Version);
+        var cachedDll = Path.Combine(cachedDir, DlssnrDllName);
+
+        if (File.Exists(cachedDll))
+            return cachedDll;
+
+        await DownloadAndCacheAsync(newest.Url, cachedDir, DlssnrDllName).ConfigureAwait(false);
+        return File.Exists(cachedDll) ? cachedDll : null;
+    }
 }
 
 // ── Manifest data model ───────────────────────────────────────────────────────
@@ -701,6 +753,7 @@ public class DlssManifestData
     public List<DlssManifestEntry>? Dlss { get; set; }
     public List<DlssManifestEntry>? Dlssd { get; set; }
     public List<DlssManifestEntry>? Dlssg { get; set; }
+    public List<DlssManifestEntry>? Dlssnr { get; set; }
     public List<DlssManifestEntry>? Streamline { get; set; }
 
     /// <summary>Dev-only DLSS SR versions (only shown when unlock.txt is present).</summary>
@@ -709,6 +762,8 @@ public class DlssManifestData
     public List<DlssManifestEntry>? DlssdDev { get; set; }
     /// <summary>Dev-only DLSS FG versions (only shown when unlock.txt is present).</summary>
     public List<DlssManifestEntry>? DlssgDev { get; set; }
+    /// <summary>Dev-only DLSS NR versions (only shown when unlock.txt is present).</summary>
+    public List<DlssManifestEntry>? DlssnrDev { get; set; }
     /// <summary>Dev-only Streamline versions (only shown when unlock.txt is present).</summary>
     public List<DlssManifestEntry>? StreamlineDev { get; set; }
 }
@@ -724,12 +779,17 @@ public class TrustedPathEntry
     public string? DlssPath { get; set; }
     public string? DlssdPath { get; set; }
     public string? DlssgPath { get; set; }
+    public string? DlssnrPath { get; set; }
     public string? StreamlineFolder { get; set; }
     public int ConfirmCount { get; set; }
+
+    /// <summary>Schema version when this entry was written — used to force rescans when new DLL types are added.</summary>
+    public int CacheVersion { get; set; }
 
     // Cached original/default versions (from .original backup or initial detection)
     public string? OriginalDlssVersion { get; set; }
     public string? OriginalDlssdVersion { get; set; }
     public string? OriginalDlssgVersion { get; set; }
+    public string? OriginalDlssnrVersion { get; set; }
     public string? OriginalStreamlineVersion { get; set; }
 }

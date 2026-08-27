@@ -7,6 +7,7 @@
 ### Maintenance
 
 - Internal groundwork for RenoDX Nexus Mods integration.
+- Internal infrastructure improvements for upcoming features.
 
 ### Manifest Updates
 

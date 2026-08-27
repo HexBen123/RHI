@@ -46,6 +46,7 @@ public partial class DetailPanelBuilder
             dlssRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             dlssRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             dlssRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            // NR column (dev-only): 2 extra columns added below when DevUnlockService.IsUnlocked
 
             // SR column
             // Disable for DLSS 1.x (not compatible with 2.x+ versions in manifest)
@@ -159,6 +160,36 @@ public partial class DetailPanelBuilder
 
             dlssRowGrid.Children.Add(MakeDlssDivider(5));
 
+            // NR column — dev-only
+            bool hasDlssnr = card.HasDlssnr;
+            if (FeatureFlags.DlssNr)
+            {
+                // Expand the grid to 9 columns: SR, div, RR, div, FG, div, NR, div, SL
+                dlssRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                dlssRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+                bool nrDriverOverride = presetService.IsSupported && presetService.IsNrDriverOverrideActive(card.GameName, card.InstallPath ?? "");
+                var nrCol = BuildDlssColumn("Neural Rendering", hasDlssnr, dlssService.DlssnrVersions,
+                    card.DlssnrInstalledVersion, DlssPresetService.NrPresets,
+                    presetService.IsSupported && hasDlssnr ? presetService.GetNrPreset(card.GameName, card.InstallPath) : 0u,
+                    async (version) =>
+                    {
+                        var tc = _window.ViewModel.AllCards.FirstOrDefault(c => c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+                        if (tc?.DlssDetection?.DlssnrPath == null) return;
+                        if (version == "Default") dlssService.Restore(tc.DlssDetection.DlssnrPath);
+                        else await dlssService.SwapDlssnrAsync(tc.DlssDetection.DlssnrPath, version);
+                        tc.RefreshDlssVersions(dlssService);
+                        _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(tc));
+                    },
+                    (preset) => { presetService.SetNrPreset(card.GameName, card.InstallPath, preset); _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(card)); },
+                    originalVersion: card.DlssDetection?.OriginalDlssnrVersion,
+                    driverOverrideActive: nrDriverOverride);
+                Grid.SetColumn(nrCol, 6);
+                dlssRowGrid.Children.Add(nrCol);
+
+                dlssRowGrid.Children.Add(MakeDlssDivider(7));
+            }
+
             // SL column (no preset)
             // Disable for Streamline v1.x (not compatible with v2.x+ versions in manifest)
             bool slEnabled = hasStreamline && !(card.StreamlineInstalledVersion?.StartsWith("1.") == true);
@@ -185,11 +216,14 @@ public partial class DetailPanelBuilder
                 null,
                 originalVersion: card.DlssDetection?.OriginalStreamlineVersion);
 
+            int slColumn = FeatureFlags.DlssNr ? 8 : 6;
+
             // Add Restore All button into the SL column (fills the preset slot)
             // Enabled when any backup exists OR any preset is non-default
             bool hasNonDefaultPreset = (presetService.IsSupported && hasDlss && presetService.GetSrPreset(card.GameName, card.InstallPath) != 0)
                 || (presetService.IsSupported && hasDlssd && presetService.GetRrPreset(card.GameName, card.InstallPath) != 0)
                 || (presetService.IsSupported && hasDlssg && presetService.GetFgPreset(card.GameName, card.InstallPath) != 0)
+                || (FeatureFlags.DlssNr && presetService.IsSupported && card.HasDlssnr && presetService.GetNrPreset(card.GameName, card.InstallPath) != 0)
                 || (presetService.IsSupported && hasDlss && presetService.GetSrRenderScale(card.GameName, card.InstallPath) != 0)
                 || (presetService.IsSupported && hasDlssd && presetService.GetRrRenderScale(card.GameName, card.InstallPath) != 0)
                 || (presetService.IsSupported && hasDlssg && presetService.GetMfgMode(card.GameName, card.InstallPath) != 0);
@@ -217,6 +251,8 @@ public partial class DetailPanelBuilder
                     presetService.SetSrPreset(targetCard.GameName, targetCard.InstallPath, 0);
                     presetService.SetRrPreset(targetCard.GameName, targetCard.InstallPath, 0);
                     presetService.SetFgPreset(targetCard.GameName, targetCard.InstallPath, 0);
+                    if (FeatureFlags.DlssNr && targetCard.HasDlssnr)
+                        presetService.SetNrPreset(targetCard.GameName, targetCard.InstallPath, 0);
                     presetService.SetSrRenderScale(targetCard.GameName, targetCard.InstallPath, 0);
                     presetService.SetRrRenderScale(targetCard.GameName, targetCard.InstallPath, 0);
                     // Reset MFG settings
@@ -241,7 +277,8 @@ public partial class DetailPanelBuilder
                 || _window.ViewModel.Settings.DefaultRrPreset != 0
                 || _window.ViewModel.Settings.DefaultFgPreset != 0
                 || _window.ViewModel.Settings.DefaultSrRenderScale != 0
-                || _window.ViewModel.Settings.DefaultRrRenderScale != 0;
+                || _window.ViewModel.Settings.DefaultRrRenderScale != 0
+                || (FeatureFlags.DlssNr && (!string.IsNullOrEmpty(_window.ViewModel.Settings.DefaultDlssnrVersion) || _window.ViewModel.Settings.DefaultNrPreset != 0));
 
             var applyBtn = new Button
             {
@@ -292,6 +329,14 @@ public partial class DetailPanelBuilder
                 if (settings.DefaultFgPreset != 0 && targetCard.HasDlssg)
                     pSvc.SetFgPreset(targetCard.GameName, targetCard.InstallPath, settings.DefaultFgPreset);
 
+                if (FeatureFlags.DlssNr)
+                {
+                    if (!string.IsNullOrEmpty(settings.DefaultDlssnrVersion) && targetCard.HasDlssnr && targetCard.DlssDetection?.DlssnrPath != null)
+                        await svc.SwapDlssnrAsync(targetCard.DlssDetection.DlssnrPath, settings.DefaultDlssnrVersion);
+                    if (settings.DefaultNrPreset != 0 && targetCard.HasDlssnr)
+                        pSvc.SetNrPreset(targetCard.GameName, targetCard.InstallPath, settings.DefaultNrPreset);
+                }
+
                 if (settings.DefaultSrRenderScale != 0 && targetCard.HasDlss && !(targetCard.DlssInstalledVersion?.StartsWith("1.") == true))
                     pSvc.SetSrRenderScale(targetCard.GameName, targetCard.InstallPath, settings.DefaultSrRenderScale);
                 if (settings.DefaultRrRenderScale != 0 && targetCard.HasDlssd && !(targetCard.DlssdInstalledVersion?.StartsWith("1.") == true))
@@ -320,7 +365,7 @@ public partial class DetailPanelBuilder
             }
             ToolTipService.SetToolTip(dlssRestoreBtn, "Restore all DLSS and Streamline DLLs to their original game versions and reset presets to Default.");
 
-            Grid.SetColumn(slCol, 6);
+            Grid.SetColumn(slCol, slColumn);
             dlssRowGrid.Children.Add(slCol);
 
             _window.NvidiaProfilePanel.Children.Add(dlssRowGrid);

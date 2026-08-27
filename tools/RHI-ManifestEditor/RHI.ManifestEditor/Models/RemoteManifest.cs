@@ -163,10 +163,10 @@ public class RemoteManifest
     public Dictionary<string, string>? PcgwUrlOverrides { get; set; }
 
     [JsonPropertyName("pcgwUseAppId")]
-    public bool PcgwUseAppId { get; set; }
+    public bool? PcgwUseAppId { get; set; }
 
     [JsonPropertyName("pcgwUrlCacheVersion")]
-    public int PcgwUrlCacheVersion { get; set; }
+    public int? PcgwUrlCacheVersion { get; set; }
 
     [JsonPropertyName("uwFixUrlOverrides")]
     public Dictionary<string, string>? UwFixUrlOverrides { get; set; }
@@ -212,6 +212,9 @@ public class RemoteManifest
 
     [JsonPropertyName("renodxExtraSettings")]
     public List<RenodxExtraSetting>? RenodxExtraSettings { get; set; }
+
+    [JsonPropertyName("featureFlags")]
+    public ManifestFeatureFlags? FeatureFlags { get; set; }
 }
 
 public class SplitGameEntry
@@ -251,6 +254,9 @@ public class ManifestDlssPresets
 
     [JsonPropertyName("fg")]
     public List<ManifestPresetEntry>? Fg { get; set; }
+
+    [JsonPropertyName("nr")]
+    public List<ManifestPresetEntry>? Nr { get; set; }
 }
 
 public class ManifestPresetEntry
@@ -347,4 +353,16 @@ public class ManifestAddonPack
 
     [JsonPropertyName("disabled")]
     public bool? Disabled { get; set; }
+}
+
+public class ManifestFeatureFlags
+{
+    [JsonPropertyName("dlssNr")]
+    public bool? DlssNr { get; set; }
+
+    [JsonPropertyName("nexusMods")]
+    public bool? NexusMods { get; set; }
+
+    [JsonPropertyName("resolutionControl")]
+    public bool? ResolutionControl { get; set; }
 }

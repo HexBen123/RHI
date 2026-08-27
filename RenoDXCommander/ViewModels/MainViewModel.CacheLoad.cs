@@ -322,6 +322,7 @@ public partial class MainViewModel
                     DlssPath = c.DlssDetection.DlssPath,
                     DlssdPath = c.DlssDetection.DlssdPath,
                     DlssgPath = c.DlssDetection.DlssgPath,
+                    DlssnrPath = c.DlssDetection.DlssnrPath,
                     StreamlineFolder = c.DlssDetection.StreamlineFolder,
                     StreamlineFiles = c.DlssDetection.StreamlineFiles.Count > 0 ? c.DlssDetection.StreamlineFiles : null,
                 };
@@ -730,6 +731,7 @@ public partial class MainViewModel
                     DlssPath = dlssCache.DlssPath,
                     DlssdPath = dlssCache.DlssdPath,
                     DlssgPath = dlssCache.DlssgPath,
+                    DlssnrPath = dlssCache.DlssnrPath,
                     StreamlineFolder = dlssCache.StreamlineFolder,
                     StreamlineFiles = dlssCache.StreamlineFiles ?? new(),
                 };
@@ -749,6 +751,8 @@ public partial class MainViewModel
                     detection.DlssdVersion = _dlssStreamlineService.GetFileVersion(detection.DlssdPath);
                 if (detection.DlssgPath != null && File.Exists(detection.DlssgPath))
                     detection.DlssgVersion = _dlssStreamlineService.GetFileVersion(detection.DlssgPath);
+                if (detection.DlssnrPath != null && File.Exists(detection.DlssnrPath))
+                    detection.DlssnrVersion = _dlssStreamlineService.GetFileVersion(detection.DlssnrPath);
                 if (detection.StreamlineInterposerPath != null && File.Exists(detection.StreamlineInterposerPath))
                     detection.StreamlineVersion = _dlssStreamlineService.GetFileVersion(detection.StreamlineInterposerPath);
 

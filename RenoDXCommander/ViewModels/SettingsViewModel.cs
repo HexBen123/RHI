@@ -94,10 +94,12 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string _defaultDlssVersion = "";
     [ObservableProperty] private string _defaultDlssdVersion = "";
     [ObservableProperty] private string _defaultDlssgVersion = "";
+    [ObservableProperty] private string _defaultDlssnrVersion = "";
     [ObservableProperty] private string _defaultStreamlineVersion = "";
     [ObservableProperty] private uint _defaultSrPreset = 0;
     [ObservableProperty] private uint _defaultRrPreset = 0;
     [ObservableProperty] private uint _defaultFgPreset = 0;
+    [ObservableProperty] private uint _defaultNrPreset = 0;
     [ObservableProperty] private uint _defaultSrRenderScale = 0;
     [ObservableProperty] private uint _defaultRrRenderScale = 0;
 
@@ -316,10 +318,12 @@ public partial class SettingsViewModel : ObservableObject
         if (s.TryGetValue("DefaultDlssVersion", out var ddv)) DefaultDlssVersion = ddv ?? "";
         if (s.TryGetValue("DefaultDlssdVersion", out var ddrv)) DefaultDlssdVersion = ddrv ?? "";
         if (s.TryGetValue("DefaultDlssgVersion", out var ddgv)) DefaultDlssgVersion = ddgv ?? "";
+        if (s.TryGetValue("DefaultDlssnrVersion", out var ddnrv)) DefaultDlssnrVersion = ddnrv ?? "";
         if (s.TryGetValue("DefaultStreamlineVersion", out var dsv)) DefaultStreamlineVersion = dsv ?? "";
         if (s.TryGetValue("DefaultSrPreset", out var dsp) && uint.TryParse(dsp, out var dspVal)) DefaultSrPreset = dspVal;
         if (s.TryGetValue("DefaultRrPreset", out var drp) && uint.TryParse(drp, out var drpVal)) DefaultRrPreset = drpVal;
         if (s.TryGetValue("DefaultFgPreset", out var dfp) && uint.TryParse(dfp, out var dfpVal)) DefaultFgPreset = dfpVal;
+        if (s.TryGetValue("DefaultNrPreset", out var dnrp) && uint.TryParse(dnrp, out var dnrpVal)) DefaultNrPreset = dnrpVal;
         if (s.TryGetValue("DefaultSrRenderScale", out var dsr) && uint.TryParse(dsr, out var dsrVal)) DefaultSrRenderScale = dsrVal;
         if (s.TryGetValue("DefaultRrRenderScale", out var drr) && uint.TryParse(drr, out var drrVal)) DefaultRrRenderScale = drrVal;
 
@@ -409,10 +413,12 @@ public partial class SettingsViewModel : ObservableObject
         if (!string.IsNullOrEmpty(DefaultDlssVersion)) s["DefaultDlssVersion"] = DefaultDlssVersion;
         if (!string.IsNullOrEmpty(DefaultDlssdVersion)) s["DefaultDlssdVersion"] = DefaultDlssdVersion;
         if (!string.IsNullOrEmpty(DefaultDlssgVersion)) s["DefaultDlssgVersion"] = DefaultDlssgVersion;
+        if (!string.IsNullOrEmpty(DefaultDlssnrVersion)) s["DefaultDlssnrVersion"] = DefaultDlssnrVersion;
         if (!string.IsNullOrEmpty(DefaultStreamlineVersion)) s["DefaultStreamlineVersion"] = DefaultStreamlineVersion;
         if (DefaultSrPreset != 0) s["DefaultSrPreset"] = DefaultSrPreset.ToString();
         if (DefaultRrPreset != 0) s["DefaultRrPreset"] = DefaultRrPreset.ToString();
         if (DefaultFgPreset != 0) s["DefaultFgPreset"] = DefaultFgPreset.ToString();
+        if (DefaultNrPreset != 0) s["DefaultNrPreset"] = DefaultNrPreset.ToString();
         if (DefaultSrRenderScale != 0) s["DefaultSrRenderScale"] = DefaultSrRenderScale.ToString();
         else s.Remove("DefaultSrRenderScale");
         if (DefaultRrRenderScale != 0) s["DefaultRrRenderScale"] = DefaultRrRenderScale.ToString();
