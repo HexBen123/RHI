@@ -1322,5 +1322,23 @@
         }
       ]
     }
-  ]
+  ],
+  "dlssPresetsDev": {
+    "sr": [
+      {
+        "name": "N - (Dev)",
+        "value": 14
+      },
+      {
+        "name": "O - (Dev)",
+        "value": 15
+      }
+    ],
+    "rr": [
+      {
+        "name": "G - (Dev)",
+        "value": 7
+      }
+    ]
+  }
 }
