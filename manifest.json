@@ -1362,24 +1362,6 @@
         "name": "G - (Dev)",
         "value": 7
       }
-    ],
-    "nr": [
-      {
-        "name": "A - (Dev)",
-        "value": 1
-      },
-      {
-        "name": "B - (Dev)",
-        "value": 2
-      },
-      {
-        "name": "C - (Dev)",
-        "value": 3
-      },
-      {
-        "name": "D - (Dev)",
-        "value": 4
-      }
     ]
   }
 }

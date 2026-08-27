@@ -54,6 +54,13 @@ public class ManifestFileService
             output["_doc"] = docNode?.DeepClone();
 
         // Walk originalRaw key order — insert _comment_* inline, pull typed values from modelNode
+        // Keys in this set are fully managed by the typed model — model output wins entirely,
+        // no merging with raw (prevents raw-JSON preservation from overriding intentional deletions).
+        var modelAuthoritativeKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "dlssPresets", "dlssPresetsDev", "featureFlags"
+        };
+
         foreach (var kv in originalRaw)
         {
             var key = kv.Key;
@@ -65,9 +72,10 @@ public class ManifestFileService
             }
             else if (modelNode.TryGetPropertyValue(key, out var modelVal))
             {
-                // For object-typed values, merge modelNode with originalRaw to preserve
-                // any nested keys the typed model doesn't capture (e.g. nr in dlssPresets).
-                if (modelVal is JsonObject modelObj && kv.Value is JsonObject rawObj)
+                // For fully-managed keys, use the model output directly.
+                // For other object-typed values, merge modelNode with originalRaw to preserve
+                // any nested keys the typed model doesn't capture.
+                if (!modelAuthoritativeKeys.Contains(key) && modelVal is JsonObject modelObj && kv.Value is JsonObject rawObj)
                 {
                     var merged = rawObj.DeepClone()!.AsObject();
                     foreach (var mkv in modelObj)
