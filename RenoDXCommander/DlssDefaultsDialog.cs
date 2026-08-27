@@ -177,6 +177,7 @@ public static class DlssDefaultsDialog
     {
         var items = new List<string> { "Default" };
         items.AddRange(versions);
+        items.Add("Custom");
 
         int selectedIdx = 0;
         if (!string.IsNullOrEmpty(currentDefault))

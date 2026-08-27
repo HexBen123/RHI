@@ -311,16 +311,36 @@ public partial class DetailPanelBuilder
 
                 if (!string.IsNullOrEmpty(settings.DefaultDlssVersion) && targetCard.HasDlss && targetCard.DlssDetection.DlssPath != null
                     && !(targetCard.DlssInstalledVersion?.StartsWith("1.") == true) && !srOverride)
-                    await svc.SwapDlssAsync(targetCard.DlssDetection.DlssPath, settings.DefaultDlssVersion);
+                {
+                    if (settings.DefaultDlssVersion.Equals("Custom", StringComparison.OrdinalIgnoreCase))
+                        await svc.SwapDlssCustomAsync(targetCard.DlssDetection.DlssPath);
+                    else
+                        await svc.SwapDlssAsync(targetCard.DlssDetection.DlssPath, settings.DefaultDlssVersion);
+                }
                 if (!string.IsNullOrEmpty(settings.DefaultDlssdVersion) && targetCard.HasDlssd && targetCard.DlssDetection.DlssdPath != null
                     && !(targetCard.DlssdInstalledVersion?.StartsWith("1.") == true) && !rrOverride)
-                    await svc.SwapDlssdAsync(targetCard.DlssDetection.DlssdPath, settings.DefaultDlssdVersion);
+                {
+                    if (settings.DefaultDlssdVersion.Equals("Custom", StringComparison.OrdinalIgnoreCase))
+                        await svc.SwapDlssCustomAsync(targetCard.DlssDetection.DlssdPath);
+                    else
+                        await svc.SwapDlssdAsync(targetCard.DlssDetection.DlssdPath, settings.DefaultDlssdVersion);
+                }
                 if (!string.IsNullOrEmpty(settings.DefaultDlssgVersion) && targetCard.HasDlssg && targetCard.DlssDetection.DlssgPath != null
                     && !fgOverride)
-                    await svc.SwapDlssgAsync(targetCard.DlssDetection.DlssgPath, settings.DefaultDlssgVersion);
+                {
+                    if (settings.DefaultDlssgVersion.Equals("Custom", StringComparison.OrdinalIgnoreCase))
+                        await svc.SwapDlssCustomAsync(targetCard.DlssDetection.DlssgPath);
+                    else
+                        await svc.SwapDlssgAsync(targetCard.DlssDetection.DlssgPath, settings.DefaultDlssgVersion);
+                }
                 if (!string.IsNullOrEmpty(settings.DefaultStreamlineVersion) && targetCard.HasStreamline && targetCard.DlssDetection.StreamlineFolder != null
                     && !(targetCard.StreamlineInstalledVersion?.StartsWith("1.") == true))
-                    await svc.SwapStreamlineAsync(targetCard.DlssDetection.StreamlineFolder, settings.DefaultStreamlineVersion);
+                {
+                    if (settings.DefaultStreamlineVersion.Equals("Custom", StringComparison.OrdinalIgnoreCase))
+                        await svc.SwapStreamlineCustomAsync(targetCard.DlssDetection.StreamlineFolder);
+                    else
+                        await svc.SwapStreamlineAsync(targetCard.DlssDetection.StreamlineFolder, settings.DefaultStreamlineVersion);
+                }
 
                 if (settings.DefaultSrPreset != 0 && targetCard.HasDlss && !(targetCard.DlssInstalledVersion?.StartsWith("1.") == true))
                     pSvc.SetSrPreset(targetCard.GameName, targetCard.InstallPath, settings.DefaultSrPreset);

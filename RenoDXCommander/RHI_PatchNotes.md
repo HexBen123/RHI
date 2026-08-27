@@ -1,5 +1,9 @@
 ## v2.4.3
 
+### Changes
+
+- "Custom" is now available as a version option in the DLSS & Streamline Defaults dialog, matching the per-game panel.
+
 ### Bug Fixes
 
 - Fixed OptiScaler uninstall deleting AMD FidelityFX DLLs and other companion files that the game shipped. RHI now backs up any existing file before overwriting it on install, and restores it on uninstall.
@@ -12,6 +16,7 @@
 ### Manifest Updates
 
 - Added reeShaders by LVutner to the shader pack library — lightweight sharpening (TinySharpen), clarity, and chromatic aberration shaders.
+- Fixed Metal Gear Solid 4 and Peace Walker (Master Collection) not detecting the game folder correctly.
 
 ---
 
