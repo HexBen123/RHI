@@ -1,9 +1,9 @@
 {
   "version": 2,
   "featureFlags": {
-    "dlssNr": true,
+    "dlssNr": false,
     "nexusMods": true,
-    "resolutionControl": false
+    "resolutionControl": true
   },
   "_doc": "Full field reference: docs/manifest-field-reference.md",
   "_comment_game_detection": "=== GAME DETECTION ===\nGames to hide from RHI entirely, split into sub-cards, or redirect to a different install subfolder.\nName mappings tell RHI which wiki/Luma mod name to look up for a given detected folder name.",
