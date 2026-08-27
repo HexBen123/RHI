@@ -1,8 +1,8 @@
 {
   "version": 2,
   "featureFlags": {
-    "dlssNr": false,
-    "nexusMods": false,
+    "dlssNr": true,
+    "nexusMods": true,
     "resolutionControl": false
   },
   "_doc": "Full field reference: docs/manifest-field-reference.md",
