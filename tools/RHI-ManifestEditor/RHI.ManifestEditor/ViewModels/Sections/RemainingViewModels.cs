@@ -207,14 +207,12 @@ public partial class NvidiaSectionViewModel : SectionViewModelBase
             ? new ManifestDlssPresets { Sr = srDev.Count > 0 ? srDev : null, Rr = rrDev.Count > 0 ? rrDev : null, Fg = fgDev.Count > 0 ? fgDev : null, Nr = nrDev.Count > 0 ? nrDev : null }
             : null;
 
-        _manifest.FeatureFlags = (FeatureFlagDlssNr || FeatureFlagNexusMods || FeatureFlagResolutionControl)
-            ? new ManifestFeatureFlags
-            {
-                DlssNr = FeatureFlagDlssNr ? true : null,
-                NexusMods = FeatureFlagNexusMods ? true : null,
-                ResolutionControl = FeatureFlagResolutionControl ? true : null
-            }
-            : null;
+        _manifest.FeatureFlags = new ManifestFeatureFlags
+        {
+            DlssNr = FeatureFlagDlssNr,
+            NexusMods = FeatureFlagNexusMods,
+            ResolutionControl = FeatureFlagResolutionControl
+        };
     }
 }
 
