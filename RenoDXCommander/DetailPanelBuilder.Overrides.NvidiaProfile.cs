@@ -185,16 +185,16 @@ public partial class DetailPanelBuilder
                     originalVersion: card.DlssDetection?.OriginalDlssnrVersion,
                     driverOverrideActive: nrDriverOverride);
 
-                // Fixed-height spacer so Deploy DLL stays at the bottom of the column
-                // regardless of whether the Preset row is showing (only present when hasDlssnr=true)
-                nrCol.Children.Add(new TextBlock
+                // Spacer before deploy row — matches the spacing FG uses before Multi Frame Gen
+                // Always add a preset placeholder so Deploy DLL aligns with Multi Frame Gen.
+                // When NR is not installed the placeholder is invisible but still takes space.
+                if (!hasDlssnr)
                 {
-                    Text = " ",
-                    FontSize = 10,
-                    Margin = new Thickness(0, 2, 0, 0),
-                    Opacity = 0, // invisible — just reserves space matching the Preset label+combo height
-                    Height = hasDlssnr ? 0 : 58, // 58px ≈ Preset label (16) + combo (32) + spacing (10)
-                });
+                    var presetPlaceholderLabel = new TextBlock { Text = "Preset", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0), Opacity = 0 };
+                    var presetPlaceholderCombo = new ComboBox { ItemsSource = new[] { "Default" }, SelectedIndex = 0, FontSize = 11, HorizontalAlignment = HorizontalAlignment.Stretch, IsEnabled = false, Opacity = 0 };
+                    nrCol.Children.Add(presetPlaceholderLabel);
+                    nrCol.Children.Add(presetPlaceholderCombo);
+                }
                 nrCol.Children.Add(new TextBlock { Text = " ", FontSize = 10, Margin = new Thickness(0, 2, 0, 0) });
                 var deployRow = new Grid { ColumnSpacing = 6 };
                 deployRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });

@@ -347,6 +347,34 @@ public partial class MainViewModel
 
                 // Re-scroll to selected game after merge (cards may have shifted)
                 ScrollToSelectedGame?.Invoke();
+
+                // Force a detail panel rebuild on the currently selected card so the UI
+                // reflects the fresh manifest data (presets, notes, NR column, etc.)
+                // that wasn't available during Phase 1 cache load.
+                // Delay slightly beyond the 150ms SelectionChanged debounce timer so our
+                // rebuild runs last and doesn't get overwritten by TryRestoreSelection.
+                if (!string.IsNullOrEmpty(LastSelectedGameName))
+                {
+                    var parsed = GameKey.Parse(LastSelectedGameName);
+                    var selectedCard = _allCards.FirstOrDefault(c =>
+                        c.GameName.Equals(parsed.Name, StringComparison.OrdinalIgnoreCase)
+                        && (string.IsNullOrEmpty(parsed.Store) || c.Source == parsed.Store));
+                    if (selectedCard != null)
+                    {
+                        var cardToRebuild = selectedCard;
+                        _ = Task.Delay(300).ContinueWith(_ =>
+                            DispatcherQueue?.TryEnqueue(() =>
+                            {
+                                _crashReporter.Log($"[BackgroundScan] Rebuilding panel for selected card '{cardToRebuild.GameName}'");
+                                cardToRebuild.NotifyAll();
+                                RequestCardRebuild?.Invoke(cardToRebuild);
+                            }));
+                    }
+                    else
+                    {
+                        _crashReporter.Log($"[BackgroundScan] Could not find selected card for '{LastSelectedGameName}' — skipping panel rebuild");
+                    }
+                }
             });
 
             // ── Deferred background work: ReShade staging + OptiScaler staging + shader sync ──

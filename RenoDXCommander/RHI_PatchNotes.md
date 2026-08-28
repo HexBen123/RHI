@@ -1,7 +1,5 @@
 ## v2.4.3
 
-## v2.4.3
-
 ### New
 
 - **DLSS Neural Rendering** — deploy `nvngx_dlssnr.dll` to any game from the Neural Rendering column, swap versions and set presets. Obtain `renodx-dlss5.addon64` from the RenoDX Discord, drop in `%LocalAppData%\RHI\Custom\Addons\`, and select from the addon picker to activate in-game.
@@ -12,6 +10,7 @@
 
 ### Bug Fixes
 
+- Fixed the selected game's detail panel not updating after the background manifest fetch completes on launch. Manifest-driven content (presets, NR column, notes etc.) is now always current after startup.
 - Fixed OptiScaler uninstall deleting AMD FidelityFX DLLs and other companion files that the game shipped. RHI now backs up any existing file before overwriting it on install, and restores it on uninstall.
 - Fixed Streamline version showing an older number when a release bundles a lower-versioned `sl.interposer.dll` alongside newer DLLs (e.g. 2.12.129 shipping with a 2.12.128 interposer). RHI now picks the highest-versioned DLL in the folder as the display version.
 - Fixed Battle.net launcher entries (Battle.net.12345 etc.) appearing in the game library. These are now blocked by prefix so no individual blacklist entries are needed.

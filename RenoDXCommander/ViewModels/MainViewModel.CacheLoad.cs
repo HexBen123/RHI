@@ -419,6 +419,7 @@ public partial class MainViewModel
 
         // Apply manifest DLSS preset overrides from cache so dropdowns are correct during Phase 1
         DlssPresetService.ApplyManifestPresets(cachedManifest);
+        FeatureFlags.ApplyManifest(cachedManifest?.FeatureFlags);
 
         // 8. Load installed records and aux records from disk (fast local reads)
         var records    = _installer.LoadAll();
