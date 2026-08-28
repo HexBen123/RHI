@@ -1188,6 +1188,19 @@ public partial class MainViewModel
             {
                 _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] DLSS Enabler check failed — {ex.Message}");
             }
+
+            // Check RenoDX DLSS5 addon update and auto-deploy if newer version available
+            try
+            {
+                var rdx5Service = App.Services.GetRequiredService<Renodx5AddonService>();
+                bool rdx5HasUpdate = await rdx5Service.CheckForUpdateAsync().ConfigureAwait(false);
+                if (rdx5HasUpdate)
+                    await rdx5Service.EnsureStagingAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] RenoDX DLSS5 addon check failed — {ex.Message}");
+            }
         }
         catch (Exception ex)
         {

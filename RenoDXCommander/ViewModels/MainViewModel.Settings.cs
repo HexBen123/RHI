@@ -1,5 +1,6 @@
 ﻿// MainViewModel.Settings.cs -- Settings persistence, name mappings, overrides, and per-game configuration.
 
+using Microsoft.Extensions.DependencyInjection;
 using System.Text.Json;
 using RenoDXCommander.Models;
 using RenoDXCommander.Services;
@@ -698,6 +699,25 @@ public partial class MainViewModel
 
                 _addonPackService.DeployAddonsForGame(gameName, card.InstallPath, is32Bit,
                     useGlobalSet, selection);
+
+                // If renodx-dlss5 is in the active selection, ensure nvngx_dlssnr.dll is also present
+                var effectiveSelection = useGlobalSet ? selection : selection;
+                bool rdx5Active = effectiveSelection?.Contains("RenoDX DLSS5", StringComparer.OrdinalIgnoreCase) == true;
+                if (rdx5Active && !File.Exists(Path.Combine(card.InstallPath, "nvngx_dlssnr.dll")))
+                {
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            var rdx5Svc = App.Services.GetRequiredService<Renodx5AddonService>();
+                            await rdx5Svc.DeployNrDllIfAbsentAsync(card.InstallPath).ConfigureAwait(false);
+                        }
+                        catch (Exception nrEx)
+                        {
+                            _crashReporter.Log($"[MainViewModel.DeployAddonsForCard] NR DLL deploy failed for '{gameName}' — {nrEx.Message}");
+                        }
+                    });
+                }
 
                 // Apply/remove DLSS Fix INI settings based on whether DLSS Fix is now deployed
                 ApplyOrRemoveDlssFixIni(card, selection, useGlobalSet);

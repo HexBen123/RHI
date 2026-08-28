@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.Extensions.DependencyInjection;
 using RenoDXCommander.Models;
 using SharpCompress.Archives;
 
@@ -46,6 +47,18 @@ public class AddonPackService : IAddonPackService
         DownloadUrl64: "https://github.com/clshortfuse/renodx/releases/download/snapshot/renodx-devkit.addon64",
         RepositoryUrl: "https://github.com/clshortfuse/renodx",
         EffectInstallPath: null);
+
+    // RenoDX DLSS5 addon — enables Neural Rendering support in RenoDX mods
+    private static readonly AddonEntry Renodx5Entry = new(
+        SectionId: "renodx-dlss5",
+        PackageName: "RenoDX DLSS5",
+        PackageDescription: "Enables DLSS Neural Rendering in any DLSS-compatible game. For 50 Series GPUs only. RHI automatically deploys nvngx_dlssnr.dll to the game folder alongside this addon.",
+        DownloadUrl: null,
+        DownloadUrl32: null,
+        DownloadUrl64: null,
+        RepositoryUrl: "https://github.com/clshortfuse/renodx",
+        EffectInstallPath: null,
+        DeployFileName: "renodx-dlss5");
 
     // DLSS Fix addon — fixes DLSS frame generation locking to 2× in Unreal Engine games
     private static readonly AddonEntry DlssFixEntry = new(
@@ -95,6 +108,13 @@ public class AddonPackService : IAddonPackService
     /// <inheritdoc />
     public bool IsDownloaded(string packageName)
     {
+        // RenoDX DLSS5 is staged by Renodx5AddonService — check its staging dir directly
+        if (packageName.Equals("RenoDX DLSS5", StringComparison.OrdinalIgnoreCase))
+        {
+            var rdx5Service = App.Services.GetRequiredService<Renodx5AddonService>();
+            return rdx5Service.IsStagingReady;
+        }
+
         if (!Directory.Exists(StagingDir))
             return false;
 
@@ -181,6 +201,12 @@ public class AddonPackService : IAddonPackService
 
         parsed ??= new List<AddonEntry>();
 
+        // Insert RenoDX DLSS5 entry at top (above Addons.ini entries including RenoDX Upgrade)
+        // Download URL is null here — the file is managed by Renodx5AddonService from staging.
+        // The addon picker deploys from %LocalAppData%\RHI\rdx5\ via the service, not via URL.
+        if (!parsed.Any(e => e.SectionId.Equals(Renodx5Entry.SectionId, StringComparison.OrdinalIgnoreCase)))
+            parsed.Insert(0, Renodx5Entry);
+
         // Append RenoDX DevKit entry (always present)
         if (!parsed.Any(e => e.PackageName.Equals(RenoDxDevKitEntry.PackageName, StringComparison.OrdinalIgnoreCase)))
             parsed.Add(RenoDxDevKitEntry);
@@ -258,6 +284,16 @@ public class AddonPackService : IAddonPackService
         }
 
         _packs = merged;
+
+        // Always keep renodx-dlss5 at the top of the list regardless of manifest insertion order
+        var rdx5Idx = _packs.FindIndex(p => p.SectionId.Equals("renodx-dlss5", StringComparison.OrdinalIgnoreCase));
+        if (rdx5Idx > 0)
+        {
+            var rdx5Entry = _packs[rdx5Idx];
+            _packs.RemoveAt(rdx5Idx);
+            _packs.Insert(0, rdx5Entry);
+        }
+
         CrashReporter.Log($"[AddonPackService.ApplyManifestOverrides] Applied {manifest.AddonPacks.Count} override(s), {_packs.Count} addons active.");
     }
 
@@ -270,6 +306,29 @@ public class AddonPackService : IAddonPackService
         {
             Directory.CreateDirectory(StagingDir);
             var safeName = SanitizeFileName(entry.PackageName);
+
+            // RenoDX DLSS5 is managed by Renodx5AddonService — route to that service and mirror
+            // the staged file into the standard addon staging dir so DeployAddonsForGame finds it.
+            if (entry.SectionId.Equals("renodx-dlss5", StringComparison.OrdinalIgnoreCase))
+            {
+                progress?.Report(("Downloading RenoDX DLSS5 addon...", 10));
+                var rdx5Service = App.Services.GetRequiredService<Renodx5AddonService>();
+                await rdx5Service.EnsureStagingAsync(progress).ConfigureAwait(false);
+                if (rdx5Service.IsStagingReady)
+                {
+                    var rdx5StagedPath = rdx5Service.StagedFilePath;
+                    var destInAddons  = Path.Combine(StagingDir, safeName + ".addon64");
+                    File.Copy(rdx5StagedPath, destInAddons, overwrite: true);
+                    SaveAddonVersion(entry.PackageName, rdx5Service.StagedVersion ?? "unknown", safeName);
+                    CrashReporter.Log($"[AddonPackService.DownloadAddonAsync] RenoDX DLSS5 mirrored to addon staging ({new FileInfo(destInAddons).Length} bytes)");
+                }
+                else
+                {
+                    CrashReporter.Log("[AddonPackService.DownloadAddonAsync] RenoDX DLSS5 staging not ready after EnsureStaging");
+                    progress?.Report(("RenoDX DLSS5 download failed", 0));
+                }
+                return;
+            }
 
             // Collect URLs to download
             var downloads = new List<(string url, string extension)>();

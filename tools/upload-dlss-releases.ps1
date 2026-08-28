@@ -42,6 +42,11 @@ foreach ($file in $files) {
         $tag = "DLSS-Enabler-$version"
         $title = "DLSS-Enabler-$version"
     }
+    elseif ($name -match "^renodx-dlss5_(.+)$") {
+        $version = $Matches[1]
+        $tag = "renodx-dlss5-$version"
+        $title = "RenoDX DLSS5 $version"
+    }
     else {
         Write-Host "SKIP: Unknown filename pattern: $($file.Name)" -ForegroundColor Yellow
         continue
