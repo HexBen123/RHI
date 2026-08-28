@@ -1,8 +1,8 @@
 ## v2.4.3
 
-### New
+## v2.4.3
 
-- **DLSS Neural Rendering** — deploy `nvngx_dlssnr.dll` to any game directly from the Neural Rendering column in the per-game Nvidia Profile section, then swap versions and set presets. To enable it in-game, obtain `renodx-dlss5.addon64` from the RenoDX Discord server, drop it in `%LocalAppData%\RHI\Custom\Addons\`, and select it from the addon picker for the game.
+### New — deploy `nvngx_dlssnr.dll` to any game directly from the Neural Rendering column in the per-game Nvidia Profile section, then swap versions and set presets. To enable it in-game, obtain `renodx-dlss5.addon64` from the RenoDX Discord server, drop it in `%LocalAppData%\RHI\Custom\Addons\`, and select it from the addon picker for the game.
 
 ### Changes
 
