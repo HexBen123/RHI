@@ -184,6 +184,131 @@ public partial class DetailPanelBuilder
                     (preset) => { presetService.SetNrPreset(card.GameName, card.InstallPath, preset); _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(card)); },
                     originalVersion: card.DlssDetection?.OriginalDlssnrVersion,
                     driverOverrideActive: nrDriverOverride);
+
+                // Fixed-height spacer so Deploy DLL stays at the bottom of the column
+                // regardless of whether the Preset row is showing (only present when hasDlssnr=true)
+                nrCol.Children.Add(new TextBlock
+                {
+                    Text = " ",
+                    FontSize = 10,
+                    Margin = new Thickness(0, 2, 0, 0),
+                    Opacity = 0, // invisible — just reserves space matching the Preset label+combo height
+                    Height = hasDlssnr ? 0 : 58, // 58px ≈ Preset label (16) + combo (32) + spacing (10)
+                });
+                nrCol.Children.Add(new TextBlock { Text = " ", FontSize = 10, Margin = new Thickness(0, 2, 0, 0) });
+                var deployRow = new Grid { ColumnSpacing = 6 };
+                deployRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                deployRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+                var deployNrBtn = new Button
+                {
+                    Content = "Deploy DLL",
+                    FontSize = 11,
+                    Height = 32,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    Background = UIFactory.Brush(ResourceKeys.AccentBlueBgBrush),
+                    Foreground = UIFactory.Brush(ResourceKeys.AccentBlueBrush),
+                    BorderBrush = UIFactory.Brush(ResourceKeys.AccentBlueBorderBrush),
+                    BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(8),
+                };
+                ToolTipService.SetToolTip(deployNrBtn, "Download and copy nvngx_dlssnr.dll to the game folder. Place renodx-dlss5.addon64 next to the exe separately to enable Neural Rendering.");
+
+                var deleteNrBtn = new Button
+                {
+                    Width = 36,
+                    Height = 32,
+                    Padding = new Thickness(0),
+                    Background = UIFactory.Brush(ResourceKeys.AccentRedBgBrush),
+                    Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush),
+                    BorderBrush = UIFactory.Brush(ResourceKeys.AccentPurpleBorderBrush),
+                    BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(8),
+                    IsEnabled = hasDlssnr,
+                    Opacity = hasDlssnr ? 1.0 : 0.0,
+                    IsHitTestVisible = hasDlssnr,
+                    Content = new TextBlock { Text = "✕", FontSize = 12, HorizontalAlignment = HorizontalAlignment.Center, Foreground = UIFactory.Brush(ResourceKeys.AccentRedBrush) },
+                };
+                ToolTipService.SetToolTip(deleteNrBtn, "Delete nvngx_dlssnr.dll from the game folder.");
+
+                deployNrBtn.Click += async (s, ev) =>
+                {
+                    var tc = _window.ViewModel.AllCards.FirstOrDefault(c => c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+                    if (tc == null || string.IsNullOrEmpty(tc.InstallPath)) return;
+
+                    deployNrBtn.IsEnabled = false;
+                    deployNrBtn.Content = "Downloading...";
+
+                    try
+                    {
+                        var cachedPath = await dlssService.EnsureNewestDlssnrCachedAsync().ConfigureAwait(false);
+                        if (cachedPath == null)
+                        {
+                            _window.DispatcherQueue?.TryEnqueue(() => { deployNrBtn.Content = "Not available"; deployNrBtn.IsEnabled = true; });
+                            return;
+                        }
+
+                        var destPath = Path.Combine(tc.InstallPath, "nvngx_dlssnr.dll");
+                        File.Copy(cachedPath, destPath, overwrite: true);
+                        CrashReporter.Log($"[NrDeployBtn] Deployed nvngx_dlssnr.dll to '{tc.InstallPath}'");
+
+                        var detection = dlssService.Detect(tc.InstallPath);
+                        _window.DispatcherQueue?.TryEnqueue(() =>
+                        {
+                            tc.DlssDetection = detection;
+                            tc.ApplyDlssDetection(detection);
+                            tc.RefreshDlssVersions(dlssService);
+                            BuildOverridesPanel(tc);
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        CrashReporter.Log($"[NrDeployBtn] Failed — {ex.Message}");
+                        _window.DispatcherQueue?.TryEnqueue(() => { deployNrBtn.Content = "Deploy DLL"; deployNrBtn.IsEnabled = true; });
+                    }
+                };
+
+                deleteNrBtn.Click += (s, ev) =>
+                {
+                    var tc = _window.ViewModel.AllCards.FirstOrDefault(c => c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
+                    if (tc == null || tc.DlssDetection?.DlssnrPath == null) return;
+                    try
+                    {
+                        dlssService.Restore(tc.DlssDetection.DlssnrPath);
+                        File.Delete(tc.DlssDetection.DlssnrPath);
+                        CrashReporter.Log($"[NrDeleteBtn] Deleted nvngx_dlssnr.dll from '{tc.InstallPath}'");
+                        var detection = dlssService.Detect(tc.InstallPath);
+                        _window.DispatcherQueue?.TryEnqueue(() =>
+                        {
+                            tc.DlssDetection = detection;
+                            tc.ApplyDlssDetection(detection);
+                            tc.RefreshDlssVersions(dlssService);
+                            BuildOverridesPanel(tc);
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        CrashReporter.Log($"[NrDeleteBtn] Failed — {ex.Message}");
+                    }
+                };
+
+                Grid.SetColumn(deployNrBtn, 0);
+                Grid.SetColumn(deleteNrBtn, 1);
+                deployRow.Children.Add(deployNrBtn);
+                deployRow.Children.Add(deleteNrBtn);
+                nrCol.Children.Add(deployRow);
+
+                // Override column opacity so deploy buttons aren't dimmed when NR not present.
+                // Manually dim only the version/preset controls.
+                if (!hasDlssnr)
+                {
+                    nrCol.Opacity = 1.0;
+                    foreach (var child in nrCol.Children.OfType<UIElement>())
+                    {
+                        if (child != deployRow)
+                            child.Opacity = 0.4;
+                    }
+                }
                 Grid.SetColumn(nrCol, 6);
                 dlssRowGrid.Children.Add(nrCol);
 
