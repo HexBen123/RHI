@@ -1315,6 +1315,18 @@
     "renodx-dlssfix": {
       "description": "Makes ReShade draw on native game frames instead of generated frames. Also hides DLSS upscaling from ReShade."
     },
+    "dlss5-dx11-bridge": {
+      "packageName": "DLSS5 DX11 Bridge",
+      "description": "Enables DLSS 5 Neural Rendering in D3D11 games. Additional setup steps are required — click How To Use for details.",
+      "downloadUrl64": "https://github.com/NIGos/dlss5-dx11-bridge/releases/latest/download/dlss5-dx11-bridge.addon64",
+      "repositoryUrl": "https://github.com/NIGos/dlss5-dx11-bridge"
+    },
+    "dlss5-feed": {
+      "packageName": "DLSS5 Feeder",
+      "description": "Enables DLSS 5 Neural Rendering in D3D11 games with no native DLSS support. Additional setup steps are required — click How To Use for details.",
+      "downloadUrl64": "https://github.com/jlrouzies-fr/DLSS5-Feeder/releases/latest/download/dlss5-feed.addon64",
+      "repositoryUrl": "https://github.com/jlrouzies-fr/DLSS5-Feeder"
+    },
     "renodx-upgrade": {
       "packageName": "RenoDX Upgrade",
       "description": "Enables inverse tone mapping (ITM) and resource upgrades for HDR in DX9\u002B games. Use with RenoFX HDR Toolkit shader for full HDR conversion. Not needed alongside RenoDX or Luma mods.",
