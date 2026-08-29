@@ -274,10 +274,25 @@ public class Renodx5AddonService
                 {
                     var deployDir = ModInstallService.GetAddonDeployPath(game.InstallPath!);
                     var dest      = Path.Combine(deployDir, DeployFileName);
-                    if (!File.Exists(dest)) continue; // only update if already present
 
-                    File.Copy(staged, dest, overwrite: true);
-                    _crashReporter.Log($"[Renodx5AddonService.AutoRedeployAsync] Updated '{game.Name}' at '{deployDir}'");
+                    // Also check the install path root in case addon was deployed there directly
+                    var destRoot = Path.Combine(game.InstallPath!, DeployFileName);
+                    bool existsInDeployDir = File.Exists(dest);
+                    bool existsInRoot = !dest.Equals(destRoot, StringComparison.OrdinalIgnoreCase) && File.Exists(destRoot);
+
+                    if (!existsInDeployDir && !existsInRoot) continue; // only update if already present
+
+                    var src = Path.Combine(_stagingDir, StagedFileName);
+                    if (existsInDeployDir)
+                    {
+                        File.Copy(src, dest, overwrite: true);
+                        _crashReporter.Log($"[Renodx5AddonService.AutoRedeployAsync] Updated '{game.Name}' at '{deployDir}'");
+                    }
+                    if (existsInRoot)
+                    {
+                        File.Copy(src, destRoot, overwrite: true);
+                        _crashReporter.Log($"[Renodx5AddonService.AutoRedeployAsync] Updated '{game.Name}' at root '{game.InstallPath}'");
+                    }
                 }
                 catch (Exception ex)
                 {

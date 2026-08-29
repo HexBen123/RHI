@@ -1,1 +1,1 @@
-Hi to all the new users. If you ever have any issues you can contact me on Discord. Thank you all for your continued support.
+Hi to all the new DLSS5 people. RHI only officially supports the files for 50xx GPUs. If you want to use any of the many modified files for 30xx, 40xx etc then you will need to place those in the RHI Custom folders in Appdata. If you need help with this then you can ask on Discord. Thank you, Rank

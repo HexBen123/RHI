@@ -1,3 +1,19 @@
+## v2.4.6
+
+### Bug Fixes
+
+- Fixed RenoDX DLSS5 not auto-updating to games when a new version is released. The addon now deploys the updated file directly from its own staging folder and no longer creates a redundant copy in the addons folder.
+
+---
+
+## v2.4.5
+
+### Bug Fixes
+
+- Fixed RenoDX DLSS5 not deploying to game folders after the addons staging folder was deleted. The addon now deploys directly from its own staging location.
+
+---
+
 ## v2.4.4
 
 ### New

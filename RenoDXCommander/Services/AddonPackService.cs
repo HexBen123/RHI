@@ -314,15 +314,7 @@ public class AddonPackService : IAddonPackService
                 progress?.Report(("Downloading RenoDX DLSS5 addon...", 10));
                 var rdx5Service = App.Services.GetRequiredService<Renodx5AddonService>();
                 await rdx5Service.EnsureStagingAsync(progress).ConfigureAwait(false);
-                if (rdx5Service.IsStagingReady)
-                {
-                    var rdx5StagedPath = rdx5Service.StagedFilePath;
-                    var destInAddons  = Path.Combine(StagingDir, safeName + ".addon64");
-                    File.Copy(rdx5StagedPath, destInAddons, overwrite: true);
-                    SaveAddonVersion(entry.PackageName, rdx5Service.StagedVersion ?? "unknown", safeName);
-                    CrashReporter.Log($"[AddonPackService.DownloadAddonAsync] RenoDX DLSS5 mirrored to addon staging ({new FileInfo(destInAddons).Length} bytes)");
-                }
-                else
+                if (!rdx5Service.IsStagingReady)
                 {
                     CrashReporter.Log("[AddonPackService.DownloadAddonAsync] RenoDX DLSS5 staging not ready after EnsureStaging");
                     progress?.Report(("RenoDX DLSS5 download failed", 0));
@@ -520,6 +512,19 @@ public class AddonPackService : IAddonPackService
 
             if (!File.Exists(stagingFile))
             {
+                // RenoDX DLSS5 is staged by Renodx5AddonService in its own directory
+                if (packageName.Equals("RenoDX DLSS5", StringComparison.OrdinalIgnoreCase))
+                {
+                    var rdx5Service = App.Services.GetRequiredService<Renodx5AddonService>();
+                    stagingFile = rdx5Service.StagedFilePath;
+                    if (!File.Exists(stagingFile))
+                    {
+                        CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] Skipping 'RenoDX DLSS5' — rdx5 staging not ready.");
+                        continue;
+                    }
+                }
+                else
+                {
                 // Check if this is a custom addon (deployed directly from Custom\Addons folder)
                 var customPath = Path.Combine(CustomAddonsDir, packageName + bitnessExt);
                 if (File.Exists(customPath))
@@ -532,6 +537,7 @@ public class AddonPackService : IAddonPackService
                     CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] Skipping '{packageName}' — no {bitnessExt} variant in staging or custom folder.");
                     continue;
                 }
+                } // end else (non-rdx5 path)
             }
 
             // Use DeployFileName if the entry specifies one, otherwise use the original
