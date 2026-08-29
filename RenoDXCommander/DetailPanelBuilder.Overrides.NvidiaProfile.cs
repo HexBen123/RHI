@@ -168,16 +168,39 @@ public partial class DetailPanelBuilder
                 dlssRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
                 dlssRowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
+                // Determine NR installed version — show "Custom" if sidecar marker exists
+                var nrDllPath = card.DlssDetection?.DlssnrPath;
+                var nrInstalledVersion = (hasDlssnr && nrDllPath != null
+                    && File.Exists(nrDllPath + ".rhi_custom"))
+                    ? "Custom"
+                    : card.DlssnrInstalledVersion;
+
+                // Track the version currently selected in the NR combo so Deploy DLL can use it
+                string nrSelectedVersion = nrInstalledVersion ?? "";
+
                 bool nrDriverOverride = presetService.IsSupported && presetService.IsNrDriverOverrideActive(card.GameName, card.InstallPath ?? "");
                 var nrCol = BuildDlssColumn("Neural Rendering", hasDlssnr, dlssService.DlssnrVersions,
-                    card.DlssnrInstalledVersion, DlssPresetService.NrPresets,
+                    nrInstalledVersion, DlssPresetService.NrPresets,
                     presetService.IsSupported && hasDlssnr ? presetService.GetNrPreset(card.GameName, card.InstallPath) : 0u,
                     async (version) =>
                     {
                         var tc = _window.ViewModel.AllCards.FirstOrDefault(c => c.GameName.Equals(capturedName, StringComparison.OrdinalIgnoreCase));
-                        if (tc?.DlssDetection?.DlssnrPath == null) return;
-                        if (version == "Default") dlssService.Restore(tc.DlssDetection.DlssnrPath);
-                        else await dlssService.SwapDlssnrAsync(tc.DlssDetection.DlssnrPath, version);
+                        nrSelectedVersion = version;
+                        if (tc?.DlssDetection?.DlssnrPath == null) return; // no existing file — only track selection, Deploy handles it
+                        if (version == "Default")
+                        {
+                            dlssService.Restore(tc.DlssDetection.DlssnrPath);
+                            // Clean up custom marker on restore
+                            try { File.Delete(tc.DlssDetection.DlssnrPath + ".rhi_custom"); } catch { }
+                        }
+                        else if (version == "Custom")
+                            await dlssService.SwapDlssCustomAsync(tc.DlssDetection.DlssnrPath);
+                        else
+                        {
+                            await dlssService.SwapDlssnrAsync(tc.DlssDetection.DlssnrPath, version);
+                            // Clean up custom marker when switching to a managed version
+                            try { File.Delete(tc.DlssDetection.DlssnrPath + ".rhi_custom"); } catch { }
+                        }
                         tc.RefreshDlssVersions(dlssService);
                         _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(tc));
                     },
@@ -241,18 +264,76 @@ public partial class DetailPanelBuilder
 
                     try
                     {
-                        var cachedPath = await dlssService.EnsureNewestDlssnrCachedAsync().ConfigureAwait(false);
-                        if (cachedPath == null)
+                        var destPath = tc.DlssDetection?.DlssnrPath ?? Path.Combine(tc.InstallPath, "nvngx_dlssnr.dll");
+                        var isCustom = nrSelectedVersion == "Custom";
+                        var isDefault = nrSelectedVersion == "Default" || string.IsNullOrEmpty(nrSelectedVersion);
+
+                        if (isCustom)
                         {
-                            _window.DispatcherQueue?.TryEnqueue(() => { deployNrBtn.Content = "Not available"; deployNrBtn.IsEnabled = true; });
-                            return;
+                            // Deploy from Custom\DLSS\nvngx_dlssnr.dll
+                            if (tc.DlssDetection?.DlssnrPath != null)
+                            {
+                                await dlssService.SwapDlssCustomAsync(tc.DlssDetection.DlssnrPath);
+                                // Write custom marker so version shows as "Custom"
+                                try { File.WriteAllText(tc.DlssDetection.DlssnrPath + ".rhi_custom", ""); } catch { }
+                            }
+                            else
+                            {
+                                // Fresh install — deploy custom file to game root
+                                var customSrc = Path.Combine(
+                                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                                    "RHI", "Custom", "DLSS", "nvngx_dlssnr.dll");
+                                if (!File.Exists(customSrc))
+                                {
+                                    _window.DispatcherQueue?.TryEnqueue(() => { deployNrBtn.Content = "Not in Custom/DLSS"; deployNrBtn.IsEnabled = true; });
+                                    return;
+                                }
+                                File.Copy(customSrc, destPath, overwrite: true);
+                                try { File.WriteAllText(destPath + ".rhi_custom", ""); } catch { }
+                                CrashReporter.Log($"[NrDeployBtn] Deployed custom nvngx_dlssnr.dll to '{tc.InstallPath}'");
+                            }
+                        }
+                        else
+                        {
+                            // Deploy a specific managed version (or newest if nothing selected)
+                            string? cachedPath;
+                            var versionToDeploy = isDefault ? null : nrSelectedVersion;
+                            if (string.IsNullOrEmpty(versionToDeploy))
+                            {
+                                cachedPath = await dlssService.EnsureNewestDlssnrCachedAsync().ConfigureAwait(false);
+                            }
+                            else
+                            {
+                                await dlssService.SwapDlssnrAsync(destPath, versionToDeploy).ConfigureAwait(false);
+                                // Clean custom marker if present
+                                try { File.Delete(destPath + ".rhi_custom"); } catch { }
+                                cachedPath = destPath; // SwapDlssnrAsync already wrote to destPath
+                            }
+
+                            if (!isDefault && !string.IsNullOrEmpty(versionToDeploy))
+                            {
+                                // SwapDlssnrAsync handled it — fall through to detection
+                            }
+                            else if (cachedPath == null)
+                            {
+                                _window.DispatcherQueue?.TryEnqueue(() => { deployNrBtn.Content = "Not available"; deployNrBtn.IsEnabled = true; });
+                                return;
+                            }
+                            else if (isDefault)
+                            {
+                                // Fresh install of newest
+                                File.Copy(cachedPath, destPath, overwrite: true);
+                                try { File.Delete(destPath + ".rhi_custom"); } catch { }
+                                CrashReporter.Log($"[NrDeployBtn] Deployed nvngx_dlssnr.dll (newest) to '{tc.InstallPath}'");
+                            }
                         }
 
-                        var destPath = Path.Combine(tc.InstallPath, "nvngx_dlssnr.dll");
-                        File.Copy(cachedPath, destPath, overwrite: true);
-                        CrashReporter.Log($"[NrDeployBtn] Deployed nvngx_dlssnr.dll to '{tc.InstallPath}'");
-
                         var detection = dlssService.Detect(tc.InstallPath);
+                        if (detection.HasAny)
+                        {
+                            dlssService.RecordDlssFound(tc.GameName);
+                            dlssService.RecordTrustedPath(tc.GameName, detection);
+                        }
                         _window.DispatcherQueue?.TryEnqueue(() =>
                         {
                             tc.DlssDetection = detection;
@@ -278,6 +359,10 @@ public partial class DetailPanelBuilder
                         File.Delete(tc.DlssDetection.DlssnrPath);
                         CrashReporter.Log($"[NrDeleteBtn] Deleted nvngx_dlssnr.dll from '{tc.InstallPath}'");
                         var detection = dlssService.Detect(tc.InstallPath);
+                        if (detection.HasAny)
+                            dlssService.RecordTrustedPath(tc.GameName, detection);
+                        else
+                            dlssService.RecordNoDlssFound(tc.GameName);
                         _window.DispatcherQueue?.TryEnqueue(() =>
                         {
                             tc.DlssDetection = detection;

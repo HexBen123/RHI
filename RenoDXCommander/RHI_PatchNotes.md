@@ -1,3 +1,12 @@
+## v2.4.7
+
+### Bug Fixes
+
+- Fixed the Neural Rendering column not showing `nvngx_dlssnr.dll` as installed after deploying it. It now updates immediately without needing a Refresh.
+- The Neural Rendering column now clearly shows "Custom" when a custom DLL is active.
+
+---
+
 ## v2.4.6
 
 ### Bug Fixes

@@ -379,7 +379,7 @@ public partial class DlssStreamlineService : IDlssStreamlineService
     // ── Trusted path cache version ────────────────────────────────────────────
     // Bump this when new DLL types are added to detection (e.g. DlssnrPath).
     // Causes a one-time full rescan on the next Full Refresh for all existing entries.
-    private const int CurrentTrustedCacheVersion = 1; // bumped for DlssnrPath addition
+    private const int CurrentTrustedCacheVersion = 2; // bumped to force rescan of entries missing DlssnrPath
 
     public void ClearScanCaches()
     {

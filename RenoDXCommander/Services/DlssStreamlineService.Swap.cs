@@ -189,6 +189,14 @@ public partial class DlssStreamlineService
         }
 
         BackupAndReplace(dllPath, customDll);
+
+        // Write a sidecar marker so the UI can show "Custom" instead of the raw file version
+        // (nvngx_dlssnr.dll specifically uses this; other DLLs are identified by their version being absent from manifest)
+        if (targetFileName.Equals("nvngx_dlssnr.dll", StringComparison.OrdinalIgnoreCase))
+        {
+            try { File.WriteAllText(dllPath + ".rhi_custom", ""); } catch { }
+        }
+
         CrashReporter.Log($"[DlssStreamlineService.SwapDlssCustomAsync] Swapped '{dllPath}' with custom DLL");
     }
 
@@ -238,6 +246,8 @@ public partial class DlssStreamlineService
         {
             File.Delete(dllPath);
             File.Move(backupPath, dllPath);
+            // Clean up any custom marker for this DLL
+            try { File.Delete(dllPath + ".rhi_custom"); } catch { }
             CrashReporter.Log($"[DlssStreamlineService.Restore] Restored '{dllPath}' from backup");
         }
         catch (Exception ex)

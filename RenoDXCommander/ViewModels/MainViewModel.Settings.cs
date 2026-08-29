@@ -711,6 +711,20 @@ public partial class MainViewModel
                         {
                             var rdx5Svc = App.Services.GetRequiredService<Renodx5AddonService>();
                             await rdx5Svc.DeployNrDllIfAbsentAsync(card.InstallPath).ConfigureAwait(false);
+
+                            // Refresh the card's DLSS detection so the NR column shows immediately
+                            var detection = _dlssStreamlineService.Detect(card.InstallPath);
+                            if (detection.HasAny)
+                            {
+                                _dlssStreamlineService.RecordDlssFound(card.GameName);
+                                _dlssStreamlineService.RecordTrustedPath(card.GameName, detection);
+                            }
+                            DispatcherQueue?.TryEnqueue(() =>
+                            {
+                                card.ApplyDlssDetection(detection);
+                                card.RefreshDlssVersions(_dlssStreamlineService);
+                                RequestOverridesPanelRebuild?.Invoke(card);
+                            });
                         }
                         catch (Exception nrEx)
                         {
