@@ -4,6 +4,10 @@
 
 - Fixed RenoDX DLSS5 not auto-updating to games when a new version is released. The addon now deploys the updated file directly from its own staging folder and no longer creates a redundant copy in the addons folder.
 
+### Manifest Updates
+
+- Added CubeLUT3Ddith by aron7awol to the shader pack library — Cube 3D LUT shader with dithering to reduce banding.
+
 ---
 
 ## v2.4.5

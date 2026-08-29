@@ -1295,6 +1295,13 @@
       "description": "Lightweight sharpening (TinySharpen), clarity, and chromatic aberration shaders",
       "category": "Extra"
     },
+    "CubeLUT3Ddith": {
+      "displayName": "CubeLUT3Ddith by aron7awol",
+      "kind": "DirectUrl",
+      "url": "https://github.com/aron7awol/CubeLUT3Ddith/archive/refs/heads/main.zip",
+      "description": "Cube 3D LUT shader with dithering to reduce banding. Requires a .cube LUT file placed in the Textures folder.",
+      "category": "Extra"
+    },
     "CrosireLegacy": {
       "requires": [
         "CrosireMaster"
