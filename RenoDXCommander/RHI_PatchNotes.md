@@ -3,6 +3,7 @@
 ### Manifest Updates
 
 - Added DLSS5 DX11 Bridge and DLSS5 Feeder to the addon picker — both enable DLSS 5 Neural Rendering in D3D11 games. Additional setup steps are required; the How To Use button on each addon links to the repo for instructions.
+- Added DLSS5 Feeder companion shader to the shader pack library.
 
 ### Bug Fixes
 
