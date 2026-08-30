@@ -1311,6 +1311,13 @@
       "description": "Companion shader for the DLSS5 Feeder addon. Requires the DLSS5 Feeder addon and iMMERSE LaunchPad.",
       "category": "Extra"
     },
+    "ReshadeMotionEstimation": {
+      "displayName": "Reshade Motion Estimation by JakobPCoder",
+      "kind": "DirectUrl",
+      "url": "https://github.com/JakobPCoder/ReshadeMotionEstimation/archive/refs/heads/master.zip",
+      "description": "Dense real-time optical flow motion estimation via block matching and pyramids.",
+      "category": "Extra"
+    },
     "CrosireLegacy": {
       "requires": [
         "CrosireMaster"
