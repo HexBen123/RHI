@@ -12,7 +12,6 @@
 ### Manifest Updates
 
 - Added Reshade Motion Estimation by JakobPCoder to the shader pack library — dense real-time optical flow motion estimation.
-- Added `nvngx_dlssnr.dll` version `310.8.SF` to the Neural Rendering version list — extends Neural Rendering support to RTX 20, 30, 40 and 50 Series GPUs. Now the default version deployed by RHI.
 
 ---
 

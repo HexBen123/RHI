@@ -186,6 +186,7 @@
     "Trine 5: A Clockwork Conspiracy": "Trine 5"
   },
   "installPathOverrides": {
+    "Warhammer 40,000: Space Marine 2": "client_pc\\root\\bin\\pc",
     "Anno 117 - Pax Romana": "Bin\\Win64",
     "Anno 117: Pax Romana": "Bin\\Win64",
     "Borderlands\u00AE 4": "OakGame\\Binaries\\Win64",
@@ -841,7 +842,7 @@
   },
   "launchExeOverrides": {
     "Arma Reforger": "ArmaReforgerSteam.exe",
-    "Warhammer 40,000: Space Marine 2": "client_pc\\root\\bin\\pc\\Warhammer 40000 Space Marine 2 - Retail.exe",
+    "Warhammer 40,000: Space Marine 2": "Warhammer 40000 Space Marine 2 - Retail.exe",
     "Crysis Remastered": "CrysisRemastered.exe",
     "Returnal\u2122": "Returnal-Win64-Shipping.exe",
     "The Elder Scrolls V: Skyrim Special Edition": "SkyrimSE.exe",
