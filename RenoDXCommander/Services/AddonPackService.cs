@@ -52,7 +52,7 @@ public class AddonPackService : IAddonPackService
     private static readonly AddonEntry Renodx5Entry = new(
         SectionId: "renodx-dlss5",
         PackageName: "RenoDX DLSS5",
-        PackageDescription: "Enables DLSS Neural Rendering in any DLSS-compatible game. For 50 Series GPUs only. RHI automatically deploys nvngx_dlssnr.dll to the game folder alongside this addon.",
+        PackageDescription: "Enables DLSS Neural Rendering in any DLSS-compatible game. Supports RTX 40 and 50 Series GPUs. RHI automatically deploys nvngx_dlssnr.dll to the game folder alongside this addon.",
         DownloadUrl: null,
         DownloadUrl32: null,
         DownloadUrl64: null,

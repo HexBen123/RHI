@@ -841,6 +841,7 @@
   },
   "launchExeOverrides": {
     "Arma Reforger": "ArmaReforgerSteam.exe",
+    "Warhammer 40,000: Space Marine 2": "client_pc\\root\\bin\\pc\\Warhammer 40000 Space Marine 2 - Retail.exe",
     "Crysis Remastered": "CrysisRemastered.exe",
     "Returnal\u2122": "Returnal-Win64-Shipping.exe",
     "The Elder Scrolls V: Skyrim Special Edition": "SkyrimSE.exe",

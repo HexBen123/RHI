@@ -3051,6 +3051,12 @@
                             Foreground="{StaticResource TextDisabledBrush}" FontSize="11"
                             Padding="8,2" VerticalAlignment="Center"
                             ToolTipService.ToolTip="View recent patch notes"/>
+                    <Button Content="MOTD"
+                            Click="MotdButton_Click"
+                            Background="Transparent" BorderThickness="0"
+                            Foreground="{StaticResource TextDisabledBrush}" FontSize="11"
+                            Padding="8,2" VerticalAlignment="Center"
+                            ToolTipService.ToolTip="Show message of the day"/>
                 </StackPanel>
             </Grid>
         </Border>
