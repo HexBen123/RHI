@@ -143,7 +143,8 @@ public partial class App : Application
             var fileName = Path.GetFileName(cmdArgs[1]);
             if ((string.Equals(ext, ".addon64", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(ext, ".addon32", StringComparison.OrdinalIgnoreCase))
-                && fileName.StartsWith("renodx-", StringComparison.OrdinalIgnoreCase))
+                && fileName.StartsWith("renodx-", StringComparison.OrdinalIgnoreCase)
+                && !fileName.StartsWith("renodx-dlss5", StringComparison.OrdinalIgnoreCase))
                 addonArg = cmdArgs[1];
         }
 

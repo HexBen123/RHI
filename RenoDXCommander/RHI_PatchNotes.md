@@ -1,9 +1,19 @@
-## v2.4.7
+## v2.4.8
+
+### Bug Fixes
+
+- Fixed "How to use" link not appearing in the per-game addon picker.
+- Fixed `renodx-dlss5.addon64` triggering an install prompt when double-clicked or drag-dropped. It is managed by RHI internally and should only be installed via the addon picker or placed in the Custom Addons folder.
 
 ### Manifest Updates
 
 - Added DLSS5 DX11 Bridge and DLSS5 Feeder to the addon picker — both enable DLSS 5 Neural Rendering in D3D11 games. Additional setup steps are required; the How To Use button on each addon links to the repo for instructions.
 - Added DLSS5 Feeder companion shader to the shader pack library.
+- Fixed Metal Gear Solid 4 (Master Collection) showing as Unreal Engine — now correctly shows MGS4 Engine.
+
+---
+
+## v2.4.7
 
 ### Bug Fixes
 

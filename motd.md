@@ -1,1 +1,7 @@
-Hi to all the new DLSS5 people. RHI only officially supports the files for 50xx GPUs. If you want to use any of the many modified files for 30xx, 40xx etc then you will need to place those in the RHI Custom folders in Appdata. If you need help with this then you can ask on Discord. Thank you, Rank
+**DLSS 5 Neural Rendering — RTX 40 Series and D3D11 support**
+
+Two new addons are now available in the addon picker: **DLSS5 DX11 Bridge** and **DLSS5 Feeder**. Both bring DLSS 5 Neural Rendering to D3D11 games. Additional setup steps are required — use the How To Use link on each addon for instructions.
+
+RTX 40 Series users can now use Neural Rendering by placing the RTX 40 build of `nvngx_dlssnr.dll` in `%LocalAppData%\RHI\Custom\DLSS\`. Once it's there, select **Custom** from the Neural Rendering version dropdown and click Deploy DLL. Ask on Discord if you need help finding the right file.
+
+Thank you, Rank

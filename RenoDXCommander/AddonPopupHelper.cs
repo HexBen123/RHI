@@ -134,6 +134,19 @@ public static class AddonPopupHelper
                 });
             }
 
+            if (!string.IsNullOrEmpty(entry.RepositoryUrl)
+                && !entry.SectionId.StartsWith("custom-", StringComparison.OrdinalIgnoreCase))
+            {
+                textPanel.Children.Add(new HyperlinkButton
+                {
+                    Content = "How to use",
+                    NavigateUri = new Uri(entry.RepositoryUrl),
+                    FontSize = 11,
+                    Foreground = Brush(ResourceKeys.AccentBlueBrush),
+                    Padding = new Thickness(0),
+                });
+            }
+
             // Right side: toggle — same behavior as global manager
             bool suppressToggle = false;
             var toggle = new ToggleSwitch
