@@ -1,3 +1,11 @@
+## v2.5.2
+
+### Bug Fixes
+
+- Fixed `RenoDX DLSS5.addon64` being deployed to game folders on every launch due to a stale file left over from renaming the addon to DLSS5 Tool. RHI now removes it automatically on startup and cleans it up from any affected game folders on the next refresh.
+
+---
+
 ## v2.5.1
 
 ### Bug Fixes

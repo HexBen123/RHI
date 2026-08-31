@@ -88,6 +88,15 @@ public class AddonPackService : IAddonPackService
     {
         _http = http;
         try { Directory.CreateDirectory(CustomAddonsDir); } catch { }
+
+        // One-time migration: eagerly remove stale "RenoDX DLSS5.addon64" at construction time
+        // so it can't be deployed before EnsureLatestAsync runs.
+        try
+        {
+            var staleStaging = Path.Combine(StagingDir, "RenoDX DLSS5.addon64");
+            if (File.Exists(staleStaging)) File.Delete(staleStaging);
+        }
+        catch { }
     }
 
     // ── Public properties ─────────────────────────────────────────────────────────
@@ -192,22 +201,61 @@ public class AddonPackService : IAddonPackService
     public async Task EnsureLatestAsync()
     {
         // One-time migration: remove stale "RenoDX DLSS5.addon64" left over from the rename to "DLSS5 Tool".
-        // If this file exists in staging it gets incorrectly deployed as a custom addon to every game.
+        // Deletes from staging AND from any game folders it was already deployed to.
         try
         {
-            var staleFile = Path.Combine(StagingDir, "RenoDX DLSS5.addon64");
-            if (File.Exists(staleFile))
+            const string staleName = "RenoDX DLSS5.addon64";
+            var staleStaging = Path.Combine(StagingDir, staleName);
+            if (File.Exists(staleStaging))
             {
-                File.Delete(staleFile);
-                CrashReporter.Log("[AddonPackService.EnsureLatestAsync] Deleted stale 'RenoDX DLSS5.addon64' from staging (renamed to DLSS5 Tool)");
+                File.Delete(staleStaging);
+                CrashReporter.Log("[AddonPackService] Deleted stale 'RenoDX DLSS5.addon64' from staging");
             }
-            // Also remove the old version entry so CheckAndUpdateAllAsync stops looking for it
             var versions = LoadVersions();
-            if (versions.Remove("RenoDX DLSS5"))
-                SaveVersions(versions);
+            if (versions.Remove("RenoDX DLSS5")) SaveVersions(versions);
+
+            // Also remove from any game folder it may have been deployed to
+            var deployments = LoadDeployments();
+            bool deploymentsChanged = false;
+            foreach (var (path, files) in deployments)
+            {
+                if (!files.Contains(staleName)) continue;
+                var gameFile = Path.Combine(path, staleName);
+                try { if (File.Exists(gameFile)) { File.Delete(gameFile); CrashReporter.Log($"[AddonPackService] Removed stale '{staleName}' from '{path}'"); } } catch { }
+                files.Remove(staleName);
+                deploymentsChanged = true;
+            }
+            if (deploymentsChanged) SaveDeployments(deployments);
+
+            // Also scan the library for any game folders that have the stale file but weren't tracked
+            try
+            {
+                var libPath = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "RHI", "game_library.json");
+                if (File.Exists(libPath))
+                {
+                    var libJson = File.ReadAllText(libPath);
+                    using var libDoc = System.Text.Json.JsonDocument.Parse(libJson);
+                    var allPaths = new List<string>();
+                    if (libDoc.RootElement.TryGetProperty("Games", out var games))
+                        foreach (var g in games.EnumerateArray())
+                            if (g.TryGetProperty("InstallPath", out var p) && !string.IsNullOrEmpty(p.GetString()))
+                                allPaths.Add(p.GetString()!);
+                    if (libDoc.RootElement.TryGetProperty("ManualGames", out var manual))
+                        foreach (var g in manual.EnumerateArray())
+                            if (g.TryGetProperty("InstallPath", out var p) && !string.IsNullOrEmpty(p.GetString()))
+                                allPaths.Add(p.GetString()!);
+                    foreach (var installPath in allPaths)
+                    {
+                        var staleGame = Path.Combine(installPath, staleName);
+                        try { if (File.Exists(staleGame)) { File.Delete(staleGame); CrashReporter.Log($"[AddonPackService] Removed stale '{staleName}' from game folder '{installPath}'"); } } catch { }
+                    }
+                }
+            }
+            catch { }
         }
-        catch (Exception ex) { CrashReporter.Log($"[AddonPackService.EnsureLatestAsync] Stale file cleanup failed — {ex.Message}"); }
-        await _downloadLock.WaitAsync();
+        catch (Exception ex) { CrashReporter.Log($"[AddonPackService] Stale file migration failed — {ex.Message}"); }        await _downloadLock.WaitAsync();
         try
         {
         List<AddonEntry>? parsed = null;
