@@ -343,6 +343,14 @@ public class GameNameService : IGameNameService
         var pgasDict = Load<Dictionary<string, List<string>>?>("PerGameAddonSelection", null);
         if (pgasDict != null)
         {
+            // Migration: rename "RenoDX DLSS5" to "DLSS5 Tool" in all per-game selections
+            foreach (var key in pgasDict.Keys.ToList())
+            {
+                var list = pgasDict[key];
+                for (int i = 0; i < list.Count; i++)
+                    if (list[i].Equals("RenoDX DLSS5", StringComparison.OrdinalIgnoreCase))
+                        list[i] = "DLSS5 Tool";
+            }
             _perGameAddonSelection = new(StringComparer.OrdinalIgnoreCase);
             foreach (var kv in pgasDict)
             {
