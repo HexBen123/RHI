@@ -400,6 +400,21 @@ public class Renodx5AddonService
                     var destRoot  = Path.Combine(game.InstallPath!, deployFileName);
                     bool inDeploy = File.Exists(dest);
                     bool inRoot   = !dest.Equals(destRoot, StringComparison.OrdinalIgnoreCase) && File.Exists(destRoot);
+
+                    // Only redeploy if the file exists AND is tracked in addon_deployments.json
+                    // This prevents re-adding files the user intentionally removed
+                    if (inDeploy)
+                    {
+                        bool tracked = AddonPackService.IsAddonTrackedInDeployments(deployDir, deployFileName)
+                                    || AddonPackService.IsAddonTrackedInDeployments(game.InstallPath!, deployFileName);
+                        if (!tracked) { inDeploy = false; }
+                    }
+                    if (inRoot)
+                    {
+                        bool tracked = AddonPackService.IsAddonTrackedInDeployments(game.InstallPath!, deployFileName);
+                        if (!tracked) { inRoot = false; }
+                    }
+
                     if (!inDeploy && !inRoot) continue;
                     if (inDeploy) { File.Copy(staged, dest, overwrite: true); _crashReporter.Log($"[{logCtx}] Updated '{game.Name}' at '{deployDir}'"); }
                     if (inRoot)   { File.Copy(staged, destRoot, overwrite: true); _crashReporter.Log($"[{logCtx}] Updated '{game.Name}' at root"); }

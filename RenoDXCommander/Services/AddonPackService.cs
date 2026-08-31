@@ -191,6 +191,22 @@ public class AddonPackService : IAddonPackService
     /// <inheritdoc />
     public async Task EnsureLatestAsync()
     {
+        // One-time migration: remove stale "RenoDX DLSS5.addon64" left over from the rename to "DLSS5 Tool".
+        // If this file exists in staging it gets incorrectly deployed as a custom addon to every game.
+        try
+        {
+            var staleFile = Path.Combine(StagingDir, "RenoDX DLSS5.addon64");
+            if (File.Exists(staleFile))
+            {
+                File.Delete(staleFile);
+                CrashReporter.Log("[AddonPackService.EnsureLatestAsync] Deleted stale 'RenoDX DLSS5.addon64' from staging (renamed to DLSS5 Tool)");
+            }
+            // Also remove the old version entry so CheckAndUpdateAllAsync stops looking for it
+            var versions = LoadVersions();
+            if (versions.Remove("RenoDX DLSS5"))
+                SaveVersions(versions);
+        }
+        catch (Exception ex) { CrashReporter.Log($"[AddonPackService.EnsureLatestAsync] Stale file cleanup failed — {ex.Message}"); }
         await _downloadLock.WaitAsync();
         try
         {
@@ -1066,6 +1082,40 @@ public class AddonPackService : IAddonPackService
     private static readonly object _deploymentsLock = new();
 
     /// <summary>
+    /// Returns true if the given addon filename is tracked as intentionally deployed to the given install path.
+    /// Used by Renodx5AddonService to prevent auto-redeploy of files the user removed.
+    /// </summary>
+    public static bool IsAddonTrackedInDeployments(string installPath, string addonFileName)
+    {
+        try
+        {
+            var deployments = _staticDeploymentCache ??= LoadDeploymentsStatic();
+            if (deployments.TryGetValue(installPath, out var files))
+                return files.Contains(addonFileName);
+        }
+        catch { }
+        return false;
+    }
+
+    private static Dictionary<string, HashSet<string>>? _staticDeploymentCache;
+
+    private static Dictionary<string, HashSet<string>> LoadDeploymentsStatic()
+    {
+        try
+        {
+            if (!File.Exists(DeploymentsJsonPath)) return new(StringComparer.OrdinalIgnoreCase);
+            var json = File.ReadAllText(DeploymentsJsonPath);
+            var raw = JsonSerializer.Deserialize<Dictionary<string, List<string>>>(json);
+            if (raw == null) return new(StringComparer.OrdinalIgnoreCase);
+            var result = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
+            foreach (var (path, files) in raw)
+                result[path] = new HashSet<string>(files, StringComparer.OrdinalIgnoreCase);
+            return result;
+        }
+        catch { return new(StringComparer.OrdinalIgnoreCase); }
+    }
+
+    /// <summary>
     /// Loads the deployment tracker: maps install path → set of addon filenames RHI deployed there.
     /// </summary>
     private static Dictionary<string, HashSet<string>> LoadDeployments()
@@ -1098,6 +1148,7 @@ public class AddonPackService : IAddonPackService
     {
         lock (_deploymentsLock)
         {
+            _staticDeploymentCache = null; // invalidate read cache
         try
         {
             var dir = Path.GetDirectoryName(DeploymentsJsonPath);
