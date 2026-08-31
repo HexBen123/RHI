@@ -95,6 +95,8 @@ public class AddonPackService : IAddonPackService
         {
             var staleStaging = Path.Combine(StagingDir, "RenoDX DLSS5.addon64");
             if (File.Exists(staleStaging)) File.Delete(staleStaging);
+            var staleCustom = Path.Combine(CustomAddonsDir, "RenoDX DLSS5.addon64");
+            if (File.Exists(staleCustom)) File.Delete(staleCustom);
         }
         catch { }
     }
@@ -656,6 +658,7 @@ public class AddonPackService : IAddonPackService
                         CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] Skipping '{packageName}' — rdx5 staging not ready.");
                         continue;
                     }
+                    bitnessExt = ".addon64"; // always deploy as .addon64 regardless of game bitness
                 }
                 else if (packageName.Equals("DLSS Tool (ShortFuse)", StringComparison.OrdinalIgnoreCase))
                 {
@@ -666,6 +669,7 @@ public class AddonPackService : IAddonPackService
                         CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] Skipping 'DLSS Tool (ShortFuse)' — SF staging not ready.");
                         continue;
                     }
+                    bitnessExt = ".addon64"; // always deploy as .addon64 regardless of game bitness
                 }
                 else
                 {

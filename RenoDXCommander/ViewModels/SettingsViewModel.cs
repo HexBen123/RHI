@@ -258,7 +258,13 @@ public partial class SettingsViewModel : ObservableObject
 
         if (s.TryGetValue("EnabledGlobalAddons", out var egaVal))
         {
-            try { EnabledGlobalAddons = JsonSerializer.Deserialize<List<string>>(egaVal) ?? new(); }
+            try
+            {
+                var addons = JsonSerializer.Deserialize<List<string>>(egaVal) ?? new();
+                // Migration: remove old "RenoDX DLSS5" name — renamed to "DLSS5 Tool"
+                addons.RemoveAll(a => a.Equals("RenoDX DLSS5", StringComparison.OrdinalIgnoreCase));
+                EnabledGlobalAddons = addons;
+            }
             catch { EnabledGlobalAddons = new(); }
         }
 
