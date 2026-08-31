@@ -1,8 +1,16 @@
+## v2.5.3
+
+### Bug Fixes
+
+- Fixed `RenoDX DLSS5.addon64` continuing to deploy to game folders even after v2.5.2. The old name was still stored in per-game addon selections in settings — RHI now migrates these to `DLSS5 Tool` on load.
+
+---
+
 ## v2.5.2
 
 ### Bug Fixes
 
-- Fixed `RenoDX DLSS5.addon64` being deployed to game folders on every launch due to a stale file left over from renaming the addon to DLSS5 Tool. RHI now removes it automatically on startup and cleans it up from any affected game folders on the next refresh.
+- Fixed `RenoDX DLSS5.addon64` being deployed to game folders on every launch due to a stale file left over from renaming the addon to DLSS5 Tool. RHI now removes it automatically on startup and cleans it up from all affected game folders, including per-game addon selections that still referenced the old name.
 - Fixed DLSS5 Tool and DLSS Tool (ShortFuse) being deployed as `.addon32` on 32-bit games, causing a ReShade load error. Both addons now always deploy as `.addon64`.
 
 ---
