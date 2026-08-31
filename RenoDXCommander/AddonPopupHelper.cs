@@ -29,7 +29,8 @@ public static class AddonPopupHelper
             .Where(a => !string.IsNullOrEmpty(a.DownloadUrl)
                      || !string.IsNullOrEmpty(a.DownloadUrl32)
                      || !string.IsNullOrEmpty(a.DownloadUrl64)
-                     || a.SectionId.Equals("renodx-dlss5", StringComparison.OrdinalIgnoreCase)) // managed by Renodx5AddonService
+                     || a.SectionId.Equals("renodx-dlss5", StringComparison.OrdinalIgnoreCase)
+                     || a.SectionId.Equals("renodx-dlss-sf", StringComparison.OrdinalIgnoreCase)) // managed by Renodx5AddonService
             .ToList();
 
         // Include custom addons (local files, no download URLs)
@@ -110,6 +111,16 @@ public static class AddonPopupHelper
                 FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
                 Foreground = Brush(ResourceKeys.TextPrimaryBrush),
             });
+            var versionLabel = addonPackService.GetVersionLabel(entry.SectionId);
+            if (!string.IsNullOrEmpty(versionLabel))
+                nameRow.Children.Add(new TextBlock
+                {
+                    Text = versionLabel,
+                    FontSize = 11,
+                    Foreground = Brush(ResourceKeys.TextSecondaryBrush),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Opacity = 0.7,
+                });
             var tickMark = new TextBlock
             {
                 Text = "✓",

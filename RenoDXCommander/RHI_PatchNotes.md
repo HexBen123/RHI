@@ -1,3 +1,18 @@
+## v2.5.0
+
+### New
+
+- Added a search bar to the shader pack picker — filter by pack name or individual shader filename.
+- **DLSS Tool (ShortFuse)** — ShortFuse's DLSS5 addon is now in the addon picker as a second option alongside DLSS5 Tool. Supports DX12, DX11 and DX9 with HDR scaling. On install, RHI automatically downloads and deploys the newest DLSS SR, RR, FG, NR and Streamline files to the game folder. Supports RTX 20-50 Series. Still WIP — fall back to DLSS5 Tool if you have issues.
+- **Updated `nvngx_dlssnr.dll`** to ShortFuse's latest build, now supporting RTX 20, 30, 40 and 50 Series GPUs with identical performance to the original NVIDIA build on RTX 50 Series.
+
+### Changes
+
+- Moved the Neural Rendering column to the far right of the Nvidia Profile section, after Streamline.
+- Renamed RenoDX DLSS5 addon to DLSS5 Tool. The current version is now shown next to the name in the addon picker.
+
+---
+
 ## v2.4.9
 
 ### New

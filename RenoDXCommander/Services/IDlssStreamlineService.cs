@@ -169,6 +169,11 @@ public interface IDlssStreamlineService
     /// Returns the cached path for the newest DLSS NR DLL, downloading if needed.
     /// </summary>
     Task<string?> EnsureNewestDlssnrCachedAsync();
+
+    /// <summary>
+    /// Returns the cached directory path for the newest Streamline version, downloading if needed.
+    /// </summary>
+    Task<string?> EnsureNewestStreamlineCachedAsync();
 }
 
 /// <summary>

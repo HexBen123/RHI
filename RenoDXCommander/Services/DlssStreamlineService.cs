@@ -752,6 +752,23 @@ public partial class DlssStreamlineService : IDlssStreamlineService
         await DownloadAndCacheAsync(newest.Url, cachedDir, DlssnrDllName).ConfigureAwait(false);
         return File.Exists(cachedDll) ? cachedDll : null;
     }
+
+    /// <inheritdoc />
+    public async Task<string?> EnsureNewestStreamlineCachedAsync()
+    {
+        var newest = _manifest?.Streamline?.FirstOrDefault();
+        if (newest == null) return null;
+
+        var cachedDir = Path.Combine(StreamlineCacheDir, newest.Version);
+        var indicator = Path.Combine(cachedDir, StreamlineIndicator);
+        var fallback  = Path.Combine(cachedDir, "sl.common.dll");
+
+        if (File.Exists(indicator) || File.Exists(fallback))
+            return cachedDir;
+
+        await DownloadAndCacheStreamlineAsync(newest.Url, cachedDir).ConfigureAwait(false);
+        return (File.Exists(indicator) || File.Exists(fallback)) ? cachedDir : null;
+    }
 }
 
 // ── Manifest data model ───────────────────────────────────────────────────────

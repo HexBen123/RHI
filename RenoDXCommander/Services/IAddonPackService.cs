@@ -25,6 +25,9 @@ public interface IAddonPackService
     /// <summary>Checks if an addon is already downloaded in the staging area.</summary>
     bool IsDownloaded(string packageName);
 
+    /// <summary>Returns a version label string for an addon (e.g. "v4.6"), or null if not available.</summary>
+    string? GetVersionLabel(string sectionId);
+
     /// <summary>Returns the list of addon package names currently in the staging area.</summary>
     IReadOnlyList<string> DownloadedAddonNames { get; }
 

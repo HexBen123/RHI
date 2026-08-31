@@ -51,14 +51,26 @@ public class AddonPackService : IAddonPackService
     // RenoDX DLSS5 addon — enables Neural Rendering support in RenoDX mods
     private static readonly AddonEntry Renodx5Entry = new(
         SectionId: "renodx-dlss5",
-        PackageName: "RenoDX DLSS5",
-        PackageDescription: "Enables DLSS Neural Rendering in any DLSS-compatible game. Supports RTX 40 and 50 Series GPUs. RHI automatically deploys nvngx_dlssnr.dll to the game folder alongside this addon.",
+        PackageName: "DLSS5 Tool",
+        PackageDescription: "Enables DLSS Neural Rendering in any DLSS-compatible game. Supports RTX 20, 30, 40 and 50 Series GPUs. RHI automatically deploys nvngx_dlssnr.dll to the game folder alongside this addon.",
         DownloadUrl: null,
         DownloadUrl32: null,
         DownloadUrl64: null,
-        RepositoryUrl: "https://github.com/clshortfuse/renodx",
+        RepositoryUrl: "https://discord.com/channels/1408098019194310818/1543802634991968366",
         EffectInstallPath: null,
         DeployFileName: "renodx-dlss5");
+
+    // ShortFuse SF variant — DX12/DX11/DX9 support, co-deploys full DLSS+Streamline stack
+    private static readonly AddonEntry Renodx5SfEntry = new(
+        SectionId: "renodx-dlss-sf",
+        PackageName: "DLSS Tool (ShortFuse)",
+        PackageDescription: "ShortFuse's DLSS5 addon. Supports DX12, DX11 and DX9. For non-DLSS games enable Load DLSS Libraries and set Hook Method to On Present. Supports RTX 20-50 Series. Still WIP — fall back to DLSS5 Tool if you have issues.",
+        DownloadUrl: null,
+        DownloadUrl32: null,
+        DownloadUrl64: null,
+        RepositoryUrl: "https://discord.com/channels/1408098019194310818/1543975158937821315",
+        EffectInstallPath: null,
+        DeployFileName: "renodx-dlss");
 
     // DLSS Fix addon — fixes DLSS frame generation locking to 2× in Unreal Engine games
     private static readonly AddonEntry DlssFixEntry = new(
@@ -109,10 +121,18 @@ public class AddonPackService : IAddonPackService
     public bool IsDownloaded(string packageName)
     {
         // RenoDX DLSS5 is staged by Renodx5AddonService — check its staging dir directly
-        if (packageName.Equals("RenoDX DLSS5", StringComparison.OrdinalIgnoreCase))
+        if (packageName.Equals("RenoDX DLSS5", StringComparison.OrdinalIgnoreCase)
+            || packageName.Equals("DLSS5 Tool", StringComparison.OrdinalIgnoreCase))
         {
             var rdx5Service = App.Services.GetRequiredService<Renodx5AddonService>();
             return rdx5Service.IsStagingReady;
+        }
+
+        // DLSS Tool (ShortFuse) — check SF staging
+        if (packageName.Equals("DLSS Tool (ShortFuse)", StringComparison.OrdinalIgnoreCase))
+        {
+            var rdx5Service = App.Services.GetRequiredService<Renodx5AddonService>();
+            return rdx5Service.IsSfStagingReady;
         }
 
         if (!Directory.Exists(StagingDir))
@@ -121,6 +141,24 @@ public class AddonPackService : IAddonPackService
         var safeName = SanitizeFileName(packageName);
         return File.Exists(Path.Combine(StagingDir, safeName + ".addon32"))
             || File.Exists(Path.Combine(StagingDir, safeName + ".addon64"));
+    }
+
+    /// <inheritdoc />
+    public string? GetVersionLabel(string sectionId)
+    {
+        if (sectionId.Equals("renodx-dlss5", StringComparison.OrdinalIgnoreCase))
+        {
+            var rdx5Service = App.Services.GetRequiredService<Renodx5AddonService>();
+            var v = rdx5Service.StagedVersion;
+            return string.IsNullOrEmpty(v) ? null : $"v{v}";
+        }
+        if (sectionId.Equals("renodx-dlss-sf", StringComparison.OrdinalIgnoreCase))
+        {
+            var rdx5Service = App.Services.GetRequiredService<Renodx5AddonService>();
+            var v = rdx5Service.SfStagedVersion;
+            return string.IsNullOrEmpty(v) ? null : $"v{v}";
+        }
+        return null;
     }
 
     /// <inheritdoc />
@@ -206,6 +244,13 @@ public class AddonPackService : IAddonPackService
         // The addon picker deploys from %LocalAppData%\RHI\rdx5\ via the service, not via URL.
         if (!parsed.Any(e => e.SectionId.Equals(Renodx5Entry.SectionId, StringComparison.OrdinalIgnoreCase)))
             parsed.Insert(0, Renodx5Entry);
+
+        // Insert SF variant immediately after DLSS5 Tool
+        if (!parsed.Any(e => e.SectionId.Equals(Renodx5SfEntry.SectionId, StringComparison.OrdinalIgnoreCase)))
+        {
+            int rdx5Idx = parsed.FindIndex(e => e.SectionId.Equals(Renodx5Entry.SectionId, StringComparison.OrdinalIgnoreCase));
+            parsed.Insert(rdx5Idx >= 0 ? rdx5Idx + 1 : 1, Renodx5SfEntry);
+        }
 
         // Append RenoDX DevKit entry (always present)
         if (!parsed.Any(e => e.PackageName.Equals(RenoDxDevKitEntry.PackageName, StringComparison.OrdinalIgnoreCase)))
@@ -294,6 +339,16 @@ public class AddonPackService : IAddonPackService
             _packs.Insert(0, rdx5Entry);
         }
 
+        // Keep SF variant immediately after DLSS5 Tool
+        var sfIdx = _packs.FindIndex(p => p.SectionId.Equals("renodx-dlss-sf", StringComparison.OrdinalIgnoreCase));
+        var rdx5FinalIdx = _packs.FindIndex(p => p.SectionId.Equals("renodx-dlss5", StringComparison.OrdinalIgnoreCase));
+        if (sfIdx >= 0 && sfIdx != rdx5FinalIdx + 1)
+        {
+            var sfEntry = _packs[sfIdx];
+            _packs.RemoveAt(sfIdx);
+            _packs.Insert(rdx5FinalIdx + 1, sfEntry);
+        }
+
         CrashReporter.Log($"[AddonPackService.ApplyManifestOverrides] Applied {manifest.AddonPacks.Count} override(s), {_packs.Count} addons active.");
     }
 
@@ -318,6 +373,20 @@ public class AddonPackService : IAddonPackService
                 {
                     CrashReporter.Log("[AddonPackService.DownloadAddonAsync] RenoDX DLSS5 staging not ready after EnsureStaging");
                     progress?.Report(("RenoDX DLSS5 download failed", 0));
+                }
+                return;
+            }
+
+            // SF variant — route to Renodx5AddonService.EnsureSfStagingAsync
+            if (entry.SectionId.Equals("renodx-dlss-sf", StringComparison.OrdinalIgnoreCase))
+            {
+                progress?.Report(("Downloading DLSS Tool (ShortFuse)...", 10));
+                var rdx5Service = App.Services.GetRequiredService<Renodx5AddonService>();
+                await rdx5Service.EnsureSfStagingAsync(progress).ConfigureAwait(false);
+                if (!rdx5Service.IsSfStagingReady)
+                {
+                    CrashReporter.Log("[AddonPackService.DownloadAddonAsync] SF staging not ready after EnsureStaging");
+                    progress?.Report(("DLSS Tool (ShortFuse) download failed", 0));
                 }
                 return;
             }
@@ -520,6 +589,16 @@ public class AddonPackService : IAddonPackService
                     if (!File.Exists(stagingFile))
                     {
                         CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] Skipping 'RenoDX DLSS5' — rdx5 staging not ready.");
+                        continue;
+                    }
+                }
+                else if (packageName.Equals("DLSS Tool (ShortFuse)", StringComparison.OrdinalIgnoreCase))
+                {
+                    var rdx5Service = App.Services.GetRequiredService<Renodx5AddonService>();
+                    stagingFile = rdx5Service.SfStagedFilePath;
+                    if (!File.Exists(stagingFile))
+                    {
+                        CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] Skipping 'DLSS Tool (ShortFuse)' — SF staging not ready.");
                         continue;
                     }
                 }

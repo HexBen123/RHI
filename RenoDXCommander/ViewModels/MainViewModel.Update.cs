@@ -1201,6 +1201,19 @@ public partial class MainViewModel
             {
                 _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] RenoDX DLSS5 addon check failed — {ex.Message}");
             }
+
+            // Check DLSS Tool (ShortFuse) SF variant update
+            try
+            {
+                var rdx5Service = App.Services.GetRequiredService<Renodx5AddonService>();
+                bool sfHasUpdate = await rdx5Service.CheckForSfUpdateAsync().ConfigureAwait(false);
+                if (sfHasUpdate)
+                    await rdx5Service.EnsureSfStagingAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _crashReporter.Log($"[MainViewModel.CheckForUpdatesAsync] DLSS Tool SF check failed — {ex.Message}");
+            }
         }
         catch (Exception ex)
         {

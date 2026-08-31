@@ -414,7 +414,7 @@ public partial class DetailPanelBuilder
                             child.Opacity = 0.4;
                     }
                 }
-                Grid.SetColumn(nrCol, 6);
+                Grid.SetColumn(nrCol, 8);
                 dlssRowGrid.Children.Add(nrCol);
 
                 dlssRowGrid.Children.Add(MakeDlssDivider(7));
@@ -446,7 +446,7 @@ public partial class DetailPanelBuilder
                 null,
                 originalVersion: card.DlssDetection?.OriginalStreamlineVersion);
 
-            int slColumn = FeatureFlags.DlssNr ? 8 : 6;
+            int slColumn = FeatureFlags.DlssNr ? 6 : 6;
 
             // Add Restore All button into the SL column (fills the preset slot)
             // Enabled when any backup exists OR any preset is non-default

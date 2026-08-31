@@ -144,7 +144,8 @@ public partial class App : Application
             if ((string.Equals(ext, ".addon64", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(ext, ".addon32", StringComparison.OrdinalIgnoreCase))
                 && fileName.StartsWith("renodx-", StringComparison.OrdinalIgnoreCase)
-                && !fileName.StartsWith("renodx-dlss5", StringComparison.OrdinalIgnoreCase))
+                && !fileName.StartsWith("renodx-dlss5", StringComparison.OrdinalIgnoreCase)
+                && !fileName.StartsWith("renodx-dlss.", StringComparison.OrdinalIgnoreCase))
                 addonArg = cmdArgs[1];
         }
 

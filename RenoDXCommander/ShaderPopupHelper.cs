@@ -141,7 +141,32 @@ public static class ShaderPopupHelper
         };
         topButtonRow.Children.Add(expandAllBtn);
         topButtonRow.Children.Add(deselectAllBtn);
+
+        // ── Search box (right of Deselect All) ───────────────────────────────
+        var searchBox = new TextBox
+        {
+            PlaceholderText = "Search packs or shaders...",
+            FontSize        = 12,
+            MinWidth        = 220,
+            Background      = Brush(ResourceKeys.SurfaceInputBrush),
+            Foreground      = Brush(ResourceKeys.TextSecondaryBrush),
+            BorderBrush     = Brush(ResourceKeys.BorderSubtleBrush),
+            BorderThickness = new Thickness(1),
+            CornerRadius    = new CornerRadius(8),
+            Padding         = new Thickness(10, 5, 10, 5),
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        // Force built-in WinUI 3 clear (✕) button to always show
+        searchBox.Loaded += (_, _) => VisualStateManager.GoToState(searchBox, "ButtonVisible", false);
+        topButtonRow.Children.Add(searchBox);
+
         panel.Children.Add(topButtonRow);
+
+        // ── Search filter action — wired after rows are built ─────────────────
+        // packRows tracks (id, displayName, packCb, fileSubPanel) for filtering
+        var packRows = new List<(string Id, string DisplayName, CheckBox PackCb, StackPanel FileSub)>();
+        // categoryHeaders tracks (category, header TextBlock, list of pack ids in that category)
+        var categoryHeaders = new List<(string Category, TextBlock Header, List<string> PackIds)>();
 
         // ── Group packs by category ───────────────────────────────────────────
         var groups = packs
@@ -157,14 +182,17 @@ public static class ShaderPopupHelper
                 _                                          => "Extra",
             };
 
-            panel.Children.Add(new TextBlock
+            var headerTextBlock = new TextBlock
             {
                 Text       = headerText,
                 FontSize   = 14,
                 FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
                 Foreground = Brush(ResourceKeys.TextPrimaryBrush),
                 Margin     = new Thickness(0, checkBoxes.Count > 0 ? 10 : 4, 0, 4),
-            });
+            };
+            panel.Children.Add(headerTextBlock);
+            var categoryPackIds = new List<string>();
+            categoryHeaders.Add((headerText, headerTextBlock, categoryPackIds));
 
             foreach (var (id, displayName, _) in group)
             {
@@ -329,6 +357,8 @@ public static class ShaderPopupHelper
                 };
 
                 checkBoxes.Add((id, packCb));
+                packRows.Add((id, displayName, packCb, fileSubPanel));
+                categoryPackIds.Add(id);
                 panel.Children.Add(packCb);
 
                 if (fileCbList.Count > 0)
@@ -375,6 +405,85 @@ public static class ShaderPopupHelper
             MaxHeight                   = 700,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             Padding                     = new Thickness(0, 0, 8, 0),
+        };
+
+        // ── Wire search box filter ────────────────────────────────────────────
+        searchBox.TextChanged += (s, ev) =>
+        {
+            VisualStateManager.GoToState(searchBox, "ButtonVisible", true);
+            var query = searchBox.Text.Trim();
+            bool hasQuery = !string.IsNullOrEmpty(query);
+
+            foreach (var (id, displayName, packCb, fileSub) in packRows)
+            {
+                if (!hasQuery)
+                {
+                    packCb.Visibility  = Visibility.Visible;
+                    // Restore all file row visibilities
+                    if (fileCheckBoxes.TryGetValue(id, out var allFc))
+                        foreach (var (_, fileCb) in allFc)
+                            fileCb.Visibility = Visibility.Visible;
+                    continue;
+                }
+
+                // Match pack name
+                bool nameMatch = displayName.Contains(query, StringComparison.OrdinalIgnoreCase);
+
+                // Match any individual shader file name
+                bool fileMatch = false;
+                if (!nameMatch && fileCheckBoxes.TryGetValue(id, out var fcList))
+                {
+                    fileMatch = fcList.Any(fc => fc.File.Contains(query, StringComparison.OrdinalIgnoreCase));
+                    // Hide individual file rows that don't match the query
+                    if (fileMatch)
+                    {
+                        foreach (var (file, fileCb) in fcList)
+                            fileCb.Visibility = file.Contains(query, StringComparison.OrdinalIgnoreCase)
+                                ? Visibility.Visible : Visibility.Collapsed;
+                    }
+                }
+                else if (nameMatch && fileCheckBoxes.TryGetValue(id, out var allFcList))
+                {
+                    // Pack name matched — show all file rows
+                    foreach (var (_, fileCb) in allFcList)
+                        fileCb.Visibility = Visibility.Visible;
+                }
+
+                bool match = nameMatch || fileMatch;
+                packCb.Visibility = match ? Visibility.Visible : Visibility.Collapsed;
+                // Collapse sub-panel for non-matching packs
+                if (!match && fileSubPanels.TryGetValue(id, out var hideSp))
+                    hideSp.Visibility = Visibility.Collapsed;
+                // If filtering by file, expand the sub-panel so matching files are visible
+                if (fileMatch && !nameMatch && fileSubPanels.TryGetValue(id, out var sp))
+                {
+                    sp.Visibility = Visibility.Visible;
+                    if (expandButtons.TryGetValue(id, out var eb))
+                        eb.Content = "▼";
+                }
+            }
+
+            // Show/hide category headers based on whether any pack in that category is visible
+            foreach (var (_, header, packIds) in categoryHeaders)
+            {
+                bool anyVisible = packIds.Any(pid =>
+                {
+                    var row = packRows.FirstOrDefault(r => r.Id.Equals(pid, StringComparison.OrdinalIgnoreCase));
+                    return row.PackCb?.Visibility == Visibility.Visible;
+                });
+                header.Visibility = anyVisible ? Visibility.Visible : Visibility.Collapsed;
+            }
+        };
+
+        // Enter key unfocuses the search box without moving cursor elsewhere
+        searchBox.KeyDown += (s, ev) =>
+        {
+            if (ev.Key == Windows.System.VirtualKey.Enter)
+            {
+                ev.Handled = true;
+                // Move focus to the scroll viewer to deselect search box without side effects
+                packScrollViewer.Focus(FocusState.Programmatic);
+            }
         };
 
         // ── Profile state ─────────────────────────────────────────────────────

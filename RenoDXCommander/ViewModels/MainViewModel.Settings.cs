@@ -702,7 +702,8 @@ public partial class MainViewModel
 
                 // If renodx-dlss5 is in the active selection, ensure nvngx_dlssnr.dll is also present
                 var effectiveSelection = useGlobalSet ? selection : selection;
-                bool rdx5Active = effectiveSelection?.Contains("RenoDX DLSS5", StringComparer.OrdinalIgnoreCase) == true;
+                bool rdx5Active = effectiveSelection?.Contains("DLSS5 Tool", StringComparer.OrdinalIgnoreCase) == true
+                               || effectiveSelection?.Contains("RenoDX DLSS5", StringComparer.OrdinalIgnoreCase) == true;
                 if (rdx5Active && !File.Exists(Path.Combine(card.InstallPath, "nvngx_dlssnr.dll")))
                 {
                     _ = Task.Run(async () =>
@@ -729,6 +730,40 @@ public partial class MainViewModel
                         catch (Exception nrEx)
                         {
                             _crashReporter.Log($"[MainViewModel.DeployAddonsForCard] NR DLL deploy failed for '{gameName}' — {nrEx.Message}");
+                        }
+                    });
+                }
+
+                // If SF variant is in the active selection, co-deploy full DLSS+Streamline stack
+                bool sfActive = effectiveSelection?.Contains("DLSS Tool (ShortFuse)", StringComparer.OrdinalIgnoreCase) == true;
+                if (sfActive)
+                {
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            var rdx5Svc = App.Services.GetRequiredService<Renodx5AddonService>();
+                            var detection = _dlssStreamlineService.Detect(card.InstallPath);
+                            await rdx5Svc.InstallSfAsync(card.InstallPath, detection).ConfigureAwait(false);
+
+                            // Refresh card DLSS state
+                            var freshDetection = _dlssStreamlineService.Detect(card.InstallPath);
+                            if (freshDetection.HasAny)
+                            {
+                                _dlssStreamlineService.RecordDlssFound(card.GameName);
+                                _dlssStreamlineService.RecordTrustedPath(card.GameName, freshDetection);
+                            }
+                            DispatcherQueue?.TryEnqueue(() =>
+                            {
+                                card.ApplyDlssDetection(freshDetection);
+                                card.RefreshDlssVersions(_dlssStreamlineService);
+                                // Full detail panel rebuild so Nvidia Profile section appears
+                                RequestCardRebuild?.Invoke(card);
+                            });
+                        }
+                        catch (Exception sfEx)
+                        {
+                            _crashReporter.Log($"[MainViewModel.DeployAddonsForCard] SF co-deploy failed for '{gameName}' — {sfEx.Message}");
                         }
                     });
                 }

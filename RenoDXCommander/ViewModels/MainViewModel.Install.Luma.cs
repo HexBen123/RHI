@@ -763,6 +763,7 @@ public partial class MainViewModel
                                 && !fn.StartsWith("renodx-dlssfix", StringComparison.OrdinalIgnoreCase)
                                 && !fn.StartsWith("renodx-upgrade", StringComparison.OrdinalIgnoreCase)
                                 && !fn.StartsWith("renodx-dlss5", StringComparison.OrdinalIgnoreCase)
+                                && !fn.StartsWith("renodx-dlss.", StringComparison.OrdinalIgnoreCase)
                                 && !fn.StartsWith("renodx-universal_ue", StringComparison.OrdinalIgnoreCase))
                             {
                                 try { File.Delete(f); } catch (Exception ex) { _crashReporter.Log($"[MainViewModel.ToggleLumaMode] Failed to delete '{f}' — {ex.Message}"); }

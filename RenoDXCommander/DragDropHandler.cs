@@ -185,7 +185,8 @@ public partial class DragDropHandler
                 // Handle .addon64 / .addon32 files — install RenoDX addon to a game
                 if (ext is ".addon64" or ".addon32"
                     && Path.GetFileName(file.Path).StartsWith("renodx-", StringComparison.OrdinalIgnoreCase)
-                    && !Path.GetFileName(file.Path).StartsWith("renodx-dlss5", StringComparison.OrdinalIgnoreCase))
+                    && !Path.GetFileName(file.Path).StartsWith("renodx-dlss5", StringComparison.OrdinalIgnoreCase)
+                    && !Path.GetFileName(file.Path).StartsWith("renodx-dlss.", StringComparison.OrdinalIgnoreCase))
                 {
                     try
                     {

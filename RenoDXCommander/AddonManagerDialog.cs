@@ -134,8 +134,9 @@ public static class AddonManagerDialog
             !string.IsNullOrEmpty(entry.DownloadUrl64))
             return "download";
 
-        // renodx-dlss5 is managed by Renodx5AddonService — treat as downloadable
-        if (entry.SectionId.Equals("renodx-dlss5", StringComparison.OrdinalIgnoreCase))
+        // renodx-dlss5 and renodx-dlss-sf are managed by Renodx5AddonService — treat as downloadable
+        if (entry.SectionId.Equals("renodx-dlss5", StringComparison.OrdinalIgnoreCase)
+            || entry.SectionId.Equals("renodx-dlss-sf", StringComparison.OrdinalIgnoreCase))
             return "download";
 
         if (!string.IsNullOrEmpty(entry.RepositoryUrl))
@@ -169,6 +170,16 @@ public static class AddonManagerDialog
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = Brush(ResourceKeys.TextPrimaryBrush),
         });
+        var versionLabel = addonPackService.GetVersionLabel(entry.SectionId);
+        if (!string.IsNullOrEmpty(versionLabel))
+            nameRow.Children.Add(new TextBlock
+            {
+                Text = versionLabel,
+                FontSize = 11,
+                Foreground = Brush(ResourceKeys.TextSecondaryBrush),
+                VerticalAlignment = VerticalAlignment.Center,
+                Opacity = 0.7,
+            });
         var tickMark = new TextBlock
         {
             Text = "✓",
