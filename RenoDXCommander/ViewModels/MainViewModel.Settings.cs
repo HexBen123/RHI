@@ -662,6 +662,10 @@ public partial class MainViewModel
 
                 bool is32Bit = card.Is32Bit;
 
+                // Capture SF installed state NOW before DeployAddonsForGame removes the addon file as stale
+                var rdx5SvcRef = App.Services.GetRequiredService<Renodx5AddonService>();
+                bool sfWasInstalled = rdx5SvcRef.IsSfInstalledIn(card.InstallPath);
+
                 // Skip addon deployment for normal ReShade games (Req 3.1, 3.2)
                 if (card.UseNormalReShade)
                 {
@@ -735,7 +739,9 @@ public partial class MainViewModel
                 }
 
                 // If SF variant is in the active selection, co-deploy full DLSS+Streamline stack
+                // If it's NOT active but was previously installed, uninstall to restore .original files
                 bool sfActive = effectiveSelection?.Contains("DLSS Tool (ShortFuse)", StringComparer.OrdinalIgnoreCase) == true;
+                bool sfInstalled = sfWasInstalled;
                 if (sfActive)
                 {
                     _ = Task.Run(async () =>
@@ -764,6 +770,35 @@ public partial class MainViewModel
                         catch (Exception sfEx)
                         {
                             _crashReporter.Log($"[MainViewModel.DeployAddonsForCard] SF co-deploy failed for '{gameName}' — {sfEx.Message}");
+                        }
+                    });
+                }
+                else if (sfInstalled)
+                {
+                    // SF was installed but is no longer selected — restore .original files and clean up
+                    _ = Task.Run(() =>
+                    {
+                        try
+                        {
+                            var rdx5Svc = App.Services.GetRequiredService<Renodx5AddonService>();
+                            var detection = _dlssStreamlineService.Detect(card.InstallPath);
+                            rdx5Svc.UninstallSf(card.InstallPath, detection);
+
+                            var freshDetection = _dlssStreamlineService.Detect(card.InstallPath);
+                            if (freshDetection.HasAny)
+                                _dlssStreamlineService.RecordTrustedPath(card.GameName, freshDetection);
+                            else
+                                _dlssStreamlineService.RecordNoDlssFound(card.GameName);
+                            DispatcherQueue?.TryEnqueue(() =>
+                            {
+                                card.ApplyDlssDetection(freshDetection);
+                                card.RefreshDlssVersions(_dlssStreamlineService);
+                                RequestCardRebuild?.Invoke(card);
+                            });
+                        }
+                        catch (Exception sfEx)
+                        {
+                            _crashReporter.Log($"[MainViewModel.DeployAddonsForCard] SF uninstall failed for '{gameName}' — {sfEx.Message}");
                         }
                     });
                 }

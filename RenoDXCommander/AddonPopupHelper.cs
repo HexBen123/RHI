@@ -160,13 +160,27 @@ public static class AddonPopupHelper
 
             // Right side: toggle — same behavior as global manager
             bool suppressToggle = false;
+
+            // Determine if this entry is blocked by mutual exclusivity (dlss5 ↔ dlss-sf)
+            bool isMutuallyExclusive = entry.SectionId.Equals("renodx-dlss5", StringComparison.OrdinalIgnoreCase)
+                                    || entry.SectionId.Equals("renodx-dlss-sf", StringComparison.OrdinalIgnoreCase);
+            string? mutualExclusivePeer = entry.SectionId.Equals("renodx-dlss5", StringComparison.OrdinalIgnoreCase)
+                ? "DLSS Tool (ShortFuse)"
+                : entry.SectionId.Equals("renodx-dlss-sf", StringComparison.OrdinalIgnoreCase)
+                ? "DLSS5 Tool" : null;
+            bool peerIsSelected = mutualExclusivePeer != null && selected.Contains(mutualExclusivePeer);
+
             var toggle = new ToggleSwitch
             {
                 IsOn = isSelected,
                 OnContent = "On",
                 OffContent = "Off",
                 VerticalAlignment = VerticalAlignment.Center,
+                IsEnabled = !peerIsSelected,
+                Opacity = peerIsSelected ? 0.35 : 1.0,
             };
+            if (peerIsSelected)
+                ToolTipService.SetToolTip(toggle, $"Disable {mutualExclusivePeer} first to enable this addon.");
 
             // Capture for the lambda
             var capturedEntry = entry;
@@ -200,6 +214,26 @@ public static class AddonPopupHelper
                     }
                 }
             };
+
+            // Wire mutual exclusivity — when this toggle turns on, grey out the peer
+            if (isMutuallyExclusive && mutualExclusivePeer != null)
+            {
+                var capturedPeerName = mutualExclusivePeer;
+                toggle.Toggled += (s, ev) =>
+                {
+                    if (suppressToggle) return;
+                    var peer = toggles.FirstOrDefault(t => t.PackageName.Equals(capturedPeerName, StringComparison.OrdinalIgnoreCase));
+                    if (peer.Toggle != null)
+                    {
+                        peer.Toggle.IsEnabled = !toggle.IsOn;
+                        peer.Toggle.Opacity = toggle.IsOn ? 0.35 : 1.0;
+                        if (toggle.IsOn)
+                            ToolTipService.SetToolTip(peer.Toggle, $"Disable {entry.PackageName} first to enable this addon.");
+                        else
+                            ToolTipService.SetToolTip(peer.Toggle, null);
+                    }
+                };
+            }
 
             toggles.Add((entry.PackageName, toggle));
 
