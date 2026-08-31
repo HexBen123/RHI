@@ -362,9 +362,9 @@ public class AddonPackService : IAddonPackService
             Directory.CreateDirectory(StagingDir);
             var safeName = SanitizeFileName(entry.PackageName);
 
-            // RenoDX DLSS5 is managed by Renodx5AddonService — route to that service and mirror
-            // the staged file into the standard addon staging dir so DeployAddonsForGame finds it.
-            if (entry.SectionId.Equals("renodx-dlss5", StringComparison.OrdinalIgnoreCase))
+            // RenoDX DLSS5 is managed by Renodx5AddonService — route to that service
+            if (entry.SectionId.Equals("renodx-dlss5", StringComparison.OrdinalIgnoreCase)
+                || entry.PackageName.Equals("DLSS5 Tool", StringComparison.OrdinalIgnoreCase))
             {
                 progress?.Report(("Downloading RenoDX DLSS5 addon...", 10));
                 var rdx5Service = App.Services.GetRequiredService<Renodx5AddonService>();
@@ -582,13 +582,14 @@ public class AddonPackService : IAddonPackService
             if (!File.Exists(stagingFile))
             {
                 // RenoDX DLSS5 is staged by Renodx5AddonService in its own directory
-                if (packageName.Equals("RenoDX DLSS5", StringComparison.OrdinalIgnoreCase))
+                if (packageName.Equals("RenoDX DLSS5", StringComparison.OrdinalIgnoreCase)
+                    || packageName.Equals("DLSS5 Tool", StringComparison.OrdinalIgnoreCase))
                 {
                     var rdx5Service = App.Services.GetRequiredService<Renodx5AddonService>();
                     stagingFile = rdx5Service.StagedFilePath;
                     if (!File.Exists(stagingFile))
                     {
-                        CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] Skipping 'RenoDX DLSS5' — rdx5 staging not ready.");
+                        CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] Skipping '{packageName}' — rdx5 staging not ready.");
                         continue;
                     }
                 }
