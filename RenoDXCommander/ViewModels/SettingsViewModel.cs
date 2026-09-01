@@ -394,9 +394,9 @@ public partial class SettingsViewModel : ObservableObject
             s["PeakNitsPresets"] = System.Text.Json.JsonSerializer.Serialize(PeakNitsPresets);
         else
             s.Remove("PeakNitsPresets"); // All 3 checked = default — remove stale non-default value
-        if (AutoUpdateComponents) s["AutoUpdateComponents"] = "true";
-        if (AutoUpdateDlss) s["AutoUpdateDlss"] = "true";
-        if (AutoUpdateStreamline) s["AutoUpdateStreamline"] = "true";
+        if (AutoUpdateComponents) s["AutoUpdateComponents"] = "true"; else s.Remove("AutoUpdateComponents");
+        if (AutoUpdateDlss) s["AutoUpdateDlss"] = "true"; else s.Remove("AutoUpdateDlss");
+        if (AutoUpdateStreamline) s["AutoUpdateStreamline"] = "true"; else s.Remove("AutoUpdateStreamline");
         if (!string.IsNullOrEmpty(LastKnownNewestDlss)) s["LastKnownNewestDlss"] = LastKnownNewestDlss;
         if (!string.IsNullOrEmpty(LastKnownNewestStreamline)) s["LastKnownNewestStreamline"] = LastKnownNewestStreamline;
         s["HdrAutoToggle"] = HdrAutoToggle ? "true" : "false";

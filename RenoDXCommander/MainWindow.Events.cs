@@ -81,6 +81,9 @@ public sealed partial class MainWindow
             DispatcherQueue?.TryEnqueue(() => progressText.Text = "Checking components...");
             await ViewModel.RefreshAsync();
 
+            // Trigger silent auto-install of any updates found
+            ViewModel.TriggerAutoUpdate();
+
             // Check app update
             DispatcherQueue?.TryEnqueue(() => progressText.Text = "Checking app version...");
             await _dialogService.CheckForAppUpdateAsync();

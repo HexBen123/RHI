@@ -632,7 +632,7 @@ public sealed partial class MainWindow
             await DialogService.ShowSafeAsync(new ContentDialog
             {
                 Title = "Import",
-                Content = $"No backup file found at:\n{path}\n\nExport profiles first.",
+                Content = $"No backup file found at:\n{path}\n\nBackup profiles first.",
                 CloseButtonText = "OK",
                 XamlRoot = Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark,
@@ -652,7 +652,7 @@ public sealed partial class MainWindow
 
         var confirmResult = await DialogService.ShowSafeAsync(new ContentDialog
         {
-            Title = "Import Profiles",
+            Title = "Restore Profiles",
             Content = new TextBlock
             {
                 Text = warningText,

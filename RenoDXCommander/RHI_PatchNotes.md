@@ -1,8 +1,22 @@
+## v2.5.4
+
+### Changes
+
+- Clicking "Check For Updates" now also triggers a silent auto-install pass immediately after the check completes, so any updates found are installed without needing a separate "Update All" click (when Automatic Updates is enabled).
+- Renamed "Export Profiles" / "Import Profiles" buttons in Settings to "Backup Profiles" / "Restore Profiles" for clarity.
+
+### Bug Fixes
+
+- Fixed `nvngx_dlssnr.dll` not being removed from the game folder when uninstalling DLSS5 Tool. RHI now cleans it up on uninstall since it was the one that deployed it.
+- Fixed Automatic Updates setting reverting to Yes on every restart when set to No. The `false` state was never written to `settings.json`, so the old `true` value persisted across sessions.
+
+---
+
 ## v2.5.3
 
 ### Bug Fixes
 
-- Fixed `RenoDX DLSS5.addon64` continuing to deploy to game folders even after v2.5.2. The old name was still stored in per-game addon selections in settings — RHI now migrates these to `DLSS5 Tool` on load.
+- Fixed `RenoDX DLSS5.addon64` still being deployed to game folders after v2.5.2. Per-game addon selections stored in `settings.json` still referenced the old name (`RenoDX DLSS5`) — these are now migrated to `DLSS5 Tool` on load. This is separate from the global addon list and stale file fixes in v2.5.2.
 
 ---
 

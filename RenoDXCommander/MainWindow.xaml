@@ -2004,7 +2004,7 @@
                                             CornerRadius="8" Padding="12,7" FontSize="12"
                                             HorizontalAlignment="Stretch"/>
 
-                                    <TextBlock Text="Export saves all per-game NVIDIA driver settings to a backup file. Import restores them — useful before updating drivers."
+                                    <TextBlock Text="Backup saves all per-game NVIDIA driver settings to a file. Restore loads them back — useful before updating drivers."
                                                TextWrapping="Wrap" FontSize="11"
                                                Foreground="{StaticResource TextSecondaryBrush}"
                                                Margin="0,8,0,0"/>
@@ -2013,7 +2013,7 @@
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
-                                        <Button Grid.Column="0" Content="Export Profiles"
+                                        <Button Grid.Column="0" Content="Backup Profiles"
                                                 Click="ExportNvidiaProfiles_Click"
                                                 ToolTipService.ToolTip="Save all per-game NVIDIA profile settings to a backup file."
                                                 Background="{StaticResource AccentBlueBgBrush}"
@@ -2021,7 +2021,7 @@
                                                 BorderBrush="{StaticResource AccentBlueBorderBrush}" BorderThickness="1"
                                                 CornerRadius="8" Padding="12,7" FontSize="12"
                                                 HorizontalAlignment="Stretch"/>
-                                        <Button Grid.Column="1" Content="Import Profiles"
+                                        <Button Grid.Column="1" Content="Restore Profiles"
                                                 Click="ImportNvidiaProfiles_Click"
                                                 ToolTipService.ToolTip="Restore per-game NVIDIA profile settings from a previous export."
                                                 Background="{StaticResource AccentBlueBgBrush}"

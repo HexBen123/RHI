@@ -149,6 +149,29 @@ public class Renodx5AddonService
         if (string.IsNullOrEmpty(installPath)) return;
         var deployDir = ModInstallService.GetAddonDeployPath(installPath);
         TryDelete(Path.Combine(deployDir, DeployFileName), "Renodx5AddonService.Uninstall");
+        // Remove nvngx_dlssnr.dll only if it matches the file RHI staged — this guards against
+        // deleting a copy the game shipped itself (which we skipped over in DeployNrDllIfAbsentAsync).
+        var nrDllPath = Path.Combine(installPath, "nvngx_dlssnr.dll");
+        if (File.Exists(nrDllPath))
+        {
+            try
+            {
+                var cachedNr = _dlssStreamlineService.GetCachedNrDllPath();
+                if (cachedNr != null && File.Exists(cachedNr)
+                    && new FileInfo(nrDllPath).Length == new FileInfo(cachedNr).Length)
+                {
+                    TryDelete(nrDllPath, "Renodx5AddonService.Uninstall");
+                }
+                else
+                {
+                    _crashReporter.Log($"[Renodx5AddonService.Uninstall] Skipping nvngx_dlssnr.dll deletion — size mismatch, likely game-original");
+                }
+            }
+            catch (Exception ex)
+            {
+                _crashReporter.Log($"[Renodx5AddonService.Uninstall] nvngx_dlssnr.dll size check failed — {ex.Message}");
+            }
+        }
     }
 
     public bool IsInstalledIn(string installPath)
