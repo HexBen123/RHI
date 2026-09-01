@@ -489,6 +489,7 @@ public class AddonPackService : IAddonPackService
 
             // Use the caller-provided version if available (avoids ETag drift for /latest/ URLs)
             string? versionToken = versionOverride;
+            bool anySucceeded = false;
 
             for (int i = 0; i < downloads.Count; i++)
             {
@@ -499,19 +500,33 @@ public class AddonPackService : IAddonPackService
                 progress?.Report(($"Downloading {entry.PackageName}...", pctBase));
                 CrashReporter.Log($"[AddonPackService.DownloadAddonAsync] Downloading '{entry.PackageName}' from {url}");
 
-                if (IsZipUrl(url))
+                try
                 {
-                    // Download zip to temp, extract .addon32/.addon64 files
-                    versionToken ??= await ResolveVersionToken(url);
-                    await DownloadAndExtractZipAsync(url, safeName, progress, pctBase, pctRange);
+                    if (IsZipUrl(url))
+                    {
+                        // Download zip to temp, extract .addon32/.addon64 files
+                        versionToken ??= await ResolveVersionToken(url);
+                        await DownloadAndExtractZipAsync(url, safeName, progress, pctBase, pctRange);
+                    }
+                    else
+                    {
+                        // Direct .addon32/.addon64 save
+                        versionToken ??= await ResolveVersionToken(url);
+                        var destPath = Path.Combine(StagingDir, safeName + ext);
+                        await DownloadFileAsync(url, destPath, entry.PackageName, progress, pctBase, pctRange);
+                    }
+                    anySucceeded = true;
                 }
-                else
+                catch (Exception urlEx)
                 {
-                    // Direct .addon32/.addon64 save
-                    versionToken ??= await ResolveVersionToken(url);
-                    var destPath = Path.Combine(StagingDir, safeName + ext);
-                    await DownloadFileAsync(url, destPath, entry.PackageName, progress, pctBase, pctRange);
+                    CrashReporter.Log($"[AddonPackService.DownloadAddonAsync] Failed for '{entry.PackageName}' url={url} — {urlEx.Message}. Continuing with remaining URLs.");
                 }
+            }
+
+            if (!anySucceeded)
+            {
+                progress?.Report(($"❌ Download failed for {entry.PackageName}", 0));
+                return;
             }
 
             // Track version

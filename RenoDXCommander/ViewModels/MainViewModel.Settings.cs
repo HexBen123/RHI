@@ -630,9 +630,9 @@ public partial class MainViewModel
         {
             _gameNameService.PerGameAddonMode.Remove(key);
             _gameNameService.PerGameAddonMode.Remove(gameName); // clear legacy name-only entry too
-            // Discard per-game addon selection when reverting to global (Req 6.6)
-            _gameNameService.PerGameAddonSelection.Remove(key);
-            _gameNameService.PerGameAddonSelection.Remove(gameName); // clear legacy name-only entry too
+            // Do NOT wipe PerGameAddonSelection here — preserve it so switching back to Select
+            // restores the previous selection. Selection is only cleared explicitly by the user
+            // through the addon picker.
         }
         else
             _gameNameService.PerGameAddonMode[key] = mode;

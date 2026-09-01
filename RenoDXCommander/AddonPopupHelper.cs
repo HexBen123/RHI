@@ -237,6 +237,26 @@ public static class AddonPopupHelper
 
             toggles.Add((entry.PackageName, toggle));
 
+            // If already selected but not yet downloaded (e.g. added to selection on a previous session
+            // before staging completed), trigger the download now so it's ready when the dialog closes.
+            if (isSelected && !isCustomAddon && !addonPackService.IsDownloaded(capturedEntry.PackageName))
+            {
+                toggle.IsEnabled = false;
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await addonPackService.DownloadAddonAsync(capturedEntry);
+                        toggle.DispatcherQueue?.TryEnqueue(() => capturedTickMark.Visibility = Visibility.Visible);
+                    }
+                    catch { }
+                    finally
+                    {
+                        toggle.DispatcherQueue?.TryEnqueue(() => toggle.IsEnabled = !peerIsSelected);
+                    }
+                });
+            }
+
             // Compose the row
             var rowGrid = new Grid { ColumnSpacing = 12 };
             rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });

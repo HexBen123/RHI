@@ -354,8 +354,9 @@ public class GameNameService : IGameNameService
             _perGameAddonSelection = new(StringComparer.OrdinalIgnoreCase);
             foreach (var kv in pgasDict)
             {
-                if (_perGameAddonMode.ContainsKey(kv.Key))
-                    _perGameAddonSelection[kv.Key] = kv.Value;
+                // Load all selections — don't require a matching mode entry.
+                // A selection without a mode entry is fine; the mode just defaults to Global.
+                _perGameAddonSelection[kv.Key] = kv.Value;
             }
         }
 

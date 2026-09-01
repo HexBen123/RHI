@@ -7,8 +7,11 @@
 
 ### Bug Fixes
 
-- Fixed `nvngx_dlssnr.dll` not being removed from the game folder when uninstalling DLSS5 Tool. RHI now cleans it up on uninstall since it was the one that deployed it.
-- Fixed Automatic Updates setting reverting to Yes on every restart when set to No. The `false` state was never written to `settings.json`, so the old `true` value persisted across sessions.
+- Fixed `nvngx_dlssnr.dll` not being removed from the game folder when uninstalling DLSS5 Tool.
+- Fixed Automatic Updates setting reverting to Yes on restart when set to No.
+- Fixed addon downloads aborting entirely when one URL (e.g. the 32-bit variant) returns a 404 — remaining URLs now continue independently.
+- Fixed per-game addon selection being lost when switching the addon mode to Global and back.
+- Fixed pre-selected addons not re-downloading on launch if their staging files were missing.
 
 ---
 

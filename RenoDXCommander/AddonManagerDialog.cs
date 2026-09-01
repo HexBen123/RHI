@@ -272,6 +272,28 @@ public static class AddonManagerDialog
             };
 
             rightElement = toggle;
+
+            // If already enabled but not yet downloaded (selected in a previous session before staging
+            // completed), trigger the download now so deploy doesn't skip it.
+            if (isEnabled && !isCustomAddon && !addonPackService.IsDownloaded(entry.PackageName))
+            {
+                toggle.IsEnabled = false;
+                var capturedEntry2 = entry;
+                var capturedTick2 = tickMark;
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await addonPackService.DownloadAddonAsync(capturedEntry2);
+                        toggle.DispatcherQueue?.TryEnqueue(() => capturedTick2.Visibility = Visibility.Visible);
+                    }
+                    catch { }
+                    finally
+                    {
+                        toggle.DispatcherQueue?.TryEnqueue(() => toggle.IsEnabled = true);
+                    }
+                });
+            }
         }
         else if (actionType == "repository")
         {
