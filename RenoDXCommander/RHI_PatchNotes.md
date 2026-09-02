@@ -4,10 +4,11 @@
 
 - Clicking "Check For Updates" now also triggers a silent auto-install pass immediately after the check completes, so any updates found are installed without needing a separate "Update All" click (when Automatic Updates is enabled).
 - Renamed "Export Profiles" / "Import Profiles" buttons in Settings to "Backup Profiles" / "Restore Profiles" for clarity.
+- ReBAR Enable now has three options: Auto (Default), Off, and On — reflecting the new driver setting (0x000BFA21). Previously only Off and On were available. Both the global Settings page and per-game overrides panel are updated.
 
 ### Bug Fixes
 
-- Fixed `nvngx_dlssnr.dll` not being removed from the game folder when uninstalling DLSS5 Tool.
+- Fixed `nvngx_dlssnr.dll` not being removed from the game folder when uninstalling DLSS5 Tool. RHI now uses a sentinel file to track whether it placed the DLL, so it only removes what it deployed.
 - Fixed Automatic Updates setting reverting to Yes on restart when set to No.
 - Fixed addon downloads aborting entirely when one URL (e.g. the 32-bit variant) returns a 404 — remaining URLs now continue independently.
 - Fixed per-game addon selection being lost when switching the addon mode to Global and back.

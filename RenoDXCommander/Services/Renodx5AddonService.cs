@@ -104,18 +104,21 @@ public class Renodx5AddonService
     {
         if (string.IsNullOrEmpty(installPath)) return;
         var nrDllDest = Path.Combine(installPath, "nvngx_dlssnr.dll");
-        if (File.Exists(nrDllDest))
-        {
-            _crashReporter.Log($"[Renodx5AddonService.DeployNrDllIfAbsentAsync] nvngx_dlssnr.dll already present — skipping");
-            return;
-        }
+        var sentinel  = nrDllDest + ".original";
+
+        // Sentinel exists → already deployed by RHI, skip
+        if (File.Exists(sentinel)) return;
+        // File exists without sentinel → game-original, don't touch
+        if (File.Exists(nrDllDest)) return;
+
         try
         {
             var cachedNr = await _dlssStreamlineService.EnsureNewestDlssnrCachedAsync().ConfigureAwait(false);
             if (cachedNr != null)
             {
                 File.Copy(cachedNr, nrDllDest, overwrite: false);
-                _crashReporter.Log($"[Renodx5AddonService.DeployNrDllIfAbsentAsync] Deployed nvngx_dlssnr.dll to '{installPath}'");
+                File.WriteAllBytes(sentinel, Array.Empty<byte>()); // 0-byte sentinel — RHI placed this
+                _crashReporter.Log($"[Renodx5AddonService.DeployNrDllIfAbsentAsync] Deployed nvngx_dlssnr.dll to '{installPath}' (sentinel written)");
             }
         }
         catch (Exception ex)
@@ -149,28 +152,31 @@ public class Renodx5AddonService
         if (string.IsNullOrEmpty(installPath)) return;
         var deployDir = ModInstallService.GetAddonDeployPath(installPath);
         TryDelete(Path.Combine(deployDir, DeployFileName), "Renodx5AddonService.Uninstall");
-        // Remove nvngx_dlssnr.dll only if it matches the file RHI staged — this guards against
-        // deleting a copy the game shipped itself (which we skipped over in DeployNrDllIfAbsentAsync).
+        // Use sentinel pattern to decide whether to remove nvngx_dlssnr.dll:
+        // 0-byte .original → RHI placed it, delete both
+        // non-zero .original → game-original, restore it
+        // no .original → game-original (pre-sentinel installs or game shipped it), leave alone
         var nrDllPath = Path.Combine(installPath, "nvngx_dlssnr.dll");
-        if (File.Exists(nrDllPath))
+        var sentinel  = nrDllPath + ".original";
+        if (File.Exists(sentinel))
         {
-            try
+            var info = new FileInfo(sentinel);
+            if (info.Length == 0)
             {
-                var cachedNr = _dlssStreamlineService.GetCachedNrDllPath();
-                if (cachedNr != null && File.Exists(cachedNr)
-                    && new FileInfo(nrDllPath).Length == new FileInfo(cachedNr).Length)
-                {
-                    TryDelete(nrDllPath, "Renodx5AddonService.Uninstall");
-                }
-                else
-                {
-                    _crashReporter.Log($"[Renodx5AddonService.Uninstall] Skipping nvngx_dlssnr.dll deletion — size mismatch, likely game-original");
-                }
+                // Sentinel — RHI placed nvngx_dlssnr.dll, game had nothing → delete both
+                TryDelete(nrDllPath, "Renodx5AddonService.Uninstall (sentinel cleanup)");
+                TryDelete(sentinel,  "Renodx5AddonService.Uninstall (sentinel delete)");
             }
-            catch (Exception ex)
+            else
             {
-                _crashReporter.Log($"[Renodx5AddonService.Uninstall] nvngx_dlssnr.dll size check failed — {ex.Message}");
+                // Non-zero backup — game had its own copy → restore it
+                try { File.Copy(sentinel, nrDllPath, overwrite: true); File.Delete(sentinel); }
+                catch (Exception ex) { _crashReporter.Log($"[Renodx5AddonService.Uninstall] Restore failed — {ex.Message}"); }
             }
+        }
+        else
+        {
+            _crashReporter.Log($"[Renodx5AddonService.Uninstall] No sentinel for nvngx_dlssnr.dll — leaving untouched");
         }
     }
 
@@ -178,6 +184,33 @@ public class Renodx5AddonService
     {
         if (string.IsNullOrEmpty(installPath)) return false;
         return File.Exists(Path.Combine(ModInstallService.GetAddonDeployPath(installPath), DeployFileName));
+    }
+
+    /// <summary>
+    /// Removes nvngx_dlssnr.dll from the game folder using the sentinel pattern.
+    /// Called when DLSS5 Tool addon is removed (e.g. switching back to Global addons).
+    /// </summary>
+    public void RemoveNrDll(string installPath)
+    {
+        if (string.IsNullOrEmpty(installPath)) return;
+        var nrDllPath = Path.Combine(installPath, "nvngx_dlssnr.dll");
+        var sentinel  = nrDllPath + ".original";
+        if (!File.Exists(sentinel))
+        {
+            _crashReporter.Log($"[Renodx5AddonService.RemoveNrDll] No sentinel — leaving nvngx_dlssnr.dll untouched");
+            return;
+        }
+        var info = new FileInfo(sentinel);
+        if (info.Length == 0)
+        {
+            TryDelete(nrDllPath, "Renodx5AddonService.RemoveNrDll (sentinel cleanup)");
+            TryDelete(sentinel,  "Renodx5AddonService.RemoveNrDll (sentinel delete)");
+        }
+        else
+        {
+            try { File.Copy(sentinel, nrDllPath, overwrite: true); File.Delete(sentinel); }
+            catch (Exception ex) { _crashReporter.Log($"[Renodx5AddonService.RemoveNrDll] Restore failed — {ex.Message}"); }
+        }
     }
 
     // ── SF public API ─────────────────────────────────────────────────────────

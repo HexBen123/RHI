@@ -802,6 +802,14 @@ public class AddonPackService : IAddonPackService
                     File.Delete(file);
                     trackedFiles.Remove(fileName);
                     CrashReporter.Log($"[AddonPackService.DeployAddonsForGame] Removed stale addon '{fileName}' from '{installPath}'.");
+
+                    // If DLSS5 Tool addon was removed, also clean up the NR dll via sentinel pattern
+                    if (fileName.Equals("renodx-dlss5.addon64", StringComparison.OrdinalIgnoreCase)
+                        || fileName.Equals("renodx-dlss5.addon32", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var rdx5Svc = App.Services.GetRequiredService<Renodx5AddonService>();
+                        rdx5Svc.RemoveNrDll(installPath);
+                    }
                 }
                 catch (Exception ex)
                 {

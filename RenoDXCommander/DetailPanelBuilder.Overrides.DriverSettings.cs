@@ -426,64 +426,40 @@ public partial class DetailPanelBuilder
             ToolTipService.SetToolTip(rebarLabel, "Resizable BAR — allows the CPU to access full GPU VRAM at once. Can improve performance by 5-10% in some titles. RTX 30+ and BIOS support required.");
             rebarCol.Children.Add(rebarLabel);
 
-            bool rebarEnabled = nvidiaPresetService.GetReBarEnabled(card.GameName, installPathSafe);
+            bool rebarEnabled = false; // set inside Enable block below
             ulong rebarSizeLimit = nvidiaPresetService.GetReBarSizeLimit(card.GameName, installPathSafe);
-            var globalReBarState = nvidiaPresetService.GetGlobalReBarEnabled();
 
-            // Enable — with Global (On/Off) option when global is set
+            // Enable — Auto (Default) / Off / On using new 0x000BFA21 setting
             {
                 rebarCol.Children.Add(new TextBlock { Text = "Enable", FontSize = 10, Foreground = UIFactory.Brush(ResourceKeys.TextTertiaryBrush), Margin = new Thickness(0, 2, 0, 0) });
-                var enableItems = new List<string>();
-                if (globalReBarState.HasValue)
-                    enableItems.Add($"Global ({(globalReBarState.Value ? "On" : "Off")})");
-                enableItems.Add("Off");
-                enableItems.Add("On");
 
-                // Determine selected index
-                int enableIdx;
-                if (globalReBarState.HasValue)
-                {
-                    // If per-game matches global, show "Global" selected; otherwise show the per-game value
-                    bool perGameMatchesGlobal = rebarEnabled == globalReBarState.Value;
-                    enableIdx = perGameMatchesGlobal ? 0 : (rebarEnabled ? 2 : 1); // Global=0, Off=1, On=2
-                }
-                else
-                {
-                    enableIdx = rebarEnabled ? 1 : 0; // Off=0, On=1
-                }
+                uint rebarEnableMode = nvidiaPresetService.GetReBarEnableMode(card.GameName, installPathSafe);
+                // 0=Off→index 1, 1=Auto→index 0, 2=On→index 2
+                int enableIdx = rebarEnableMode == 0 ? 1 : rebarEnableMode == 2 ? 2 : 0;
 
                 var rebarEnableCombo = new ComboBox
                 {
-                    ItemsSource = enableItems,
+                    ItemsSource = new[] { "Auto (Default)", "Off", "On" },
                     SelectedIndex = enableIdx,
                     FontSize = 11,
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     CornerRadius = new CornerRadius(6),
                 };
-                ToolTipService.SetToolTip(rebarEnableCombo, globalReBarState.HasValue
-                    ? "Global = inherit from global setting. On/Off = per-game override."
-                    : "Off = ReBAR disabled. On = Force-enable ReBAR for this game.");
+                ToolTipService.SetToolTip(rebarEnableCombo, "Auto = driver decides. On = force-enable ReBAR. Off = force-disable ReBAR.");
                 var rebarComboInit = true;
                 rebarEnableCombo.SelectionChanged += (s, ev) =>
                 {
                     if (rebarComboInit) return;
-                    var selected = rebarEnableCombo.SelectedItem as string;
-                    if (selected != null && selected.StartsWith("Global"))
-                    {
-                        // Remove per-game override — inherit from global
-                        // Delete the per-game setting by setting it to match global
-                        bool globalVal = globalReBarState ?? false;
-                        nvidiaPresetService.SetReBarEnabled(card.GameName, installPathSafe, globalVal, 2);
-                    }
-                    else
-                    {
-                        bool enabling = selected == "On";
-                        nvidiaPresetService.SetReBarEnabled(card.GameName, installPathSafe, enabling, 2);
-                    }
+                    // index 0=Auto(1), 1=Off(0), 2=On(2)
+                    uint mode = rebarEnableCombo.SelectedIndex switch { 1 => 0u, 2 => 2u, _ => 1u };
+                    nvidiaPresetService.SetReBarEnableMode(card.GameName, installPathSafe, mode);
                     _window.DispatcherQueue?.TryEnqueue(() => BuildOverridesPanel(card));
                 };
                 rebarCol.Children.Add(rebarEnableCombo);
                 rebarComboInit = false;
+
+                // Derive enabled state for Mode/Size combos: only On enables them, Auto and Off grey them
+                rebarEnabled = rebarEnableMode == 2;
             }
 
             // Mode
