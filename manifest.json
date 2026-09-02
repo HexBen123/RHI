@@ -234,7 +234,8 @@
     "WATCH_DOGS2": "bin",
     "METAL GEAR SOLID 4: Guns of the Patriots - Master Collection Version": "MGS4",
     "METAL GEAR SOLID: Peace Walker - Master Collection Version": "mgspw",
-    "The Witcher 3: Wild Hunt - Complete Edition": "bin\\x64_dx12"
+    "The Witcher 3: Wild Hunt - Complete Edition": "bin\\x64_dx12",
+    "Outlast": "Binaries\\Win64"
   },
   "splitGames": {
     "Diablo": [
@@ -508,6 +509,7 @@
   "engineHintOverrides": {
     "Avowed": "Unreal Engine 5.3.2",
     "METAL GEAR SOLID 4: Guns of the Patriots - Master Collection Version": "MGS4 Engine",
+    "Outlast": "Unreal (Legacy)",
     "Beast of Reincarnation": "Unreal Engine 5.4.4",
     "Call of the Elder Gods": "Unreal Engine 5.6.1",
     "Denshattack!": "Unreal Engine 5.6.1",
@@ -591,6 +593,7 @@
     "AI: THE SOMNIUM FILES",
     "Anno 117 - Pax Romana",
     "Ball x Pit",
+    "Outlast",
     "Zero Parades",
     "BeamNG.drive",
     "Control",
