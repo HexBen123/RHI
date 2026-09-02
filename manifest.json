@@ -233,7 +233,8 @@
     "Watch_Dogs\u00AE 2": "bin",
     "WATCH_DOGS2": "bin",
     "METAL GEAR SOLID 4: Guns of the Patriots - Master Collection Version": "MGS4",
-    "METAL GEAR SOLID: Peace Walker - Master Collection Version": "mgspw"
+    "METAL GEAR SOLID: Peace Walker - Master Collection Version": "mgspw",
+    "The Witcher 3: Wild Hunt - Complete Edition": "bin\\x64_dx12"
   },
   "splitGames": {
     "Diablo": [

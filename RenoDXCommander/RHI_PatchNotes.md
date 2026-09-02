@@ -3,6 +3,7 @@
 ### Manifest Updates
 
 - Added a note to Ori and the Blind Forest: Definitive Edition warning that the generic Unity mod may have visual issues and the named mod is deprecated.
+- Added install path override for The Witcher 3: Wild Hunt - Complete Edition (`bin\x64_dx12`).
 
 ---
 
