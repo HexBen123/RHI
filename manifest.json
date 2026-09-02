@@ -502,7 +502,8 @@
     "Wolfenstein II: The New Colossus": "id Tech",
     "Wolfenstein: The New Order": "id Tech",
     "Wolfenstein: The Old Blood": "id Tech",
-    "Wolfenstein: Youngblood": "id Tech"
+    "Wolfenstein: Youngblood": "id Tech",
+    "The Witcher 3: Wild Hunt - Complete Edition": "REDengine"
   },
   "engineHintOverrides": {
     "Avowed": "Unreal Engine 5.3.2",
@@ -572,7 +573,8 @@
     "Trackmania": "DX11, DX12",
     "DOOM \u002B DOOM II": "VLK",
     "DOOM 64": "VLK",
-    "Crimson Desert Enhanced": "DX12"
+    "Crimson Desert Enhanced": "DX12",
+    "The Witcher 3: Wild Hunt - Complete Edition": "DX12"
   },
   "thirtyTwoBitGames": [
     "Assassin\u0027s Creed",
