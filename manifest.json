@@ -755,6 +755,9 @@
     },
     "REANIMAL": {
       "renodx": "REANIMAL has native HDR that is literally \u0022HDR Den made\u0022.\rThere is no need to add RenoDX to this game."
+    },
+    "Ori and the Blind Forest: Definitive Edition": {
+      "renodx": "Generic Unity mod may have visual issues in this game. The named mod is deprecated but can be installed manually as an alternative."
     }
   },
   "forceExternalOnly": {
@@ -1337,13 +1340,13 @@
     },
     "dlss5-dx11-bridge": {
       "packageName": "DLSS5 DX11 Bridge",
-      "description": "Enables DLSS 5 Neural Rendering in D3D11 games. Additional setup steps are required — click How To Use for details.",
+      "description": "Enables DLSS 5 Neural Rendering in D3D11 games. Additional setup steps are required \u2014 click How To Use for details.",
       "downloadUrl64": "https://github.com/NIGos/dlss5-dx11-bridge/releases/latest/download/dlss5-dx11-bridge.addon64",
       "repositoryUrl": "https://github.com/NIGos/dlss5-dx11-bridge"
     },
     "dlss5-feed": {
       "packageName": "DLSS5 Feeder",
-      "description": "Enables DLSS 5 Neural Rendering in D3D11 games with no native DLSS support. Additional setup steps are required — click How To Use for details.",
+      "description": "Enables DLSS 5 Neural Rendering in D3D11 games with no native DLSS support. Additional setup steps are required \u2014 click How To Use for details.",
       "downloadUrl64": "https://github.com/jlrouzies-fr/DLSS5-Feeder/releases/latest/download/dlss5-feed.addon64",
       "repositoryUrl": "https://github.com/jlrouzies-fr/DLSS5-Feeder"
     },

@@ -14,6 +14,10 @@
 - Fixed per-game addon selection being lost when switching the addon mode to Global and back.
 - Fixed pre-selected addons not re-downloading on launch if their staging files were missing.
 
+### Manifest Updates
+
+- Added a note to Ori and the Blind Forest: Definitive Edition warning that the generic Unity mod may have visual issues and the named mod is deprecated.
+
 ---
 
 ## v2.5.3
